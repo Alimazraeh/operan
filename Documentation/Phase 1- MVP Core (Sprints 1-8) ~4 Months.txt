@@ -1,0 +1,22 @@
+📦 EPIC: Tenant Control Plane (Module 01)
+   ├─ US-101: As an admin, I can provision a new tenant namespace
+   ├─ US-102: As a system, I can isolate tenant resources logically
+   └─ US-103: As a billing system, I can track tenant usage metrics
+
+📦 EPIC: Agent Runtime Skeleton (Module 03)
+   ├─ US-201: As an orchestrator, I can execute a simple DAG workflow
+   ├─ US-202: As a developer, I can register a basic agent with capabilities
+   └─ US-203: As a system, I can checkpoint & resume workflow state
+
+📦 EPIC: Minimal Memory Fabric (Module 07)
+   ├─ US-301: As an agent, I can store/retrieve semantic embeddings
+   ├─ US-302: As an admin, I can configure tenant-specific vector isolation
+   └─ US-303: As a system, I can log episodic execution history
+
+📦 EPIC: Human Supervision Hook (Module 09)
+   ├─ US-401: As a supervisor, I can approve/reject agent actions via UI
+   └─ US-402: As a system, I can enforce approval gates before execution
+
+📦 EPIC: Basic Observability (Module 11)
+   ├─ US-501: As an operator, I can view workflow execution traces
+   └─ US-502: As a finance stakeholder, I can see token/cost metrics per tenant

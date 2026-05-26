@@ -1,0 +1,12 @@
+🔷 Platform Core Team (Foundation)
+   └─ Architecture, Infra, Security, Model Abstraction
+
+🔷 Pod 1: Tenant & Identity (Modules 01, 02)
+🔷 Pod 2: Agent Runtime (Modules 03, 04, 14)
+🔷 Pod 3: Memory & Knowledge (Modules 06, 07)
+🔷 Pod 4: Execution & Tools (Modules 08, 16, 18)
+🔷 Pod 5: Governance & Observability (Modules 09, 10, 11, 17)
+🔷 Pod 6: Experience & Marketplace (Modules 05, 15, UI/SDK)
+
+🔷 Strategic Pod: Arabic Intelligence (Module 19) [KSA Differentiator]
+🔷 Sovereign Deployment Pod (Module 20) [Compliance/Infrastructure]

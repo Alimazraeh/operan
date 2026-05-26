@@ -1,0 +1,21 @@
+🗓️ Sprint Planning (Day 1 AM)
+   ├─ PI Objective alignment
+   ├─ Story refinement & estimation (Planning Poker)
+   └─ Dependency mapping across pods
+
+🔄 Daily Standup (15 mins)
+   ├─ Pod-level sync
+   └─ Cross-pod blockers escalated in Scrum-of-Scrums (3x/week)
+
+🔍 Mid-Sprint Review (Day 6)
+   ├─ Demo in-progress features
+   └─ Adjust scope if integration risks emerge
+
+✅ Sprint Review (Day 10 PM)
+   ├─ Working software demo to stakeholders
+   ├─ Acceptance criteria validation
+   └─ Feedback incorporated into backlog
+
+🧭 Sprint Retrospective (Day 11 AM)
+   ├─ Process improvements
+   └─ Technical debt prioritization

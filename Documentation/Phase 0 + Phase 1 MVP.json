@@ -1,0 +1,170 @@
+[
+  {
+    "id": "EPIC-01",
+    "type": "epic",
+    "title": "Tenant Control Plane (Module 01)",
+    "description": "Centralized tenant provisioning, namespace creation, quota allocation, billing integration, and environment isolation.",
+    "team": "Pod 1: Tenant & Identity",
+    "priority": 0,
+    "labels": ["module-01", "foundation", "multi-tenant"],
+    "state": "backlog"
+  },
+  {
+    "id": "STORY-01-01",
+    "type": "issue",
+    "title": "Provision isolated tenant namespace on demand",
+    "description": "As a platform admin, when I submit a tenant creation request, the system allocates a logically isolated namespace, generates tenant-specific encryption keys, applies default quotas, and returns a tenant ID. AC: 1) Namespace created in K8s 2) RBAC defaults applied 3) Secret rotation scheduled 4) Tenant ID returned in <2s",
+    "parentId": "EPIC-01",
+    "team": "Pod 1: Tenant & Identity",
+    "priority": 1,
+    "labels": ["module-01", "sprint-1", "infra", "security"],
+    "estimate": 5,
+    "state": "backlog"
+  },
+  {
+    "id": "STORY-01-02",
+    "type": "issue",
+    "title": "Enforce logical isolation for tenant resources",
+    "description": "Verify tenant A cannot access tenant B's vector stores, execution logs, or agent registries. Enforce namespace-level RBAC, resource tagging, and cross-tenant request blocking. AC: 1) Unit tests for cross-tenant leakage 2) Integration test with mock requests 3) Audit log on denied access",
+    "parentId": "EPIC-01",
+    "team": "Pod 1: Tenant & Identity",
+    "priority": 0,
+    "labels": ["module-01", "sprint-1", "security", "compliance"],
+    "estimate": 8,
+    "state": "backlog"
+  },
+  {
+    "id": "EPIC-03",
+    "type": "epic",
+    "title": "Agent Orchestration Engine (Module 03)",
+    "description": "Core runtime engine for event-driven DAG execution, agent scheduling, state checkpointing, retry/timeout logic, and workflow replay.",
+    "team": "Pod 2: Agent Runtime",
+    "priority": 0,
+    "labels": ["module-03", "runtime", "orchestration"],
+    "state": "backlog"
+  },
+  {
+    "id": "STORY-03-01",
+    "type": "issue",
+    "title": "Execute minimal DAG workflow with async nodes",
+    "description": "Implement DAG executor supporting parallel branches, async node routing, and success/failure edges. Support checkpointing at node boundaries. AC: 1) YAML/JSON workflow definition parsed 2) Nodes execute concurrently where possible 3) State persisted after each node 4) Failure triggers retry policy",
+    "parentId": "EPIC-03",
+    "team": "Pod 2: Agent Runtime",
+    "priority": 1,
+    "labels": ["module-03", "sprint-1", "backend"],
+    "estimate": 8,
+    "state": "backlog"
+  },
+  {
+    "id": "STORY-03-02",
+    "type": "issue",
+    "title": "Implement resumable workflow state & replay",
+    "description": "Persist workflow state to distributed storage. On failure/restart, resume from last checkpoint without re-executing completed nodes. Validate idempotency and deterministic replay. AC: 1) Checkpoint stored every N nodes 2) Replay API accepts workflow_id 3) State diff logged 4) MTTR <5 mins on simulated crash",
+    "parentId": "EPIC-03",
+    "team": "Pod 2: Agent Runtime",
+    "priority": 1,
+    "labels": ["module-03", "sprint-2", "reliability"],
+    "estimate": 8,
+    "state": "backlog"
+  },
+  {
+    "id": "EPIC-07",
+    "type": "epic",
+    "title": "Memory Fabric (Module 07)",
+    "description": "Persistent organizational cognition layer supporting semantic, episodic, and graph memory with strict tenant isolation.",
+    "team": "Pod 3: Memory & Knowledge",
+    "priority": 0,
+    "labels": ["module-07", "ai", "memory"],
+    "state": "backlog"
+  },
+  {
+    "id": "STORY-07-01",
+    "type": "issue",
+    "title": "Store/retrieve semantic embeddings per tenant",
+    "description": "Implement vector store abstraction with tenant-scoped collections. Support similarity search with metadata filters and confidence thresholds. AC: 1) Qdrant/Weaviate abstraction layer 2) Tenant filter enforced at query level 3) Index rebuild on schema change 4) P95 search <1s",
+    "parentId": "EPIC-07",
+    "team": "Pod 3: Memory & Knowledge",
+    "priority": 1,
+    "labels": ["module-07", "sprint-2", "vector-db"],
+    "estimate": 8,
+    "state": "backlog"
+  },
+  {
+    "id": "EPIC-09",
+    "type": "epic",
+    "title": "Human Supervision Layer (Module 09)",
+    "description": "Govern autonomous execution safely via approval chains, intervention controls, escalation paths, and human-in-the-loop review.",
+    "team": "Pod 5: Governance & Observability",
+    "priority": 0,
+    "labels": ["module-09", "governance", "trust"],
+    "state": "backlog"
+  },
+  {
+    "id": "STORY-09-01",
+    "type": "issue",
+    "title": "Configure sequential & parallel approval chains",
+    "description": "As a Department Admin, I want to define approval chains for high-risk agent actions so execution only proceeds after human validation. AC: 1) UI/API to chain approvers 2) Sequential vs parallel routing 3) Approve/Reject/Clarify actions 4) TTL & auto-escalation",
+    "parentId": "EPIC-09",
+    "team": "Pod 5: Governance & Observability",
+    "priority": 0,
+    "labels": ["module-09", "sprint-3", "governance", "ui"],
+    "estimate": 8,
+    "state": "backlog"
+  },
+  {
+    "id": "STORY-09-02",
+    "type": "issue",
+    "title": "Human-in-the-loop intervention & state override",
+    "description": "As a Supervisor, I want to pause an active workflow and inject corrective parameters so that I can prevent hallucinated execution or data corruption before it propagates downstream.",
+    "parentId": "EPIC-09",
+    "team": "Pod 5: Governance & Observability",
+    "priority": 0,
+    "labels": ["module-09", "sprint-4", "runtime-integration"],
+    "estimate": 5,
+    "state": "backlog"
+  },
+  {
+    "id": "EPIC-12",
+    "type": "epic",
+    "title": "Model Abstraction Layer (Module 12)",
+    "description": "Decouple orchestration from model vendors. Support routing, fallback, cost/latency optimization, and capability scoring.",
+    "team": "Platform Core",
+    "priority": 0,
+    "labels": ["module-12", "llm", "abstraction"],
+    "state": "backlog"
+  },
+  {
+    "id": "STORY-12-01",
+    "type": "issue",
+    "title": "Implement multi-provider model router with fallback",
+    "description": "Abstract LLM calls behind a unified interface. Support dynamic routing based on task type, cost caps, and latency SLAs. Fallback to secondary provider on rate limit/error. AC: 1) Configurable provider pool 2) Circuit breaker on 429/5xx 3) Token cost tracking per call 4) P95 routing decision <50ms",
+    "parentId": "EPIC-12",
+    "team": "Platform Core",
+    "priority": 1,
+    "labels": ["module-12", "sprint-1", "llm", "resilience"],
+    "estimate": 5,
+    "state": "backlog"
+  },
+  {
+    "id": "EPIC-19",
+    "type": "epic",
+    "title": "Arabic Language Intelligence Layer (Module 19)",
+    "description": "Strategic differentiator: Arabic-first embeddings, dialect normalization, Arabic OCR, terminology governance, and sovereign model routing.",
+    "team": "Strategic Pod: Arabic Intelligence",
+    "priority": 0,
+    "labels": ["module-19", "arabic-ai", "strategic-moat"],
+    "state": "backlog"
+  },
+  {
+    "id": "STORY-19-01",
+    "type": "issue",
+    "title": "Integrate Arabic-native embedding & retrieval pipeline",
+    "description": "Deploy Arabic-optimized embedding model (e.g., Jais/AraBERT variants). Build dialect normalization pre-processor. Validate retrieval accuracy against English baseline. AC: 1) P95 embedding latency <300ms 2) Dialect normalization >92% accuracy 3) Tenant-scoped Arabic vector index 4) Cross-lingual query routing",
+    "parentId": "EPIC-19",
+    "team": "Strategic Pod: Arabic Intelligence",
+    "priority": 0,
+    "labels": ["module-19", "sprint-3", "nlp", "arabic"],
+    "estimate": 8,
+    "state": "backlog"
+  }
+]

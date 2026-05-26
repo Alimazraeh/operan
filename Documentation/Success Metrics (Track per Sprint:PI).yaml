@@ -1,0 +1,14 @@
+Technical Health:
+  - Workflow success rate: ≥99.5%
+  - P95 agent response latency: <2s
+  - Mean time to recover (MTTR): <15 mins
+
+Business Value:
+  - Departments deployed per tenant: Target 3 by Phase 2
+  - Human approval override rate: <5% (indicates good autonomy)
+  - Cost per workflow execution: Trending down 10% per PI
+
+Strategic Moats:
+  - Arabic task accuracy vs. baseline: +25% by Phase 2
+  - Time to deploy new department template: <1 day by Phase 3
+  - Third-party agents in marketplace: 10+ by Phase 3

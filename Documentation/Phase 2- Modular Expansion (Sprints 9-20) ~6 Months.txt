@@ -1,0 +1,20 @@
+🔷 Identity & Access (Pod 1)
+   └─ SSO/SAML, RBAC/ABAC policies, agent identity management
+
+🔷 Agent Registry & Marketplace (Pods 2, 6)
+   └─ Versioned agent catalog, dependency resolution, marketplace API
+
+🔷 Knowledge Pipeline (Pod 3)
+   └─ Multi-source ingestion (SharePoint, ERP, email), Arabic OCR, entity extraction
+
+🔷 Tool Execution Sandbox (Pod 4)
+   └─ MCP integration, API sandboxing, dry-run/rollback capabilities
+
+🔷 Policy Engine (Pod 5)
+   └─ OPA/Rego integration, dynamic policy evaluation, compliance reporting
+
+🔷 Department Templates (Pod 6)
+   └─ HR, Finance, Legal templates with configurable governance
+
+🔷 Arabic Intelligence (Strategic Pod)
+   └─ Arabic embeddings, dialect normalization, sovereign model routing

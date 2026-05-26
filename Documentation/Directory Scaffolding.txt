@@ -1,0 +1,10 @@
+contracts/
+└── v1/
+    ├── openapi-tenant.yaml          # Module 01: REST provisioning & quota
+    ├── openapi-orchestration.yaml   # Module 03: DAG execution & checkpointing
+    ├── openapi-supervision.yaml     # Module 09: Approval chains & intervention
+    ├── asyncapi-event-bus.yaml      # Module 14: Inter-agent pub/sub & workflow signals
+    ├── schema-agent.json            # Agent metadata, capabilities, escalation rules
+    ├── schema-workflow-state.json   # DAG node state, checkpoint payload
+    ├── schema-approval.json         # Human-in-loop request/response schema
+    └── integration-graph.yaml       # Dependency topology, SLA edges, call direction

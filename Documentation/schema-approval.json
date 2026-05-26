@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ApprovalRequest",
+  "type": "object",
+  "required": ["workflow_id", "action_type", "requester_agent_id", "payload"],
+  "properties": {
+    "workflow_id": {"type": "string", "format": "uuid"},
+    "action_type": {"enum": ["EXECUTE", "TRANSFER", "DEPLOY", "TERMINATE"]},
+    "requester_agent_id": {"type": "string"},
+    "payload": {"type": "object"},
+    "ttl_seconds": {"type": "integer", "minimum": 60, "maximum": 86400}
+  }
+}
