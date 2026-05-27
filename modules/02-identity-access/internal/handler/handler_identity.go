@@ -3,6 +3,8 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/operan/modules/02-identity-access/internal/events"
@@ -27,7 +29,7 @@ func NewServiceIdentityHandler(ids *store.ServiceIdentityStore, audit *store.Aud
 	}
 }
 
-// Create handles POST /tenants/{id}/iam/service-identities
+// Create handles POST /api/v1/iam/service-identities
 func (h *ServiceIdentityHandler) Create(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 	actorID := middleware.GetUserID(r.Context())
@@ -44,7 +46,7 @@ func (h *ServiceIdentityHandler) Create(w http.ResponseWriter, r *http.Request) 
 	}
 
 	identity := &models.ServiceIdentity{
-		TenantID: req.TenantID,
+		TenantID: tenantID,
 		Name:     req.Name,
 		Roles:    req.Roles,
 	}
@@ -82,7 +84,49 @@ func (h *ServiceIdentityHandler) Create(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(identity)
 }
 
-// GetByID handles GET /tenants/{id}/iam/service-identities/{identity_id}
+// List handles GET /api/v1/iam/service-identities
+func (h *ServiceIdentityHandler) List(w http.ResponseWriter, r *http.Request) {
+	tenantID := middleware.GetTenantID(r.Context())
+
+	pageStr := r.URL.Query().Get("page")
+	pageSizeStr := r.URL.Query().Get("page_size")
+
+	page := 1
+	pageSize := 50
+	if pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+	if pageSizeStr != "" {
+		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 && ps <= 100 {
+			pageSize = ps
+		}
+	}
+
+	identities, err := h.IDs.List(tenantID)
+	if err != nil {
+		http.Error(w, `{"error":"failed to list service identities"}`, http.StatusInternalServerError)
+		return
+	}
+	total := len(identities)
+
+	// Redact API keys in response
+	for _, id := range identities {
+		id.APIKeyID = "[REDACTED]"
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"service_identities": identities,
+		"total":              total,
+		"page":               page,
+		"page_size":          pageSize,
+		"total_pages":        (total + pageSize - 1) / pageSize,
+	})
+}
+
+// GetByID handles GET /api/v1/iam/service-identities/{id}
 func (h *ServiceIdentityHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	identityID := extractIdentityID(r.URL.Path)
 	if identityID == "" {
@@ -103,13 +147,15 @@ func (h *ServiceIdentityHandler) GetByID(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(identity)
 }
 
-// extractIdentityID extracts the identity_id from the URL path.
+// extractIdentityID extracts the service identity ID from the URL path.
+// Handles: /api/v1/iam/service-identities/{id}
 func extractIdentityID(path string) string {
-	parts := splitPath(path)
-	if len(parts) >= 6 && parts[4] == "service-identities" {
-		return parts[5]
+	path = strings.TrimPrefix(path, "/api/v1/iam/service-identities/")
+	path = strings.TrimSuffix(path, "/")
+	if path == "" {
+		return ""
 	}
-	return ""
+	return path
 }
 
 // AgentIdentityHandler handles agent identity-related HTTP endpoints.
@@ -128,7 +174,7 @@ func NewAgentIdentityHandler(ids *store.AgentIdentityStore, audit *store.AuditSt
 	}
 }
 
-// Register handles POST /tenants/{id}/iam/agent-identities
+// Register handles POST /api/v1/iam/agent-identities
 func (h *AgentIdentityHandler) Register(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 	actorID := middleware.GetUserID(r.Context())
@@ -145,7 +191,7 @@ func (h *AgentIdentityHandler) Register(w http.ResponseWriter, r *http.Request) 
 	}
 
 	identity := &models.AgentIdentity{
-		TenantID:          req.TenantID,
+		TenantID:          tenantID,
 		AgentID:           req.AgentID,
 		Capabilities:      req.Capabilities,
 		MemoryScope:       req.MemoryScope,
@@ -168,10 +214,10 @@ func (h *AgentIdentityHandler) Register(w http.ResponseWriter, r *http.Request) 
 		ResourceID:   identity.ID,
 		Result:       "success",
 		Details: map[string]interface{}{
-			"agent_id":            identity.AgentID,
-			"capabilities":        identity.Capabilities,
-			"allowed_tools":       identity.AllowedTools,
-			"escalation_targets":  identity.EscalationTargets,
+			"agent_id":             identity.AgentID,
+			"capabilities":         identity.Capabilities,
+			"allowed_tools":        identity.AllowedTools,
+			"escalation_targets":   identity.EscalationTargets,
 		},
 		Timestamp: time.Now().UTC(),
 	})
@@ -181,9 +227,46 @@ func (h *AgentIdentityHandler) Register(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(identity)
 }
 
-// GetByAgent handles GET /tenants/{id}/iam/agent-identities/agent/{agent_id}
+// List handles GET /api/v1/iam/agent-identities
+func (h *AgentIdentityHandler) List(w http.ResponseWriter, r *http.Request) {
+	tenantID := middleware.GetTenantID(r.Context())
+
+	pageStr := r.URL.Query().Get("page")
+	pageSizeStr := r.URL.Query().Get("page_size")
+
+	page := 1
+	pageSize := 50
+	if pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+	if pageSizeStr != "" {
+		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 && ps <= 100 {
+			pageSize = ps
+		}
+	}
+
+	identities, err := h.IDs.ListByTenant(tenantID)
+	if err != nil {
+		http.Error(w, `{"error":"failed to list agent identities"}`, http.StatusInternalServerError)
+		return
+	}
+	total := len(identities)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"agent_identities": identities,
+		"total":            total,
+		"page":             page,
+		"page_size":        pageSize,
+		"total_pages":      (total + pageSize - 1) / pageSize,
+	})
+}
+
+// GetByAgent handles GET /api/v1/iam/agent-identities/agent/{agent_id}
 func (h *AgentIdentityHandler) GetByAgent(w http.ResponseWriter, r *http.Request) {
-	// Extract agent_id from URL path: /tenants/{id}/iam/agent-identities/agent/{agent_id}
+	// Extract agent_id from URL path: /api/v1/iam/agent-identities/agent/{agent_id}
 	agentID := extractAgentID(r.URL.Path)
 	if agentID == "" {
 		http.Error(w, `{"error":"agent_id is required"}`, http.StatusBadRequest)
@@ -201,11 +284,16 @@ func (h *AgentIdentityHandler) GetByAgent(w http.ResponseWriter, r *http.Request
 }
 
 // extractAgentID extracts the agent_id from the URL path.
+// Handles: /api/v1/iam/agent-identities/agent/{agent_id}
 func extractAgentID(path string) string {
-	parts := splitPath(path)
-	// Expected: /tenants/{id}/iam/agent-identities/agent/{agent_id}
-	if len(parts) >= 8 && parts[4] == "agent-identities" && parts[6] == "agent" {
-		return parts[7]
+	const prefix = "/api/v1/iam/agent-identities/agent/"
+	if !strings.HasPrefix(path, prefix) {
+		return ""
 	}
-	return ""
+	agentID := path[len(prefix):]
+	agentID = strings.TrimSuffix(agentID, "/")
+	if agentID == "" {
+		return ""
+	}
+	return agentID
 }

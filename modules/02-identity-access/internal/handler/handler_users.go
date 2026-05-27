@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/operan/modules/02-identity-access/internal/events"
@@ -14,8 +15,8 @@ import (
 
 // UserHandler handles user-related HTTP endpoints.
 type UserHandler struct {
-	Users   *store.UserStore
-	Audit   *store.AuditStore
+	Users     *store.UserStore
+	Audit     *store.AuditStore
 	Publisher *events.Publisher
 }
 
@@ -28,7 +29,7 @@ func NewUserHandler(users *store.UserStore, audit *store.AuditStore, publisher *
 	}
 }
 
-// Create handles POST /tenants/{id}/iam/users
+// Create handles POST /api/v1/iam/users
 func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 	actorID := middleware.GetUserID(r.Context())
@@ -53,11 +54,11 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := &models.User{
-		TenantID:           tenantID,
-		Email:              req.Email,
-		DisplayName:        req.DisplayName,
-		Roles:              req.Roles,
-		MFAEnabled:         false,
+		TenantID:             tenantID,
+		Email:                req.Email,
+		DisplayName:          req.DisplayName,
+		Roles:                req.Roles,
+		MFAEnabled:           false,
 		AuthenticationMethod: "password",
 	}
 	if req.MFAEnabled != nil && *req.MFAEnabled {
@@ -97,7 +98,7 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-// List handles GET /tenants/{id}/iam/users
+// List handles GET /api/v1/iam/users
 func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 
@@ -133,9 +134,8 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// GetByID handles GET /tenants/{id}/iam/users/{user_id}
+// GetByID handles GET /api/v1/iam/users/{user_id}
 func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	// Extract user_id from URL path
 	userID := extractUserID(r.URL.Path)
 	if userID == "" {
 		http.Error(w, `{"error":"user_id is required"}`, http.StatusBadRequest)
@@ -152,7 +152,7 @@ func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-// Update handles PATCH /tenants/{id}/iam/users/{user_id}
+// Update handles PATCH /api/v1/iam/users/{user_id}
 func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 	actorID := middleware.GetUserID(r.Context())
@@ -201,7 +201,7 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-// Deactivate handles DELETE /tenants/{id}/iam/users/{user_id}
+// Deactivate handles DELETE /api/v1/iam/users/{user_id}
 func (h *UserHandler) Deactivate(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 	actorID := middleware.GetUserID(r.Context())
@@ -234,13 +234,13 @@ func (h *UserHandler) Deactivate(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "deactivated"})
 }
 
-// SetRoles handles POST /tenants/{id}/iam/users/{user_id}/roles
+// SetRoles handles PUT /api/v1/iam/users/{user_id}/roles
 func (h *UserHandler) SetRoles(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 	actorID := middleware.GetUserID(r.Context())
 
-	userID := extractUserID(r.URL.Path)
-	if userID == "" {
+	userID, ok := extractUserRolesPath(r.URL.Path)
+	if !ok || userID == "" {
 		http.Error(w, `{"error":"user_id is required"}`, http.StatusBadRequest)
 		return
 	}
@@ -285,38 +285,36 @@ func (h *UserHandler) SetRoles(w http.ResponseWriter, r *http.Request) {
 }
 
 // extractUserID extracts the user_id from the URL path.
+// Supports: /api/v1/iam/users/{id} and /api/v1/iam/users/{id}/roles
 func extractUserID(path string) string {
-	// Expected path: /tenants/{id}/iam/users/{user_id}
-	parts := splitPath(path)
-	if len(parts) >= 6 && parts[4] == "users" {
-		return parts[5]
+	// Strip base path prefix
+	path = strings.TrimPrefix(path, "/api/v1/iam/users/")
+	path = strings.TrimSuffix(path, "/")
+	// If there's still a slash, it's /{id}/roles → take first segment
+	if idx := strings.Index(path, "/"); idx >= 0 {
+		path = path[:idx]
 	}
-	return ""
+	if path == "" {
+		return ""
+	}
+	return path
 }
 
-// splitPath splits a URL path into segments.
-func splitPath(path string) []string {
-	if path == "/" {
-		return []string{""}
+// extractUserRolesPath checks if the path is /api/v1/iam/users/{id}/roles
+// and returns (user_id, true).
+func extractUserRolesPath(path string) (string, bool) {
+	const prefix = "/api/v1/iam/users/"
+	if !strings.HasPrefix(path, prefix) {
+		return "", false
 	}
-	if path[0] == '/' {
-		path = path[1:]
+	remaining := path[len(prefix):]
+	remaining = strings.TrimSuffix(remaining, "/")
+	if !strings.HasSuffix(remaining, "/roles") {
+		return "", false
 	}
-	return splitString(path, '/')
-}
-
-// splitString splits a string by a separator.
-func splitString(s string, sep rune) []string {
-	var result []string
-	var current string
-	for _, r := range s {
-		if r == sep {
-			result = append(result, current)
-			current = ""
-		} else {
-			current += string(r)
-		}
+	id := strings.TrimSuffix(remaining, "/roles")
+	if id == "" {
+		return "", false
 	}
-	result = append(result, current)
-	return result
+	return id, true
 }
