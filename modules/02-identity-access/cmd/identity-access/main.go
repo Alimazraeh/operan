@@ -34,7 +34,7 @@ func main() {
 	ssoHandler := handler.NewSSOHandler(ssoConfigs, audit, publisher)
 	scimHandler := handler.NewSCIMHandler(users, audit, publisher)
 	auditHandler := handler.NewAuditHandler(audit)
-	rbacHandler := handler.NewRBACHandler(users, roles, audit)
+	rbacHandler := handler.NewRBACHandler(users, roles, serviceIDs, agentIDs, audit)
 
 	// Setup routes — base path: /api/v1/iam
 	mux := http.NewServeMux()
@@ -245,7 +245,7 @@ func main() {
 	// Wrap with middleware chain
 	var chain http.Handler = mux
 	chain = middleware.TraceInjector(chain)
-	chain = middleware.AuthValidator(chain)
+	chain = middleware.AuthValidator(cfg.TokenSecret, chain)
 	chain = middleware.TenantInjector(chain)
 
 	// Start server
