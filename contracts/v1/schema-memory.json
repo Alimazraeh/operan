@@ -1,0 +1,152 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Operan Memory Fabric Schema (Module 07)",
+  "description": "Persistent organizational cognition layer — semantic, episodic, procedural, graph, and institutional memory with lineage tracking and provenance.",
+  "type": "object",
+  "definitions": {
+    "SemanticMemoryEntry": {
+      "type": "object",
+      "required": ["tenant_id", "content", "embedding"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "content": { "type": "string" },
+        "embedding": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Vector embedding for semantic search"
+        },
+        "metadata": { "type": "object" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "source_document": { "type": "string", "format": "uuid" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "memory_type": {
+          "type": "string",
+          "enum": ["fact", "document_chunk", "embedding", "knowledge"]
+        },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "EpisodicMemoryEntry": {
+      "type": "object",
+      "required": ["tenant_id", "department_id", "timestamp", "event_type", "outcome"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "department_id": { "type": "string", "format": "uuid" },
+        "agent_id": { "type": "string", "format": "uuid" },
+        "workflow_id": { "type": "string", "format": "uuid" },
+        "event_type": { "type": "string" },
+        "description": { "type": "string" },
+        "context": { "type": "object" },
+        "outcome": {
+          "type": "string",
+          "enum": ["success", "failure", "partial", "pending"]
+        },
+        "evidence": {
+          "type": "array",
+          "items": { "type": "string", "format": "uuid" }
+        },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "memory_weight": {
+          "type": "number",
+          "description": "Importance weight for compression priority"
+        },
+        "compressed_into": { "type": "string", "format": "uuid" }
+      }
+    },
+    "ProceduralMemoryEntry": {
+      "type": "object",
+      "required": ["tenant_id", "name", "steps"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "domain": { "type": "string" },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["order", "action"],
+            "properties": {
+              "order": { "type": "integer" },
+              "action": { "type": "string" },
+              "agent_role": { "type": "string" },
+              "tools_required": { "type": "array", "items": { "type": "string" } },
+              "expected_output": { "type": "string" }
+            }
+          }
+        },
+        "conditions": { "type": "array", "items": { "type": "string" } },
+        "version": { "type": "string" },
+        "last_updated": { "type": "string", "format": "date-time" }
+      }
+    },
+    "GraphMemoryEntity": {
+      "type": "object",
+      "required": ["source", "target", "relation"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "source": { "type": "string", "description": "Entity reference ID" },
+        "target": { "type": "string", "description": "Entity reference ID" },
+        "relation": { "type": "string", "description": "Relationship type" },
+        "metadata": { "type": "object" },
+        "weight": { "type": "number" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "created_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "MemoryLineage": {
+      "type": "object",
+      "required": ["entry_id", "created_at", "chain"],
+      "properties": {
+        "entry_id": { "type": "string", "format": "uuid" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "chain": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["stage", "timestamp"],
+            "properties": {
+              "stage": {
+                "type": "string",
+                "enum": [
+                  "source", "ingest", "parse", "chunk",
+                  "embed", "index", "graph_build", "merge"
+                ]
+              },
+              "timestamp": { "type": "string", "format": "date-time" },
+              "source_id": { "type": "string", "format": "uuid" },
+              "details": { "type": "object" }
+            }
+          }
+        }
+      }
+    },
+    "MemoryHealth": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["healthy", "degraded", "critical"]
+        },
+        "semantic_storage": {
+          "type": "object",
+          "properties": {
+            "status": { "type": "string", "enum": ["healthy", "degraded", "offline"] },
+            "backend": { "type": "string" },
+            "entries_count": { "type": "integer" },
+            "last_compression": { "type": "string", "format": "date-time" }
+          }
+        },
+        "graph_storage": { "$ref": "#/definitions/MemoryHealth/properties/semantic_storage" },
+        "episodic_storage": { "$ref": "#/definitions/MemoryHealth/properties/semantic_storage" },
+        "total_entries": { "type": "integer" },
+        "compression_ratio": { "type": "number" },
+        "avg_query_latency_ms": { "type": "integer" }
+      }
+    }
+  }
+}

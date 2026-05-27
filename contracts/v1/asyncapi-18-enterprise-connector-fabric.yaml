@@ -1,0 +1,516 @@
+asyncapi: 2.6.0
+info:
+  title: Operan Enterprise Connector Fabric Events
+  description: Event-driven API for the Enterprise Connector Fabric module covering connector lifecycle, synchronization events, and operational status changes.
+  version: 1.0.0
+  contact:
+    name: Platform Architect
+    email: arch@operan.dev
+  license:
+    name: Proprietary
+servers:
+  - url: wss://events.operan.dev/v1
+    description: Production event stream
+  - url: wss://events-staging.operan.dev/v1
+    description: Staging event stream
+defaultContentType: application/json
+channels:
+  /enterprise-connector/connector/registered:
+    description: Published when a new connector is registered.
+    publish:
+      summary: Connector registered event
+      operationId: receiveConnectorRegistered
+      message:
+        $ref: '#/components/messages/ConnectorRegistered'
+  /enterprise-connector/connector/connected:
+    description: Published when a connector establishes a connection.
+    publish:
+      summary: Connector connected event
+      operationId: receiveConnectorConnected
+      message:
+        $ref: '#/components/messages/ConnectorConnected'
+  /enterprise-connector/connector/disconnected:
+    description: Published when a connector loses connection.
+    publish:
+      summary: Connector disconnected event
+      operationId: receiveConnectorDisconnected
+      message:
+        $ref: '#/components/messages/ConnectorDisconnected'
+  /enterprise-connector/connector/sync-started:
+    description: Published when a sync operation begins.
+    publish:
+      summary: Connector sync started event
+      operationId: receiveConnectorSyncStarted
+      message:
+        $ref: '#/components/messages/ConnectorSyncStarted'
+  /enterprise-connector/connector/sync-completed:
+    description: Published when a sync operation completes successfully.
+    publish:
+      summary: Connector sync completed event
+      operationId: receiveConnectorSyncCompleted
+      message:
+        $ref: '#/components/messages/ConnectorSyncCompleted'
+  /enterprise-connector/connector/sync-failed:
+    description: Published when a sync operation fails.
+    publish:
+      summary: Connector sync failed event
+      operationId: receiveConnectorSyncFailed
+      message:
+        $ref: '#/components/messages/ConnectorSyncFailed'
+  /enterprise-connector/connector/status-changed:
+    description: Published when a connector's operational status changes.
+    publish:
+      summary: Connector status changed event
+      operationId: receiveConnectorStatusChanged
+      message:
+        $ref: '#/components/messages/ConnectorStatusChanged'
+  /enterprise-connector/connector/rate-limited:
+    description: Published when a connector hits its rate limit.
+    publish:
+      summary: Connector rate limited event
+      operationId: receiveConnectorRateLimited
+      message:
+        $ref: '#/components/messages/ConnectorRateLimited'
+components:
+  messages:
+    ConnectorRegistered:
+      name: connector.registered
+      summary: A connector was registered
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ConnectorRegisteredPayload'
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+    ConnectorConnected:
+      name: connector.connected
+      summary: A connector is now connected
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ConnectorConnectedPayload'
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+    ConnectorDisconnected:
+      name: connector.disconnected
+      summary: A connector lost connection
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ConnectorDisconnectedPayload'
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+    ConnectorSyncStarted:
+      name: connector.sync_started
+      summary: A sync operation has started
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ConnectorSyncStartedPayload'
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+    ConnectorSyncCompleted:
+      name: connector.sync_completed
+      summary: A sync operation has completed
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ConnectorSyncCompletedPayload'
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+    ConnectorSyncFailed:
+      name: connector.sync_failed
+      summary: A sync operation has failed
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ConnectorSyncFailedPayload'
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+    ConnectorStatusChanged:
+      name: connector.status_changed
+      summary: A connector status changed
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ConnectorStatusChangedPayload'
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+    ConnectorRateLimited:
+      name: connector.rate_limited
+      summary: A connector hit its rate limit
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ConnectorRateLimitedPayload'
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+  schemas:
+    EventHeaders:
+      type: object
+      required:
+        - id
+        - type
+        - source
+        - time
+        - tenant_id
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique event identifier
+        type:
+          type: string
+          description: Full event type name
+        source:
+          type: string
+          description: Event source identifier
+          enum:
+            - enterprise-connector-fabric
+        time:
+          type: string
+          format: date-time
+          description: Event timestamp
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant context for the event
+        correlation_id:
+          type: string
+          format: uuid
+          description: Correlation ID for tracing related events
+    ConnectorRegisteredPayload:
+      type: object
+      required:
+        - connector_id
+        - tenant_id
+        - vendor
+        - display_name
+      properties:
+        connector_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        vendor:
+          type: string
+          enum:
+            - sap
+            - oracle
+            - salesforce
+            - microsoft_365
+            - google_workspace
+            - servicenow
+            - slack
+            - teams
+            - jira
+            - github
+            - custom
+        display_name:
+          type: string
+        description:
+          type: string
+        sync_mode:
+          type: string
+          enum:
+            - full
+            - incremental
+            - real_time
+            - scheduled
+        created_by:
+          type: string
+          format: uuid
+    ConnectorConnectedPayload:
+      type: object
+      required:
+        - connector_id
+        - tenant_id
+        - vendor
+        - connected_at
+      properties:
+        connector_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        vendor:
+          type: string
+          enum:
+            - sap
+            - oracle
+            - salesforce
+            - microsoft_365
+            - google_workspace
+            - servicenow
+            - slack
+            - teams
+            - jira
+            - github
+            - custom
+        connected_at:
+          type: string
+          format: date-time
+        latency_ms:
+          type: integer
+          minimum: 0
+        authentication_method:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+    ConnectorDisconnectedPayload:
+      type: object
+      required:
+        - connector_id
+        - tenant_id
+        - vendor
+        - disconnected_at
+      properties:
+        connector_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        vendor:
+          type: string
+          enum:
+            - sap
+            - oracle
+            - salesforce
+            - microsoft_365
+            - google_workspace
+            - servicenow
+            - slack
+            - teams
+            - jira
+            - github
+            - custom
+        disconnected_at:
+          type: string
+          format: date-time
+        reason:
+          type: string
+          enum:
+            - network_error
+            - authentication_expired
+            - token_revoked
+            - manual_disconnect
+            - connection_timeout
+            - api_error
+            - unknown
+        last_error:
+          type: string
+    ConnectorSyncStartedPayload:
+      type: object
+      required:
+        - connector_id
+        - sync_run_id
+        - tenant_id
+        - sync_mode
+        - started_at
+      properties:
+        connector_id:
+          type: string
+          format: uuid
+        sync_run_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        sync_mode:
+          type: string
+          enum:
+            - full
+            - incremental
+            - real_time
+            - scheduled
+        object_types:
+          type: array
+          items:
+            type: string
+        target_range:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date-time
+            end_date:
+              type: string
+              format: date-time
+        started_at:
+          type: string
+          format: date-time
+    ConnectorSyncCompletedPayload:
+      type: object
+      required:
+        - connector_id
+        - sync_run_id
+        - tenant_id
+        - completed_at
+      properties:
+        connector_id:
+          type: string
+          format: uuid
+        sync_run_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        sync_mode:
+          type: string
+          enum:
+            - full
+            - incremental
+            - real_time
+            - scheduled
+        objects_synced:
+          type: integer
+          minimum: 0
+        objects_failed:
+          type: integer
+          minimum: 0
+        duration_ms:
+          type: integer
+          minimum: 0
+        completed_at:
+          type: string
+          format: date-time
+    ConnectorSyncFailedPayload:
+      type: object
+      required:
+        - connector_id
+        - sync_run_id
+        - tenant_id
+        - error_message
+        - failed_at
+      properties:
+        connector_id:
+          type: string
+          format: uuid
+        sync_run_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        sync_mode:
+          type: string
+          enum:
+            - full
+            - incremental
+            - real_time
+            - scheduled
+        error_message:
+          type: string
+        error_code:
+          type: string
+        objects_synced_before_failure:
+          type: integer
+          minimum: 0
+        failed_at:
+          type: string
+          format: date-time
+        retryable:
+          type: boolean
+    ConnectorStatusChangedPayload:
+      type: object
+      required:
+        - connector_id
+        - tenant_id
+        - previous_status
+        - new_status
+        - changed_at
+      properties:
+        connector_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        vendor:
+          type: string
+          enum:
+            - sap
+            - oracle
+            - salesforce
+            - microsoft_365
+            - google_workspace
+            - servicenow
+            - slack
+            - teams
+            - jira
+            - github
+            - custom
+        previous_status:
+          type: string
+          enum:
+            - connected
+            - disconnected
+            - error
+            - degraded
+            - testing
+        new_status:
+          type: string
+          enum:
+            - connected
+            - disconnected
+            - error
+            - degraded
+            - testing
+        changed_at:
+          type: string
+          format: date-time
+        reason:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+    ConnectorRateLimitedPayload:
+      type: object
+      required:
+        - connector_id
+        - tenant_id
+        - limit
+        - current_usage
+        - triggered_at
+      properties:
+        connector_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        vendor:
+          type: string
+          enum:
+            - sap
+            - oracle
+            - salesforce
+            - microsoft_365
+            - google_workspace
+            - servicenow
+            - slack
+            - teams
+            - jira
+            - github
+            - custom
+        limit:
+          type: integer
+          description: Rate limit value (e.g., requests per minute)
+        current_usage:
+          type: integer
+          description: Current usage count within the rate limit window
+        window_type:
+          type: string
+          enum:
+            - per_minute
+            - per_hour
+            - per_day
+        retry_after_seconds:
+          type: integer
+          minimum: 0
+          description: Suggested wait time before retrying
+        queued_requests:
+          type: integer
+          minimum: 0
+          description: Number of requests currently queued due to rate limiting
+        triggered_at:
+          type: string
+          format: date-time

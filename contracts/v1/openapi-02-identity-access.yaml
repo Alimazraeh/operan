@@ -1,0 +1,627 @@
+openapi: 3.0.3
+info:
+  title: Operan Identity & Access Management API
+  description: Enterprise-grade authentication and authorization. Module 02.
+  version: 1.0.0
+  contact:
+    name: Operan Platform Team
+
+servers:
+  - url: /api/v1/iam
+
+security:
+  - BearerAuth: []
+  - X-Tenant-ID:
+      schema:
+        type: string
+  - X-Request-ID:
+      schema:
+        type: string
+
+paths:
+  /users:
+    post:
+      summary: Create a new user
+      operationId: createUser
+      tags: [users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+            example:
+              email: user@acme.corp
+              display_name: "John Doe"
+              roles: [department_admin]
+              mfa_enabled: true
+              ldap_dn: null
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request
+
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      operationId: getUser
+      tags: [users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    patch:
+      summary: Update user
+      operationId: updateUser
+      tags: [users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated
+
+    delete:
+      summary: Deactivate user
+      operationId: deactivateUser
+      tags: [users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: User deactivated
+
+  /users/{id}/roles:
+    put:
+      summary: Set user roles (replaces all)
+      operationId: setUserRoles
+      tags: [roles]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetRolesRequest'
+      responses:
+        '200':
+          description: Roles updated
+
+  /roles:
+    post:
+      summary: Define a custom role
+      operationId: createRole
+      tags: [roles]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoleRequest'
+      responses:
+        '201':
+          description: Role created
+
+  /roles/{id}:
+    delete:
+      summary: Delete a custom role
+      operationId: deleteRole
+      tags: [roles]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Role deleted
+
+  /service-identities:
+    post:
+      summary: Create a service identity
+      description: For non-human entities (agents, external systems, CI/CD).
+      operationId: createServiceIdentity
+      tags: [service-identities]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateServiceIdentityRequest'
+      responses:
+        '201':
+          description: Service identity created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceIdentity'
+
+  /agent-identities:
+    post:
+      summary: Register an agent identity
+      description: Registers an autonomous agent with its capability set and permission scope.
+      operationId: registerAgentIdentity
+      tags: [agent-identities]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterAgentIdentityRequest'
+      responses:
+        '201':
+          description: Agent identity registered
+
+  /auth/sso/configure:
+    post:
+      summary: Configure SSO provider
+      operationId: configureSSO
+      tags: [sso]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SSOConfig'
+      responses:
+        '201':
+          description: SSO configured
+
+  /auth/sso/test:
+    post:
+      summary: Test SSO connection
+      operationId: testSSO
+      tags: [sso]
+      responses:
+        '200':
+          description: SSO connection successful
+
+  /scim/users:
+    get:
+      summary: SCIM user listing
+      description: SCIM 2.0 compliant user provisioning endpoint.
+      operationId: scimListUsers
+      tags: [scim]
+      parameters:
+        - name: filter
+          in: query
+          schema:
+            type: string
+        - name: startIndex
+          in: query
+          schema:
+            type: integer
+        - name: count
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: SCIM user list
+
+  /audit/trails:
+    get:
+      summary: Get audit trail entries
+      operationId: getAuditTrails
+      tags: [audit]
+      parameters:
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+        - name: actor_id
+          in: query
+          schema:
+            type: string
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Audit trail entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditEntry'
+                  total:
+                    type: integer
+
+  /audit/session-replay/{session_id}:
+    get:
+      summary: Get session replay data
+      operationId: getSessionReplay
+      tags: [audit]
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session replay data
+
+  /rbac/evaluate:
+    post:
+      summary: Evaluate RBAC/ABAC policy
+      description: Check if an actor has a specific permission. Supports attribute-based evaluation.
+      operationId: evaluatePermission
+      tags: [rbac]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionCheckRequest'
+      responses:
+        '200':
+          description: Permission evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionCheckResult'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    X-Tenant-ID:
+      name: X-Tenant-ID
+      in: header
+      required: true
+      schema:
+        type: string
+    X-Request-ID:
+      name: X-Request-ID
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    CreateUserRequest:
+      type: object
+      required:
+        - email
+        - display_name
+      properties:
+        email:
+          type: string
+          format: email
+        display_name:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        mfa_enabled:
+          type: boolean
+          default: false
+        ldap_dn:
+          type: string
+          nullable: true
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        display_name:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        mfa_enabled:
+          type: boolean
+        status:
+          type: string
+          enum: [active, suspended, deactivated]
+
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - display_name
+        - tenant_id
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        display_name:
+          type: string
+        tenant_id:
+          type: string
+          format: uuid
+        roles:
+          type: array
+          items:
+            type: string
+        mfa_enabled:
+          type: boolean
+        ldap_dn:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, suspended, deactivated]
+        created_at:
+          type: string
+          format: date-time
+        last_login_at:
+          type: string
+          format: date-time
+
+    SetRolesRequest:
+      type: object
+      required:
+        - roles
+      properties:
+        roles:
+          type: array
+          items:
+            type: string
+
+    CreateRoleRequest:
+      type: object
+      required:
+        - name
+        - permissions
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        is_system:
+          type: boolean
+          default: false
+
+    CreateServiceIdentityRequest:
+      type: object
+      required:
+        - name
+        - tenant_id
+        - roles
+      properties:
+        name:
+          type: string
+        tenant_id:
+          type: string
+          format: uuid
+        roles:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          nullable: true
+
+    ServiceIdentity:
+      type: object
+      required:
+        - id
+        - name
+        - tenant_id
+        - api_key_id
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        tenant_id:
+          type: string
+          format: uuid
+        roles:
+          type: array
+          items:
+            type: string
+        api_key_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
+
+    RegisterAgentIdentityRequest:
+      type: object
+      required:
+        - agent_id
+        - tenant_id
+        - capabilities
+      properties:
+        agent_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        capabilities:
+          type: array
+          items:
+            type: string
+        memory_scope:
+          type: array
+          items:
+            type: string
+        allowed_tools:
+          type: array
+          items:
+            type: string
+        escalation_targets:
+          type: array
+          items:
+            type: string
+
+    SSOConfig:
+      type: object
+      required:
+        - provider
+        - tenant_id
+      properties:
+        provider:
+          type: string
+          enum: [keycloak, ory, authentik, azure_ad, okta]
+        tenant_id:
+          type: string
+          format: uuid
+        issuer_url:
+          type: string
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+
+    AuditEntry:
+      type: object
+      required:
+        - id
+        - timestamp
+        - actor_id
+        - action
+        - resource
+        - result
+      properties:
+        id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        actor_id:
+          type: string
+        actor_type:
+          type: string
+          enum: [user, service_identity, agent_identity]
+        action:
+          type: string
+        resource:
+          type: string
+        resource_type:
+          type: string
+        result:
+          type: string
+          enum: [success, failure, denied]
+        details:
+          type: object
+        ip_address:
+          type: string
+        user_agent:
+          type: string
+
+    PermissionCheckRequest:
+      type: object
+      required:
+        - actor_id
+        - action
+        - resource
+      properties:
+        actor_id:
+          type: string
+        action:
+          type: string
+        resource:
+          type: string
+        attributes:
+          type: object
+          description: ABAC attributes for policy evaluation
+
+    PermissionCheckResult:
+      type: object
+      required:
+        - allowed
+        - reason
+      properties:
+        allowed:
+          type: boolean
+        reason:
+          type: string
+        policy_match:
+          type: string
+          nullable: true
+        evaluated_at:
+          type: string
+          format: date-time

@@ -1,0 +1,241 @@
+asyncapi: 2.6.0
+info:
+  title: Operan Agent Marketplace Events
+  version: 1.0.0
+  description: MODULE 15 — Agent Marketplace event definitions for agent discovery, licensing, procurement, and deployment.
+  license:
+    name: Proprietary
+
+servers:
+  default:
+    url: broker.operan.internal:443
+    protocol: tls
+    description: Operan message broker
+
+channels:
+  operan/events/marketplace/order/placed:
+    publish:
+      summary: Agent order placed
+      description: Published when a tenant places an order for an agent from the marketplace.
+      operationId: orderPlaced
+      message:
+        $ref: '#/components/messages/OrderPlaced'
+
+  operan/events/marketplace/license/granted:
+    publish:
+      summary: License granted
+      description: Published when a license is granted for an ordered agent.
+      operationId: licenseGranted
+      message:
+        $ref: '#/components/messages/LicenseGranted'
+
+  operan/events/marketplace/license/revoked:
+    publish:
+      summary: License revoked
+      description: Published when a license is revoked or expires.
+      operationId: licenseRevoked
+      message:
+        $ref: '#/components/messages/LicenseRevoked'
+
+  operan/events/marketplace/agent/deployed:
+    publish:
+      summary: Agent deployed
+      description: Published when an agent is deployed from marketplace to a tenant's environment.
+      operationId: agentDeployed
+      message:
+        $ref: '#/components/messages/AgentDeployed'
+
+  operan/events/marketplace/agent/undeployed:
+    publish:
+      summary: Agent undeployed
+      description: Published when an agent is removed from a tenant's environment.
+      operationId: agentUndeployed
+      message:
+        $ref: '#/components/messages/AgentUndeployed'
+
+  operan/events/marketplace/order/reviewed:
+    publish:
+      summary: Agent reviewed
+      description: Published when a marketplace listing receives a review or rating.
+      operationId: orderReviewed
+      message:
+        $ref: '#/components/messages/OrderReviewed'
+
+components:
+  messages:
+    OrderPlaced:
+      name: OrderPlaced
+      title: Order Placed
+      summary: Event emitted when a tenant orders an agent from the marketplace.
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId: { $ref: '#/components/schemas/Uuid' }
+          tenantId: { $ref: '#/components/schemas/Uuid' }
+          messageId: { $ref: '#/components/schemas/Uuid' }
+          timestamp: { $ref: '#/components/schemas/DateTime' }
+      payload:
+        $ref: '#/components/schemas/OrderPlacedPayload'
+
+    LicenseGranted:
+      name: LicenseGranted
+      title: License Granted
+      summary: Event emitted when a license is granted for an agent.
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId: { $ref: '#/components/schemas/Uuid' }
+          tenantId: { $ref: '#/components/schemas/Uuid' }
+          messageId: { $ref: '#/components/schemas/Uuid' }
+          timestamp: { $ref: '#/components/schemas/DateTime' }
+      payload:
+        $ref: '#/components/schemas/LicenseGrantedPayload'
+
+    LicenseRevoked:
+      name: LicenseRevoked
+      title: License Revoked
+      summary: Event emitted when a license is revoked.
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId: { $ref: '#/components/schemas/Uuid' }
+          tenantId: { $ref: '#/components/schemas/Uuid' }
+          messageId: { $ref: '#/components/schemas/Uuid' }
+          timestamp: { $ref: '#/components/schemas/DateTime' }
+      payload:
+        $ref: '#/components/schemas/LicenseRevokedPayload'
+
+    AgentDeployed:
+      name: AgentDeployed
+      title: Agent Deployed
+      summary: Event emitted when an agent is deployed from marketplace.
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId: { $ref: '#/components/schemas/Uuid' }
+          tenantId: { $ref: '#/components/schemas/Uuid' }
+          messageId: { $ref: '#/components/schemas/Uuid' }
+          timestamp: { $ref: '#/components/schemas/DateTime' }
+      payload:
+        $ref: '#/components/schemas/AgentDeployedPayload'
+
+    AgentUndeployed:
+      name: AgentUndeployed
+      title: Agent Undeployed
+      summary: Event emitted when an agent is removed from a tenant environment.
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId: { $ref: '#/components/schemas/Uuid' }
+          tenantId: { $ref: '#/components/schemas/Uuid' }
+          messageId: { $ref: '#/components/schemas/Uuid' }
+          timestamp: { $ref: '#/components/schemas/DateTime' }
+      payload:
+        $ref: '#/components/schemas/AgentUndeployedPayload'
+
+    OrderReviewed:
+      name: OrderReviewed
+      title: Agent Reviewed
+      summary: Event emitted when an agent listing receives a review.
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId: { $ref: '#/components/schemas/Uuid' }
+          tenantId: { $ref: '#/components/schemas/Uuid' }
+          messageId: { $ref: '#/components/schemas/Uuid' }
+          timestamp: { $ref: '#/components/schemas/DateTime' }
+      payload:
+        $ref: '#/components/schemas/OrderReviewedPayload'
+
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+
+    DateTime:
+      type: string
+      format: date-time
+
+    OrderPlacedPayload:
+      type: object
+      required: [order_id, tenant_id, agent_id, agent_version, quantity, pricing]
+      properties:
+        order_id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { $ref: '#/components/schemas/Uuid' }
+        agent_id: { $ref: '#/components/schemas/Uuid' }
+        agent_version: { type: string }
+        quantity: { type: integer, minimum: 1 }
+        pricing:
+          type: object
+          properties:
+            total_cost: { type: number }
+            currency: { type: string }
+            billing_interval: { type: string, enum: [monthly, annual, per_run] }
+        ordered_at: { $ref: '#/components/schemas/DateTime' }
+        ordered_by: { $ref: '#/components/schemas/Uuid' }
+
+    LicenseGrantedPayload:
+      type: object
+      required: [license_id, order_id, tenant_id, agent_id, granted_at]
+      properties:
+        license_id: { $ref: '#/components/schemas/Uuid' }
+        order_id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { $ref: '#/components/schemas/Uuid' }
+        agent_id: { $ref: '#/components/schemas/Uuid' }
+        granted_by: { $ref: '#/components/schemas/Uuid' }
+        granted_at: { $ref: '#/components/schemas/DateTime' }
+        expires_at: { $ref: '#/components/schemas/DateTime' }
+        license_type: { type: string }
+        seat_limit: { type: integer, nullable: true }
+
+    LicenseRevokedPayload:
+      type: object
+      required: [license_id, tenant_id, agent_id, revoked_at]
+      properties:
+        license_id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { $ref: '#/components/schemas/Uuid' }
+        agent_id: { $ref: '#/components/schemas/Uuid' }
+        revoked_by: { $ref: '#/components/schemas/Uuid' }
+        revoked_at: { $ref: '#/components/schemas/DateTime' }
+        reason: { type: string }
+
+    AgentDeployedPayload:
+      type: object
+      required: [deployment_id, tenant_id, agent_id, version, deployed_at]
+      properties:
+        deployment_id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { $ref: '#/components/schemas/Uuid' }
+        agent_id: { $ref: '#/components/schemas/Uuid' }
+        version: { type: string }
+        target_environment: { type: string, enum: [dev, staging, production] }
+        deployed_at: { $ref: '#/components/schemas/DateTime' }
+        deployed_by: { $ref: '#/components/schemas/Uuid' }
+
+    AgentUndeployedPayload:
+      type: object
+      required: [deployment_id, tenant_id, agent_id, undeployed_at]
+      properties:
+        deployment_id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { $ref: '#/components/schemas/Uuid' }
+        agent_id: { $ref: '#/components/schemas/Uuid' }
+        undeployed_at: { $ref: '#/components/schemas/DateTime' }
+        undeployed_by: { $ref: '#/components/schemas/Uuid' }
+        reason: { type: string }
+
+    OrderReviewedPayload:
+      type: object
+      required: [review_id, agent_id, tenant_id, rating]
+      properties:
+        review_id: { $ref: '#/components/schemas/Uuid' }
+        agent_id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { $ref: '#/components/schemas/Uuid' }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        review_text: { type: string, nullable: true }
+        reviewed_at: { $ref: '#/components/schemas/DateTime' }
+        reviewed_by: { $ref: '#/components/schemas/Uuid' }

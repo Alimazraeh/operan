@@ -1,0 +1,663 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.operan.dev/v1/enterprise-connector-fabric.json",
+  "title": "Operan Enterprise Connector Fabric JSON Schema",
+  "description": "Comprehensive JSON Schema for the Enterprise Connector Fabric module covering connector, sync, and vendor domain objects.",
+  "version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "vendor_type": {
+      "$ref": "#/$defs/VendorType"
+    },
+    "sync_mode": {
+      "$ref": "#/$defs/SyncMode"
+    },
+    "connection_status": {
+      "$ref": "#/$defs/ConnectionStatus"
+    },
+    "register_connector_request": {
+      "$ref": "#/$defs/RegisterConnectorRequest"
+    },
+    "update_connector_request": {
+      "$ref": "#/$defs/UpdateConnectorRequest"
+    },
+    "connector": {
+      "$ref": "#/$defs/Connector"
+    },
+    "connector_status": {
+      "$ref": "#/$defs/ConnectorStatus"
+    },
+    "rate_limit_config": {
+      "$ref": "#/$defs/RateLimitConfig"
+    },
+    "connection_test_result": {
+      "$ref": "#/$defs/ConnectionTestResult"
+    },
+    "trigger_sync_request": {
+      "$ref": "#/$defs/TriggerSyncRequest"
+    },
+    "sync_run": {
+      "$ref": "#/$defs/SyncRun"
+    },
+    "batch_sync_request": {
+      "$ref": "#/$defs/BatchSyncRequest"
+    },
+    "batch_sync_result": {
+      "$ref": "#/$defs/BatchSyncResult"
+    },
+    "batch_sync_connector_result": {
+      "$ref": "#/$defs/BatchSyncConnectorResult"
+    },
+    "connector_list": {
+      "$ref": "#/$defs/ConnectorList"
+    },
+    "supported_connectors_response": {
+      "$ref": "#/$defs/SupportedConnectorsResponse"
+    },
+    "supported_vendor": {
+      "$ref": "#/$defs/SupportedVendor"
+    },
+    "problem_detail": {
+      "$ref": "#/$defs/ProblemDetail"
+    }
+  },
+  "$defs": {
+    "VendorType": {
+      "type": "string",
+      "enum": [
+        "sap",
+        "oracle",
+        "salesforce",
+        "microsoft_365",
+        "google_workspace",
+        "servicenow",
+        "slack",
+        "teams",
+        "jira",
+        "github",
+        "custom"
+      ],
+      "description": "Supported vendor type"
+    },
+    "SyncMode": {
+      "type": "string",
+      "enum": [
+        "full",
+        "incremental",
+        "real_time",
+        "scheduled"
+      ],
+      "description": "Data synchronization mode"
+    },
+    "ConnectionStatus": {
+      "type": "string",
+      "enum": [
+        "connected",
+        "disconnected",
+        "error",
+        "degraded",
+        "testing"
+      ],
+      "description": "Connection status"
+    },
+    "RegisterConnectorRequest": {
+      "type": "object",
+      "required": [
+        "tenant_id",
+        "vendor",
+        "display_name"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "vendor": {
+          "$ref": "#/$defs/VendorType"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "connection_config": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "sync_mode": {
+          "$ref": "#/$defs/SyncMode"
+        },
+        "rate_limit": {
+          "$ref": "#/$defs/RateLimitConfig"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "created_by": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "additionalProperties": false
+    },
+    "UpdateConnectorRequest": {
+      "type": "object",
+      "properties": {
+        "display_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "connection_config": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "sync_mode": {
+          "$ref": "#/$defs/SyncMode"
+        },
+        "rate_limit": {
+          "$ref": "#/$defs/RateLimitConfig"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "Connector": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "vendor",
+        "display_name",
+        "status",
+        "sync_mode",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "vendor": {
+          "$ref": "#/$defs/VendorType"
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ConnectionStatus"
+        },
+        "sync_mode": {
+          "$ref": "#/$defs/SyncMode"
+        },
+        "connection_config": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "rate_limit": {
+          "$ref": "#/$defs/RateLimitConfig"
+        },
+        "last_sync_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_error": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "created_by": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ConnectorStatus": {
+      "type": "object",
+      "required": [
+        "id",
+        "status",
+        "status_details",
+        "checked_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "$ref": "#/$defs/ConnectionStatus"
+        },
+        "status_details": {
+          "type": "string"
+        },
+        "last_sync_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_error": {
+          "type": "string"
+        },
+        "uptime_percentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "connected_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RateLimitConfig": {
+      "type": "object",
+      "properties": {
+        "requests_per_minute": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "burst_limit": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "queue_enabled": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "ConnectionTestResult": {
+      "type": "object",
+      "required": [
+        "connector_id",
+        "success",
+        "message",
+        "tested_at"
+      ],
+      "properties": {
+        "connector_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "success": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
+        },
+        "latency_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "authentication_status": {
+          "type": "string",
+          "enum": [
+            "valid",
+            "invalid",
+            "expired",
+            "pending"
+          ]
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "tested_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TriggerSyncRequest": {
+      "type": "object",
+      "properties": {
+        "sync_mode": {
+          "$ref": "#/$defs/SyncMode"
+        },
+        "object_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "target_range": {
+          "type": "object",
+          "properties": {
+            "start_date": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "end_date": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "SyncRun": {
+      "type": "object",
+      "required": [
+        "id",
+        "connector_id",
+        "status",
+        "started_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "connector_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sync_mode": {
+          "$ref": "#/$defs/SyncMode"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "running",
+            "completed",
+            "failed",
+            "cancelled"
+          ]
+        },
+        "progress_percentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "objects_synced": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "objects_failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "error_message": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "BatchSyncRequest": {
+      "type": "object",
+      "required": [
+        "connector_ids"
+      ],
+      "properties": {
+        "connector_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "sync_mode": {
+          "$ref": "#/$defs/SyncMode"
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "normal",
+            "high"
+          ],
+          "default": "normal"
+        }
+      },
+      "additionalProperties": false
+    },
+    "BatchSyncResult": {
+      "type": "object",
+      "required": [
+        "id",
+        "initiated_at",
+        "connector_results"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "connector_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "initiated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "connector_results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/BatchSyncConnectorResult"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "BatchSyncConnectorResult": {
+      "type": "object",
+      "properties": {
+        "connector_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "initiated",
+            "completed",
+            "failed"
+          ]
+        },
+        "sync_run_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "error": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ConnectorList": {
+      "type": "object",
+      "required": [
+        "items",
+        "total",
+        "cursor"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Connector"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "has_more": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SupportedConnectorsResponse": {
+      "type": "object",
+      "required": [
+        "vendors"
+      ],
+      "properties": {
+        "vendors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SupportedVendor"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SupportedVendor": {
+      "type": "object",
+      "required": [
+        "vendor",
+        "display_name",
+        "supported_sync_modes"
+      ],
+      "properties": {
+        "vendor": {
+          "$ref": "#/$defs/VendorType"
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "supported_sync_modes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SyncMode"
+          }
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "authentication_methods": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rate_limits": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProblemDetail": {
+      "type": "object",
+      "required": [
+        "type",
+        "title",
+        "status",
+        "detail",
+        "instance"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "format": "uri"
+        },
+        "title": {
+          "type": "string"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "detail": {
+          "type": "string"
+        },
+        "instance": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

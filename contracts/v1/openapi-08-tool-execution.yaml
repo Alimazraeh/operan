@@ -1,0 +1,547 @@
+openapi: 3.0.3
+info:
+  title: Operan Tool Execution API
+  description: Tool registration, execution, and cost tracking. Module 08.
+  version: 1.0.0
+servers:
+  - url: /api/v1/tools
+    description: Tool execution API root
+
+paths:
+  /register:
+    post:
+      operationId: registerTool
+      summary: Register a new tool
+      tags: [registration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToolRegisterRequest'
+      responses:
+        '201':
+          description: Tool registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+        '400':
+          description: Invalid request
+
+  /:
+    get:
+      operationId: listTools
+      summary: List available tools
+      tags: [registration]
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [knowledge, communication, enterprise, utility, business_logic, security, ai_model]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, deprecated, disabled]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Tool list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolList'
+
+  /{toolId}:
+    parameters:
+      - name: toolId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getTool
+      summary: Get tool details
+      tags: [registration]
+      responses:
+        '200':
+          description: Tool details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+        '404':
+          description: Tool not found
+    put:
+      operationId: updateTool
+      summary: Update tool metadata
+      tags: [registration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToolUpdateRequest'
+      responses:
+        '200':
+          description: Tool updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+        '404':
+          description: Tool not found
+
+  /{toolId}/versions:
+    get:
+      operationId: listToolVersions
+      summary: List tool versions
+      tags: [versions]
+      parameters:
+        - name: toolId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, deprecated, draft]
+      responses:
+        '200':
+          description: Version list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolVersionList'
+
+  /execute:
+    post:
+      operationId: executeTool
+      summary: Execute a tool
+      tags: [execution]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToolExecutionRequest'
+      responses:
+        '202':
+          description: Execution accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolExecutionRecord'
+        '400':
+          description: Invalid execution request
+        '404':
+          description: Tool not found
+        '429':
+          description: Rate limit exceeded
+
+  /executions:
+    get:
+      operationId: listExecutions
+      summary: List tool execution records
+      tags: [execution]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [queued, running, completed, failed, cancelled]
+        - name: tool_name
+          in: query
+          schema:
+            type: string
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Execution list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionList'
+
+  /executions/{executionId}:
+    parameters:
+      - name: executionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getExecution
+      summary: Get execution details
+      tags: [execution]
+      responses:
+        '200':
+          description: Execution details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolExecutionRecord'
+        '404':
+          description: Execution not found
+
+  /executions/{executionId}/retry:
+    post:
+      operationId: retryExecution
+      summary: Retry a failed execution
+      tags: [execution]
+      parameters:
+        - name: executionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '202':
+          description: Retry accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolExecutionRecord'
+        '404':
+          description: Execution not found
+
+  /cost:
+    get:
+      operationId: getToolCost
+      summary: Get cost summary for tool executions
+      tags: [cost]
+      parameters:
+        - name: tool_name
+          in: query
+          schema:
+            type: string
+        - name: start
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Cost summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostSummary'
+
+components:
+  schemas:
+    ToolRegisterRequest:
+      type: object
+      required: [tenant_id, name]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [knowledge, communication, enterprise, utility, business_logic, security, ai_model]
+        input_schema:
+          type: object
+        output_schema:
+          type: object
+        auth_requirements:
+          type: array
+          items:
+            type: string
+        rate_limit:
+          $ref: '#/components/schemas/RateLimit'
+        cost_per_call:
+          $ref: '#/components/schemas/CostPerCall'
+        security_requirements:
+          type: array
+          items:
+            type: string
+
+    ToolUpdateRequest:
+      type: object
+      properties:
+        description:
+          type: string
+        category:
+          type: string
+          enum: [knowledge, communication, enterprise, utility, business_logic, security, ai_model]
+        input_schema:
+          type: object
+        output_schema:
+          type: object
+        rate_limit:
+          $ref: '#/components/schemas/RateLimit'
+        status:
+          type: string
+          enum: [active, deprecated, disabled]
+        cost_per_call:
+          $ref: '#/components/schemas/CostPerCall'
+
+    Tool:
+      type: object
+      required: [id, tenant_id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        version:
+          type: string
+          pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        description:
+          type: string
+        category:
+          type: string
+          enum: [knowledge, communication, enterprise, utility, business_logic, security, ai_model]
+        input_schema:
+          type: object
+        output_schema:
+          type: object
+        auth_requirements:
+          type: array
+          items:
+            type: string
+        rate_limit:
+          $ref: '#/components/schemas/RateLimit'
+        status:
+          type: string
+          enum: [active, deprecated, disabled]
+        cost_per_call:
+          $ref: '#/components/schemas/CostPerCall'
+        security_requirements:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ToolList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tool'
+        total:
+          type: integer
+        offset:
+          type: integer
+
+    RateLimit:
+      type: object
+      properties:
+        max_requests_per_minute:
+          type: integer
+        max_burst:
+          type: integer
+        retry_after_ms:
+          type: integer
+
+    CostPerCall:
+      type: object
+      required: [currency, amount]
+      properties:
+        currency:
+          type: string
+        amount:
+          type: number
+
+    ToolExecutionRequest:
+      type: object
+      required: [tenant_id, agent_id, tool_name, input]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        tool_name:
+          type: string
+        tool_version:
+          type: string
+          pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        input:
+          type: object
+        cost_estimate:
+          $ref: '#/components/schemas/CostPerCall'
+        timeout_ms:
+          type: integer
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+
+    ToolExecutionRecord:
+      type: object
+      required: [id, tenant_id, agent_id, tool_name, status, retry_count, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        tool_name:
+          type: string
+        tool_version:
+          type: string
+          pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        status:
+          type: string
+          enum: [queued, running, completed, failed, cancelled]
+        input:
+          type: object
+        output:
+          type: object
+        execution_time_ms:
+          type: integer
+        error_code:
+          type: string
+        error_message:
+          type: string
+        retry_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ExecutionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolExecutionRecord'
+        total:
+          type: integer
+        offset:
+          type: integer
+
+    ToolVersion:
+      type: object
+      required: [id, tool_id, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tool_id:
+          type: string
+          format: uuid
+        version:
+          type: string
+          pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+          format: uuid
+        change_summary:
+          type: string
+          enum: [major, minor, patch, breaking]
+        input_schema:
+          type: object
+        output_schema:
+          type: object
+        status:
+          type: string
+          enum: [active, deprecated, draft]
+
+    ToolVersionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolVersion'
+        total:
+          type: integer
+
+    CostSummary:
+      type: object
+      properties:
+        tool_name:
+          type: string
+        total_calls:
+          type: integer
+        total_cost:
+          $ref: '#/components/schemas/CostPerCall'
+        avg_cost_per_call:
+          $ref: '#/components/schemas/CostPerCall'
+        period:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+            end:
+              type: string
+              format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object

@@ -1,0 +1,500 @@
+asyncapi: 2.6.0
+openapi: 3.0.3
+info:
+  title: Operan Module 08 — Tool Execution Events
+  version: 1.0.0
+  description: AsyncAPI specification for Tool Execution events across the Operan platform.
+servers:
+  production:
+    url: amqp://prod-broker.operan.internal:5672
+    protocol: amqp
+    description: Production AMQP broker
+  staging:
+    url: amqp://staging-broker.operan.internal:5672
+    protocol: amqp
+    description: Staging AMQP broker
+channels:
+  operan/events/tools/execution/requested:
+    publish:
+      summary: Emitted when a tool execution is requested by an agent.
+      operationId: onToolExecutionRequested
+      message:
+        $ref: '#/components/messages/ToolExecutionRequested'
+  operan/events/tools/execution/started:
+    publish:
+      summary: Emitted when a tool execution has started.
+      operationId: onToolExecutionStarted
+      message:
+        $ref: '#/components/messages/ToolExecutionStarted'
+  operan/events/tools/execution/completed:
+    publish:
+      summary: Emitted when a tool execution has completed successfully.
+      operationId: onToolExecutionCompleted
+      message:
+        $ref: '#/components/messages/ToolExecutionCompleted'
+  operan/events/tools/execution/failed:
+    publish:
+      summary: Emitted when a tool execution has failed.
+      operationId: onToolExecutionFailed
+      message:
+        $ref: '#/components/messages/ToolExecutionFailed'
+  operan/events/tools/tool_registered:
+    publish:
+      summary: Emitted when a new tool is registered in the platform.
+      operationId: onToolRegistered
+      message:
+        $ref: '#/components/messages/ToolRegistered'
+  operan/events/tools/tool_version_changed:
+    publish:
+      summary: Emitted when a registered tool undergoes a version change.
+      operationId: onToolVersionChanged
+      message:
+        $ref: '#/components/messages/ToolVersionChanged'
+components:
+  messages:
+    ToolExecutionRequested:
+      messageId: toolExecutionRequested
+      name: ToolExecutionRequested
+      summary: A tool execution request initiated by an agent.
+      correlationId:
+        description: The correlation ID for tracing this execution across services.
+        location: '$message.header#/correlationId'
+      schema:
+        type: object
+        required:
+          - execution_id
+          - tenant_id
+          - agent_id
+          - tool_name
+          - tool_version
+          - tool_input_schema
+          - requested_at
+        properties:
+          correlationId:
+            type: string
+            format: uuid
+            description: Correlation ID for tracing this event across services.
+          tenantId:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          messageId:
+            type: string
+            format: uuid
+            description: Unique identifier for this message.
+          timestamp:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the event was generated.
+          execution_id:
+            type: string
+            format: uuid
+            description: Unique identifier for this tool execution.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          agent_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the agent requesting execution.
+          tool_name:
+            type: string
+            description: Name of the tool to execute.
+          tool_version:
+            type: string
+            description: Version of the tool to execute, following semantic versioning.
+          tool_input_schema:
+            type: string
+            description: JSON string representing the input schema for the tool.
+          cost_estimate:
+            anyOf:
+              - type: object
+                properties:
+                  currency:
+                    type: string
+                    description: Currency code (e.g., USD, EUR).
+                  amount:
+                    type: number
+                    description: Estimated cost amount.
+                required:
+                  - currency
+                  - amount
+              - type: 'null'
+            description: Estimated cost of execution, or null if unavailable.
+          requested_at:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the execution was requested.
+
+    ToolExecutionStarted:
+      messageId: toolExecutionStarted
+      name: ToolExecutionStarted
+      summary: A tool execution has started.
+      correlationId:
+        description: The correlation ID for tracing this execution across services.
+        location: '$message.header#/correlationId'
+      schema:
+        type: object
+        required:
+          - execution_id
+          - tenant_id
+          - agent_id
+          - tool_name
+          - started_at
+          - timeout_ms
+        properties:
+          correlationId:
+            type: string
+            format: uuid
+            description: Correlation ID for tracing this event across services.
+          tenantId:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          messageId:
+            type: string
+            format: uuid
+            description: Unique identifier for this message.
+          timestamp:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the event was generated.
+          execution_id:
+            type: string
+            format: uuid
+            description: Unique identifier for this tool execution.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          agent_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the agent that owns this execution.
+          tool_name:
+            type: string
+            description: Name of the tool being executed.
+          started_at:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the execution started.
+          timeout_ms:
+            type: integer
+            description: Timeout for this execution in milliseconds.
+
+    ToolExecutionCompleted:
+      messageId: toolExecutionCompleted
+      name: ToolExecutionCompleted
+      summary: A tool execution has completed successfully.
+      correlationId:
+        description: The correlation ID for tracing this execution across services.
+        location: '$message.header#/correlationId'
+      schema:
+        type: object
+        required:
+          - execution_id
+          - tenant_id
+          - agent_id
+          - tool_name
+          - output
+          - execution_time_ms
+          - cost
+          - token_usage
+          - completed_at
+        properties:
+          correlationId:
+            type: string
+            format: uuid
+            description: Correlation ID for tracing this event across services.
+          tenantId:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          messageId:
+            type: string
+            format: uuid
+            description: Unique identifier for this message.
+          timestamp:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the event was generated.
+          execution_id:
+            type: string
+            format: uuid
+            description: Unique identifier for this tool execution.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          agent_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the agent that owns this execution.
+          tool_name:
+            type: string
+            description: Name of the tool that was executed.
+          output:
+            type: object
+            description: The output produced by the tool execution.
+          execution_time_ms:
+            type: number
+            description: Total execution time in milliseconds.
+          cost:
+            type: object
+            properties:
+              currency:
+                type: string
+                description: Currency code (e.g., USD, EUR).
+              amount:
+                type: number
+                description: Actual cost incurred by this execution.
+            required:
+              - currency
+              - amount
+            description: Cost of the execution.
+          token_usage:
+            type: object
+            properties:
+              input_tokens:
+                type: integer
+                description: Number of input tokens consumed.
+              output_tokens:
+                type: integer
+                description: Number of output tokens produced.
+              total_tokens:
+                type: integer
+                description: Total tokens consumed (input + output).
+            required:
+              - input_tokens
+              - output_tokens
+              - total_tokens
+            description: Token usage breakdown for this execution.
+          completed_at:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the execution completed.
+
+    ToolExecutionFailed:
+      messageId: toolExecutionFailed
+      name: ToolExecutionFailed
+      summary: A tool execution has failed.
+      correlationId:
+        description: The correlation ID for tracing this execution across services.
+        location: '$message.header#/correlationId'
+      schema:
+        type: object
+        required:
+          - execution_id
+          - tenant_id
+          - agent_id
+          - tool_name
+          - error_code
+          - error_message
+          - retryable
+          - failed_at
+        properties:
+          correlationId:
+            type: string
+            format: uuid
+            description: Correlation ID for tracing this event across services.
+          tenantId:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          messageId:
+            type: string
+            format: uuid
+            description: Unique identifier for this message.
+          timestamp:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the event was generated.
+          execution_id:
+            type: string
+            format: uuid
+            description: Unique identifier for this tool execution.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          agent_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the agent that owns this execution.
+          tool_name:
+            type: string
+            description: Name of the tool that failed.
+          error_code:
+            type: string
+            description: Machine-readable error code.
+          error_message:
+            type: string
+            description: Human-readable error message.
+          retryable:
+            type: boolean
+            description: Indicates whether this execution can be retried.
+          failed_at:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the execution failed.
+
+    ToolRegistered:
+      messageId: toolRegistered
+      name: ToolRegistered
+      summary: A new tool has been registered in the platform.
+      correlationId:
+        description: The correlation ID for tracing this event across services.
+        location: '$message.header#/correlationId'
+      schema:
+        type: object
+        required:
+          - tool_id
+          - tenant_id
+          - name
+          - version
+          - description
+          - schema
+          - auth_requirements
+          - rate_limit
+          - registered_by
+          - registered_at
+        properties:
+          correlationId:
+            type: string
+            format: uuid
+            description: Correlation ID for tracing this event across services.
+          tenantId:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          messageId:
+            type: string
+            format: uuid
+            description: Unique identifier for this message.
+          timestamp:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the event was generated.
+          tool_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the registered tool.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          name:
+            type: string
+            description: Human-readable name of the tool.
+          version:
+            type: string
+            description: Semantic version of the tool.
+          description:
+            type: string
+            description: Human-readable description of the tool.
+          schema:
+            type: object
+            properties:
+              input_schema:
+                type: object
+                description: JSON schema describing the expected input for the tool.
+            required:
+              - input_schema
+            description: Schema definition for the tool.
+          auth_requirements:
+            type: array
+            items:
+              type: string
+            description: Array of authentication requirement identifiers.
+          rate_limit:
+            type: object
+            properties:
+              max_requests_per_minute:
+                type: integer
+                description: Maximum number of requests allowed per minute.
+              max_burst:
+                type: integer
+                description: Maximum burst size for rate limiting.
+            required:
+              - max_requests_per_minute
+              - max_burst
+            description: Rate limiting configuration for the tool.
+          registered_by:
+            type: string
+            description: Identifier of the user or system that registered the tool.
+          registered_at:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the tool was registered.
+
+    ToolVersionChanged:
+      messageId: toolVersionChanged
+      name: ToolVersionChanged
+      summary: A registered tool has undergone a version change.
+      correlationId:
+        description: The correlation ID for tracing this event across services.
+        location: '$message.header#/correlationId'
+      schema:
+        type: object
+        required:
+          - tool_id
+          - tenant_id
+          - old_version
+          - new_version
+          - changed_by
+          - changed_at
+          - breaking_change
+        properties:
+          correlationId:
+            type: string
+            format: uuid
+            description: Correlation ID for tracing this event across services.
+          tenantId:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          messageId:
+            type: string
+            format: uuid
+            description: Unique identifier for this message.
+          timestamp:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the event was generated.
+          tool_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tool that changed versions.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          old_version:
+            type: string
+            description: Previous semantic version of the tool.
+          new_version:
+            type: string
+            description: New semantic version of the tool.
+          changed_by:
+            type: string
+            description: Identifier of the user or system that performed the version change.
+          changed_at:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the version change occurred.
+          breaking_change:
+            type: boolean
+            description: Indicates whether this version change includes breaking changes.
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT-based bearer token authentication.
+    TenantContext:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Required tenant context header identifying the tenant for this request.

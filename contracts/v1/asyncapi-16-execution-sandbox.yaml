@@ -1,0 +1,273 @@
+asyncapi: 2.6.0
+info:
+  title: Operan Execution Sandbox Events
+  version: 1.0.0
+  description: MODULE 16 — Execution Sandbox event definitions for isolated agent execution, resource tracking, and sandbox lifecycle.
+  license:
+    name: Proprietary
+
+servers:
+  default:
+    url: broker.operan.internal:443
+    protocol: tls
+    description: Operan message broker
+
+channels:
+  operan/events/sandbox/created:
+    publish:
+      summary: Sandbox created
+      description: Published when a new execution sandbox is provisioned.
+      operationId: sandboxCreated
+      message:
+        $ref: '#/components/messages/SandboxCreated'
+
+  operan/events/sandbox/started:
+    publish:
+      summary: Sandbox started
+      description: Published when a sandbox begins execution.
+      operationId: sandboxStarted
+      message:
+        $ref: '#/components/messages/SandboxStarted'
+
+  operan/events/sandbox/resource/used:
+    publish:
+      summary: Resource usage reported
+      description: Published during sandbox execution for resource consumption tracking.
+      operationId: resourceUsed
+      message:
+        $ref: '#/components/messages/ResourceUsed'
+
+  operan/events/sandbox/completed:
+    publish:
+      summary: Sandbox completed
+      description: Published when a sandbox finishes execution successfully.
+      operationId: sandboxCompleted
+      message:
+        $ref: '#/components/messages/SandboxCompleted'
+
+  operan/events/sandbox/failed:
+    publish:
+      summary: Sandbox failed
+      description: Published when a sandbox fails during execution.
+      operationId: sandboxFailed
+      message:
+        $ref: '#/components/messages/SandboxFailed'
+
+  operan/events/sandbox/expired:
+    publish:
+      summary: Sandbox expired
+      description: Published when a sandbox times out before completion.
+      operationId: sandboxExpired
+      message:
+        $ref: '#/components/messages/SandboxExpired'
+
+  operan/events/sandbox/quota/exceeded:
+    publish:
+      summary: Resource quota exceeded
+      description: Published when a sandbox approaches or exceeds its resource limits.
+      operationId: quotaExceeded
+      message:
+        $ref: '#/components/messages/QuotaExceeded'
+
+components:
+  messages:
+    SandboxCreated:
+      name: SandboxCreated
+      title: Sandbox Created
+      summary: Event emitted when an execution sandbox is provisioned.
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId: { $ref: '#/components/schemas/Uuid' }
+          tenantId: { $ref: '#/components/schemas/Uuid' }
+          messageId: { $ref: '#/components/schemas/Uuid' }
+          timestamp: { $ref: '#/components/schemas/DateTime' }
+      payload:
+        $ref: '#/components/schemas/SandboxCreatedPayload'
+
+    SandboxStarted:
+      name: SandboxStarted
+      title: Sandbox Started
+      summary: Event emitted when a sandbox begins execution.
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId: { $ref: '#/components/schemas/Uuid' }
+          tenantId: { $ref: '#/components/schemas/Uuid' }
+          messageId: { $ref: '#/components/schemas/Uuid' }
+          timestamp: { $ref: '#/components/schemas/DateTime' }
+      payload:
+        $ref: '#/components/schemas/SandboxStartedPayload'
+
+    ResourceUsed:
+      name: ResourceUsed
+      title: Resource Used
+      summary: Event emitted during sandbox execution for resource tracking.
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId: { $ref: '#/components/schemas/Uuid' }
+          tenantId: { $ref: '#/components/schemas/Uuid' }
+          messageId: { $ref: '#/components/schemas/Uuid' }
+          timestamp: { $ref: '#/components/schemas/DateTime' }
+      payload:
+        $ref: '#/components/schemas/ResourceUsedPayload'
+
+    SandboxCompleted:
+      name: SandboxCompleted
+      title: Sandbox Completed
+      summary: Event emitted when a sandbox finishes successfully.
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId: { $ref: '#/components/schemas/Uuid' }
+          tenantId: { $ref: '#/components/schemas/Uuid' }
+          messageId: { $ref: '#/components/schemas/Uuid' }
+          timestamp: { $ref: '#/components/schemas/DateTime' }
+      payload:
+        $ref: '#/components/schemas/SandboxCompletedPayload'
+
+    SandboxFailed:
+      name: SandboxFailed
+      title: Sandbox Failed
+      summary: Event emitted when a sandbox fails.
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId: { $ref: '#/components/schemas/Uuid' }
+          tenantId: { $ref: '#/components/schemas/Uuid' }
+          messageId: { $ref: '#/components/schemas/Uuid' }
+          timestamp: { $ref: '#/components/schemas/DateTime' }
+      payload:
+        $ref: '#/components/schemas/SandboxFailedPayload'
+
+    SandboxExpired:
+      name: SandboxExpired
+      title: Sandbox Expired
+      summary: Event emitted when a sandbox times out.
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId: { $ref: '#/components/schemas/Uuid' }
+          tenantId: { $ref: '#/components/schemas/Uuid' }
+          messageId: { $ref: '#/components/schemas/Uuid' }
+          timestamp: { $ref: '#/components/schemas/DateTime' }
+      payload:
+        $ref: '#/components/schemas/SandboxExpiredPayload'
+
+    QuotaExceeded:
+      name: QuotaExceeded
+      title: Quota Exceeded
+      summary: Event emitted when resource limits are exceeded.
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId: { $ref: '#/components/schemas/Uuid' }
+          tenantId: { $ref: '#/components/schemas/Uuid' }
+          messageId: { $ref: '#/components/schemas/Uuid' }
+          timestamp: { $ref: '#/components/schemas/DateTime' }
+      payload:
+        $ref: '#/components/schemas/QuotaExceededPayload'
+
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+
+    DateTime:
+      type: string
+      format: date-time
+
+    SandboxCreatedPayload:
+      type: object
+      required: [sandbox_id, tenant_id, agent_id, created_at]
+      properties:
+        sandbox_id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { $ref: '#/components/schemas/Uuid' }
+        agent_id: { $ref: '#/components/schemas/Uuid' }
+        sandbox_type: { type: string, enum: [cpu, gpu, isolated] }
+        resource_limits:
+          type: object
+          properties:
+            cpu_millicores: { type: integer }
+            memory_mb: { type: integer }
+            max_duration_seconds: { type: integer }
+            gpu: { type: boolean }
+        created_at: { $ref: '#/components/schemas/DateTime' }
+        created_by: { $ref: '#/components/schemas/Uuid' }
+
+    SandboxStartedPayload:
+      type: object
+      required: [sandbox_id, tenant_id, started_at]
+      properties:
+        sandbox_id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { $ref: '#/components/schemas/Uuid' }
+        started_at: { $ref: '#/components/schemas/DateTime' }
+        entrypoint: { type: string }
+        input_ref: { type: string }
+
+    ResourceUsedPayload:
+      type: object
+      required: [sandbox_id, tenant_id, metrics, recorded_at]
+      properties:
+        sandbox_id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { $ref: '#/components/schemas/Uuid' }
+        metrics:
+          type: object
+          properties:
+            cpu_percent: { type: number }
+            memory_mb_used: { type: integer }
+            tokens_consumed: { type: integer }
+            api_calls_made: { type: integer }
+        recorded_at: { $ref: '#/components/schemas/DateTime' }
+
+    SandboxCompletedPayload:
+      type: object
+      required: [sandbox_id, tenant_id, completed_at, exit_code]
+      properties:
+        sandbox_id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { $ref: '#/components/schemas/Uuid' }
+        completed_at: { $ref: '#/components/schemas/DateTime' }
+        exit_code: { type: integer }
+        output_ref: { type: string }
+        total_duration_seconds: { type: integer }
+
+    SandboxFailedPayload:
+      type: object
+      required: [sandbox_id, tenant_id, failed_at, error]
+      properties:
+        sandbox_id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { $ref: '#/components/schemas/Uuid' }
+        failed_at: { $ref: '#/components/schemas/DateTime' }
+        error_code: { type: string }
+        error: { type: string }
+        attempt_count: { type: integer }
+
+    SandboxExpiredPayload:
+      type: object
+      required: [sandbox_id, tenant_id, expired_at, max_duration]
+      properties:
+        sandbox_id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { $ref: '#/components/schemas/Uuid' }
+        expired_at: { $ref: '#/components/schemas/DateTime' }
+        max_duration_seconds: { type: integer }
+        elapsed_seconds: { type: integer }
+
+    QuotaExceededPayload:
+      type: object
+      required: [sandbox_id, tenant_id, quota_type, limit, current, triggered_at]
+      properties:
+        sandbox_id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { $ref: '#/components/schemas/Uuid' }
+        quota_type: { type: string, enum: [cpu, memory, tokens, api_calls, duration] }
+        limit: { type: integer }
+        current: { type: integer }
+        triggered_at: { $ref: '#/components/schemas/DateTime' }
+        action_taken: { type: string, enum: [warn, throttle, terminate] }

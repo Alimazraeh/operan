@@ -1,0 +1,408 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Operan ML & Cognitive Services Engine Schema (Module 12)",
+  "description": "AI intelligence layer. Model management, prompt templates, vector search, embeddings, fine-tuning, inference, and AI agent cognitive services.",
+  "type": "object",
+  "definitions": {
+    "RegisterModelRequest": {
+      "type": "object",
+      "required": ["tenant_id", "name", "provider", "type"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "provider": {
+          "type": "string",
+          "enum": ["openai", "anthropic", "google", "aws", "azure", "ollama", "custom"]
+        },
+        "type": {
+          "type": "string",
+          "enum": ["llm", "embedding", "reranker", "speech", "vision"]
+        },
+        "model_id": { "type": "string" },
+        "parameters": { "type": "object" },
+        "api_config": { "type": "object" },
+        "cost_per_token": {
+          "type": "object",
+          "properties": {
+            "prompt": { "type": "number" },
+            "completion": { "type": "number" }
+          }
+        },
+        "max_tokens": { "type": "integer" },
+        "temperature": { "type": "number" },
+        "enabled": { "type": "boolean", "default": true },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "Model": {
+      "type": "object",
+      "required": ["id", "name", "provider", "type", "status"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "provider": { "type": "string" },
+        "type": { "type": "string" },
+        "model_id": { "type": "string" },
+        "parameters": { "type": "object" },
+        "api_config": { "type": "object" },
+        "cost_per_token": { "type": "object" },
+        "max_tokens": { "type": "integer" },
+        "default_temperature": { "type": "number" },
+        "status": {
+          "type": "string",
+          "enum": ["active", "inactive", "deprecated", "error"]
+        },
+        "usage_count": { "type": "integer" },
+        "avg_latency_ms": { "type": "number" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "UpdateModelRequest": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "parameters": { "type": "object" },
+        "api_config": { "type": "object" },
+        "cost_per_token": { "type": "object" },
+        "max_tokens": { "type": "integer" },
+        "default_temperature": { "type": "number" },
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "InvokeRequest": {
+      "type": "object",
+      "required": ["input"],
+      "properties": {
+        "input": { "type": "string" },
+        "temperature": { "type": "number" },
+        "max_tokens": { "type": "integer" },
+        "top_p": { "type": "number" },
+        "stop_sequences": { "type": "array", "items": { "type": "string" } },
+        "system_prompt": { "type": "string" },
+        "context": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "response_format": {
+          "type": "string",
+          "enum": ["text", "json", "structured"]
+        },
+        "tool_choice": {
+          "type": "string",
+          "enum": ["auto", "none", "required"]
+        },
+        "tools": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+    "InvokeResult": {
+      "type": "object",
+      "required": ["success"],
+      "properties": {
+        "success": { "type": "boolean" },
+        "output": { "type": "string" },
+        "tokens_used": {
+          "type": "object",
+          "properties": {
+            "prompt": { "type": "integer" },
+            "completion": { "type": "integer" },
+            "total": { "type": "integer" }
+          }
+        },
+        "cost": { "type": "number" },
+        "latency_ms": { "type": "number" },
+        "model_id": { "type": "string", "format": "uuid" },
+        "finish_reason": { "type": "string" },
+        "usage_metadata": { "type": "object" },
+        "error": { "type": "string" }
+      }
+    },
+    "CompareRequest": {
+      "type": "object",
+      "required": ["tasks"],
+      "properties": {
+        "tasks": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/CompareTask" }
+        },
+        "reference_models": {
+          "type": "array",
+          "items": { "type": "string", "format": "uuid" }
+        },
+        "evaluation_criteria": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "CompareTask": {
+      "type": "object",
+      "required": ["prompt"],
+      "properties": {
+        "prompt": { "type": "string" },
+        "expected_output": { "type": "string" },
+        "system_prompt": { "type": "string" }
+      }
+    },
+    "EvaluateRequest": {
+      "type": "object",
+      "required": ["dataset_id"],
+      "properties": {
+        "dataset_id": { "type": "string", "format": "uuid" },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["accuracy", "coherence", "relevance", "toxicity", "speed"]
+          }
+        },
+        "samples": { "type": "integer" }
+      }
+    },
+    "CreatePromptRequest": {
+      "type": "object",
+      "required": ["tenant_id", "name", "template"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "template": { "type": "string" },
+        "variables": { "type": "array", "items": { "type": "string" } },
+        "model_id": { "type": "string", "format": "uuid" },
+        "category": {
+          "type": "string",
+          "enum": ["chat", "extract", "classify", "summarize", "translate", "code", "reasoning", "custom"]
+        },
+        "version": { "type": "string" },
+        "is_default": { "type": "boolean", "default": false },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "PromptTemplate": {
+      "type": "object",
+      "required": ["id", "name", "template"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "template": { "type": "string" },
+        "variables": { "type": "array", "items": { "type": "string" } },
+        "model_id": { "type": "string", "format": "uuid" },
+        "category": { "type": "string" },
+        "version": { "type": "string" },
+        "is_default": { "type": "boolean" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "UpdatePromptRequest": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "template": { "type": "string" },
+        "variables": { "type": "array", "items": { "type": "string" } },
+        "model_id": { "type": "string", "format": "uuid" },
+        "category": { "type": "string" },
+        "version": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "RenderPromptRequest": {
+      "type": "object",
+      "required": ["variables"],
+      "properties": {
+        "variables": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "GenerateEmbeddingsRequest": {
+      "type": "object",
+      "required": ["tenant_id", "texts"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "texts": { "type": "array", "items": { "type": "string" } },
+        "model_id": { "type": "string", "format": "uuid" },
+        "dimensions": { "type": "integer" },
+        "normalize": { "type": "boolean", "default": true }
+      }
+    },
+    "EmbeddingsResult": {
+      "type": "object",
+      "required": ["embeddings"],
+      "properties": {
+        "embeddings": {
+          "type": "array",
+          "items": { "type": "array", "items": { "type": "number" } }
+        },
+        "model_id": { "type": "string", "format": "uuid" },
+        "tokens_used": { "type": "integer" },
+        "dimensions": { "type": "integer" }
+      }
+    },
+    "VectorStoreQueryRequest": {
+      "type": "object",
+      "required": ["tenant_id", "query", "store_id"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "query": { "type": "string" },
+        "store_id": { "type": "string", "format": "uuid" },
+        "top_k": { "type": "integer", "default": 10 },
+        "threshold": { "type": "number" },
+        "filter": { "type": "object" }
+      }
+    },
+    "VectorStoreResults": {
+      "type": "object",
+      "required": ["results"],
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/VectorStoreHit" }
+        },
+        "query_time_ms": { "type": "number" },
+        "total_matched": { "type": "integer" }
+      }
+    },
+    "VectorStoreHit": {
+      "type": "object",
+      "required": ["id", "score", "content"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "score": { "type": "number" },
+        "content": { "type": "string" },
+        "metadata": { "type": "object" },
+        "source": { "type": "string" }
+      }
+    },
+    "CreateFineTuningRequest": {
+      "type": "object",
+      "required": ["tenant_id", "base_model_id", "training_data"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "base_model_id": { "type": "string", "format": "uuid" },
+        "training_data": {
+          "type": "object",
+          "properties": {
+            "dataset_id": { "type": "string", "format": "uuid" },
+            "samples": { "type": "array", "items": { "type": "object" } }
+          }
+        },
+        "hyperparameters": {
+          "type": "object",
+          "properties": {
+            "epochs": { "type": "integer" },
+            "learning_rate": { "type": "number" },
+            "batch_size": { "type": "integer" },
+            "temperature": { "type": "number" }
+          }
+        },
+        "name": { "type": "string" },
+        "validation_data": {
+          "type": "object",
+          "properties": {
+            "dataset_id": { "type": "string", "format": "uuid" }
+          }
+        }
+      }
+    },
+    "FineTuningJob": {
+      "type": "object",
+      "required": ["id", "status"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "base_model_id": { "type": "string", "format": "uuid" },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "running", "completed", "failed"]
+        },
+        "progress": { "type": "number" },
+        "hyperparameters": { "type": "object" },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "train_loss": { "type": "number" },
+            "eval_loss": { "type": "number" },
+            "eval_accuracy": { "type": "number" }
+          }
+        },
+        "created_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "error_message": { "type": "string" },
+        "output_model_id": { "type": "string", "format": "uuid" }
+      }
+    },
+    "AIAssistantRequest": {
+      "type": "object",
+      "required": ["tenant_id", "task", "input"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "task": {
+          "type": "string",
+          "enum": [
+            "translate", "sentiment", "keywords", "topics", "tone",
+            "style", "reasoning", "planning", "code_generate",
+            "code_review", "data_analyze", "knowledge_query"
+          ]
+        },
+        "input": { "type": "string" },
+        "context": { "type": "object" },
+        "parameters": { "type": "object" },
+        "model_id": { "type": "string", "format": "uuid" }
+      }
+    },
+    "AIAssistantResponse": {
+      "type": "object",
+      "required": ["success", "task"],
+      "properties": {
+        "success": { "type": "boolean" },
+        "task": { "type": "string" },
+        "output": { "type": "object" },
+        "tokens_used": { "type": "object" },
+        "latency_ms": { "type": "number" },
+        "model_id": { "type": "string", "format": "uuid" },
+        "error": { "type": "string" }
+      }
+    },
+    "SummarizeRequest": {
+      "type": "object",
+      "required": ["tenant_id", "content"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "content": { "type": "string" },
+        "summary_type": {
+          "type": "string",
+          "enum": ["brief", "detailed", "bullet", "executive", "one_line"]
+        },
+        "max_length": { "type": "integer" },
+        "language": { "type": "string" }
+      }
+    },
+    "ClassifyRequest": {
+      "type": "object",
+      "required": ["tenant_id", "content", "categories"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "content": { "type": "string" },
+        "categories": { "type": "array", "items": { "type": "string" } },
+        "model_id": { "type": "string", "format": "uuid" }
+      }
+    },
+    "ExtractRequest": {
+      "type": "object",
+      "required": ["tenant_id", "content", "fields"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "content": { "type": "string" },
+        "fields": { "type": "array", "items": { "type": "string" } },
+        "model_id": { "type": "string", "format": "uuid" }
+      }
+    }
+  }
+}

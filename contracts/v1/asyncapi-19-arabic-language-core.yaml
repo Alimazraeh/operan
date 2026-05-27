@@ -1,0 +1,391 @@
+asyncapi: 2.6.0
+id: urn:uuid:operan-module19-arabic-language
+info:
+  title: Operan — Arabic Language Processing Events
+  version: 1.0.0
+  description: Module 19 — Arabic Language Processing Event Definitions for Operan platform
+
+servers:
+  production:
+    url: rabbitmq-operan.prod.internal:5672
+    protocol: amqp
+    description: Production RabbitMQ broker
+  staging:
+    url: rabbitmq-operan.staging.internal:5672
+    protocol: amqp
+    description: Staging RabbitMQ broker
+
+channels:
+  operan/events/arabic/language/processed:
+    publish:
+      summary: Published when Arabic text processing (standardization, vocalization, mangling, normalization) completes.
+      operationId: receiveArabicLanguageProcessed
+      message:
+        $ref: '#/components/messages/ArabicLanguageProcessed'
+
+  operan/events/arabic/language/translation_request:
+    publish:
+      summary: Published when a translation request is created for Arabic script conversion.
+      operationId: receiveArabicLanguageTranslationRequest
+      message:
+        $ref: '#/components/messages/ArabicLanguageTranslationRequest'
+
+  operan/events/arabic/language/translation_complete:
+    publish:
+      summary: Published when an Arabic script translation request completes.
+      operationId: receiveArabicLanguageTranslationComplete
+      message:
+        $ref: '#/components/messages/ArabicLanguageTranslationComplete'
+
+  operan/events/arabic/language/vocab/updated:
+    publish:
+      summary: Published when the Arabic vocabulary store is modified.
+      operationId: receiveArabicLanguageVocabUpdated
+      message:
+        $ref: '#/components/messages/ArabicLanguageVocabUpdated'
+
+  operan/events/arabic/language/model/trained:
+    publish:
+      summary: Published when an Arabic language model finishes training.
+      operationId: receiveArabicLanguageModelTrained
+      message:
+        $ref: '#/components/messages/ArabicLanguageModelTrained'
+
+components:
+  messages:
+    ArabicLanguageProcessed:
+      messageId: ArabicLanguageProcessed
+      name: ArabicLanguageProcessed
+      correlationId:
+        description: UUID that correlates this event with its originating request.
+      tenantId:
+        description: UUID of the tenant associated with this event.
+      messageId:
+        description: Unique UUID for this message instance.
+      timestamp:
+        description: ISO 8601 date-time when the event was emitted.
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - event_id
+          - tenant_id
+          - input_text
+          - processed_text
+          - script
+          - language_variant
+          - operations_applied
+          - confidence_score
+          - processing_time_ms
+          - processed_at
+        properties:
+          event_id:
+            type: string
+            format: uuid
+            description: Unique identifier for this processing event.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Tenant that owns this data.
+          document_id:
+            type: string
+            format: uuid
+            nullable: true
+            description: Source document UUID, or null if no document source.
+          input_text:
+            type: string
+            description: The original Arabic input text.
+          processed_text:
+            type: string
+            description: The Arabic text after processing.
+          script:
+            $ref: '#/components/schemas/ArabicScript'
+          language_variant:
+            $ref: '#/components/schemas/LanguageVariant'
+          operations_applied:
+            type: array
+            items:
+              type: string
+            description: List of processing operations applied to the text.
+          confidence_score:
+            type: number
+            description: Confidence score of the processing result.
+          processing_time_ms:
+            type: integer
+            description: Processing duration in milliseconds.
+          processed_at:
+            type: string
+            format: date-time
+            description: ISO 8601 date-time when processing completed.
+
+    ArabicLanguageTranslationRequest:
+      messageId: ArabicLanguageTranslationRequest
+      name: ArabicLanguageTranslationRequest
+      correlationId:
+        description: UUID that correlates this request with subsequent translation_complete events.
+      tenantId:
+        description: UUID of the tenant associated with this request.
+      messageId:
+        description: Unique UUID for this message instance.
+      timestamp:
+        description: ISO 8601 date-time when the event was emitted.
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - request_id
+          - tenant_id
+          - source_script
+          - target_script
+          - priority
+          - segment_count
+          - requested_by
+          - requested_at
+        properties:
+          request_id:
+            type: string
+            format: uuid
+            description: Unique identifier for this translation request.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Tenant that owns this data.
+          document_id:
+            type: string
+            format: uuid
+            nullable: true
+            description: Associated document UUID, or null if none.
+          source_script:
+            $ref: '#/components/schemas/ArabicScript'
+          target_script:
+            $ref: '#/components/schemas/ArabicScript'
+          priority:
+            $ref: '#/components/schemas/TranslationPriority'
+          segment_count:
+            type: integer
+            description: Number of text segments to translate.
+          requested_by:
+            type: string
+            format: uuid
+            description: UUID of the user or system that initiated the request.
+          requested_at:
+            type: string
+            format: date-time
+            description: ISO 8601 date-time when the request was made.
+
+    ArabicLanguageTranslationComplete:
+      messageId: ArabicLanguageTranslationComplete
+      name: ArabicLanguageTranslationComplete
+      correlationId:
+        description: UUID matching the original translation_request correlationId.
+      tenantId:
+        description: UUID of the tenant associated with this event.
+      messageId:
+        description: Unique UUID for this message instance.
+      timestamp:
+        description: ISO 8601 date-time when the event was emitted.
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - request_id
+          - tenant_id
+          - document_id
+          - source_script
+          - target_script
+          - translated_segments
+          - total_segments
+          - confidence_scores
+          - completed_at
+        properties:
+          request_id:
+            type: string
+            format: uuid
+            description: UUID of the translation request that completed.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Tenant that owns this data.
+          document_id:
+            type: string
+            format: uuid
+            description: Associated document UUID.
+          source_script:
+            $ref: '#/components/schemas/ArabicScript'
+          target_script:
+            $ref: '#/components/schemas/ArabicScript'
+          translated_segments:
+            type: integer
+            description: Number of segments successfully translated.
+          total_segments:
+            type: integer
+            description: Total number of segments in the request.
+          confidence_scores:
+            type: array
+            items:
+              type: number
+            description: Per-segment confidence scores for the translation.
+          completed_at:
+            type: string
+            format: date-time
+            description: ISO 8601 date-time when translation completed.
+
+    ArabicLanguageVocabUpdated:
+      messageId: ArabicLanguageVocabUpdated
+      name: ArabicLanguageVocabUpdated
+      correlationId:
+        description: UUID that correlates this vocab update with its originating action.
+      tenantId:
+        description: UUID of the tenant associated with this event.
+      messageId:
+        description: Unique UUID for this message instance.
+      timestamp:
+        description: ISO 8601 date-time when the event was emitted.
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - tenant_id
+          - vocab_id
+          - operation
+          - terms_added
+          - terms_removed
+          - updated_by
+          - updated_at
+        properties:
+          tenant_id:
+            type: string
+            format: uuid
+            description: Tenant that owns the vocabulary.
+          vocab_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the vocabulary entry or batch.
+          operation:
+            $ref: '#/components/schemas/VocabOperation'
+          terms_added:
+            type: integer
+            description: Number of terms added in this operation.
+          terms_removed:
+            type: integer
+            description: Number of terms removed in this operation.
+          updated_by:
+            type: string
+            format: uuid
+            description: UUID of the user or system that performed the update.
+          updated_at:
+            type: string
+            format: date-time
+            description: ISO 8601 date-time when the update occurred.
+
+    ArabicLanguageModelTrained:
+      messageId: ArabicLanguageModelTrained
+      name: ArabicLanguageModelTrained
+      correlationId:
+        description: UUID that correlates this training result with its originating training job.
+      tenantId:
+        description: UUID of the tenant associated with this event.
+      messageId:
+        description: Unique UUID for this message instance.
+      timestamp:
+        description: ISO 8601 date-time when the event was emitted.
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - tenant_id
+          - model_id
+          - variant
+          - training_dataset_size
+          - accuracy
+          - trained_by
+          - trained_at
+          - status
+        properties:
+          tenant_id:
+            type: string
+            format: uuid
+            description: Tenant that owns the model.
+          model_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the trained model.
+          variant:
+            $ref: '#/components/schemas/LanguageVariant'
+          training_dataset_size:
+            type: integer
+            description: Number of samples in the training dataset.
+          accuracy:
+            type: number
+            description: Accuracy metric of the trained model.
+          trained_by:
+            type: string
+            format: uuid
+            description: UUID of the user or system that initiated training.
+          trained_at:
+            type: string
+            format: date-time
+            description: ISO 8601 date-time when training finished.
+          status:
+            $ref: '#/components/schemas/ModelTrainingStatus'
+
+  schemas:
+    ArabicScript:
+      type: string
+      enum:
+        - standard
+        - vocalized
+        - mangled
+        - normalized
+      description: Arabic text script form — standard unvocalized, fully vocalized (tashkeel), mangled (de-vocalized/normalized with noise), or fully normalized.
+
+    LanguageVariant:
+      type: string
+      enum:
+        - msa
+        - gulf
+        - shami
+        - maghrebi
+        - narrow_regional
+      description: Arabic language variant — Modern Standard Arabic, Gulf dialect, Shami (Levantine), Maghrebi (North African), or a narrow regional dialect.
+
+    TranslationPriority:
+      type: string
+      enum:
+        - low
+        - normal
+        - high
+        - urgent
+      description: Priority level of the translation request.
+
+    VocabOperation:
+      type: string
+      enum:
+        - add
+        - remove
+        - update
+      description: Type of vocabulary operation performed.
+
+    ModelTrainingStatus:
+      type: string
+      enum:
+        - ready
+        - training
+        - failed
+      description: Current status of the trained model.
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: HTTP Bearer JWT authentication for service-to-service and client authentication.
+    TenantContext:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Required tenant identification header. Must be present on every request.
+
+security:
+  - BearerAuth: []
+  - TenantContext: []

@@ -1,0 +1,833 @@
+openapi: 3.0.3
+info:
+  title: Operan Knowledge Base Engine API
+  description: Knowledge management. Document ingestion, semantic search, Q&A, knowledge graph, source attribution, versioning, and access control. Module 15.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1/knowledge
+
+security:
+  - BearerAuth: []
+  - X-Tenant-ID:
+      schema:
+        type: string
+
+paths:
+  /collections:
+    post:
+      summary: Create a knowledge collection
+      operationId: createCollection
+      tags: [collections]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCollectionRequest'
+      responses:
+        '201':
+          description: Collection created
+
+    get:
+      summary: List collections
+      operationId: listCollections
+      tags: [collections]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Collection list
+
+  /collections/{id}:
+    get:
+      summary: Get collection details
+      operationId: getCollection
+      tags: [collections]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Collection details
+
+    patch:
+      summary: Update collection
+      operationId: updateCollection
+      tags: [collections]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCollectionRequest'
+      responses:
+        '200':
+          description: Collection updated
+
+    delete:
+      summary: Delete collection
+      operationId: deleteCollection
+      tags: [collections]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Collection deleted
+
+  /collections/{id}/documents:
+    post:
+      summary: Upload a document
+      operationId: uploadDocument
+      tags: [documents]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadDocumentRequest'
+      responses:
+        '202':
+          description: Document uploaded
+
+    get:
+      summary: List documents
+      operationId: listDocuments
+      tags: [documents]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [processing, indexed, error]
+      responses:
+        '200':
+          description: Document list
+
+  /collections/{id}/documents/{doc_id}:
+    get:
+      summary: Get document details
+      operationId: getDocument
+      tags: [documents]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: doc_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Document details
+
+    delete:
+      summary: Delete document
+      operationId: deleteDocument
+      tags: [documents]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: doc_id
+          in: path
+          required: true
+          schema:
+            type: "string"
+            format: uuid
+      responses:
+        '204':
+          description: Document deleted
+
+  /collections/{id}/search:
+    post:
+      summary: Search knowledge collection
+      operationId: searchCollection
+      tags: [search]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Search results
+
+  /collections/{id}/qa:
+    post:
+      summary: Ask a question (Q&A)
+      operationId: askQuestion
+      tags: [qa]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionRequest'
+      responses:
+        '200':
+          description: Q&A response
+
+  /graphs:
+    post:
+      summary: Create knowledge graph
+      operationId: createGraph
+      tags: [graphs]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGraphRequest'
+      responses:
+        '201':
+          description: Graph created
+
+    get:
+      summary: List knowledge graphs
+      operationId: listGraphs
+      tags: [graphs]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Graph list
+
+  /graphs/{id}:
+    get:
+      summary: Get knowledge graph details
+      operationId: getGraph
+      tags: [graphs]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Graph details
+
+    delete:
+      summary: Delete knowledge graph
+      operationId: deleteGraph
+      tags: [graphs]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Graph deleted
+
+  /graphs/{id}/query:
+    post:
+      summary: Query knowledge graph
+      operationId: queryGraph
+      tags: [graphs]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphQueryRequest'
+      responses:
+        '200':
+          description: Graph query results
+
+  /indexes:
+    get:
+      summary: List vector indexes
+      operationId: listIndexes
+      tags: [indexes]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Index list
+
+  /indexes/{index_id}/stats:
+    get:
+      summary: Get index statistics
+      operationId: getIndexStats
+      tags: [indexes]
+      parameters:
+        - name: index_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Index statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexStats'
+
+  /health:
+    get:
+      summary: Service health check
+      operationId: healthCheck
+      tags: [health]
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    X-Tenant-ID:
+      name: X-Tenant-ID
+      in: header
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    CreateCollectionRequest:
+      type: object
+      required:
+        - tenant_id
+        - name
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        embedding_model_id:
+          type: string
+          format: uuid
+        dimensions:
+          type: integer
+        distance_metric:
+          type: string
+          enum: [cosine, dot_product, euclidean]
+        vector_index_type:
+          type: string
+          enum: [hnsw, ivf, flat]
+        access_control:
+          type: object
+        metadata:
+          type: object
+        tags:
+          type: array
+          items:
+            type: string
+
+    Collection:
+      type: object
+      required:
+        - id
+        - name
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        embedding_model_id:
+          type: string
+          format: uuid
+        dimensions:
+          type: integer
+        distance_metric:
+          type: string
+        vector_index_type:
+          type: string
+        access_control:
+          type: object
+        status:
+          type: string
+          enum: [active, inactive, error]
+        document_count:
+          type: integer
+        chunk_count:
+          type: integer
+        vector_count:
+          type: integer
+        storage_bytes:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        tags:
+          type: array
+          items:
+            type: string
+
+    UpdateCollectionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        embedding_model_id:
+          type: string
+          format: uuid
+        access_control:
+          type: object
+        status:
+          type: string
+          enum: [active, inactive, error]
+        tags:
+          type: array
+          items:
+            type: string
+
+    UploadDocumentRequest:
+      type: object
+      required:
+        - content
+        - type
+      properties:
+        content:
+          type: string
+          description: Document content (text or base64 for binary)
+        type:
+          type: string
+          enum: [text, pdf, docx, html, markdown, csv, json]
+        name:
+          type: string
+        filename:
+          type: string
+        metadata:
+          type: object
+        chunk_size:
+          type: integer
+          default: 500
+        chunk_overlap:
+          type: integer
+          default: 50
+        chunk_strategy:
+          type: string
+          enum: [fixed, semantic, paragraph, sentence]
+        auto_embed:
+          type: boolean
+          default: true
+
+    Document:
+      type: object
+      required:
+        - id
+        - collection_id
+        - type
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        collection_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        filename:
+          type: string
+        type:
+          type: string
+        content_preview:
+          type: string
+        status:
+          type: string
+          enum: [processing, indexed, error]
+        chunk_count:
+          type: integer
+        size_bytes:
+          type: integer
+        metadata:
+          type: object
+        error_message:
+          type: string
+        uploaded_at:
+          type: string
+          format: date-time
+        indexed_at:
+          type: string
+          format: date-time
+        version:
+          type: integer
+
+    SearchRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+        top_k:
+          type: integer
+          default: 10
+        threshold:
+          type: number
+        filter:
+          type: object
+        return_content:
+          type: boolean
+          default: true
+        return_embeddings:
+          type: boolean
+          default: false
+
+    SearchResult:
+      type: object
+      required:
+        - id
+        - score
+      properties:
+        id:
+          type: string
+          format: uuid
+        score:
+          type: number
+        collection_id:
+          type: string
+          format: uuid
+        document_id:
+          type: string
+          format: uuid
+        chunk_index:
+          type: integer
+        content:
+          type: string
+        metadata:
+          type: object
+        source:
+          type: object
+          properties:
+            filename:
+              type: string
+            page:
+              type: integer
+            paragraph:
+              type: integer
+
+    QuestionRequest:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+        top_k:
+          type: integer
+          default: 5
+        max_tokens:
+          type: integer
+        model_id:
+          type: string
+          format: uuid
+        include_sources:
+          type: boolean
+          default: true
+        answer_style:
+          type: string
+          enum: [concise, detailed, cite_sources]
+
+    QuestionResponse:
+      type: object
+      required:
+        - question
+        - answer
+      properties:
+        question:
+          type: string
+        answer:
+          type: string
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceCitation'
+        confidence:
+          type: number
+        tokens_used:
+          type: object
+        latency_ms:
+          type: number
+
+    SourceCitation:
+      type: object
+      required:
+        - document_id
+        - content
+      properties:
+        document_id:
+          type: string
+          format: uuid
+        document_name:
+          type: string
+        content:
+          type: string
+        score:
+          type: number
+        page:
+          type: integer
+        chunk_index:
+          type: integer
+
+    CreateGraphRequest:
+      type: object
+      required:
+        - tenant_id
+        - name
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        source_collection_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        entity_types:
+          type: array
+          items:
+            type: string
+        relation_types:
+          type: array
+          items:
+            type: string
+        max_entities:
+          type: integer
+
+    KnowledgeGraph:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        source_collection_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        entity_types:
+          type: array
+          items:
+            type: string
+        relation_types:
+          type: array
+          items:
+            type: string
+        entity_count:
+          type: integer
+        relation_count:
+          type: integer
+        status:
+          type: string
+          enum: [building, ready, error]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    GraphQueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+        entity_type:
+          type: string
+        relation_type:
+          type: string
+        max_depth:
+          type: integer
+          default: 3
+        return_format:
+          type: string
+          enum: [graph, triples, json]
+
+    GraphQueryResult:
+      type: object
+      required:
+        - query
+        - entities
+        - relations
+      properties:
+        query:
+          type: string
+        entities:
+          type: array
+          items:
+            type: object
+        relations:
+          type: array
+          items:
+            type: object
+        answer:
+          type: string
+        latency_ms:
+          type: number
+
+    IndexStats:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        collection_id:
+          type: string
+          format: uuid
+        vector_count:
+          type: integer
+        dimensions:
+          type: integer
+        index_type:
+          type: string
+        storage_bytes:
+          type: integer
+        query_time_ms:
+          type: number
+        last_optimized:
+          type: string
+          format: date-time
+
+    HealthStatus:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        uptime_seconds:
+          type: integer
+        active_collections:
+          type: integer
+        total_documents:
+          type: integer
+        total_vectors:
+          type: integer
+        indexing_queue_depth:
+          type: integer
+        avg_search_latency_ms:
+          type: number
+        last_check:
+          type: string
+          format: date-time

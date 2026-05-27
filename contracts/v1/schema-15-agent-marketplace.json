@@ -1,0 +1,306 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "Notification": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "recipient_type",
+        "recipient_id",
+        "channel",
+        "subject",
+        "body",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "recipient_type": {
+          "type": "string",
+          "enum": [
+            "agent",
+            "user",
+            "webhook"
+          ]
+        },
+        "recipient_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "channel": {
+          "type": "string",
+          "enum": [
+            "in_app",
+            "email",
+            "slack",
+            "webhook",
+            "sms"
+          ]
+        },
+        "subject": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "queued",
+            "sent",
+            "delivered",
+            "failed",
+            "read",
+            "cancelled"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "normal",
+            "high",
+            "urgent",
+            "critical"
+          ]
+        },
+        "template_id": {
+          "type": ["string", "null"],
+          "format": "uuid"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "sent_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "failed_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "error_code": {
+          "type": ["string", "null"]
+        },
+        "error_message": {
+          "type": ["string", "null"]
+        },
+        "delivery_attempts": {
+          "type": ["integer", "null"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "NotificationQueueRequest": {
+      "type": "object",
+      "required": [
+        "tenant_id",
+        "recipient_type",
+        "recipient_id",
+        "channel",
+        "subject",
+        "body"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "recipient_type": {
+          "type": "string",
+          "enum": [
+            "agent",
+            "user",
+            "webhook"
+          ]
+        },
+        "recipient_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "channel": {
+          "type": "string",
+          "enum": [
+            "in_app",
+            "email",
+            "slack",
+            "webhook",
+            "sms"
+          ]
+        },
+        "subject": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "normal",
+            "high",
+            "urgent",
+            "critical"
+          ],
+          "default": "normal"
+        },
+        "template_id": {
+          "type": ["string", "null"],
+          "format": "uuid"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "scheduled_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "NotificationRoute": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "trigger_conditions",
+        "default_channel",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "trigger_conditions": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "default_channel": {
+          "type": "string",
+          "enum": [
+            "in_app",
+            "email",
+            "slack",
+            "webhook",
+            "sms"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "route_name": {
+          "type": "string"
+        },
+        "fallback_channels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "max_retries": {
+          "type": ["integer", "null"]
+        },
+        "active": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "BulkNotificationRequest": {
+      "type": "object",
+      "required": [
+        "tenant_id",
+        "recipient_ids",
+        "channel",
+        "subject",
+        "body"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "recipient_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "channel": {
+          "type": "string",
+          "enum": [
+            "in_app",
+            "email",
+            "slack",
+            "webhook",
+            "sms"
+          ]
+        },
+        "subject": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "normal",
+            "high",
+            "urgent",
+            "critical"
+          ]
+        },
+        "metadata": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

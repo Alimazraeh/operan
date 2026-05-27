@@ -1,0 +1,593 @@
+asyncapi: 2.6.0
+id: urn:uuid:operan-module14-collaboration
+info:
+  title: Agent Collaboration & Communication
+  version: 1.0.0
+  description: Operan Module 14 — Agent Collaboration & Communication protocol via AMQP/RabbitMQ
+  contact:
+    name: Operan Platform Team
+    url: https://operan.internal/docs
+  license:
+    name: Proprietary
+servers:
+  production:
+    url: rabbitmq-operan.prod.internal:5672
+    protocol: amqp
+    description: Production RabbitMQ cluster
+  staging:
+    url: rabbitmq-operan.staging.internal:5672
+    protocol: amqp
+    description: Staging RabbitMQ cluster
+defaultContentType: application/json
+channels:
+  operan/events/collaboration/message/sent:
+    publish:
+      summary: Publish when an agent sends a collaboration message
+      operationId: publishMessageSent
+      message:
+        $ref: '#/components/messages/MessageSent'
+  operan/events/collaboration/message/read:
+    publish:
+      summary: Publish when an agent marks a collaboration message as read
+      operationId: publishMessageRead
+      message:
+        $ref: '#/components/messages/MessageRead'
+  operan/events/collaboration/task/assigned:
+    publish:
+      summary: Publish when a task is assigned to an agent
+      operationId: publishTaskAssigned
+      message:
+        $ref: '#/components/messages/TaskAssigned'
+  operan/events/collaboration/task/completed:
+    publish:
+      summary: Publish when an agent completes a task
+      operationId: publishTaskCompleted
+      message:
+        $ref: '#/components/messages/TaskCompleted'
+  operan/events/collaboration/task/escalated:
+    publish:
+      summary: Publish when an agent escalates a task
+      operationId: publishTaskEscalated
+      message:
+        $ref: '#/components/messages/TaskEscalated'
+  operan/events/collaboration/team/joined:
+    publish:
+      summary: Publish when an agent joins a team
+      operationId: publishTeamJoined
+      message:
+        $ref: '#/components/messages/TeamJoined'
+components:
+  messages:
+    MessageSent:
+      messageId: MessageSent
+      name: MessageSent
+      summary: Agent sends a collaboration message
+      contentType: application/json
+      headers:
+        type: object
+        required:
+          - messageId
+          - tenantId
+          - correlationId
+          - timestamp
+        properties:
+          messageId:
+            type: string
+            format: uuid
+            description: Unique identifier for this message
+          tenantId:
+            type: string
+            format: uuid
+            description: Tenant identifier
+          correlationId:
+            type: string
+            format: uuid
+            description: Correlation identifier for message chaining
+          timestamp:
+            type: string
+            format: date-time
+            description: Message publish timestamp
+          x-tenant-id:
+            type: string
+            description: Tenant context header
+            example: "tenant-uuid-here"
+      payload:
+        type: object
+        required:
+          - message_id
+          - tenant_id
+          - sender_id
+          - recipients
+          - message_type
+          - content
+          - priority
+          - sent_at
+        properties:
+          message_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the message
+          tenant_id:
+            type: string
+            format: uuid
+            description: Tenant identifier
+          sender_id:
+            type: string
+            format: uuid
+            description: UUID of the sending agent
+          recipients:
+            type: array
+            items:
+              type: string
+              format: uuid
+            description: Array of recipient agent UUIDs
+          message_type:
+            type: string
+            enum:
+              - task_request
+              - task_update
+              - question
+              - answer
+              - resource_share
+              - status_update
+              - escalation
+            description: Type of collaboration message
+          content:
+            type: object
+            description: Message content payload
+          priority:
+            type: string
+            enum:
+              - low
+              - normal
+              - high
+              - urgent
+            description: Message priority level
+          conversation_id:
+            type:
+              - string
+              - "null"
+            format: uuid
+            nullable: true
+            description: Associated conversation UUID or null
+          expires_at:
+            type:
+              - string
+              - "null"
+            format: date-time
+            nullable: true
+            description: Message expiration timestamp or null
+          sent_at:
+            type: string
+            format: date-time
+            description: Timestamp when the message was sent
+    MessageRead:
+      messageId: MessageRead
+      name: MessageRead
+      summary: Agent marks a message as read
+      contentType: application/json
+      headers:
+        type: object
+        required:
+          - messageId
+          - tenantId
+          - correlationId
+          - timestamp
+        properties:
+          messageId:
+            type: string
+            format: uuid
+            description: Unique identifier for this message
+          tenantId:
+            type: string
+            format: uuid
+            description: Tenant identifier
+          correlationId:
+            type: string
+            format: uuid
+            description: Correlation identifier for message chaining
+          timestamp:
+            type: string
+            format: date-time
+            description: Event publish timestamp
+          x-tenant-id:
+            type: string
+            description: Tenant context header
+            example: "tenant-uuid-here"
+      payload:
+        type: object
+        required:
+          - message_id
+          - tenant_id
+          - reader_id
+          - read_at
+        properties:
+          message_id:
+            type: string
+            format: uuid
+            description: UUID of the message being marked read
+          tenant_id:
+            type: string
+            format: uuid
+            description: Tenant identifier
+          reader_id:
+            type: string
+            format: uuid
+            description: UUID of the agent who read the message
+          conversation_id:
+            type:
+              - string
+              - "null"
+            format: uuid
+            nullable: true
+            description: Associated conversation UUID or null
+          read_at:
+            type: string
+            format: date-time
+            description: Timestamp when the message was read
+    TaskAssigned:
+      messageId: TaskAssigned
+      name: TaskAssigned
+      summary: A task is assigned to an agent
+      contentType: application/json
+      headers:
+        type: object
+        required:
+          - messageId
+          - tenantId
+          - correlationId
+          - timestamp
+        properties:
+          messageId:
+            type: string
+            format: uuid
+            description: Unique identifier for this message
+          tenantId:
+            type: string
+            format: uuid
+            description: Tenant identifier
+          correlationId:
+            type: string
+            format: uuid
+            description: Correlation identifier for task lifecycle
+          timestamp:
+            type: string
+            format: date-time
+            description: Event publish timestamp
+          x-tenant-id:
+            type: string
+            description: Tenant context header
+            example: "tenant-uuid-here"
+      payload:
+        type: object
+        required:
+          - task_id
+          - tenant_id
+          - assignment_id
+          - requester_id
+          - assignee_id
+          - task_description
+          - task_context
+          - priority
+          - status
+          - created_at
+        properties:
+          task_id:
+            type: string
+            format: uuid
+            description: UUID of the task
+          tenant_id:
+            type: string
+            format: uuid
+            description: Tenant identifier
+          assignment_id:
+            type: string
+            format: uuid
+            description: UUID of this specific assignment
+          requester_id:
+            type: string
+            format: uuid
+            description: UUID of the agent requesting the task
+          assignee_id:
+            type: string
+            format: uuid
+            description: UUID of the agent assigned the task
+          task_description:
+            type: string
+            description: Human-readable task description
+          task_context:
+            type: object
+            description: Additional task context and metadata
+          priority:
+            type: string
+            enum:
+              - low
+              - normal
+              - high
+              - urgent
+            description: Task priority level
+          due_at:
+            type:
+              - string
+              - "null"
+            format: date-time
+            nullable: true
+            description: Task deadline or null if none
+          status:
+            type: string
+            enum:
+              - pending
+              - accepted
+              - in_progress
+              - completed
+              - rejected
+              - expired
+            description: Task assignment status
+          created_at:
+            type: string
+            format: date-time
+            description: Timestamp when the task was created
+    TaskCompleted:
+      messageId: TaskCompleted
+      name: TaskCompleted
+      summary: An agent has completed an assigned task
+      contentType: application/json
+      headers:
+        type: object
+        required:
+          - messageId
+          - tenantId
+          - correlationId
+          - timestamp
+        properties:
+          messageId:
+            type: string
+            format: uuid
+            description: Unique identifier for this message
+          tenantId:
+            type: string
+            format: uuid
+            description: Tenant identifier
+          correlationId:
+            type: string
+            format: uuid
+            description: Correlation identifier for task lifecycle
+          timestamp:
+            type: string
+            format: date-time
+            description: Event publish timestamp
+          x-tenant-id:
+            type: string
+            description: Tenant context header
+            example: "tenant-uuid-here"
+      payload:
+        type: object
+        required:
+          - task_id
+          - tenant_id
+          - assignment_id
+          - assignee_id
+          - result
+          - created_at
+          - completed_at
+        properties:
+          task_id:
+            type: string
+            format: uuid
+            description: UUID of the completed task
+          tenant_id:
+            type: string
+            format: uuid
+            description: Tenant identifier
+          assignment_id:
+            type: string
+            format: uuid
+            description: UUID of the assignment
+          assignee_id:
+            type: string
+            format: uuid
+            description: UUID of the agent who completed the task
+          result:
+            type: object
+            description: Task completion result and output
+          created_at:
+            type: string
+            format: date-time
+            description: Timestamp when the task was created
+          completed_at:
+            type: string
+            format: date-time
+            description: Timestamp when the task was completed
+    TaskEscalated:
+      messageId: TaskEscalated
+      name: TaskEscalated
+      summary: An agent has escalated an assigned task
+      contentType: application/json
+      headers:
+        type: object
+        required:
+          - messageId
+          - tenantId
+          - correlationId
+          - timestamp
+        properties:
+          messageId:
+            type: string
+            format: uuid
+            description: Unique identifier for this message
+          tenantId:
+            type: string
+            format: uuid
+            description: Tenant identifier
+          correlationId:
+            type: string
+            format: uuid
+            description: Correlation identifier for task lifecycle
+          timestamp:
+            type: string
+            format: date-time
+            description: Event publish timestamp
+          x-tenant-id:
+            type: string
+            description: Tenant context header
+            example: "tenant-uuid-here"
+      payload:
+        type: object
+        required:
+          - task_id
+          - tenant_id
+          - assignment_id
+          - assignee_id
+          - reason
+          - escalated_to
+          - escalated_at
+        properties:
+          task_id:
+            type: string
+            format: uuid
+            description: UUID of the escalated task
+          tenant_id:
+            type: string
+            format: uuid
+            description: Tenant identifier
+          assignment_id:
+            type: string
+            format: uuid
+            description: UUID of the assignment
+          assignee_id:
+            type: string
+            format: uuid
+            description: UUID of the agent who escalated the task
+          reason:
+            type: string
+            description: Reason for escalation
+          escalated_to:
+            type: array
+            items:
+              type: string
+              format: uuid
+            description: Array of agent UUIDs the task was escalated to
+          escalated_at:
+            type: string
+            format: date-time
+            description: Timestamp when the task was escalated
+    TeamJoined:
+      messageId: TeamJoined
+      name: TeamJoined
+      summary: An agent has joined a team
+      contentType: application/json
+      headers:
+        type: object
+        required:
+          - messageId
+          - tenantId
+          - correlationId
+          - timestamp
+        properties:
+          messageId:
+            type: string
+            format: uuid
+            description: Unique identifier for this message
+          tenantId:
+            type: string
+            format: uuid
+            description: Tenant identifier
+          correlationId:
+            type: string
+            format: uuid
+            description: Correlation identifier for team events
+          timestamp:
+            type: string
+            format: date-time
+            description: Event publish timestamp
+          x-tenant-id:
+            type: string
+            description: Tenant context header
+            example: "tenant-uuid-here"
+      payload:
+        type: object
+        required:
+          - team_id
+          - tenant_id
+          - agent_id
+          - role
+          - joined_at
+        properties:
+          team_id:
+            type: string
+            format: uuid
+            description: UUID of the team
+          tenant_id:
+            type: string
+            format: uuid
+            description: Tenant identifier
+          agent_id:
+            type: string
+            format: uuid
+            description: UUID of the joining agent
+          role:
+            type: string
+            enum:
+              - member
+              - lead
+              - observer
+            description: Role of the agent in the team
+          joined_at:
+            type: string
+            format: date-time
+            description: Timestamp when the agent joined the team
+  schemas:
+    MessageHeaders:
+      type: object
+      required:
+        - messageId
+        - tenantId
+        - correlationId
+        - timestamp
+      properties:
+        messageId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        correlationId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+    TaskHeaders:
+      type: object
+      required:
+        - messageId
+        - tenantId
+        - correlationId
+        - timestamp
+      properties:
+        messageId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        correlationId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT bearer token for agent authentication
+    TenantContext:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Tenant context header for multi-tenant isolation
+security:
+  - BearerAuth: []
+  - TenantContext: []

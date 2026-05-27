@@ -1,0 +1,401 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "MODULE 05 — Department Template Hub: Schema definitions for department template management, agent configuration, cloning, patching, versioning, and error handling.",
+  "definitions": {
+    "DepartmentTemplate": {
+      "type": "object",
+      "description": "A reusable department template that defines the structure, agents, and policies for a specific department within a tenant.",
+      "required": [
+        "id",
+        "tenant_id",
+        "department_id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the department template."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The tenant to which this template belongs."
+        },
+        "department_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The department this template is associated with."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the department template."
+        },
+        "description": {
+          "type": "string",
+          "description": "A human-readable description of the department template."
+        },
+        "version": {
+          "type": "string",
+          "description": "Semantic version string (e.g., 1.0.0) for this template."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "active",
+            "deprecated"
+          ],
+          "description": "The lifecycle status of the template."
+        },
+        "created_by": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The user ID of the creator."
+        },
+        "updated_by": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The user ID of the last updater."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the template was created."
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the template was last updated."
+        }
+      },
+      "additionalProperties": false
+    },
+    "DepartmentTemplateAgent": {
+      "type": "object",
+      "description": "An agent configuration within a department template, defining its role, capabilities, and governance.",
+      "required": [
+        "agent_role"
+      ],
+      "properties": {
+        "agent_role": {
+          "type": "string",
+          "description": "The role identifier for this agent (e.g., coordinator, analyst, executor)."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of capabilities this agent can perform."
+        },
+        "memory_scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of memory scopes accessible to this agent."
+        },
+        "escalation_rules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of escalation rules governing this agent's behavior."
+        },
+        "governance_policies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of governance policies this agent must adhere to."
+        },
+        "workflow_attachments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of workflow IDs or references attached to this agent."
+        }
+      },
+      "additionalProperties": false
+    },
+    "CreateDepartmentTemplateRequest": {
+      "type": "object",
+      "description": "Request payload for creating a new department template.",
+      "required": [
+        "tenant_id",
+        "department_id",
+        "name"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The tenant to which the new template will belong."
+        },
+        "department_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The department ID for the new template."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the department template to create."
+        },
+        "description": {
+          "type": "string",
+          "description": "A human-readable description of the new template."
+        },
+        "agents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CreateDepartmentTemplateAgentRequest"
+          },
+          "description": "List of agent configurations to include in the template."
+        },
+        "default_governance_policies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Default governance policies applied to all agents in the template."
+        },
+        "initial_workflow_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "List of workflow IDs to attach initially to the template."
+        }
+      },
+      "additionalProperties": false
+    },
+    "CreateDepartmentTemplateAgentRequest": {
+      "type": "object",
+      "description": "Request payload for configuring an agent within a department template.",
+      "required": [
+        "agent_role"
+      ],
+      "properties": {
+        "agent_role": {
+          "type": "string",
+          "description": "The role identifier for this agent."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of capabilities this agent can perform."
+        },
+        "memory_scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of memory scopes accessible to this agent."
+        },
+        "escalation_rules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of escalation rules governing this agent's behavior."
+        },
+        "governance_policies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of governance policies this agent must adhere to."
+        }
+      },
+      "additionalProperties": false
+    },
+    "CloneDepartmentTemplateRequest": {
+      "type": "object",
+      "description": "Request payload for cloning an existing department template.",
+      "required": [
+        "clone_type",
+        "cloned_by"
+      ],
+      "properties": {
+        "clone_type": {
+          "type": "string",
+          "enum": [
+            "full",
+            "partial"
+          ],
+          "description": "Type of clone: full copies everything; partial allows selective customization."
+        },
+        "cloned_by": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The user ID of the person initiating the clone."
+        },
+        "source_template_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The ID of the template to clone."
+        },
+        "customizations": {
+          "type": "object",
+          "description": "Customization overrides applied during a partial clone."
+        },
+        "department_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "List of department IDs to apply the cloned template to (for batch cloning)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "PatchDepartmentTemplateRequest": {
+      "type": "object",
+      "description": "Request payload for partially updating a department template.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "New name for the template."
+        },
+        "description": {
+          "type": "string",
+          "description": "Updated description."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "deprecated"
+          ],
+          "description": "New lifecycle status."
+        },
+        "agents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PatchAgentRequest"
+          },
+          "description": "List of agent patch operations to apply."
+        },
+        "governance_policies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Updated governance policies for the template."
+        }
+      },
+      "additionalProperties": false
+    },
+    "PatchAgentRequest": {
+      "type": "object",
+      "description": "Request payload for partially updating an agent within a department template.",
+      "properties": {
+        "role": {
+          "type": "string",
+          "description": "Updated agent role."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Updated list of capabilities."
+        },
+        "memory_scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Updated list of memory scopes."
+        },
+        "escalation_rules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Updated list of escalation rules."
+        },
+        "governance_policies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Updated list of governance policies."
+        }
+      },
+      "additionalProperties": false
+    },
+    "TemplateVersion": {
+      "type": "object",
+      "description": "A snapshot of a department template at a specific point in time.",
+      "required": [
+        "id",
+        "template_id",
+        "version",
+        "created_at",
+        "created_by"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for this version record."
+        },
+        "template_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The ID of the template this version belongs to."
+        },
+        "version": {
+          "type": "string",
+          "description": "Semantic version string (e.g., 1.0.0, 1.1.0) for this template version."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when this version was created."
+        },
+        "created_by": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The user ID who created this version."
+        },
+        "changes_summary": {
+          "type": "string",
+          "description": "Human-readable summary of changes in this version."
+        },
+        "diff_from_previous": {
+          "type": "object",
+          "description": "Structured diff of changes compared to the previous version."
+        }
+      },
+      "additionalProperties": false
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "description": "Standard error response structure for API errors.",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Machine-readable error code."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message."
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional error details, which may include validation errors or contextual information."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

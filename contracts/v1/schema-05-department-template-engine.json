@@ -1,0 +1,605 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.operan.io/v1/module05.json",
+  "title": "Operan Module 05 — Department Template Engine Schemas",
+  "description": "Comprehensive JSON Schema definitions for the Department Template Engine domain objects.",
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "semver": {
+      "type": "string",
+      "description": "Semantic versioning string (e.g., '1.2.3').",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "date-time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "templateCategory": {
+      "type": "string",
+      "enum": ["hr", "finance", "procurement", "engineering", "translation", "legal", "compliance", "research", "custom"]
+    },
+    "agentStatus": {
+      "type": "string",
+      "enum": ["draft", "reviewed", "published", "archived"]
+    },
+    "workflowStepType": {
+      "type": "string",
+      "enum": ["agent_call", "api_call", "data_fetch", "transformation", "approval", "notification", "tool_call", "conditional"]
+    },
+    "governanceRuleType": {
+      "type": "string",
+      "enum": ["access_control", "data_usage", "rate_limit", "audit", "compliance", "custom"]
+    },
+    "governanceEnforcement": {
+      "type": "string",
+      "enum": ["enforce", "warn", "log"]
+    },
+    "kpiMetricType": {
+      "type": "string",
+      "enum": ["counter", "gauge", "histogram", "timer", "boolean"]
+    },
+    "kpiAggregationPeriod": {
+      "type": "string",
+      "enum": ["minute", "hour", "day", "week", "month"]
+    },
+    "integrationType": {
+      "type": "string",
+      "enum": ["erp", "crm", "email", "calendar", "document", "messaging", "custom"]
+    },
+    "integrationAuthMethod": {
+      "type": "string",
+      "enum": ["oauth2", "api_key", "basic", "jwt", "custom"]
+    },
+    "integrationStatus": {
+      "type": "string",
+      "enum": ["active", "inactive", "error", "pending"]
+    },
+    "policyScope": {
+      "type": "string",
+      "enum": ["agent", "workflow", "department", "system"]
+    },
+    "deploymentEnvironment": {
+      "type": "string",
+      "enum": ["dev", "staging", "production"]
+    },
+    "deploymentStatus": {
+      "type": "string",
+      "enum": ["select", "configure", "connect_data", "provision_memory", "deploy_swarm", "operational", "failed", "rolled_back"]
+    },
+
+    "AgentDefinition": {
+      "type": "object",
+      "required": ["id", "role", "capabilities"],
+      "properties": {
+        "id": { "$ref": "#/definitions/uuid" },
+        "role": {
+          "type": "string",
+          "description": "Agent role within the department (e.g., 'analyst', 'coordinator')."
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "model": { "type": "string" },
+        "system_prompt": { "type": "string" },
+        "memory_profile": { "type": "string" },
+        "tool_requirements": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "constraints": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "created_at": { "$ref": "#/definitions/date-time" },
+        "updated_at": { "$ref": "#/definitions/date-time" }
+      },
+      "additionalProperties": false
+    },
+
+    "WorkflowStep": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": { "$ref": "#/definitions/uuid" },
+        "type": { "$ref": "#/definitions/workflowStepType" },
+        "name": { "type": "string" },
+        "config": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "timeout_seconds": { "type": "integer" },
+        "retry_policy": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "WorkflowDefinition": {
+      "type": "object",
+      "required": ["id", "name", "steps"],
+      "properties": {
+        "id": { "$ref": "#/definitions/uuid" },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": { "type": "string" },
+        "steps": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/WorkflowStep" }
+        },
+        "triggers": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "error_handling": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "created_at": { "$ref": "#/definitions/date-time" },
+        "updated_at": { "$ref": "#/definitions/date-time" }
+      },
+      "additionalProperties": false
+    },
+
+    "MemoryTopology": {
+      "type": "object",
+      "properties": {
+        "semantic_enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "episodic_enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "procedural_enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "graph_enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "memory_profiles": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "retention_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "compression_settings": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "GovernanceRule": {
+      "type": "object",
+      "required": ["id", "name", "type", "enforcement"],
+      "properties": {
+        "id": { "$ref": "#/definitions/uuid" },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "type": { "$ref": "#/definitions/governanceRuleType" },
+        "description": { "type": "string" },
+        "enforcement": { "$ref": "#/definitions/governanceEnforcement" },
+        "conditions": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "actions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "created_at": { "$ref": "#/definitions/date-time" },
+        "updated_at": { "$ref": "#/definitions/date-time" }
+      },
+      "additionalProperties": false
+    },
+
+    "KPIDefinition": {
+      "type": "object",
+      "required": ["id", "name", "metric_type"],
+      "properties": {
+        "id": { "$ref": "#/definitions/uuid" },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": { "type": "string" },
+        "metric_type": { "$ref": "#/definitions/kpiMetricType" },
+        "unit": { "type": "string" },
+        "thresholds": {
+          "type": "object",
+          "properties": {
+            "warning": { "type": "number" },
+            "critical": { "type": "number" }
+          }
+        },
+        "aggregation_period": { "$ref": "#/definitions/kpiAggregationPeriod" },
+        "dashboard_link": {
+          "type": "string",
+          "format": "uri"
+        },
+        "created_at": { "$ref": "#/definitions/date-time" },
+        "updated_at": { "$ref": "#/definitions/date-time" }
+      },
+      "additionalProperties": false
+    },
+
+    "IntegrationDefinition": {
+      "type": "object",
+      "required": ["id", "type", "config"],
+      "properties": {
+        "id": { "$ref": "#/definitions/uuid" },
+        "type": { "$ref": "#/definitions/integrationType" },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "provider": { "type": "string" },
+        "config": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Provider-specific connection configuration."
+        },
+        "auth_method": { "$ref": "#/definitions/integrationAuthMethod" },
+        "status": { "$ref": "#/definitions/integrationStatus" },
+        "created_at": { "$ref": "#/definitions/date-time" },
+        "updated_at": { "$ref": "#/definitions/date-time" }
+      },
+      "additionalProperties": false
+    },
+
+    "OperationalPolicy": {
+      "type": "object",
+      "required": ["id", "name", "scope"],
+      "properties": {
+        "id": { "$ref": "#/definitions/uuid" },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": { "type": "string" },
+        "scope": { "$ref": "#/definitions/policyScope" },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "effective_from": { "$ref": "#/definitions/date-time" },
+        "effective_to": { "$ref": "#/definitions/date-time" },
+        "version": { "type": "string" },
+        "created_at": { "$ref": "#/definitions/date-time" },
+        "updated_at": { "$ref": "#/definitions/date-time" }
+      },
+      "additionalProperties": false
+    },
+
+    "Template": {
+      "type": "object",
+      "required": ["id", "name", "category", "version"],
+      "properties": {
+        "id": { "$ref": "#/definitions/uuid" },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": { "type": "string" },
+        "category": { "$ref": "#/definitions/templateCategory" },
+        "version": { "$ref": "#/definitions/semver" },
+        "agents": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/AgentDefinition" }
+        },
+        "workflows": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/WorkflowDefinition" }
+        },
+        "memory_topology": { "$ref": "#/definitions/MemoryTopology" },
+        "governance_rules": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/GovernanceRule" }
+        },
+        "kpis": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/KPIDefinition" }
+        },
+        "integrations": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/IntegrationDefinition" }
+        },
+        "operational_policies": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/OperationalPolicy" }
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "created_at": { "$ref": "#/definitions/date-time" },
+        "updated_at": { "$ref": "#/definitions/date-time" },
+        "created_by": { "$ref": "#/definitions/uuid" },
+        "status": { "$ref": "#/definitions/agentStatus" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "TemplateCreate": {
+      "type": "object",
+      "required": ["name", "category"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": { "type": "string" },
+        "category": { "$ref": "#/definitions/templateCategory" },
+        "agents": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/AgentDefinition" }
+        },
+        "workflows": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/WorkflowDefinition" }
+        },
+        "memory_topology": { "$ref": "#/definitions/MemoryTopology" },
+        "governance_rules": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/GovernanceRule" }
+        },
+        "kpis": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/KPIDefinition" }
+        },
+        "integrations": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/IntegrationDefinition" }
+        },
+        "operational_policies": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/OperationalPolicy" }
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "TemplatePatch": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": { "type": "string" },
+        "category": { "$ref": "#/definitions/templateCategory" },
+        "agents": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/AgentDefinition" }
+        },
+        "workflows": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/WorkflowDefinition" }
+        },
+        "memory_topology": { "$ref": "#/definitions/MemoryTopology" },
+        "governance_rules": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/GovernanceRule" }
+        },
+        "kpis": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/KPIDefinition" }
+        },
+        "integrations": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/IntegrationDefinition" }
+        },
+        "operational_policies": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/OperationalPolicy" }
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "status": { "$ref": "#/definitions/agentStatus" }
+      },
+      "additionalProperties": false
+    },
+
+    "TemplateDeployment": {
+      "type": "object",
+      "required": ["id", "template_id", "version", "status"],
+      "properties": {
+        "id": { "$ref": "#/definitions/uuid" },
+        "template_id": { "$ref": "#/definitions/uuid" },
+        "version": { "$ref": "#/definitions/semver" },
+        "status": { "$ref": "#/definitions/deploymentStatus" },
+        "environment": { "$ref": "#/definitions/deploymentEnvironment" },
+        "configuration": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "provisioned_entities": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "started_at": { "$ref": "#/definitions/date-time" },
+        "completed_at": { "$ref": "#/definitions/date-time" },
+        "error_message": { "type": "string" },
+        "deployed_by": { "$ref": "#/definitions/uuid" },
+        "created_at": { "$ref": "#/definitions/date-time" },
+        "updated_at": { "$ref": "#/definitions/date-time" }
+      },
+      "additionalProperties": false
+    },
+
+    "TemplateDeployRequest": {
+      "type": "object",
+      "required": ["template_id", "version", "environment"],
+      "properties": {
+        "template_id": { "$ref": "#/definitions/uuid" },
+        "version": { "$ref": "#/definitions/semver" },
+        "environment": { "$ref": "#/definitions/deploymentEnvironment" },
+        "configuration": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "CustomTemplate": {
+      "type": "object",
+      "required": ["id", "name", "category"],
+      "properties": {
+        "id": { "$ref": "#/definitions/uuid" },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": { "type": "string" },
+        "category": { "$ref": "#/definitions/templateCategory" },
+        "content": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Free-form template content for custom templates."
+        },
+        "owner_id": { "$ref": "#/definitions/uuid" },
+        "shared_with": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/uuid" }
+        },
+        "version": { "$ref": "#/definitions/semver" },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "published", "archived"]
+        },
+        "created_at": { "$ref": "#/definitions/date-time" },
+        "updated_at": { "$ref": "#/definitions/date-time" },
+        "created_by": { "$ref": "#/definitions/uuid" }
+      },
+      "additionalProperties": false
+    },
+
+    "CustomTemplateCreate": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": { "type": "string" },
+        "category": { "$ref": "#/definitions/templateCategory" },
+        "content": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "shared_with": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/uuid" }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "CustomTemplatePatch": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": { "type": "string" },
+        "category": { "$ref": "#/definitions/templateCategory" },
+        "content": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "shared_with": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/uuid" }
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "published", "archived"]
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "PaginationMeta": {
+      "type": "object",
+      "properties": {
+        "total": { "type": "integer" },
+        "page": { "type": "integer" },
+        "page_size": { "type": "integer" },
+        "total_pages": { "type": "integer" }
+      },
+      "required": ["total", "page", "page_size", "total_pages"]
+    },
+
+    "PaginatedResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {}
+        },
+        "meta": { "$ref": "#/definitions/PaginationMeta" }
+      },
+      "required": ["data", "meta"]
+    },
+
+    "Error": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "integer" },
+        "message": { "type": "string" },
+        "details": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "trace_id": { "$ref": "#/definitions/uuid" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

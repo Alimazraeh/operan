@@ -1,0 +1,457 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "CollaborationMessage": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "sender_id",
+        "content",
+        "message_type",
+        "sent_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the message"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Tenant identifier"
+        },
+        "sender_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the message sender"
+        },
+        "content": {
+          "type": "object",
+          "description": "Message payload content"
+        },
+        "message_type": {
+          "type": "string",
+          "enum": [
+            "task_request",
+            "task_update",
+            "question",
+            "answer",
+            "resource_share",
+            "status_update",
+            "escalation"
+          ],
+          "description": "Type of collaboration message"
+        },
+        "sent_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the message was sent"
+        },
+        "recipients": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "List of recipient agent UUIDs"
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "normal",
+            "high",
+            "urgent"
+          ],
+          "description": "Message priority level"
+        },
+        "conversation_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid",
+          "description": "UUID of the conversation this message belongs to, or null"
+        },
+        "expires_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Optional expiration timestamp"
+        },
+        "read_by": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "user_id",
+              "read_at"
+            ],
+            "properties": {
+              "user_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "UUID of the user who read the message"
+              },
+              "read_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the message was read"
+              }
+            }
+          },
+          "description": "List of users who have read the message"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional key-value metadata"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CollaborationTask": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "requester_id",
+        "assignee_id",
+        "task_description",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the task"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Tenant identifier"
+        },
+        "requester_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the agent who requested the task"
+        },
+        "assignee_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the agent assigned to the task"
+        },
+        "task_description": {
+          "type": "string",
+          "description": "Detailed description of the task"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "accepted",
+            "in_progress",
+            "completed",
+            "rejected",
+            "expired"
+          ],
+          "description": "Current status of the task"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the task was created"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the task was last updated"
+        },
+        "task_context": {
+          "type": "object",
+          "description": "Additional context for the task"
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "normal",
+            "high",
+            "urgent"
+          ],
+          "description": "Task priority level"
+        },
+        "due_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Optional deadline for the task"
+        },
+        "result": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Task result payload, null if not yet completed"
+        },
+        "conversation_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid",
+          "description": "UUID of the associated conversation, or null"
+        },
+        "assignment_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid",
+          "description": "UUID of the related TaskAssignment record, or null"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TaskAssignment": {
+      "type": "object",
+      "required": [
+        "assignment_id",
+        "task_id",
+        "requester_id",
+        "assignee_id",
+        "status"
+      ],
+      "properties": {
+        "assignment_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the assignment"
+        },
+        "task_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the task being assigned"
+        },
+        "requester_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the agent who created the assignment"
+        },
+        "assignee_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the agent assigned to the task"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "accepted",
+            "in_progress",
+            "completed",
+            "rejected"
+          ],
+          "description": "Current status of the assignment"
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "normal",
+            "high",
+            "urgent"
+          ],
+          "description": "Assignment priority level"
+        },
+        "due_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Optional deadline for the assignment"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the assignment was created"
+        },
+        "accepted_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Timestamp when the assignee accepted the task, or null"
+        },
+        "completed_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Timestamp when the assignment was completed, or null"
+        },
+        "rejection_reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Reason for rejection, if applicable"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TeamMembership": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "team_id",
+        "agent_id",
+        "role",
+        "joined_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the membership record"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Tenant identifier"
+        },
+        "team_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the team"
+        },
+        "agent_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the agent"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "member",
+            "lead",
+            "observer"
+          ],
+          "description": "Role of the agent within the team"
+        },
+        "joined_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the agent joined the team"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "inactive",
+            "pending"
+          ],
+          "description": "Current membership status"
+        },
+        "permissions": {
+          "type": "object",
+          "description": "Agent-specific permissions within the team"
+        },
+        "left_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Timestamp when the agent left the team, or null"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CreateTaskRequest": {
+      "type": "object",
+      "required": [
+        "tenant_id",
+        "assignee_id",
+        "task_description",
+        "task_context"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Tenant identifier"
+        },
+        "assignee_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the agent to assign the task to"
+        },
+        "task_description": {
+          "type": "string",
+          "description": "Detailed description of the task to create"
+        },
+        "task_context": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Additional context for the task, may be null"
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "normal",
+            "high",
+            "urgent"
+          ],
+          "description": "Task priority level"
+        },
+        "due_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Optional deadline for the task"
+        },
+        "message_type": {
+          "type": "string",
+          "description": "Message type associated with the task creation"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Error code identifier"
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message"
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional error details"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

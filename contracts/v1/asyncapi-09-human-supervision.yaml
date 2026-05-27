@@ -1,0 +1,484 @@
+asyncapi: '2.6.0'
+info:
+  title: Operan Module 09 — Human Supervision Events
+  version: '1.0.0'
+  description: Event schema for human supervision gates, responses, escalations, timeouts, and policy violations within the Operan platform.
+  contact:
+    name: Operan Platform Team
+    url: 'https://operan.internal'
+    email: 'platform@operan.internal'
+  license:
+    name: Proprietary
+
+servers:
+  production:
+    url: 'amqp://rabbitmq-prod.operan.internal:5672'
+    protocol: amqp
+    description: Production AMQP broker
+    security:
+      - bearerAuth: []
+      - tenantContext: []
+  staging:
+    url: 'amqp://rabbitmq-staging.operan.internal:5672'
+    protocol: amqp
+    description: Staging AMQP broker for integration testing
+    security:
+      - bearerAuth: []
+      - tenantContext: []
+
+channels:
+  operan/events/supervision/gate/raised:
+    description: >
+      Published when a human-supervision gate is raised during workflow execution.
+      Awaiting human intervention before the agent may proceed.
+    publish:
+      summary: Publish a gate-raised event
+      operationId: publishGateRaised
+      tags:
+        - name: supervision
+          description: Human supervision gate lifecycle events
+        - name: gate
+          description: Gate lifecycle
+      message:
+        $ref: '#/components/messages/GateRaised'
+
+  operan/events/supervision/gate/responded:
+    description: >
+      Published when a human reviewer responds to a raised gate with a decision.
+    publish:
+      summary: Publish a gate-responded event
+      operationId: publishGateResponded
+      tags:
+        - name: supervision
+          description: Human supervision gate lifecycle events
+        - name: gate
+          description: Gate lifecycle
+      message:
+        $ref: '#/components/messages/GateResponded'
+
+  operan/events/supervision/gate/escalated:
+    description: >
+      Published when a gate is escalated to a different or higher-level approver.
+    publish:
+      summary: Publish a gate-escalated event
+      operationId: publishGateEscalated
+      tags:
+        - name: supervision
+          description: Human supervision gate lifecycle events
+        - name: gate
+          description: Gate lifecycle
+      message:
+        $ref: '#/components/messages/GateEscalated'
+
+  operan/events/supervision/gate/timeout:
+    description: >
+      Published when a raised gate times out without a human response within the
+      configured deadline.
+    publish:
+      summary: Publish a gate-timeout event
+      operationId: publishGateTimeout
+      tags:
+        - name: supervision
+          description: Human supervision gate lifecycle events
+        - name: gate
+          description: Gate lifecycle
+      message:
+        $ref: '#/components/messages/GateTimeout'
+
+  operan/events/supervision/policy/violation_detected:
+    description: >
+      Published when a policy engine detects a governance or safety violation by
+      an agent during workflow execution.
+    publish:
+      summary: Publish a policy-violation event
+      operationId: publishPolicyViolation
+      tags:
+        - name: supervision
+          description: Human supervision gate lifecycle events
+        - name: policy
+          description: Policy enforcement events
+      message:
+        $ref: '#/components/messages/PolicyViolationDetected'
+
+components:
+  schemas:
+    GateRaisedPayload:
+      type: object
+      required:
+        - gate_id
+        - tenant_id
+        - workflow_id
+        - node_id
+        - gate_type
+        - raised_by
+        - raised_at
+      properties:
+        gate_id:
+          type: string
+          format: uuid
+          description: Unique identifier for this gate instance.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant that owns this workflow.
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow definition that triggered the gate.
+        node_id:
+          type: string
+          description: Node within the workflow that raised the gate.
+        gate_type:
+          $ref: '#/components/schemas/GateTypeEnum'
+        human_approver_id:
+          type: ['string', 'null']
+          format: uuid
+          description: Assigned human approver, or null if unassigned.
+        escalation_reason:
+          type: string
+          description: Reason the gate was raised and requires human attention.
+        raised_by:
+          type: string
+          description: Agent ID that triggered the gate.
+        raised_at:
+          type: string
+          format: date-time
+          description: Timestamp when the gate was raised.
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        approval_threshold:
+          type: ['number', 'null']
+          minimum: 0
+          maximum: 1
+          description: Required approval threshold ratio (0–1), or null.
+
+    GateRespondedPayload:
+      type: object
+      required:
+        - response_id
+        - gate_id
+        - tenant_id
+        - response
+        - response_by
+        - response_at
+      properties:
+        response_id:
+          type: string
+          format: uuid
+          description: Unique identifier for this response.
+        gate_id:
+          type: string
+          format: uuid
+          description: Gate instance this response addresses.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant that owns the workflow.
+        response:
+          $ref: '#/components/schemas/ResponseEnum'
+        response_by:
+          type: string
+          description: User ID of the human who responded.
+        response_at:
+          type: string
+          format: date-time
+          description: Timestamp of the response.
+        comments:
+          type: ['string', 'null']
+          description: Human reviewer free-text comments.
+        conditions:
+          type: ['object', 'null']
+          description: Conditional constraints attached to the response.
+
+    GateEscalatedPayload:
+      type: object
+      required:
+        - gate_id
+        - tenant_id
+        - previous_approver_id
+        - new_approver_id
+        - escalation_reason
+        - escalated_at
+        - escalation_level
+      properties:
+        gate_id:
+          type: string
+          format: uuid
+          description: Gate instance being escalated.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant that owns the workflow.
+        previous_approver_id:
+          type: string
+          format: uuid
+          description: Approver who previously held responsibility.
+        new_approver_id:
+          type: string
+          format: uuid
+          description: New approver assigned to this gate.
+        escalation_reason:
+          type: string
+          description: Reason for escalating to a new approver.
+        escalated_at:
+          type: string
+          format: date-time
+          description: Timestamp of the escalation.
+        escalation_level:
+          type: integer
+          minimum: 0
+          description: Escalation level (0 = first escalation).
+
+    GateTimeoutPayload:
+      type: object
+      required:
+        - gate_id
+        - tenant_id
+        - timeout_action
+        - timed_out_at
+        - original_deadline
+      properties:
+        gate_id:
+          type: string
+          format: uuid
+          description: Gate instance that timed out.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant that owns the workflow.
+        timeout_action:
+          $ref: '#/components/schemas/TimeoutActionEnum'
+        timed_out_at:
+          type: string
+          format: date-time
+          description: Timestamp when the gate timed out.
+        original_deadline:
+          type: string
+          format: date-time
+          description: Configured deadline that was exceeded.
+
+    PolicyViolationDetectedPayload:
+      type: object
+      required:
+        - violation_id
+        - tenant_id
+        - agent_id
+        - workflow_id
+        - policy_id
+        - violation_type
+        - severity
+        - details
+        - detected_at
+      properties:
+        violation_id:
+          type: string
+          format: uuid
+          description: Unique identifier for this violation record.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant where the violation occurred.
+        agent_id:
+          type: string
+          format: uuid
+          description: Agent ID that triggered the violation.
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow in which the violation occurred.
+        policy_id:
+          type: string
+          format: uuid
+          description: Policy that was violated.
+        violation_type:
+          $ref: '#/components/schemas/ViolationTypeEnum'
+        severity:
+          $ref: '#/components/schemas/SeverityEnum'
+        details:
+          type: object
+          description: Structured details about the violation.
+        detected_at:
+          type: string
+          format: date-time
+          description: Timestamp when the violation was detected.
+
+    GateTypeEnum:
+      type: string
+      enum:
+        - human_approval
+        - human_input
+        - human_review
+        - human_override
+      description: Type of human-supervision gate.
+
+    PriorityEnum:
+      type: string
+      enum:
+        - low
+        - medium
+        - high
+        - urgent
+      description: Priority level of the gate event.
+
+    ResponseEnum:
+      type: string
+      enum:
+        - approve
+        - reject
+        - request_revision
+        - escalate
+      description: Decision made by the human reviewer.
+
+    TimeoutActionEnum:
+      type: string
+      enum:
+        - auto_approve
+        - auto_reject
+        - notify_escalate
+      description: Action taken when a gate times out.
+
+    ViolationTypeEnum:
+      type: string
+      enum:
+        - unauthorized_tool_use
+        - quota_breach
+        - safety_threshold_exceeded
+        - governance_bypass
+        - unauthorized_access_attempt
+      description: Category of policy violation detected.
+
+    SeverityEnum:
+      type: string
+      enum:
+        - low
+        - medium
+        - high
+        - critical
+      description: Severity of the detected violation.
+
+    BaseEnvelope:
+      type: object
+      required:
+        - correlationId
+        - tenantId
+        - messageId
+        - timestamp
+      properties:
+        correlationId:
+          type: string
+          format: uuid
+          description: Correlation identifier linking related events.
+        tenantId:
+          type: string
+          format: uuid
+          description: Tenant identifier.
+        messageId:
+          type: string
+          format: uuid
+          description: Unique identifier for this message.
+        timestamp:
+          type: string
+          format: date-time
+          description: Message creation timestamp.
+
+    GateRaisedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseEnvelope'
+        - $ref: '#/components/schemas/GateRaisedPayload'
+      description: Complete envelope for a gate-raised event.
+
+    GateRespondedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseEnvelope'
+        - $ref: '#/components/schemas/GateRespondedPayload'
+      description: Complete envelope for a gate-responded event.
+
+    GateEscalatedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseEnvelope'
+        - $ref: '#/components/schemas/GateEscalatedPayload'
+      description: Complete envelope for a gate-escalated event.
+
+    GateTimeoutMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseEnvelope'
+        - $ref: '#/components/schemas/GateTimeoutPayload'
+      description: Complete envelope for a gate-timeout event.
+
+    PolicyViolationDetectedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseEnvelope'
+        - $ref: '#/components/schemas/PolicyViolationDetectedPayload'
+      description: Complete envelope for a policy-violation event.
+
+    TenantHeaders:
+      type: object
+      required:
+        - X-Tenant-ID
+      properties:
+        X-Tenant-ID:
+          type: string
+          description: Required tenant context header for routing and multi-tenancy.
+
+  messages:
+    GateRaised:
+      name: GateRaised
+      summary: Event published when a human-supervision gate is raised.
+      messageId: gateRaisedMessageId
+      contentType: application/json
+      schema:
+        $ref: '#/components/schemas/GateRaisedMessage'
+      headers:
+        $ref: '#/components/schemas/TenantHeaders'
+
+    GateResponded:
+      name: GateResponded
+      summary: Event published when a human reviewer responds to a gate.
+      messageId: gateRespondedMessageId
+      contentType: application/json
+      schema:
+        $ref: '#/components/schemas/GateRespondedMessage'
+      headers:
+        $ref: '#/components/schemas/TenantHeaders'
+
+    GateEscalated:
+      name: GateEscalated
+      summary: Event published when a gate is escalated to a new approver.
+      messageId: gateEscalatedMessageId
+      contentType: application/json
+      schema:
+        $ref: '#/components/schemas/GateEscalatedMessage'
+      headers:
+        $ref: '#/components/schemas/TenantHeaders'
+
+    GateTimeout:
+      name: GateTimeout
+      summary: Event published when a gate times out without human response.
+      messageId: gateTimeoutMessageId
+      contentType: application/json
+      schema:
+        $ref: '#/components/schemas/GateTimeoutMessage'
+      headers:
+        $ref: '#/components/schemas/TenantHeaders'
+
+    PolicyViolationDetected:
+      name: PolicyViolationDetected
+      summary: Event published when a policy violation is detected.
+      messageId: policyViolationDetectedMessageId
+      contentType: application/json
+      schema:
+        $ref: '#/components/schemas/PolicyViolationDetectedMessage'
+      headers:
+        $ref: '#/components/schemas/TenantHeaders'
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT-based bearer token authentication.
+    tenantContext:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Required tenant identification header for multi-tenant routing.

@@ -1,0 +1,1103 @@
+openapi: 3.0.3
+info:
+  title: Operan Enterprise Connector Fabric API
+  description: Connect Operan to enterprise systems (SAP, Oracle, Salesforce, Microsoft 365, Google Workspace, ServiceNow, Slack, Teams, Jira, GitHub) with universal connectors, data mapping, and orchestration. Module 18.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1/enterprise-connector
+
+security:
+  - BearerAuth: []
+  - X-Tenant-ID:
+      schema:
+        type: string
+
+paths:
+  /connectors:
+    post:
+      summary: Register enterprise connector
+      operationId: registerConnector
+      tags: [connectors]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterConnectorRequest'
+      responses:
+        '201':
+          description: Connector registered
+
+    get:
+      summary: List enterprise connectors
+      operationId: listConnectors
+      tags: [connectors]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [sap, oracle, salesforce, microsoft365, googleworkspace, servicenow, slack, teams, jira, github]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, error, testing]
+      responses:
+        '200':
+          description: Connector list
+
+  /connectors/{id}:
+    get:
+      summary: Get connector details
+      operationId: getConnector
+      tags: [connectors]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Connector details
+
+    patch:
+      summary: Update connector
+      operationId: updateConnector
+      tags: [connectors]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConnectorRequest'
+      responses:
+        '200':
+          description: Connector updated
+
+    delete:
+      summary: Delete connector
+      operationId: deleteConnector
+      tags: [connectors]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Connector deleted
+
+  /connectors/{id}/test:
+    post:
+      summary: Test connector
+      operationId: testConnector
+      tags: [connectors]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Test result
+
+  /connectors/{id}/sync:
+    post:
+      summary: Trigger connector sync
+      operationId: triggerSync
+      tags: [connectors]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriggerSyncRequest'
+      responses:
+        '202':
+          description: Sync triggered
+
+  /connectors/{id}/status:
+    get:
+      summary: Get connector status
+      operationId: getConnectorStatus
+      tags: [connectors]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Connector status
+
+  /connections:
+    post:
+      summary: Create data connection
+      operationId: createConnection
+      tags: [connections]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConnectionRequest'
+      responses:
+        '201':
+          description: Connection created
+
+    get:
+      summary: List data connections
+      operationId: listConnections
+      tags: [connections]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: connector_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Connection list
+
+  /connections/{id}:
+    get:
+      summary: Get connection details
+      operationId: getConnection
+      tags: [connections]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Connection details
+
+    patch:
+      summary: Update connection
+      operationId: updateConnection
+      tags: [connections]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConnectionRequest'
+      responses:
+        '200':
+          description: Connection updated
+
+    delete:
+      summary: Delete connection
+      operationId: deleteConnection
+      tags: [connections]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Connection deleted
+
+  /data-mappings:
+    post:
+      summary: Create data mapping
+      operationId: createDataMapping
+      tags: [data-mapping]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDataMappingRequest'
+      responses:
+        '201':
+          description: Data mapping created
+
+    get:
+      summary: List data mappings
+      operationId: listDataMappings
+      tags: [data-mapping]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: connector_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Data mapping list
+
+  /data-mappings/{id}:
+    get:
+      summary: Get data mapping details
+      operationId: getDataMapping
+      tags: [data-mapping]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Data mapping
+
+    patch:
+      summary: Update data mapping
+      operationId: updateDataMapping
+      tags: [data-mapping]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDataMappingRequest'
+      responses:
+        '200':
+          description: Data mapping updated
+
+    delete:
+      summary: Delete data mapping
+      operationId: deleteDataMapping
+      tags: [data-mapping]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Data mapping deleted
+
+  /data-syncs:
+    post:
+      summary: Create data sync job
+      operationId: createDataSync
+      tags: [data-sync]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDataSyncRequest'
+      responses:
+        '201':
+          description: Data sync created
+
+    get:
+      summary: List data sync jobs
+      operationId: listDataSyncs
+      tags: [data-sync]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, running, completed, failed]
+      responses:
+        '200':
+          description: Data sync list
+
+  /data-syncs/{id}:
+    get:
+      summary: Get data sync job details
+      operationId: getDataSync
+      tags: [data-sync]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Data sync details
+
+    delete:
+      summary: Cancel data sync job
+      operationId: cancelDataSync
+      tags: [data-sync]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Sync cancelled
+
+  /data-syncs/{id}/logs:
+    get:
+      summary: Get data sync logs
+      operationId: getDataSyncLogs
+      tags: [data-sync]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Data sync logs
+
+  /orchestrations:
+    post:
+      summary: Create orchestration flow
+      operationId: createOrchestration
+      tags: [orchestration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrchestrationRequest'
+      responses:
+        '201':
+          description: Orchestration created
+
+    get:
+      summary: List orchestrations
+      operationId: listOrchestrations
+      tags: [orchestration]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Orchestration list
+
+  /orchestrations/{id}:
+    get:
+      summary: Get orchestration details
+      operationId: getOrchestration
+      tags: [orchestration]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Orchestration details
+
+    patch:
+      summary: Update orchestration
+      operationId: updateOrchestration
+      tags: [orchestration]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrchestrationRequest'
+      responses:
+        '200':
+          description: Orchestration updated
+
+    delete:
+      summary: Delete orchestration
+      operationId: deleteOrchestration
+      tags: [orchestration]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Orchestration deleted
+
+  /orchestrations/{id}/run:
+    post:
+      summary: Run orchestration flow
+      operationId: runOrchestration
+      tags: [orchestration]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '202':
+          description: Orchestration started
+
+  /health:
+    get:
+      summary: Service health check
+      operationId: healthCheck
+      tags: [health]
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    X-Tenant-ID:
+      name: X-Tenant-ID
+      in: header
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    # Connector Schemas
+    RegisterConnectorRequest:
+      type: object
+      required:
+        - tenant_id
+        - name
+        - type
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [sap, oracle, salesforce, microsoft365, googleworkspace, servicenow, slack, teams, jira, github]
+        auth_type:
+          type: string
+          enum: [oauth2, api_key, basic, sso, cert]
+        config:
+          type: object
+        tags:
+          type: array
+          items:
+            type: string
+
+    Connector:
+      type: object
+      required:
+        - id
+        - name
+        - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [sap, oracle, salesforce, microsoft365, googleworkspace, servicenow, slack, teams, jira, github]
+        auth_type:
+          type: string
+          enum: [oauth2, api_key, basic, sso, cert]
+        status:
+          type: string
+          enum: [active, inactive, error, testing]
+        last_sync:
+          type: string
+          format: date-time
+        config:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        tags:
+          type: array
+          items:
+            type: string
+
+    UpdateConnectorRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        config:
+          type: object
+        status:
+          type: string
+          enum: [active, inactive, error, testing]
+        tags:
+          type: array
+          items:
+            type: string
+
+    ConnectorTestResult:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        details:
+          type: object
+        latency_ms:
+          type: integer
+
+    ConnectorStatus:
+      type: object
+      required:
+        - id
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [active, inactive, error, testing]
+        connections:
+          type: integer
+        active_syncs:
+          type: integer
+        errors:
+          type: integer
+        last_error:
+          type: string
+        uptime:
+          type: string
+
+    TriggerSyncRequest:
+      type: object
+      properties:
+        sync_type:
+          type: string
+          enum: [full, incremental]
+        entities:
+          type: array
+          items:
+            type: string
+        filters:
+          type: object
+
+    # Connection Schemas
+    CreateConnectionRequest:
+      type: object
+      required:
+        - tenant_id
+        - connector_id
+        - name
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        connector_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        endpoint:
+          type: string
+        credentials:
+          type: object
+        metadata:
+          type: object
+
+    Connection:
+      type: object
+      required:
+        - id
+        - connector_id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        connector_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        endpoint:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, error]
+        metadata:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UpdateConnectionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        endpoint:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, error]
+        metadata:
+          type: object
+
+    # Data Mapping Schemas
+    CreateDataMappingRequest:
+      type: object
+      required:
+        - tenant_id
+        - name
+        - source
+        - target
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        connector_id:
+          type: string
+          format: uuid
+        source:
+          type: object
+          required:
+            - entity
+            - fields
+          properties:
+            entity:
+              type: string
+            fields:
+              type: object
+        target:
+          type: object
+          required:
+            - entity
+            - fields
+          properties:
+            entity:
+              type: string
+            fields:
+              type: object
+        transformations:
+          type: array
+          items:
+            type: object
+        metadata:
+          type: object
+
+    DataMapping:
+      type: object
+      required:
+        - id
+        - name
+        - source
+        - target
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        connector_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        source:
+          type: object
+        target:
+          type: object
+        transformations:
+          type: array
+          items:
+            type: object
+        status:
+          type: string
+          enum: [active, inactive, draft]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+
+    UpdateDataMappingRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        source:
+          type: object
+        target:
+          type: object
+        transformations:
+          type: array
+          items:
+            type: object
+        status:
+          type: string
+          enum: [active, inactive, draft]
+        metadata:
+          type: object
+
+    # Data Sync Schemas
+    CreateDataSyncRequest:
+      type: object
+      required:
+        - tenant_id
+        - name
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        source_connector_id:
+          type: string
+          format: uuid
+        target_connector_id:
+          type: string
+          format: uuid
+        mapping_id:
+          type: string
+          format: uuid
+        schedule:
+          type: object
+        sync_type:
+          type: string
+          enum: [full, incremental]
+        metadata:
+          type: object
+
+    DataSync:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        source_connector_id:
+          type: string
+          format: uuid
+        target_connector_id:
+          type: string
+          format: uuid
+        mapping_id:
+          type: string
+          format: uuid
+        schedule:
+          type: object
+        sync_type:
+          type: string
+          enum: [full, incremental]
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        records_synced:
+          type: integer
+        records_total:
+          type: integer
+        error_message:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+
+    DataSyncLog:
+      type: object
+      required:
+        - timestamp
+        - level
+      properties:
+        id:
+          type: string
+          format: uuid
+        sync_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: string
+          enum: [debug, info, warn, error]
+        message:
+          type: string
+        details:
+          type: object
+
+    # Orchestration Schemas
+    CreateOrchestrationRequest:
+      type: object
+      required:
+        - tenant_id
+        - name
+        - steps
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        steps:
+          type: array
+          items:
+            type: object
+            required:
+              - order
+              - connector_id
+            properties:
+              order:
+                type: integer
+              connector_id:
+                type: string
+                format: uuid
+              action:
+                type: string
+              mapping_id:
+                type: string
+                format: uuid
+              condition:
+                type: object
+        trigger:
+          type: object
+        metadata:
+          type: object
+
+    Orchestration:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        steps:
+          type: array
+          items:
+            type: object
+        trigger:
+          type: object
+        status:
+          type: string
+          enum: [active, inactive, paused, error]
+        last_run:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+
+    UpdateOrchestrationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        steps:
+          type: array
+          items:
+            type: object
+        trigger:
+          type: object
+        status:
+          type: string
+          enum: [active, inactive, paused, error]
+        metadata:
+          type: object
+
+    OrchestrationRun:
+      type: object
+      required:
+        - id
+        - orchestration_id
+      properties:
+        id:
+          type: string
+          format: uuid
+        orchestration_id:
+          type: string
+          format: uuid
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [running, completed, failed, cancelled]
+        steps_completed:
+          type: integer
+        steps_total:
+          type: integer
+        error_message:
+          type: string
+
+    # Health Schemas
+    HealthStatus:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        uptime_seconds:
+          type: integer
+        active_connectors:
+          type: integer
+        active_syncs:
+          type: integer
+        active_orchestrations:
+          type: integer
+        last_check:
+          type: string
+          format: date-time

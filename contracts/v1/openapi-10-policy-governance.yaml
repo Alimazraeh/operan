@@ -1,0 +1,930 @@
+openapi: "3.0.3"
+info:
+  title: Operan — Policy & Governance Engine
+  version: "1.0.0"
+  description: Policy definition, evaluation, violation tracking, and compliance auditing for the Operan AI agent platform.
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.operan.io/v1
+    description: Production
+  - url: https://staging-api.operan.io/v1
+    description: Staging
+
+security:
+  - BearerAuth: []
+  - TenantID: []
+
+tags:
+  - name: policies
+    description: Policy lifecycle management
+  - name: compliance
+    description: Compliance audits and reporting
+
+paths:
+  /policies:
+    post:
+      tags: [policies]
+      operationId: createPolicy
+      summary: Create a new policy
+      description: Register a new governance policy. Policies are Rego/OPA compatible and define rules for agent behavior, data handling, and compliance.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePolicyRequest"
+            example:
+              name: "Prohibit discriminatory content in Arabic"
+              type: action_validation
+              description: "Ensures no discriminatory or harmful content is generated in Arabic language outputs."
+              format: rego
+              policy_source: "package operan.governance\n\nallow = false {\n  input.language == \"ar\"\n  contains_harmful(input.output)\n}\n\ncontains_harmful(text) {\n  re_match(\"(harmful_pattern)\", text)\n}"
+              risk_threshold: 70
+              scope:
+                resource_types: ["agent_output", "workflow_result"]
+                agent_ids: []
+                model_ids: []
+                tenant_ids: []
+                regions: ["ME", "APAC"]
+              enabled: true
+              metadata:
+                owner_team: "compliance"
+                last_reviewed: "2026-05-01"
+      responses:
+        "201":
+          description: Policy created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Policy"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "422":
+          $ref: "#/components/responses/ErrorResponse422"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /policies/{id}:
+    get:
+      tags: [policies]
+      operationId: getPolicy
+      summary: Get a policy by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Policy details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Policy"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+    patch:
+      tags: [policies]
+      operationId: updatePolicy
+      summary: Update a policy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePolicyRequest"
+      responses:
+        "200":
+          description: Policy updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Policy"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "409":
+          $ref: "#/components/responses/ErrorResponse409"
+        "422":
+          $ref: "#/components/responses/ErrorResponse422"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+    delete:
+      tags: [policies]
+      operationId: deletePolicy
+      summary: Delete a policy (deactivate)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Policy deleted
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /policies/{id}/evaluate:
+    post:
+      tags: [policies]
+      operationId: evaluatePolicy
+      summary: Evaluate a policy against a resource
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvaluateRequest"
+            example:
+              resource_type: agent_output
+              resource_id: "res-98765"
+              context:
+                agent_id: "agent-001"
+                workflow_id: "wf-12345"
+                input_text: "Some input to evaluate"
+                output_text: "Model output to check"
+                language: "ar"
+      responses:
+        "200":
+          description: Evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationResult"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "422":
+          $ref: "#/components/responses/ErrorResponse422"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /policies/{id}/violations:
+    get:
+      tags: [policies]
+      operationId: getPolicyViolations
+      summary: Get violations for a policy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [info, low, medium, high, critical]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, acknowledged, in_progress, resolved, closed]
+      responses:
+        "200":
+          description: Policy violations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ViolationsResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /compliance/audits:
+    post:
+      tags: [compliance]
+      operationId: createAudit
+      summary: Start a compliance audit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAuditRequest"
+            example:
+              audit_type: scheduled
+              title: "Q2 2026 Compliance Review"
+              description: "Quarterly compliance audit covering all active policies."
+              policies_to_audit:
+                - "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                - "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+              scope:
+                date_range:
+                  start: "2026-01-01T00:00:00Z"
+                  end: "2026-03-31T23:59:59Z"
+                agent_ids: []
+                model_ids: []
+                regions: ["EMEA", "APAC"]
+                scheduled_for: "2026-06-01T10:00:00Z"
+              auditor_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+      responses:
+        "201":
+          description: Audit created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Audit"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "422":
+          $ref: "#/components/responses/ErrorResponse422"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /compliance/audits/{id}:
+    get:
+      tags: [compliance]
+      operationId: getAudit
+      summary: Get an audit by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Audit details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Audit"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /compliance/reports:
+    get:
+      tags: [compliance]
+      operationId: generateReport
+      summary: Generate a compliance report
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, quarterly, yearly, custom]
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, pdf]
+            default: json
+      responses:
+        "200":
+          description: Compliance report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplianceReport"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "422":
+          $ref: "#/components/responses/ErrorResponse422"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    TenantID:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+
+  schemas:
+    CreatePolicyRequest:
+      type: object
+      required: [name, type, policy_source]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        type:
+          type: string
+          enum: [action_validation, data_governance, compliance_rule, risk_assessment, custom]
+        description:
+          type: string
+        format:
+          type: string
+          enum: [rego, json_schema, custom]
+          default: rego
+        policy_source:
+          type: string
+          description: OPA-compatible Rego policy source code
+        risk_threshold:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Risk score threshold for triggering actions
+        scope:
+          $ref: "#/components/schemas/PolicyScope"
+        enabled:
+          type: boolean
+          default: true
+        metadata:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+
+    UpdatePolicyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        type:
+          type: string
+          enum: [action_validation, data_governance, compliance_rule, risk_assessment, custom]
+        policy_source:
+          type: string
+        risk_threshold:
+          type: integer
+          minimum: 0
+          maximum: 100
+        scope:
+          $ref: "#/components/schemas/PolicyScope"
+        enabled:
+          type: boolean
+        metadata:
+          type: object
+          additionalProperties: true
+
+    EvaluateRequest:
+      type: object
+      required: [resource_type, resource_id, context]
+      properties:
+        resource_type:
+          type: string
+          description: Type of resource being evaluated (e.g., agent_output, workflow_result)
+        resource_id:
+          type: string
+        context:
+          type: object
+          description: Context data for the evaluation (agent_id, workflow_id, input/output text, etc.)
+          additionalProperties: true
+      additionalProperties: false
+
+    CreateAuditRequest:
+      type: object
+      required: [audit_type, title, scope]
+      properties:
+        audit_type:
+          type: string
+          enum: [scheduled, ad_hoc, regulatory, internal, post_incident]
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        policies_to_audit:
+          type: array
+          items:
+            type: string
+            format: uuid
+        scope:
+          $ref: "#/components/schemas/AuditScope"
+        auditor_id:
+          type: string
+          format: uuid
+        metadata:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+
+    PolicyScope:
+      type: object
+      properties:
+        resource_types:
+          type: array
+          items:
+            type: string
+        agent_ids:
+          type: array
+          items:
+            type: string
+        model_ids:
+          type: array
+          items:
+            type: string
+        tenant_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        regions:
+          type: array
+          items:
+            type: string
+      additionalProperties: false
+
+    AuditScope:
+      type: object
+      required: [date_range]
+      properties:
+        date_range:
+          $ref: "#/components/schemas/DateRange"
+        agent_ids:
+          type: array
+          items:
+            type: string
+        model_ids:
+          type: array
+          items:
+            type: string
+        regions:
+          type: array
+          items:
+            type: string
+        scheduled_for:
+          type: string
+          format: date-time
+
+    DateRange:
+      type: object
+      required: [start, end]
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+
+    Policy:
+      type: object
+      required: [id, name, type, format, policy_source, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+          enum: [action_validation, data_governance, compliance_rule, risk_assessment, custom]
+        description:
+          type: string
+        format:
+          type: string
+          enum: [rego, json_schema, custom]
+        policy_source:
+          type: string
+        policy_hash:
+          type: string
+          description: SHA-256 hash of policy_source for change tracking
+        risk_threshold:
+          type: integer
+          minimum: 0
+          maximum: 100
+        scope:
+          $ref: "#/components/schemas/policyScope"
+        status:
+          type: string
+          enum: [draft, active, deprecated, archived]
+        enabled:
+          type: boolean
+        version:
+          type: integer
+          minimum: 1
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+
+    EvaluationResult:
+      type: object
+      required: [policy_id, resource_id, passed, risk_score, created_at]
+      properties:
+        evaluation_id:
+          type: string
+          format: uuid
+        policy_id:
+          type: string
+          format: uuid
+        resource_type:
+          type: string
+        resource_id:
+          type: string
+        passed:
+          type: boolean
+        risk_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        violation_count:
+          type: integer
+        violations:
+          type: array
+          items:
+            $ref: "#/components/schemas/PolicyViolation"
+        details:
+          type: object
+          description: Detailed evaluation results from the Rego engine
+          additionalProperties: true
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+
+    PolicyViolation:
+      type: object
+      required: [id, policy_id, resource_type, resource_id, severity]
+      properties:
+        id:
+          type: string
+          format: uuid
+        policy_id:
+          type: string
+          format: uuid
+        resource_type:
+          type: string
+        resource_id:
+          type: string
+        severity:
+          type: string
+          enum: [info, low, medium, high, critical]
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, acknowledged, in_progress, resolved, closed]
+        detected_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+        resolved_by:
+          type: string
+          format: uuid
+        resolution_notes:
+          type: string
+        resolution_type:
+          type: string
+          enum: [false_positive, policy_updated, remediated, accepted_risk, ignored]
+        metadata:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+
+    ViolationsResponse:
+      type: object
+      properties:
+        violations:
+          type: array
+          items:
+            $ref: "#/components/schemas/PolicyViolation"
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+
+    Audit:
+      type: object
+      required: [id, audit_type, title, status, auditor_id, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        audit_type:
+          type: string
+          enum: [scheduled, ad_hoc, regulatory, internal, post_incident]
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [planned, in_progress, completed, cancelled]
+        policies_to_audit:
+          type: array
+          items:
+            type: string
+            format: uuid
+        scope:
+          $ref: "#/components/schemas/auditScope"
+        auditor_id:
+          type: string
+          format: uuid
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        findings_summary:
+          type: object
+          properties:
+            total_violations:
+              type: integer
+            by_severity:
+              type: object
+              additionalProperties: true
+            by_policy:
+              type: object
+              additionalProperties: true
+            compliance_rate:
+              type: number
+              minimum: 0
+              maximum: 1
+        results_file_url:
+          type: string
+          description: URL to download detailed audit results
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+
+    ComplianceReport:
+      type: object
+      required: [report_id, tenant_id, period, generated_at]
+      properties:
+        report_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        period:
+          type: string
+          enum: [daily, weekly, monthly, quarterly, yearly, custom]
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        summary:
+          type: object
+          properties:
+            total_policies:
+              type: integer
+            active_policies:
+              type: integer
+            total_violations:
+              type: integer
+            open_violations:
+              type: integer
+            resolved_violations:
+              type: integer
+            compliance_rate:
+              type: number
+              minimum: 0
+              maximum: 1
+            risk_trend:
+              type: string
+              enum: [improving, stable, deteriorating]
+        violations_by_severity:
+          type: object
+          additionalProperties: true
+        violations_by_policy:
+          type: object
+          additionalProperties: true
+        top_violations:
+          type: array
+          items:
+            type: object
+            properties:
+              policy_id:
+                type: string
+                format: uuid
+              policy_name:
+                type: string
+              violation_count:
+                type: integer
+              severity:
+                type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+        generated_at:
+          type: string
+          format: date-time
+        file_url:
+          type: string
+          description: URL to download the full report file (for non-JSON formats)
+      additionalProperties: false
+
+  responses:
+    ErrorResponse400:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: BAD_REQUEST
+              message: "Invalid request body"
+    ErrorResponse401:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: "Authentication required"
+    ErrorResponse403:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: FORBIDDEN
+              message: "Insufficient permissions"
+    ErrorResponse404:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: NOT_FOUND
+              message: "Resource not found"
+    ErrorResponse409:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: CONFLICT
+              message: "Policy is active and cannot be deleted"
+    ErrorResponse422:
+      description: Unprocessable Entity
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: UNPROCESSABLE_ENTITY
+              message: "Validation failed"
+              details:
+                - field: "policy_source"
+                  message: "Invalid Rego syntax"
+    ErrorResponse500:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: "An unexpected error occurred"
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                oneOf:
+                  - type: string
+                  - type: object
+            request_id:
+              type: string
+              format: uuid

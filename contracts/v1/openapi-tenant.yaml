@@ -1,0 +1,421 @@
+openapi: 3.0.3
+info:
+  title: Operan Tenant Control Plane API
+  description: Centralized tenant provisioning and lifecycle management. Module 01.
+  version: 1.0.0
+  contact:
+    name: Operan Platform Team
+  license:
+    name: Proprietary
+
+servers:
+  - url: /api/v1
+    description: Platform API gateway
+
+security:
+  - BearerAuth: []
+  - TenantContext: []
+
+paths:
+  /tenants:
+    post:
+      summary: Provision a new tenant
+      description: Create an isolated tenant namespace with default quotas, RBAC policies, and encryption keys.
+      operationId: createTenant
+      tags:
+        - tenants
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTenantRequest'
+            example:
+              name: acme-corp
+              display_name: "Acme Corporation"
+              region: me-east-1
+              plan: enterprise
+              admin_email: admin@acme.corp
+              quotas:
+                max_agents: 500
+                max_workflows_per_day: 50000
+                max_storage_gb: 100
+                max_monthly_tokens: 100000000
+      responses:
+        '201':
+          description: Tenant provisioned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+        '400':
+          description: Invalid request
+        '409':
+          description: Tenant slug already exists
+        '422':
+          description: Quota exceeds plan limits
+
+  /tenants/{id}:
+    get:
+      summary: Get tenant details
+      operationId: getTenant
+      tags:
+        - tenants
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tenant details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+        '404':
+          description: Tenant not found
+
+    patch:
+      summary: Update tenant configuration
+      operationId: patchTenant
+      tags:
+        - tenants
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchTenantRequest'
+      responses:
+        '200':
+          description: Tenant updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+        '404':
+          description: Tenant not found
+        '422':
+          description: Validation error
+
+    delete:
+      summary: Deprovision a tenant
+      description: Soft-delete tenant and schedule data isolation cleanup. Hard delete is a separate admin action.
+      operationId: deleteTenant
+      tags:
+        - tenants
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '202':
+          description: Tenant deprovisioning initiated
+        '404':
+          description: Tenant not found
+        '409':
+          description: Tenant has active workflows — cancel or pause first
+
+  /tenants/{id}/quota:
+    get:
+      summary: Get tenant quota and usage
+      operationId: getTenantQuota
+      tags:
+        - tenants
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Quota and current usage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantQuota'
+
+  /tenants/{id}/quota:
+    patch:
+      summary: Update tenant quota limits
+      operationId: patchTenantQuota
+      tags:
+        - tenants
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQuotaRequest'
+      responses:
+        '200':
+          description: Quota updated
+        '404':
+          description: Tenant not found
+
+  /tenants/{id}/status:
+    get:
+      summary: Get tenant deployment status
+      operationId: getTenantStatus
+      tags:
+        - tenants
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tenant lifecycle status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantStatus'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    TenantContext:
+      name: X-Tenant-ID
+      in: header
+      description: Explicit tenant context header for multi-tenant routing
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    CreateTenantRequest:
+      type: object
+      required:
+        - name
+        - region
+        - plan
+        - admin_email
+      properties:
+        name:
+          type: string
+          description: Unique tenant slug (DNS-safe)
+          pattern: '^[a-z][a-z0-9-]{1,61}[a-z0-9]$'
+          maxLength: 63
+        display_name:
+          type: string
+          maxLength: 255
+        region:
+          type: string
+          description: Deployment region for data residency
+          enum:
+            - me-east-1
+            - eu-west-1
+            - us-east-1
+            - ap-south-1
+            - on-prem
+        plan:
+          type: string
+          enum:
+            - saas
+            - enterprise
+            - sovereign
+        admin_email:
+          type: string
+          format: email
+        quotas:
+          $ref: '#/components/schemas/CreateTenantQuota'
+        custom_policies:
+          type: object
+          description: Tenant-specific overrides for governance rules
+
+    PatchTenantRequest:
+      type: object
+      properties:
+        display_name:
+          type: string
+        admin_email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum: [active, suspended, deprovisioning]
+        custom_policies:
+          type: object
+
+    TenantQuota:
+      type: object
+      properties:
+        limits:
+          $ref: '#/components/schemas/QuotaLimits'
+        usage:
+          $ref: '#/components/schemas/QuotaUsage'
+
+    QuotaLimits:
+      type: object
+      properties:
+        max_agents:
+          type: integer
+          minimum: 0
+        max_workflows_per_day:
+          type: integer
+          minimum: 0
+        max_storage_gb:
+          type: integer
+          minimum: 0
+        max_monthly_tokens:
+          type: integer
+          minimum: 0
+        max_concurrent_workflows:
+          type: integer
+          minimum: 0
+
+    QuotaUsage:
+      type: object
+      properties:
+        active_agents:
+          type: integer
+        workflows_today:
+          type: integer
+        storage_gb_used:
+          type: number
+          format: float
+        tokens_this_month:
+          type: integer
+        concurrent_workflows:
+          type: integer
+
+    UpdateQuotaRequest:
+      type: object
+      properties:
+        max_agents:
+          type: integer
+          minimum: 0
+        max_workflows_per_day:
+          type: integer
+          minimum: 0
+        max_storage_gb:
+          type: integer
+          minimum: 0
+        max_monthly_tokens:
+          type: integer
+          minimum: 0
+        max_concurrent_workflows:
+          type: integer
+
+    CreateTenantQuota:
+      allOf:
+        - $ref: '#/components/schemas/QuotaLimits'
+
+    TenantStatus:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [provisioning, active, suspended, deprovisioning, deprovisioned]
+        region:
+          type: string
+        provisioned_at:
+          type: string
+          format: date-time
+        last_activity_at:
+          type: string
+          format: date-time
+        isolation:
+          $ref: '#/components/schemas/IsolationConfig'
+
+    IsolationConfig:
+      type: object
+      properties:
+        namespace:
+          type: string
+        encryption:
+          type: object
+          properties:
+            algorithm:
+              type: string
+            key_rotation_days:
+              type: integer
+        network_policy:
+          type: string
+          enum: [isolated, restricted, open]
+
+    Tenant:
+      type: object
+      required:
+        - id
+        - name
+        - region
+        - plan
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        display_name:
+          type: string
+        region:
+          type: string
+        plan:
+          type: string
+        status:
+          type: string
+          enum: [provisioning, active, suspended, deprovisioning, deprovisioned]
+        admin_email:
+          type: string
+        quotas:
+          $ref: '#/components/schemas/TenantQuota'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        isolation:
+          $ref: '#/components/schemas/IsolationConfig'
+
+responses:
+  ErrorResponse:
+    description: Standard error response
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object

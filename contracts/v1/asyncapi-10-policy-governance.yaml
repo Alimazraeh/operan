@@ -1,0 +1,465 @@
+asyncapi: 2.6.0
+info:
+  title: Operan Policy & Governance Events
+  version: 1.0.0
+  description: Module 10 — Policy & Governance event contract for the Operan platform.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  production:
+    url: rabbitmq.production.operan.io
+    protocol: amqp
+    description: Production AMQP broker
+    security:
+      - BearerAuth: []
+      - TenantContext: []
+  staging:
+    url: rabbitmq.staging.operan.io
+    protocol: amqp
+    description: Staging AMQP broker
+    security:
+      - BearerAuth: []
+      - TenantContext: []
+
+defaultContentType: application/json
+
+channels:
+  operan/events/policy/rule/created:
+    publish:
+      summary: Publish when a new policy rule is created.
+      operationId: receivePolicyRuleCreated
+      message:
+        $ref: '#/components/messages/PolicyRuleCreated'
+
+  operan/events/policy/rule/updated:
+    publish:
+      summary: Publish when an existing policy rule is updated.
+      operationId: receivePolicyRuleUpdated
+      message:
+        $ref: '#/components/messages/PolicyRuleUpdated'
+
+  operan/events/policy/rule/deactivated:
+    publish:
+      summary: Publish when a policy rule is deactivated.
+      operationId: receivePolicyRuleDeactivated
+      message:
+        $ref: '#/components/messages/PolicyRuleDeactivated'
+
+  operan/events/policy/audit/result:
+    publish:
+      summary: Publish the result of a policy audit check against an agent action.
+      operationId: receivePolicyAuditResult
+      message:
+        $ref: '#/components/messages/PolicyAuditResult'
+
+  operan/events/policy/compliance/report_generated:
+    publish:
+      summary: Publish when a compliance report has been generated.
+      operationId: receivePolicyComplianceReportGenerated
+      message:
+        $ref: '#/components/messages/PolicyComplianceReportGenerated'
+
+  operan/events/policy/tenant/quota_updated:
+    publish:
+      summary: Publish when a tenant's resource quotas are updated.
+      operationId: receivePolicyTenantQuotaUpdated
+      message:
+        $ref: '#/components/messages/PolicyTenantQuotaUpdated'
+
+components:
+  messages:
+    PolicyRuleCreated:
+      name: PolicyRuleCreated
+      title: Policy Rule Created
+      summary: Event fired when a new policy rule is created.
+      correlationId:
+        description: The UUID of the correlation ID for tracing this event.
+        type: string
+        format: uuid
+      tenantId:
+        description: The UUID of the tenant this policy rule belongs to.
+        type: string
+        format: uuid
+      messageId:
+        description: A unique UUID for this message instance.
+        type: string
+        format: uuid
+      timestamp:
+        description: The date-time at which the rule was created.
+        type: string
+        format: date-time
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - rule_id
+          - tenant_id
+          - name
+          - policy_type
+          - rule_body
+          - scope
+          - priority
+          - enforcement
+          - created_by
+          - created_at
+        properties:
+          rule_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the policy rule.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          name:
+            type: string
+            description: Human-readable name of the policy rule.
+          policy_type:
+            type: string
+            enum:
+              - tool_use
+              - data_access
+              - agent_behavior
+              - safety
+              - cost
+              - compliance
+            description: Category of the policy rule.
+          rule_body:
+            type: object
+            description: The structured definition of the rule including conditions, actions, and parameters.
+          scope:
+            type: string
+            enum:
+              - global
+              - tenant
+              - department
+              - agent
+            description: The scope at which this rule applies.
+          priority:
+            type: integer
+            description: Priority level of the rule (higher number = higher priority).
+          enforcement:
+            type: string
+            enum:
+              - enforce
+              - audit
+              - warn
+            description: Enforcement mode for this rule.
+          created_by:
+            type: string
+            description: Identifier of the user or system that created the rule.
+          created_at:
+            type: string
+            format: date-time
+            description: Timestamp of rule creation.
+
+    PolicyRuleUpdated:
+      name: PolicyRuleUpdated
+      title: Policy Rule Updated
+      summary: Event fired when an existing policy rule is updated.
+      correlationId:
+        description: The UUID of the correlation ID for tracing this event.
+        type: string
+        format: uuid
+      tenantId:
+        description: The UUID of the tenant this policy rule belongs to.
+        type: string
+        format: uuid
+      messageId:
+        description: A unique UUID for this message instance.
+        type: string
+        format: uuid
+      timestamp:
+        description: The date-time at which the rule was updated.
+        type: string
+        format: date-time
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - rule_id
+          - tenant_id
+          - updated_by
+          - updated_at
+          - changes
+          - old_policy_body
+          - new_policy_body
+        properties:
+          rule_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the policy rule that was updated.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          updated_by:
+            type: string
+            description: Identifier of the user or system that performed the update.
+          updated_at:
+            type: string
+            format: date-time
+            description: Timestamp of the update.
+          changes:
+            type: object
+            description: A map of changed field names to their new values.
+          old_policy_body:
+            type: object
+            nullable: true
+            description: The policy body before the update. Null if this is a creation masquerading as an update.
+          new_policy_body:
+            type: object
+            description: The policy body after the update.
+
+    PolicyRuleDeactivated:
+      name: PolicyRuleDeactivated
+      title: Policy Rule Deactivated
+      summary: Event fired when a policy rule is deactivated.
+      correlationId:
+        description: The UUID of the correlation ID for tracing this event.
+        type: string
+        format: uuid
+      tenantId:
+        description: The UUID of the tenant this policy rule belongs to.
+        type: string
+        format: uuid
+      messageId:
+        description: A unique UUID for this message instance.
+        type: string
+        format: uuid
+      timestamp:
+        description: The date-time at which the rule was deactivated.
+        type: string
+        format: date-time
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - rule_id
+          - tenant_id
+          - deactivated_by
+          - deactivated_at
+          - reason
+        properties:
+          rule_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the policy rule that was deactivated.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          deactivated_by:
+            type: string
+            description: Identifier of the user or system that deactivated the rule.
+          deactivated_at:
+            type: string
+            format: date-time
+            description: Timestamp of deactivation.
+          reason:
+            type: string
+            description: Human-readable reason for deactivating the rule.
+
+    PolicyAuditResult:
+      name: PolicyAuditResult
+      title: Policy Audit Result
+      summary: Event fired when a policy audit check completes against an agent action.
+      correlationId:
+        description: The UUID of the correlation ID for tracing this event.
+        type: string
+        format: uuid
+      tenantId:
+        description: The UUID of the tenant this audit result belongs to.
+        type: string
+        format: uuid
+      messageId:
+        description: A unique UUID for this message instance.
+        type: string
+        format: uuid
+      timestamp:
+        description: The date-time at which the audit was performed.
+        type: string
+        format: date-time
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - audit_id
+          - tenant_id
+          - agent_id
+          - workflow_id
+          - rule_id
+          - action_performed
+          - decision
+          - decision_reason
+          - timestamp
+        properties:
+          audit_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the audit check.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          agent_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the agent whose action was audited.
+          workflow_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the workflow in which the action occurred.
+          rule_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the policy rule that was evaluated.
+          action_performed:
+            type: string
+            description: Description of the action that was performed by the agent.
+          decision:
+            type: string
+            enum:
+              - allowed
+              - blocked
+              - flagged
+            description: The policy decision for the action.
+          decision_reason:
+            type: string
+            description: Human-readable explanation of the decision.
+          timestamp:
+            type: string
+            format: date-time
+            description: Timestamp when the audit was performed.
+
+    PolicyComplianceReportGenerated:
+      name: PolicyComplianceReportGenerated
+      title: Policy Compliance Report Generated
+      summary: Event fired when a compliance report has been generated.
+      correlationId:
+        description: The UUID of the correlation ID for tracing this event.
+        type: string
+        format: uuid
+      tenantId:
+        description: The UUID of the tenant this report belongs to.
+        type: string
+        format: uuid
+      messageId:
+        description: A unique UUID for this message instance.
+        type: string
+        format: uuid
+      timestamp:
+        description: The date-time at which the report was generated.
+        type: string
+        format: date-time
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - report_id
+          - tenant_id
+          - report_type
+          - generated_by
+          - generated_at
+          - summary
+          - findings_count
+          - severity_breakdown
+        properties:
+          report_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the compliance report.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          report_type:
+            type: string
+            enum:
+              - daily
+              - weekly
+              - monthly
+              - incident
+            description: Type of the compliance report.
+          generated_by:
+            type: string
+            description: Identifier of the system or user that generated the report.
+          generated_at:
+            type: string
+            format: date-time
+            description: Timestamp when the report was generated.
+          summary:
+            type: object
+            description: A high-level summary of the report findings.
+          findings_count:
+            type: integer
+            description: Total number of findings identified in the report.
+          severity_breakdown:
+            type: object
+            description: A map of severity levels to their respective finding counts.
+
+    PolicyTenantQuotaUpdated:
+      name: PolicyTenantQuotaUpdated
+      title: Policy Tenant Quota Updated
+      summary: Event fired when a tenant's resource quotas are updated.
+      correlationId:
+        description: The UUID of the correlation ID for tracing this event.
+        type: string
+        format: uuid
+      tenantId:
+        description: The UUID of the tenant whose quotas were updated.
+        type: string
+        format: uuid
+      messageId:
+        description: A unique UUID for this message instance.
+        type: string
+        format: uuid
+      timestamp:
+        description: The date-time at which the quotas were updated.
+        type: string
+        format: date-time
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - tenant_id
+          - updated_by
+          - updated_at
+          - old_quotas
+          - new_quotas
+          - reason
+        properties:
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          updated_by:
+            type: string
+            description: Identifier of the user or system that updated the quotas.
+          updated_at:
+            type: string
+            format: date-time
+            description: Timestamp of the quota update.
+          old_quotas:
+            type: object
+            description: The quota configuration before the update.
+          new_quotas:
+            type: object
+            description: The quota configuration after the update.
+          reason:
+            type: string
+            description: Human-readable reason for the quota change.
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT bearer token for authentication.
+    TenantContext:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Required tenant context header identifying the tenant context for the request.

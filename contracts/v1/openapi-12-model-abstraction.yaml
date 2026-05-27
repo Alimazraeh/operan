@@ -1,0 +1,648 @@
+openapi: 3.0.3
+info:
+  title: Operan Model Abstraction & Routing API
+  description: Model provider management, health monitoring, and routing decisions. Module 12.
+  version: 1.0.0
+servers:
+  - url: /api/v1/models
+    description: Model abstraction API root
+
+paths:
+  /provision:
+    post:
+      operationId: provisionModel
+      summary: Register or provision a new model provider
+      tags: [providers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelProvisionRequest'
+      responses:
+        '201':
+          description: Model provisioned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelProvider'
+        '400':
+          description: Invalid request
+
+  /:
+    get:
+      operationId: listModels
+      summary: List configured model providers
+      tags: [providers]
+      parameters:
+        - name: provider
+          in: query
+          schema:
+            type: string
+            enum: [openai, azure, google, aws, local, anthropic, ollama]
+        - name: tier
+          in: query
+          schema:
+            type: string
+            enum: [standard, premium, experimental]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, deprecated]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Model provider list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelProviderList'
+
+  /{modelId}:
+    parameters:
+      - name: modelId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getModel
+      summary: Get model provider details
+      tags: [providers]
+      responses:
+        '200':
+          description: Model provider details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelProvider'
+        '404':
+          description: Model not found
+    put:
+      operationId: updateModel
+      summary: Update model provider configuration
+      tags: [providers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelUpdateRequest'
+      responses:
+        '200':
+          description: Model updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelProvider'
+        '404':
+          description: Model not found
+    delete:
+      operationId: deleteModel
+      summary: Remove a model provider
+      tags: [providers]
+      responses:
+        '204':
+          description: Model removed
+        '404':
+          description: Model not found
+
+  /{modelId}/health:
+    get:
+      operationId: getModelHealth
+      summary: Get health status of a model provider
+      tags: [health]
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelHealth'
+        '404':
+          description: Model not found
+
+  /calls:
+    get:
+      operationId: listModelCalls
+      summary: List model API calls
+      tags: [calls]
+      parameters:
+        - name: model_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: provider
+          in: query
+          schema:
+            type: string
+            enum: [openai, azure, google, aws, local, anthropic, ollama]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [success, failed]
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Call list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelCallList'
+
+  /cost:
+    get:
+      operationId: getModelCost
+      summary: Get cost summary for model calls
+      tags: [cost]
+      parameters:
+        - name: provider
+          in: query
+          schema:
+            type: string
+            enum: [openai, azure, google, aws, local, anthropic, ollama]
+        - name: model_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: start
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Cost summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostSummary'
+
+  /capacity:
+    get:
+      operationId: getModelCapacity
+      summary: Get current capacity across model providers
+      tags: [capacity]
+      parameters:
+        - name: provider
+          in: query
+          schema:
+            type: string
+            enum: [openai, azure, google, aws, local, anthropic, ollama]
+      responses:
+        '200':
+          description: Capacity summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapacitySummary'
+
+  /route:
+    post:
+      operationId: getRoutingDecision
+      summary: Get a routing decision for a request
+      tags: [routing]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoutingRequest'
+      responses:
+        '200':
+          description: Routing decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutingDecision'
+        '400':
+          description: Invalid routing request
+
+  /routing-decisions:
+    get:
+      operationId: listRoutingDecisions
+      summary: List historical routing decisions
+      tags: [routing]
+      parameters:
+        - name: selected_model_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: fallback_triggered
+          in: query
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Decision list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutingDecisionList'
+
+  /{modelId}/token-usage:
+    get:
+      operationId: getModelTokenUsage
+      summary: Get token usage for a model
+      tags: [usage]
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+            default: day
+      responses:
+        '200':
+          description: Token usage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenUsage'
+        '404':
+          description: Model not found
+
+components:
+  schemas:
+    ModelProvisionRequest:
+      type: object
+      required: [tenant_id, provider, model_name]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          enum: [openai, azure, google, aws, local, anthropic, ollama]
+        model_name:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        tier:
+          type: string
+          enum: [standard, premium, experimental]
+        cost_per_token:
+          $ref: '#/components/schemas/CostPerToken'
+        rate_limit:
+          $ref: '#/components/schemas/RateLimit'
+        max_context_length:
+          type: integer
+        api_key_ref:
+          type: string
+          description: Reference to stored API credentials
+
+    ModelUpdateRequest:
+      type: object
+      properties:
+        tier:
+          type: string
+          enum: [standard, premium, experimental]
+        status:
+          type: string
+          enum: [active, inactive, deprecated]
+        cost_per_token:
+          $ref: '#/components/schemas/CostPerToken'
+        rate_limit:
+          $ref: '#/components/schemas/RateLimit'
+        capabilities:
+          type: array
+          items:
+            type: string
+
+    ModelProvider:
+      type: object
+      required: [id, tenant_id, provider, model_name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          enum: [openai, azure, google, aws, local, anthropic, ollama]
+        model_name:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        tier:
+          type: string
+          enum: [standard, premium, experimental]
+        status:
+          type: string
+          enum: [active, inactive, deprecated]
+        cost_per_token:
+          $ref: '#/components/schemas/CostPerToken'
+        rate_limit:
+          $ref: '#/components/schemas/RateLimit'
+        max_context_length:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ModelProviderList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModelProvider'
+        total:
+          type: integer
+
+    ModelCall:
+      type: object
+      required: [id, tenant_id, model_id, provider, status, timestamp]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        model_id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          enum: [openai, azure, google, aws, local, anthropic, ollama]
+        status:
+          type: string
+          enum: [success, failed]
+        agent_id:
+          type: string
+          format: uuid
+        workflow_id:
+          type: string
+          format: uuid
+        input_tokens:
+          type: integer
+        output_tokens:
+          type: integer
+        latency_ms:
+          type: integer
+        cost:
+          $ref: '#/components/schemas/CostPerCall'
+        error_message:
+          type:
+            - string
+            - 'null'
+        timestamp:
+          type: string
+          format: date-time
+
+    ModelCallList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModelCall'
+        total:
+          type: integer
+
+    RoutingDecision:
+      type: object
+      required: [id, tenant_id, selected_model_id, reason, timestamp]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        selected_model_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        candidate_models:
+          type: array
+          items:
+            type: string
+            format: uuid
+        fallback_triggered:
+          type: boolean
+        selection_criteria:
+          type: object
+        latency_ms:
+          type: integer
+        cost:
+          $ref: '#/components/schemas/CostPerCall'
+
+    RoutingDecisionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoutingDecision'
+        total:
+          type: integer
+
+    RoutingRequest:
+      type: object
+      required: [tenant_id, request_type]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        request_type:
+          type: string
+          enum: [chat, completion, embedding, image]
+        priority:
+          type: string
+          enum: [low, normal, high]
+        max_latency_ms:
+          type: integer
+        max_cost:
+          type: number
+        fallback_enabled:
+          type: boolean
+          default: true
+
+    ModelHealth:
+      type: object
+      required: [model_id, tenant_id, status, timestamp]
+      properties:
+        model_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        current_capacity:
+          type: integer
+        max_capacity:
+          type: integer
+        utilization:
+          type: number
+        error_rate:
+          type: number
+          minimum: 0
+          maximum: 1
+        avg_latency_ms:
+          type: integer
+
+    CostPerToken:
+      type: object
+      properties:
+        prompt:
+          type: number
+        completion:
+          type: number
+        currency:
+          type: string
+
+    CostPerCall:
+      type: object
+      required: [currency, amount]
+      properties:
+        currency:
+          type: string
+        amount:
+          type: number
+
+    RateLimit:
+      type: object
+      properties:
+        max_requests_per_minute:
+          type: integer
+        max_tokens_per_minute:
+          type: integer
+
+    CostSummary:
+      type: object
+      properties:
+        total_cost:
+          $ref: '#/components/schemas/CostPerCall'
+        total_calls:
+          type: integer
+        total_tokens:
+          type: object
+          properties:
+            input_tokens:
+              type: integer
+            output_tokens:
+              type: integer
+        period:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+            end:
+              type: string
+              format: date-time
+
+    CapacitySummary:
+      type: object
+      properties:
+        provider:
+          type: string
+        total_capacity:
+          type: integer
+        current_load:
+          type: integer
+        utilization_percent:
+          type: number
+
+    TokenUsage:
+      type: object
+      properties:
+        model_id:
+          type: string
+          format: uuid
+        period:
+          type: string
+        input_tokens:
+          type: integer
+        output_tokens:
+          type: integer
+        total_tokens:
+          type: integer
+        breakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date-time
+              input_tokens:
+                type: integer
+              output_tokens:
+                type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object

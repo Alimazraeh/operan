@@ -1,0 +1,547 @@
+asyncapi: 2.6.0
+info:
+  title: Operan Agent Registry Events
+  version: 1.0.0
+  description: MODULE 04 — Agent Registry event definitions for the Operan platform.
+  license:
+    name: Proprietary
+
+servers:
+  default:
+    url: broker.operan.internal:443
+    protocol: tls
+    description: Operan message broker
+
+channels:
+  operan/events/registry/agent/registered:
+    publish:
+      summary: Agent registered event
+      description: Published when a new agent is registered in the registry.
+      operationId: agentRegistered
+      message:
+        $ref: '#/components/messages/AgentRegistered'
+
+  operan/events/registry/agent/capabilities_updated:
+    publish:
+      summary: Agent capabilities updated event
+      description: Published when an agent's capabilities are modified.
+      operationId: agentCapabilitiesUpdated
+      message:
+        $ref: '#/components/messages/AgentCapabilitiesUpdated'
+
+  operan/events/registry/agent/version_created:
+    publish:
+      summary: Agent version created event
+      description: Published when a new version of an agent is created.
+      operationId: agentVersionCreated
+      message:
+        $ref: '#/components/messages/AgentVersionCreated'
+
+  operan/events/registry/agent/promoted:
+    publish:
+      summary: Agent promoted event
+      description: Published when an agent version is promoted across environments.
+      operationId: agentPromoted
+      message:
+        $ref: '#/components/messages/AgentPromoted'
+
+  operan/events/registry/agent/deprecated:
+    publish:
+      summary: Agent deprecated event
+      description: Published when an agent or version is deprecated.
+      operationId: agentDeprecated
+      message:
+        $ref: '#/components/messages/AgentDeprecated'
+
+  operan/events/registry/agent/archived:
+    publish:
+      summary: Agent archived event
+      description: Published when an agent is archived.
+      operationId: agentArchived
+      message:
+        $ref: '#/components/messages/AgentArchived'
+
+  operan/events/registry/dependency/added:
+    publish:
+      summary: Dependency added event
+      description: Published when a dependency is added between agents.
+      operationId: dependencyAdded
+      message:
+        $ref: '#/components/messages/DependencyAdded'
+
+  operan/events/registry/dependency/removed:
+    publish:
+      summary: Dependency removed event
+      description: Published when a dependency between agents is removed.
+      operationId: dependencyRemoved
+      message:
+        $ref: '#/components/messages/DependencyRemoved'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT bearer token for authentication.
+    TenantContext:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Required tenant identifier header.
+
+  messages:
+    AgentRegistered:
+      name: AgentRegistered
+      title: Agent Registered
+      summary: Event emitted when a new agent is registered in the registry.
+      headers:
+        type: object
+        required:
+          - correlationId
+          - tenantId
+          - messageId
+          - timestamp
+        properties:
+          correlationId:
+            $ref: '#/components/schemas/Uuid'
+          tenantId:
+            $ref: '#/components/schemas/Uuid'
+          messageId:
+            $ref: '#/components/schemas/Uuid'
+          timestamp:
+            $ref: '#/components/schemas/DateTime'
+      payload:
+        $ref: '#/components/schemas/AgentRegisteredPayload'
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+
+    AgentCapabilitiesUpdated:
+      name: AgentCapabilitiesUpdated
+      title: Agent Capabilities Updated
+      summary: Event emitted when an agent's capabilities are updated.
+      headers:
+        type: object
+        required:
+          - correlationId
+          - tenantId
+          - messageId
+          - timestamp
+        properties:
+          correlationId:
+            $ref: '#/components/schemas/Uuid'
+          tenantId:
+            $ref: '#/components/schemas/Uuid'
+          messageId:
+            $ref: '#/components/schemas/Uuid'
+          timestamp:
+            $ref: '#/components/schemas/DateTime'
+      payload:
+        $ref: '#/components/schemas/AgentCapabilitiesUpdatedPayload'
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+
+    AgentVersionCreated:
+      name: AgentVersionCreated
+      title: Agent Version Created
+      summary: Event emitted when a new version of an agent is created.
+      headers:
+        type: object
+        required:
+          - correlationId
+          - tenantId
+          - messageId
+          - timestamp
+        properties:
+          correlationId:
+            $ref: '#/components/schemas/Uuid'
+          tenantId:
+            $ref: '#/components/schemas/Uuid'
+          messageId:
+            $ref: '#/components/schemas/Uuid'
+          timestamp:
+            $ref: '#/components/schemas/DateTime'
+      payload:
+        $ref: '#/components/schemas/AgentVersionCreatedPayload'
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+
+    AgentPromoted:
+      name: AgentPromoted
+      title: Agent Promoted
+      summary: Event emitted when an agent version is promoted across environments.
+      headers:
+        type: object
+        required:
+          - correlationId
+          - tenantId
+          - messageId
+          - timestamp
+        properties:
+          correlationId:
+            $ref: '#/components/schemas/Uuid'
+          tenantId:
+            $ref: '#/components/schemas/Uuid'
+          messageId:
+            $ref: '#/components/schemas/Uuid'
+          timestamp:
+            $ref: '#/components/schemas/DateTime'
+      payload:
+        $ref: '#/components/schemas/AgentPromotedPayload'
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+
+    AgentDeprecated:
+      name: AgentDeprecated
+      title: Agent Deprecated
+      summary: Event emitted when an agent or version is deprecated.
+      headers:
+        type: object
+        required:
+          - correlationId
+          - tenantId
+          - messageId
+          - timestamp
+        properties:
+          correlationId:
+            $ref: '#/components/schemas/Uuid'
+          tenantId:
+            $ref: '#/components/schemas/Uuid'
+          messageId:
+            $ref: '#/components/schemas/Uuid'
+          timestamp:
+            $ref: '#/components/schemas/DateTime'
+      payload:
+        $ref: '#/components/schemas/AgentDeprecatedPayload'
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+
+    AgentArchived:
+      name: AgentArchived
+      title: Agent Archived
+      summary: Event emitted when an agent is archived.
+      headers:
+        type: object
+        required:
+          - correlationId
+          - tenantId
+          - messageId
+          - timestamp
+        properties:
+          correlationId:
+            $ref: '#/components/schemas/Uuid'
+          tenantId:
+            $ref: '#/components/schemas/Uuid'
+          messageId:
+            $ref: '#/components/schemas/Uuid'
+          timestamp:
+            $ref: '#/components/schemas/DateTime'
+      payload:
+        $ref: '#/components/schemas/AgentArchivedPayload'
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+
+    DependencyAdded:
+      name: DependencyAdded
+      title: Dependency Added
+      summary: Event emitted when a dependency is added between agents.
+      headers:
+        type: object
+        required:
+          - correlationId
+          - tenantId
+          - messageId
+          - timestamp
+        properties:
+          correlationId:
+            $ref: '#/components/schemas/Uuid'
+          tenantId:
+            $ref: '#/components/schemas/Uuid'
+          messageId:
+            $ref: '#/components/schemas/Uuid'
+          timestamp:
+            $ref: '#/components/schemas/DateTime'
+      payload:
+        $ref: '#/components/schemas/DependencyAddedPayload'
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+
+    DependencyRemoved:
+      name: DependencyRemoved
+      title: Dependency Removed
+      summary: Event emitted when a dependency between agents is removed.
+      headers:
+        type: object
+        required:
+          - correlationId
+          - tenantId
+          - messageId
+          - timestamp
+        properties:
+          correlationId:
+            $ref: '#/components/schemas/Uuid'
+          tenantId:
+            $ref: '#/components/schemas/Uuid'
+          messageId:
+            $ref: '#/components/schemas/Uuid'
+          timestamp:
+            $ref: '#/components/schemas/DateTime'
+      payload:
+        $ref: '#/components/schemas/DependencyRemovedPayload'
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+      description: RFC 4122 compliant UUID.
+
+    DateTime:
+      type: string
+      format: date-time
+      description: RFC 3339 section 5.6 compliant date-time string.
+
+    AgentRegisteredPayload:
+      type: object
+      required:
+        - agent_id
+        - tenant_id
+        - name
+        - role
+        - capabilities
+        - tools
+        - memory_access
+        - escalation_rules
+        - governance_policies
+        - version
+        - registered_by
+        - registered_at
+      properties:
+        agent_id:
+          $ref: '#/components/schemas/Uuid'
+        tenant_id:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+          description: Human-readable name of the agent.
+        role:
+          type: string
+          description: Functional role of the agent within the platform.
+        capabilities:
+          type: array
+          items:
+            type: string
+          description: List of capabilities the agent supports.
+        tools:
+          type: array
+          items:
+            type: string
+          description: List of tools the agent can invoke.
+        memory_access:
+          type: string
+          description: Level or type of memory access granted to this agent.
+        escalation_rules:
+          type: array
+          items:
+            type: string
+          description: Escalation rules governing this agent's behavior.
+        governance_policies:
+          type: array
+          items:
+            type: string
+          description: Governance policies applicable to this agent.
+        version:
+          type: string
+          description: Version of the agent at time of registration.
+        registered_by:
+          $ref: '#/components/schemas/Uuid'
+        registered_at:
+          $ref: '#/components/schemas/DateTime'
+
+    AgentCapabilitiesUpdatedPayload:
+      type: object
+      required:
+        - agent_id
+        - tenant_id
+        - previous_capabilities
+        - new_capabilities
+        - updated_by
+        - updated_at
+      properties:
+        agent_id:
+          $ref: '#/components/schemas/Uuid'
+        tenant_id:
+          $ref: '#/components/schemas/Uuid'
+        previous_capabilities:
+          type: array
+          items:
+            type: string
+          description: Capabilities the agent had prior to this update.
+        new_capabilities:
+          type: array
+          items:
+            type: string
+          description: Updated set of capabilities for the agent.
+        updated_by:
+          $ref: '#/components/schemas/Uuid'
+        updated_at:
+          $ref: '#/components/schemas/DateTime'
+
+    AgentVersionCreatedPayload:
+      type: object
+      required:
+        - agent_id
+        - new_version
+        - previous_version
+        - created_by
+        - created_at
+        - change_summary
+      properties:
+        agent_id:
+          $ref: '#/components/schemas/Uuid'
+        new_version:
+          type: string
+          pattern: '^\\d+\\.\\d+\\.\\d+$'
+          description: New semver version string.
+        previous_version:
+          type: string
+          pattern: '^\\d+\\.\\d+\\.\\d+$'
+          description: Previous semver version string.
+        created_by:
+          $ref: '#/components/schemas/Uuid'
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        change_summary:
+          type: string
+          description: Human-readable summary of changes in this version.
+
+    AgentPromotedPayload:
+      type: object
+      required:
+        - agent_id
+        - promoted_version
+        - promoted_by
+        - promoted_at
+        - from_environment
+        - to_environment
+      properties:
+        agent_id:
+          $ref: '#/components/schemas/Uuid'
+        promoted_version:
+          type: string
+          description: The agent version being promoted.
+        promoted_by:
+          $ref: '#/components/schemas/Uuid'
+        promoted_at:
+          $ref: '#/components/schemas/DateTime'
+        from_environment:
+          type: string
+          description: Source environment of the promotion.
+        to_environment:
+          type: string
+          enum:
+            - staging
+            - production
+          description: Target environment of the promotion.
+
+    AgentDeprecatedPayload:
+      type: object
+      required:
+        - agent_id
+        - deprecated_by
+        - deprecated_at
+        - reason
+        - replacement_agent_id
+        - sunset_date
+      properties:
+        agent_id:
+          $ref: '#/components/schemas/Uuid'
+        deprecated_by:
+          $ref: '#/components/schemas/Uuid'
+        deprecated_at:
+          $ref: '#/components/schemas/DateTime'
+        reason:
+          type: string
+          description: Reason for deprecation.
+        replacement_agent_id:
+          anyOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
+          description: UUID of a replacement agent, or null if none exists.
+        sunset_date:
+          type: string
+          format: date-time
+          description: Date when the agent will be fully retired.
+
+    AgentArchivedPayload:
+      type: object
+      required:
+        - agent_id
+        - archived_by
+        - archived_at
+        - archive_reason
+      properties:
+        agent_id:
+          $ref: '#/components/schemas/Uuid'
+        archived_by:
+          $ref: '#/components/schemas/Uuid'
+        archived_at:
+          $ref: '#/components/schemas/DateTime'
+        archive_reason:
+          type: string
+          description: Reason for archiving the agent.
+
+    DependencyAddedPayload:
+      type: object
+      required:
+        - agent_id
+        - dependency_agent_id
+        - dependency_type
+        - added_by
+        - added_at
+      properties:
+        agent_id:
+          $ref: '#/components/schemas/Uuid'
+        dependency_agent_id:
+          $ref: '#/components/schemas/Uuid'
+        dependency_type:
+          type: string
+          enum:
+            - required
+            - optional
+            - runtime
+          description: Type of dependency relationship.
+        added_by:
+          $ref: '#/components/schemas/Uuid'
+        added_at:
+          $ref: '#/components/schemas/DateTime'
+
+    DependencyRemovedPayload:
+      type: object
+      required:
+        - agent_id
+        - removed_dependency_id
+        - removed_by
+        - removed_at
+        - reason
+      properties:
+        agent_id:
+          $ref: '#/components/schemas/Uuid'
+        removed_dependency_id:
+          $ref: '#/components/schemas/Uuid'
+        removed_by:
+          $ref: '#/components/schemas/Uuid'
+        removed_at:
+          $ref: '#/components/schemas/DateTime'
+        reason:
+          type: string
+          description: Reason for removing the dependency.

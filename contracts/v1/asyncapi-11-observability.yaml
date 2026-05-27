@@ -1,0 +1,455 @@
+asyncapi: 2.6.0
+id: urn:uuid:operan-module-11-observability
+info:
+  title: Operan Observability & Tracing
+  version: 1.0.0
+  description: Module 11 — Observability & Tracing event contracts for the Operan platform
+  contact:
+    name: Operan Platform Team
+    url: https://operan.internal
+    email: platform@operan.internal
+  license:
+    name: Proprietary
+
+servers:
+  production:
+    url: rabbitmq-operan.prod.internal:5672
+    protocol: amqp
+    description: Production RabbitMQ broker
+  staging:
+    url: rabbitmq-operan.staging.internal:5672
+    protocol: amqp
+    description: Staging RabbitMQ broker
+
+defaultContentType: application/json
+
+channels:
+  operan/events/observability/metric/recorded:
+    $ref: '#/components/channels/operanEventsObservabilityMetricRecorded'
+  operan/events/observability/trace/span:
+    $ref: '#/components/channels/operanEventsObservabilityTraceSpan'
+  operan/events/observability/trace/flush:
+    $ref: '#/components/channels/operanEventsObservabilityTraceFlush'
+  operan/events/observability/alert/fired:
+    $ref: '#/components/channels/operanEventsObservabilityAlertFired'
+  operan/events/observability/health/status_change:
+    $ref: '#/components/channels/operanEventsObservabilityHealthStatusChange'
+
+components:
+  channels:
+    operanEventsObservabilityMetricRecorded:
+      address: operan/events/observability/metric/recorded
+      messages:
+        MetricRecorded:
+          $ref: '#/components/messages/MetricRecorded'
+    operanEventsObservabilityTraceSpan:
+      address: operan/events/observability/trace/span
+      messages:
+        TraceSpan:
+          $ref: '#/components/messages/TraceSpan'
+    operanEventsObservabilityTraceFlush:
+      address: operan/events/observability/trace/flush
+      messages:
+        TraceFlush:
+          $ref: '#/components/messages/TraceFlush'
+    operanEventsObservabilityAlertFired:
+      address: operan/events/observability/alert/fired
+      messages:
+        AlertFired:
+          $ref: '#/components/messages/AlertFired'
+    operanEventsObservabilityHealthStatusChange:
+      address: operan/events/observability/health/status_change
+      messages:
+        HealthStatusChange:
+          $ref: '#/components/messages/HealthStatusChange'
+
+  messages:
+    MetricRecorded:
+      messageId: metricRecorded
+      name: MetricRecorded
+      title: Metric Recorded
+      summary: A metric has been recorded by an Observability agent
+      description: Published whenever a metric is recorded through the Observability module
+      correlationId:
+        $ref: '#/components/correlationIds/defaultCorrelationId'
+      tags:
+        - name: module:observability
+          type: info
+        - name: module:metric
+          type: info
+      headers:
+        $ref: '#/components/schemas/MessageHeaders'
+      payload:
+        type: object
+        additionalProperties: false
+        required:
+          - metric_id
+          - tenant_id
+          - metric_name
+          - metric_value
+          - metric_type
+          - labels
+          - source_id
+          - recorded_at
+        properties:
+          metric_id:
+            $ref: '#/components/schemas/UUID'
+            description: Unique identifier for this metric record
+          tenant_id:
+            $ref: '#/components/schemas/UUID'
+            description: Tenant that owns this metric
+          metric_name:
+            type: string
+            description: Human-readable name of the metric
+          metric_value:
+            type: number
+            description: Numeric value of the metric
+          metric_type:
+            $ref: '#/components/schemas/MetricType'
+          labels:
+            $ref: '#/components/schemas/LabelObject'
+          source_id:
+            type: string
+            description: Identifier of the source that recorded this metric
+          recorded_at:
+            type: string
+            format: date-time
+            description: Timestamp when the metric was recorded
+
+    TraceSpan:
+      messageId: traceSpan
+      name: TraceSpan
+      title: Trace Span
+      summary: A span has been emitted within an orchestration workflow
+      description: Published whenever a trace span is emitted, capturing the lifecycle of an operation
+      correlationId:
+        $ref: '#/components/correlationIds/defaultCorrelationId'
+      tags:
+        - name: module:observability
+          type: info
+        - name: module:trace
+          type: info
+      headers:
+        $ref: '#/components/schemas/MessageHeaders'
+      payload:
+        type: object
+        additionalProperties: false
+        required:
+          - trace_id
+          - span_id
+          - tenant_id
+          - workflow_id
+          - agent_id
+          - span_name
+          - span_type
+          - start_time
+          - end_time
+          - duration_ms
+          - status
+          - tags
+        properties:
+          trace_id:
+            $ref: '#/components/schemas/UUID'
+            description: Identifier shared across all spans in the same trace
+          span_id:
+            $ref: '#/components/schemas/UUID'
+            description: Unique identifier for this span
+          tenant_id:
+            $ref: '#/components/schemas/UUID'
+            description: Tenant that owns this span
+          workflow_id:
+            $ref: '#/components/schemas/UUID'
+            description: Workflow execution that this span belongs to
+          agent_id:
+            $ref: '#/components/schemas/UUID'
+            description: Agent that produced this span
+          span_name:
+            type: string
+            description: Human-readable name of the span operation
+          span_type:
+            $ref: '#/components/schemas/SpanType'
+          start_time:
+            type: string
+            format: date-time
+            description: When this span started
+          end_time:
+            type: string
+            format: date-time
+            description: When this span ended
+          duration_ms:
+            type: integer
+            description: Duration of the span in milliseconds
+          status:
+            $ref: '#/components/schemas/SpanStatus'
+          tags:
+            $ref: '#/components/schemas/TagObject'
+
+    TraceFlush:
+      messageId: traceFlush
+      name: TraceFlush
+      title: Trace Flush
+      summary: Batch of spans has been flushed to persistent storage
+      description: Published after a batch of spans is flushed to backing storage
+      correlationId:
+        $ref: '#/components/correlationIds/defaultCorrelationId'
+      tags:
+        - name: module:observability
+          type: info
+        - name: module:trace
+          type: info
+        - name: action:flush
+          type: info
+      headers:
+        $ref: '#/components/schemas/MessageHeaders'
+      payload:
+        type: object
+        additionalProperties: false
+        required:
+          - tenant_id
+          - flush_id
+          - span_count
+          - flushed_at
+        properties:
+          tenant_id:
+            $ref: '#/components/schemas/UUID'
+            description: Tenant whose spans were flushed
+          flush_id:
+            $ref: '#/components/schemas/UUID'
+            description: Unique identifier for this flush operation
+          span_count:
+            type: integer
+            description: Number of spans flushed in this batch
+          flushed_at:
+            type: string
+            format: date-time
+            description: Timestamp when the flush occurred
+
+    AlertFired:
+      messageId: alertFired
+      name: AlertFired
+      title: Alert Fired
+      summary: An alert condition has been triggered
+      description: Published whenever an alert condition is evaluated as true
+      correlationId:
+        $ref: '#/components/correlationIds/defaultCorrelationId'
+      tags:
+        - name: module:observability
+          type: info
+        - name: module:alert
+          type: info
+      headers:
+        $ref: '#/components/schemas/MessageHeaders'
+      payload:
+        type: object
+        additionalProperties: false
+        required:
+          - alert_id
+          - tenant_id
+          - alert_name
+          - severity
+          - condition_description
+          - current_value
+          - threshold
+          - triggered_at
+          - resolved_at
+        properties:
+          alert_id:
+            $ref: '#/components/schemas/UUID'
+            description: Unique identifier for this alert instance
+          tenant_id:
+            $ref: '#/components/schemas/UUID'
+            description: Tenant on which this alert fired
+          alert_name:
+            type: string
+            description: Human-readable name of the alert rule
+          severity:
+            $ref: '#/components/schemas/AlertSeverity'
+          condition_description:
+            type: string
+            description: Human-readable description of the condition that triggered the alert
+          current_value:
+            type: number
+            description: The value that triggered the alert
+          threshold:
+            type: number
+            description: The threshold that was exceeded or breached
+          triggered_at:
+            type: string
+            format: date-time
+            description: Timestamp when the alert was triggered
+          resolved_at:
+            oneOf:
+              - type: string
+                format: date-time
+              - type: 'null'
+            description: Timestamp when the alert was resolved; null if still active
+
+    HealthStatusChange:
+      messageId: healthStatusChange
+      name: HealthStatusChange
+      title: Health Status Change
+      summary: A component health status has changed
+      description: Published whenever a monitored component transitions between healthy, degraded, and unhealthy states
+      correlationId:
+        $ref: '#/components/correlationIds/defaultCorrelationId'
+      tags:
+        - name: module:observability
+          type: info
+        - name: module:health
+          type: info
+      headers:
+        $ref: '#/components/schemas/MessageHeaders'
+      payload:
+        type: object
+        additionalProperties: false
+        required:
+          - tenant_id
+          - component_id
+          - component_type
+          - previous_status
+          - new_status
+          - reason
+          - changed_at
+        properties:
+          tenant_id:
+            $ref: '#/components/schemas/UUID'
+            description: Tenant to which the component belongs
+          component_id:
+            type: string
+            description: Identifier of the component whose health changed
+          component_type:
+            $ref: '#/components/schemas/ComponentType'
+          previous_status:
+            $ref: '#/components/schemas/HealthStatus'
+          new_status:
+            $ref: '#/components/schemas/HealthStatus'
+          reason:
+            type: string
+            description: Human-readable explanation for the status change
+          changed_at:
+            type: string
+            format: date-time
+            description: Timestamp when the status changed
+
+  schemas:
+    UUID:
+      type: string
+      format: uuid
+      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      example: '550e8400-e29b-41d4-a716-446655440000'
+      description: RFC 4122 compliant UUID v4
+
+    MessageHeaders:
+      type: object
+      additionalProperties: false
+      required:
+        - correlationId
+        - tenantId
+        - messageId
+        - timestamp
+      properties:
+        correlationId:
+          $ref: '#/components/schemas/UUID'
+          description: Correlation identifier linking related messages across the system
+        tenantId:
+          $ref: '#/components/schemas/UUID'
+          description: Tenant identifier for multi-tenancy routing
+        messageId:
+          $ref: '#/components/schemas/UUID'
+          description: Unique identifier for this message instance
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when the message was produced
+
+    LabelObject:
+      type: object
+      description: Key-value pairs of arbitrary string labels attached to a metric
+      additionalProperties:
+        type: string
+      example:
+        environment: production
+        region: us-east-1
+
+    TagObject:
+      type: object
+      description: Key-value pairs of arbitrary string tags attached to a span
+      additionalProperties:
+        type: string
+      example:
+        workflow.step: '3'
+        tool.name: code_search
+
+    MetricType:
+      type: string
+      enum:
+        - counter
+        - gauge
+        - histogram
+        - timer
+      description: The type of metric being recorded
+
+    SpanType:
+      type: string
+      enum:
+        - orchestration
+        - tool
+        - memory
+        - policy
+        - human_gate
+      description: The category of operation this span represents
+
+    SpanStatus:
+      type: string
+      enum:
+        - ok
+        - error
+        - cancelled
+      description: The outcome status of the span
+
+    AlertSeverity:
+      type: string
+      enum:
+        - info
+        - warning
+        - critical
+      description: The severity level of the alert
+
+    ComponentType:
+      type: string
+      enum:
+        - agent
+        - workflow
+        - tool
+        - memory
+        - policy
+        - gateway
+      description: The type of component whose health is being reported
+
+    HealthStatus:
+      type: string
+      enum:
+        - healthy
+        - degraded
+        - unhealthy
+      description: The health state of a monitored component
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: HTTP bearer authentication using a JWT token
+    TenantContext:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Required header identifying the tenant context for multi-tenancy routing
+
+security:
+  - BearerAuth: []
+  - TenantContext: []
+
+tags:
+  - name: module:observability
+    description: Observability & Tracing module for Operan platform

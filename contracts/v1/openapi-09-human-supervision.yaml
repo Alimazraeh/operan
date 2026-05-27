@@ -1,0 +1,1468 @@
+openapi: "3.0.3"
+info:
+  title: Operan — Human Supervision Layer
+  version: "1.0.0"
+  description: Human-in-the-loop supervision, approval workflows, escalation management, and intervention control for the Operan AI agent platform.
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.operan.io/v1
+    description: Production
+  - url: https://staging-api.operan.io/v1
+    description: Staging
+
+security:
+  - BearerAuth: []
+  - TenantID: []
+
+tags:
+  - name: approvals
+    description: Approval workflow management
+  - name: escalations
+    description: Escalation management and resolution
+  - name: interventions
+    description: Human intervention actions
+  - name: queue
+    description: Human review queue
+  - name: risk-dashboard
+    description: Risk overview dashboard
+  - name: hitl
+    description: Human-in-the-loop interaction
+
+paths:
+  /approvals:
+    post:
+      tags: [approvals]
+      operationId: createApproval
+      summary: Create a new approval request
+      description: Submit an approval request for human review. Supports sequential, parallel, conditional, and threshold approval types.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApprovalRequest"
+            example:
+              request_id: "550e8400-e29b-41d4-a716-446655440000"
+              requester_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+              type: sequential
+              title: "Deployment of model v2.4 to production"
+              description: "Requires sign-off before deploying the updated NLU model."
+              metadata:
+                model_version: "2.4.0"
+                environment: production
+              required_approvers:
+                - user_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                  role: tech_lead
+                - user_id: "6ba7b811-9dad-11d1-80b4-00c04fd430c8"
+                  role: compliance_officer
+              expires_at: "2026-06-15T12:00:00Z"
+              conditional_config:
+                condition: "risk_score > 70"
+                fallback_approval: true
+              threshold_config:
+                min_approvals: 2
+                max_rejections: 1
+      responses:
+        "201":
+          description: Approval created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Approval"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "422":
+          $ref: "#/components/responses/ErrorResponse422"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /approvals/{id}:
+    get:
+      tags: [approvals]
+      operationId: getApproval
+      summary: Get an approval by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the approval
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Approval details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Approval"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+    patch:
+      tags: [approvals]
+      operationId: updateApproval
+      summary: Update an approval
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateApprovalRequest"
+      responses:
+        "200":
+          description: Approval updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Approval"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "409":
+          $ref: "#/components/responses/ErrorResponse409"
+        "422":
+          $ref: "#/components/responses/ErrorResponse422"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+    delete:
+      tags: [approvals]
+      operationId: deleteApproval
+      summary: Delete an approval (revoke)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Approval deleted
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /approvals/{id}/approve:
+    post:
+      tags: [approvals]
+      operationId: approveApproval
+      summary: Approve an approval request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApproveRequest"
+      responses:
+        "200":
+          description: Approval approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Approval"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "409":
+          $ref: "#/components/responses/ErrorResponse409"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /approvals/{id}/reject:
+    post:
+      tags: [approvals]
+      operationId: rejectApproval
+      summary: Reject an approval request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectRequest"
+      responses:
+        "200":
+          description: Approval rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Approval"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "409":
+          $ref: "#/components/responses/ErrorResponse409"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /approvals/{id}/delegate:
+    post:
+      tags: [approvals]
+      operationId: delegateApproval
+      summary: Delegate an approval to another user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DelegateRequest"
+      responses:
+        "200":
+          description: Approval delegated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Approval"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "409":
+          $ref: "#/components/responses/ErrorResponse409"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /escalations:
+    post:
+      tags: [escalations]
+      operationId: createEscalation
+      summary: Create a new escalation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEscalationRequest"
+            example:
+              severity: critical
+              category: hallucination
+              title: "Model generating harmful content in Arabic"
+              description: "Agent output includes discriminatory language when processing Arabic dialect input."
+              related_approval_id: "550e8400-e29b-41d4-a716-446655440000"
+              source_agent_id: "agent-001"
+              impact_scope: user-facing
+              requested_action: pause
+              assigned_to: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+              metadata:
+                affected_users_count: 150
+                confidence_score: 0.92
+      responses:
+        "201":
+          description: Escalation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escalation"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "422":
+          $ref: "#/components/responses/ErrorResponse422"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /escalations/{id}:
+    get:
+      tags: [escalations]
+      operationId: getEscalation
+      summary: Get an escalation by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Escalation details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escalation"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+    patch:
+      tags: [escalations]
+      operationId: updateEscalation
+      summary: Update an escalation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEscalationRequest"
+      responses:
+        "200":
+          description: Escalation updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escalation"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "409":
+          $ref: "#/components/responses/ErrorResponse409"
+        "422":
+          $ref: "#/components/responses/ErrorResponse422"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+    delete:
+      tags: [escalations]
+      operationId: deleteEscalation
+      summary: Delete (archive) an escalation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Escalation deleted
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /escalations/{id}/resolve:
+    post:
+      tags: [escalations]
+      operationId: resolveEscalation
+      summary: Mark an escalation as resolved
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveEscalationRequest"
+      responses:
+        "200":
+          description: Escalation resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escalation"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "409":
+          $ref: "#/components/responses/ErrorResponse409"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /interventions:
+    post:
+      tags: [interventions]
+      operationId: createIntervention
+      summary: Issue a human intervention
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInterventionRequest"
+            example:
+              action: pause
+              target_agent_id: "agent-001"
+              target_workflow_id: "wf-12345"
+              reason: "Safety concern detected in agent output"
+              scope:
+                type: agent
+                resource_id: "agent-001"
+              duration_minutes: 30
+              issued_by: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+              metadata:
+                related_escalation_id: "esc-789"
+      responses:
+        "201":
+          description: Intervention issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Intervention"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "422":
+          $ref: "#/components/responses/ErrorResponse422"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /interventions/{id}:
+    get:
+      tags: [interventions]
+      operationId: getIntervention
+      summary: Get an intervention by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Intervention details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Intervention"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+    patch:
+      tags: [interventions]
+      operationId: updateIntervention
+      summary: Update an intervention
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInterventionRequest"
+      responses:
+        "200":
+          description: Intervention updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Intervention"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "409":
+          $ref: "#/components/responses/ErrorResponse409"
+        "422":
+          $ref: "#/components/responses/ErrorResponse422"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+    delete:
+      tags: [interventions]
+      operationId: deleteIntervention
+      summary: Delete (archive) an intervention
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Intervention deleted
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /interventions/{id}/revoke:
+    post:
+      tags: [interventions]
+      operationId: revokeIntervention
+      summary: Revoke an active intervention
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Intervention revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Intervention"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "409":
+          $ref: "#/components/responses/ErrorResponse409"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /queue:
+    get:
+      tags: [queue]
+      operationId: getHumanQueue
+      summary: Get the human review queue
+      parameters:
+        - name: user_id
+          in: query
+          description: Filter by reviewer user ID
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          description: Queue type filter (approval, escalation, intervention)
+          schema:
+            type: string
+            enum: [approval, escalation, intervention]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Queue items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueueResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /risk-dashboard:
+    get:
+      tags: [risk-dashboard]
+      operationId: getRiskDashboard
+      summary: Get risk dashboard for a tenant
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          description: Tenant UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Risk dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskDashboard"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+  /hitl/{request_id}/answer:
+    post:
+      tags: [hitl]
+      operationId: submitHitlAnswer
+      summary: Submit a human-in-the-loop answer
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          description: Original request ID that triggered the HITL query
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HitlAnswerRequest"
+            example:
+              answer: "This translation is acceptable, no changes needed."
+              confidence: high
+              action_taken: approve
+              metadata:
+                reviewer_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+      responses:
+        "200":
+          description: HITL answer recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HitlAnswer"
+        "400":
+          $ref: "#/components/responses/ErrorResponse400"
+        "401":
+          $ref: "#/components/responses/ErrorResponse401"
+        "403":
+          $ref: "#/components/responses/ErrorResponse403"
+        "404":
+          $ref: "#/components/responses/ErrorResponse404"
+        "409":
+          $ref: "#/components/responses/ErrorResponse409"
+        "422":
+          $ref: "#/components/responses/ErrorResponse422"
+        "500":
+          $ref: "#/components/responses/ErrorResponse500"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT bearer token with appropriate scopes
+    TenantID:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Tenant identifier for multi-tenancy isolation
+
+  schemas:
+    CreateApprovalRequest:
+      type: object
+      required: [request_id, requester_id, type]
+      properties:
+        request_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the request requiring approval
+        requester_id:
+          type: string
+          format: uuid
+          description: ID of the entity (user or agent) requesting approval
+        type:
+          type: string
+          enum: [sequential, parallel, conditional, threshold]
+          description: Approval workflow type
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        required_approvers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalTarget"
+        expires_at:
+          type: string
+          format: date-time
+          description: Timestamp after which the approval expires
+        conditional_config:
+          $ref: "#/components/schemas/ConditionalConfig"
+        threshold_config:
+          $ref: "#/components/schemas/ThresholdConfig"
+      additionalProperties: false
+
+    UpdateApprovalRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        expires_at:
+          type: string
+          format: date-time
+        required_approvers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalTarget"
+
+    ApproveRequest:
+      type: object
+      required: [approver_id]
+      properties:
+        approver_id:
+          type: string
+          format: uuid
+          description: ID of the user or agent providing approval
+        comment:
+          type: string
+          maxLength: 2000
+        conditions:
+          type: array
+          items:
+            type: string
+          description: Conditions attached to the approval
+        metadata:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+
+    RejectRequest:
+      type: object
+      required: [rejector_id, reason]
+      properties:
+        rejector_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          maxLength: 2000
+        comment:
+          type: string
+          maxLength: 2000
+      additionalProperties: false
+
+    DelegateRequest:
+      type: object
+      required: [delegator_id, new_approver_id]
+      properties:
+        delegator_id:
+          type: string
+          format: uuid
+        new_approver_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          maxLength: 2000
+      additionalProperties: false
+
+    CreateEscalationRequest:
+      type: object
+      required: [severity, category, title]
+      properties:
+        severity:
+          type: string
+          enum: [low, medium, high, critical, p0]
+        category:
+          type: string
+          enum: [hallucination, security, financial, operational, compliance, system]
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        related_approval_id:
+          type: string
+          format: uuid
+        source_agent_id:
+          type: string
+        impact_scope:
+          type: string
+          enum: [internal, user-facing, public, regulatory]
+        requested_action:
+          type: string
+          enum: [pause, stop, restrict, override, redirect, suspend]
+        assigned_to:
+          type: string
+          format: uuid
+        metadata:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+
+    UpdateEscalationRequest:
+      type: object
+      properties:
+        severity:
+          type: string
+          enum: [low, medium, high, critical, p0]
+        category:
+          type: string
+          enum: [hallucination, security, financial, operational, compliance, system]
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        assigned_to:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [open, acknowledged, in_progress, resolved, closed]
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ResolveEscalationRequest:
+      type: object
+      required: [resolver_id]
+      properties:
+        resolver_id:
+          type: string
+          format: uuid
+        resolution_notes:
+          type: string
+          maxLength: 5000
+        resolution_type:
+          type: string
+          enum: [manual_resolution, automated_fix, escalation_to_human, no_action_needed, configuration_change]
+        metadata:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+
+    CreateInterventionRequest:
+      type: object
+      required: [action, target_agent_id, reason]
+      properties:
+        action:
+          type: string
+          enum: [pause, stop, restrict, override, redirect, suspend]
+        target_agent_id:
+          type: string
+        target_workflow_id:
+          type: string
+        reason:
+          type: string
+          maxLength: 2000
+        scope:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [agent, workflow, model, tenant, region]
+            resource_id:
+              type: string
+          required: [type]
+        duration_minutes:
+          type: integer
+          minimum: 1
+          maximum: 10080
+        issued_by:
+          type: string
+          format: uuid
+        metadata:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+
+    UpdateInterventionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 2000
+        duration_minutes:
+          type: integer
+          minimum: 1
+          maximum: 10080
+        scope:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [agent, workflow, model, tenant, region]
+            resource_id:
+              type: string
+
+    HitlAnswerRequest:
+      type: object
+      required: [answer]
+      properties:
+        answer:
+          type: string
+        confidence:
+          type: string
+          enum: [low, medium, high]
+        action_taken:
+          type: string
+          enum: [approve, reject, modify, escalate, ignore]
+        metadata:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+
+    ApprovalTarget:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+        user_group_id:
+          type: string
+          format: uuid
+      oneOf:
+        - required: [user_id]
+        - required: [user_group_id]
+
+    ConditionalConfig:
+      type: object
+      properties:
+        condition:
+          type: string
+          description: Condition expression (e.g., "risk_score > 70")
+        fallback_approval:
+          type: boolean
+          description: Whether to auto-approve if condition cannot be evaluated
+
+    ThresholdConfig:
+      type: object
+      properties:
+        min_approvals:
+          type: integer
+          minimum: 1
+        max_rejections:
+          type: integer
+          minimum: 0
+          description: Number of rejections that auto-fail the request
+
+    Approval:
+      type: object
+      required: [id, request_id, requester_id, type, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        request_id:
+          type: string
+          format: uuid
+        requester_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [sequential, parallel, conditional, threshold]
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [pending, in_progress, approved, rejected, delegated, expired, cancelled]
+        current_step:
+          type: integer
+          description: Current step in sequential approval
+        approvals:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalAction"
+        rejections:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalAction"
+        delegates:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalDelegate"
+        metadata:
+          type: object
+          additionalProperties: true
+        expires_at:
+          type: string
+          format: date-time
+        approved_at:
+          type: string
+          format: date-time
+        rejected_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+
+    ApprovalAction:
+      type: object
+      required: [actor_id, action, created_at]
+      properties:
+        actor_id:
+          type: string
+          format: uuid
+        action:
+          type: string
+          enum: [approve, reject]
+        comment:
+          type: string
+        conditions:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+
+    ApprovalDelegate:
+      type: object
+      required: [from_user_id, to_user_id, created_at]
+      properties:
+        from_user_id:
+          type: string
+          format: uuid
+        to_user_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Escalation:
+      type: object
+      required: [id, severity, category, title, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        severity:
+          type: string
+          enum: [low, medium, high, critical, p0]
+        category:
+          type: string
+          enum: [hallucination, security, financial, operational, compliance, system]
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, acknowledged, in_progress, resolved, closed]
+        related_approval_id:
+          type: string
+          format: uuid
+        source_agent_id:
+          type: string
+        impact_scope:
+          type: string
+          enum: [internal, user-facing, public, regulatory]
+        requested_action:
+          type: string
+          enum: [pause, stop, restrict, override, redirect, suspend]
+        assigned_to:
+          type: string
+          format: uuid
+        resolved_at:
+          type: string
+          format: date-time
+        resolver_id:
+          type: string
+          format: uuid
+        resolution_notes:
+          type: string
+        resolution_type:
+          type: string
+          enum: [manual_resolution, automated_fix, escalation_to_human, no_action_needed, configuration_change]
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+
+    Intervention:
+      type: object
+      required: [id, action, target_agent_id, status, issued_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          type: string
+          enum: [pause, stop, restrict, override, redirect, suspend]
+        target_agent_id:
+          type: string
+        target_workflow_id:
+          type: string
+        reason:
+          type: string
+        status:
+          type: string
+          enum: [active, expired, revoked, completed]
+        scope:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [agent, workflow, model, tenant, region]
+            resource_id:
+              type: string
+        duration_minutes:
+          type: integer
+          minimum: 1
+        expires_at:
+          type: string
+          format: date-time
+        issued_by:
+          type: string
+          format: uuid
+        revoked_at:
+          type: string
+          format: date-time
+        revoked_by:
+          type: string
+          format: uuid
+        metadata:
+          type: object
+          additionalProperties: true
+        issued_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+
+    QueueResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/QueueItem"
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+
+    QueueItem:
+      type: object
+      properties:
+        item_id:
+          type: string
+          format: uuid
+        item_type:
+          type: string
+          enum: [approval, escalation, intervention]
+        title:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        due_at:
+          type: string
+          format: date-time
+        assigned_to:
+          type: string
+          format: uuid
+
+    RiskDashboard:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        active_approvals_count:
+          type: integer
+        pending_escalations_count:
+          type: integer
+        active_interventions_count:
+          type: integer
+        overall_risk_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        escalation_by_severity:
+          type: object
+          additionalProperties: true
+        escalation_by_category:
+          type: object
+          additionalProperties: true
+        recent_escalations:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              severity:
+                type: string
+              category:
+                type: string
+              status:
+                type: string
+        recent_interventions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              action:
+                type: string
+              status:
+                type: string
+        generated_at:
+          type: string
+          format: date-time
+
+    HitlAnswer:
+      type: object
+      required: [id, request_id, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        request_id:
+          type: string
+          format: uuid
+        answer:
+          type: string
+        confidence:
+          type: string
+          enum: [low, medium, high]
+        action_taken:
+          type: string
+          enum: [approve, reject, modify, escalate, ignore]
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+
+  responses:
+    ErrorResponse400:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: BAD_REQUEST
+              message: "Invalid request body"
+              details: ["Field 'type' is required"]
+
+    ErrorResponse401:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: "Authentication required"
+
+    ErrorResponse403:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: FORBIDDEN
+              message: "Insufficient permissions for this operation"
+
+    ErrorResponse404:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: NOT_FOUND
+              message: "Resource not found"
+
+    ErrorResponse409:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: CONFLICT
+              message: "Resource is in a state that prevents this operation"
+
+    ErrorResponse422:
+      description: Unprocessable Entity
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: UNPROCESSABLE_ENTITY
+              message: "Validation failed"
+              details:
+                - field: "severity"
+                  message: "must be one of: low, medium, high, critical, p0"
+
+    ErrorResponse500:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: "An unexpected error occurred"
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                oneOf:
+                  - type: string
+                  - type: object
+            request_id:
+              type: string
+              format: uuid

@@ -1,0 +1,601 @@
+asyncapi: "2.6.0"
+info:
+  title: Operan Multi-Model Routing Engine Events
+  description: >
+    AsyncAPI specification for the Operan Multi-Model Routing Engine
+    event stream. Covers routing decisions, strategy evaluations,
+    model selections, fallbacks, quality scoring, and cost optimization events.
+  version: 1.0.0
+  contact:
+    name: Operan Platform Engineering
+    url: https://operan.adri.dev
+  license:
+    name: Proprietary
+    url: https://operan.adri.dev/licenses
+
+servers:
+  production:
+    url: broker.operan.adri.dev:5671
+    protocol: amqps
+    description: Production message broker
+    security:
+      - brokerAuth: []
+  staging:
+    url: staging-broker.operan.adri.dev:5671
+    protocol: amqps
+    description: Staging message broker
+    security:
+      - brokerAuth: []
+
+defaultContentType: application/json
+
+channels:
+  routing.decision_made:
+    $ref: "#/channels/routingDecisionMade"
+  routing.strategy_evaluated:
+    $ref: "#/channels/routingStrategyEvaluated"
+  routing.model_selected:
+    $ref: "#/channels/routingModelSelected"
+  routing.fallback_routed:
+    $ref: "#/channels/routingFallbackRouted"
+  routing.quality_scored:
+    $ref: "#/channels/routingQualityScored"
+  routing.cost_optimized:
+    $ref: "#/channels/routingCostOptimized"
+
+components:
+  schemas:
+    RoutingDecisionEvent:
+      type: object
+      required:
+        - event_id
+        - event_type
+        - tenant_id
+        - query_type
+        - timestamp
+        - decision_id
+        - selected_model
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Unique event identifier
+        event_type:
+          type: string
+          const: routing.decision_made
+        event_version:
+          type: string
+          const: "1.0"
+        tenant_id:
+          type: string
+          format: uuid
+          description: Operating tenant identifier
+        timestamp:
+          type: string
+          format: date-time
+          description: Event creation timestamp
+        decision_id:
+          type: string
+          format: uuid
+          description: Associated routing decision identifier
+        query_type:
+          type: string
+          enum:
+            - translation
+            - reasoning
+            - summarization
+            - classification
+            - generation
+            - embedding
+            - vision
+            - code
+            - data_analysis
+        input_hash:
+          type: string
+          description: SHA-256 hash of the input payload for audit trail
+        selected_model:
+          type: object
+          required:
+            - model_id
+            - vendor
+          properties:
+            model_id:
+              type: string
+              format: uuid
+            vendor:
+              type: string
+            model_name:
+              type: string
+            version:
+              type: string
+        fallback_model:
+          type: object
+          properties:
+            model_id:
+              type: string
+              format: uuid
+            vendor:
+              type: string
+            model_name:
+              type: string
+        quality_scores:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+            minimum: 0.0
+            maximum: 1.0
+        cost:
+          type: number
+          format: double
+          minimum: 0.0
+        latency_estimate_ms:
+          type: integer
+          format: int64
+          minimum: 0
+        optimization_target:
+          type: string
+          enum:
+            - quality
+            - cost
+            - latency
+        carbon_intensity_factor:
+          type: number
+          format: double
+          minimum: 0.0
+        strategy_id:
+          type: string
+          format: uuid
+        is_fallback:
+          type: boolean
+        metadata:
+          type: object
+          additionalProperties: true
+
+    StrategyEvaluatedEvent:
+      type: object
+      required:
+        - event_id
+        - event_type
+        - tenant_id
+        - strategy_id
+        - timestamp
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          const: routing.strategy_evaluated
+        event_version:
+          type: string
+          const: "1.0"
+        tenant_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        strategy_id:
+          type: string
+          format: uuid
+          description: Evaluated routing strategy identifier
+        strategy_name:
+          type: string
+        evaluation_input:
+          type: object
+          description: Input used for evaluation
+        ranked_models:
+          type: array
+          items:
+            type: object
+            required:
+              - model_id
+              - score
+            properties:
+              model_id:
+                type: string
+                format: uuid
+              vendor:
+                type: string
+              model_name:
+                type: string
+              score:
+                type: number
+                format: double
+              quality_score:
+                type: number
+                format: double
+              cost:
+                type: number
+                format: double
+              latency_estimate_ms:
+                type: integer
+                format: int64
+              carbon_intensity_factor:
+                type: number
+                format: double
+        recommended_model:
+          type: object
+          required:
+            - model_id
+          properties:
+            model_id:
+              type: string
+              format: uuid
+            vendor:
+              type: string
+            model_name:
+              type: string
+        evaluation_metadata:
+          type: object
+          additionalProperties: true
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ModelSelectedEvent:
+      type: object
+      required:
+        - event_id
+        - event_type
+        - tenant_id
+        - model_id
+        - timestamp
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          const: routing.model_selected
+        event_version:
+          type: string
+          const: "1.0"
+        tenant_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        decision_id:
+          type: string
+          format: uuid
+        query_type:
+          type: string
+          enum:
+            - translation
+            - reasoning
+            - summarization
+            - classification
+            - generation
+            - embedding
+            - vision
+            - code
+            - data_analysis
+        selected_model:
+          type: object
+          required:
+            - model_id
+            - vendor
+          properties:
+            model_id:
+              type: string
+              format: uuid
+            vendor:
+              type: string
+            model_name:
+              type: string
+            version:
+              type: string
+        selection_rationale:
+          type: string
+          description: Explanation for why this model was selected
+        alternative_models:
+          type: array
+          items:
+            type: object
+            properties:
+              model_id:
+                type: string
+                format: uuid
+              vendor:
+                type: string
+              model_name:
+                type: string
+              rejection_reason:
+                type: string
+        quality_score:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+        cost:
+          type: number
+          format: double
+          minimum: 0.0
+        latency_estimate_ms:
+          type: integer
+          format: int64
+          minimum: 0
+        carbon_intensity_factor:
+          type: number
+          format: double
+          minimum: 0.0
+        strategy_id:
+          type: string
+          format: uuid
+        metadata:
+          type: object
+          additionalProperties: true
+
+    FallbackRoutedEvent:
+      type: object
+      required:
+        - event_id
+        - event_type
+        - tenant_id
+        - original_model
+        - fallback_model
+        - timestamp
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          const: routing.fallback_routed
+        event_version:
+          type: string
+          const: "1.0"
+        tenant_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        decision_id:
+          type: string
+          format: uuid
+        original_model:
+          type: object
+          required:
+            - model_id
+          properties:
+            model_id:
+              type: string
+              format: uuid
+            vendor:
+              type: string
+            model_name:
+              type: string
+        fallback_model:
+          type: object
+          required:
+            - model_id
+            - vendor
+          properties:
+            model_id:
+              type: string
+              format: uuid
+            vendor:
+              type: string
+            model_name:
+              type: string
+        fallback_reason:
+          type: string
+          enum:
+            - quality_below_threshold
+            - model_unavailable
+            - latency_exceeded
+            - cost_exceeded
+            - region_unavailable
+            - capacity_exhausted
+        quality_scores:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+            minimum: 0.0
+            maximum: 1.0
+        query_type:
+          type: string
+          enum:
+            - translation
+            - reasoning
+            - summarization
+            - classification
+            - generation
+            - embedding
+            - vision
+            - code
+            - data_analysis
+        strategy_id:
+          type: string
+          format: uuid
+        metadata:
+          type: object
+          additionalProperties: true
+
+    QualityScoredEvent:
+      type: object
+      required:
+        - event_id
+        - event_type
+        - tenant_id
+        - decision_id
+        - scores
+        - timestamp
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          const: routing.quality_scored
+        event_version:
+          type: string
+          const: "1.0"
+        tenant_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        decision_id:
+          type: string
+          format: uuid
+        query_type:
+          type: string
+          enum:
+            - translation
+            - reasoning
+            - summarization
+            - classification
+            - generation
+            - embedding
+            - vision
+            - code
+            - data_analysis
+        scores:
+          type: object
+          description: Quality scores per dimension (0.0-1.0)
+          additionalProperties:
+            type: number
+            format: double
+            minimum: 0.0
+            maximum: 1.0
+        overall_score:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+        selected_model:
+          type: object
+          required:
+            - model_id
+          properties:
+            model_id:
+              type: string
+              format: uuid
+            vendor:
+              type: string
+            model_name:
+              type: string
+        quality_threshold:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+        passed_threshold:
+          type: boolean
+        feedback:
+          type: object
+          additionalProperties: true
+        metadata:
+          type: object
+          additionalProperties: true
+
+    CostOptimizedEvent:
+      type: object
+      required:
+        - event_id
+        - event_type
+        - tenant_id
+        - decision_id
+        - timestamp
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          const: routing.cost_optimized
+        event_version:
+          type: string
+          const: "1.0"
+        tenant_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        decision_id:
+          type: string
+          format: uuid
+        query_type:
+          type: string
+          enum:
+            - translation
+            - reasoning
+            - summarization
+            - classification
+            - generation
+            - embedding
+            - vision
+            - code
+            - data_analysis
+        selected_model:
+          type: object
+          required:
+            - model_id
+          properties:
+            model_id:
+              type: string
+              format: uuid
+            vendor:
+              type: string
+            model_name:
+              type: string
+            version:
+              type: string
+        selected_cost:
+          type: number
+          format: double
+          minimum: 0.0
+        alternative_cost:
+          type: number
+          format: double
+          minimum: 0.0
+          description: Cost of the non-optimized alternative
+        savings_amount:
+          type: number
+          format: double
+          minimum: 0.0
+        savings_percentage:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 100.0
+        carbon_intensity_factor:
+          type: number
+          format: double
+          minimum: 0.0
+        optimization_target:
+          type: string
+          enum:
+            - quality
+            - cost
+            - latency
+        strategy_id:
+          type: string
+          format: uuid
+        metadata:
+          type: object
+          additionalProperties: true
+
+  securitySchemes:
+    brokerAuth:
+      type: certificate
+      description: TLS client certificate for broker authentication
+
+bindings:
+  amqps:
+    routingKey:
+      pattern: "routing.#"
+    durable: true
+    x-delivery-mode: persistent
+    x-priority: 5
+
+security:
+  - brokerAuth: []

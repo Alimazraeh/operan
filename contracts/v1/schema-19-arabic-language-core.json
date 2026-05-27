@@ -1,0 +1,370 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "ProcessingResult": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "document_id",
+        "input_text",
+        "processed_text",
+        "script",
+        "language_variant",
+        "confidence_score",
+        "processed_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "document_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "input_text": {
+          "type": "string"
+        },
+        "processed_text": {
+          "type": "string"
+        },
+        "script": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "vocalized",
+            "mangled",
+            "normalized"
+          ]
+        },
+        "language_variant": {
+          "type": "string",
+          "enum": [
+            "msa",
+            "gulf",
+            "shami",
+            "maghrebi",
+            "narrow_regional"
+          ]
+        },
+        "confidence_score": {
+          "type": "number"
+        },
+        "processed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "operations_applied": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "processing_time_ms": {
+          "type": "integer"
+        }
+      }
+    },
+    "ProcessTextRequest": {
+      "type": "object",
+      "required": [
+        "tenant_id",
+        "input_text"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "input_text": {
+          "type": "string"
+        },
+        "document_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "target_script": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "vocalized",
+            "mangled",
+            "normalized"
+          ]
+        },
+        "target_variant": {
+          "type": "string",
+          "enum": [
+            "msa",
+            "gulf",
+            "shami",
+            "maghrebi",
+            "narrow_regional"
+          ]
+        },
+        "operations": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "TranslationResult": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "request_id",
+        "source_script",
+        "target_script",
+        "translated_content",
+        "completed_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "source_script": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "vocalized",
+            "mangled"
+          ]
+        },
+        "target_script": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "vocalized",
+            "normalized",
+            "mangled"
+          ]
+        },
+        "translated_content": {
+          "type": "string"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "confidence_scores": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "TranslationRequest": {
+      "type": "object",
+      "required": [
+        "tenant_id",
+        "source_script",
+        "target_script",
+        "content"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "source_script": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "vocalized",
+            "mangled"
+          ]
+        },
+        "target_script": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "vocalized",
+            "normalized",
+            "mangled"
+          ]
+        },
+        "content": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "normal",
+            "high",
+            "urgent"
+          ]
+        }
+      }
+    },
+    "VocabEntry": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "term",
+        "definition",
+        "script",
+        "variant",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "term": {
+          "type": "string"
+        },
+        "definition": {
+          "type": "string"
+        },
+        "script": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "vocalized",
+            "mangled",
+            "normalized"
+          ]
+        },
+        "variant": {
+          "type": "string",
+          "enum": [
+            "msa",
+            "gulf",
+            "shami",
+            "maghrebi",
+            "narrow_regional"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "examples": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "LanguageModel": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "model_name",
+        "variant",
+        "status",
+        "trained_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "model_name": {
+          "type": "string"
+        },
+        "variant": {
+          "type": "string",
+          "enum": [
+            "msa",
+            "gulf",
+            "shami",
+            "maghrebi",
+            "narrow_regional"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ready",
+            "training",
+            "failed"
+          ]
+        },
+        "trained_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "training_dataset_size": {
+          "type": "integer"
+        },
+        "accuracy": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "trained_by": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "model_uri": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

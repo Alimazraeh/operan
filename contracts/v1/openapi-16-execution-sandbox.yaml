@@ -1,0 +1,301 @@
+openapi: 3.0.3
+info:
+  title: Operan Execution Sandbox API
+  description: Sandbox lifecycle, configuration, and resource management. Module 16.
+  version: 1.0.0
+servers:
+  - url: /api/v1/sandbox
+    description: Execution sandbox API root
+
+paths:
+  /sandboxes:
+    post:
+      operationId: createSandbox
+      summary: Create a new execution sandbox
+      tags: [sandbox]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSandboxRequest'
+      responses:
+        '201':
+          description: Sandbox created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxResource'
+        '400':
+          description: Invalid request
+        '403':
+          description: Insufficient quota
+    get:
+      operationId: listSandboxes
+      summary: List sandboxes for the current tenant
+      tags: [sandbox]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [created, running, completed, failed, expired]
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Sandbox list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxList'
+
+  /sandboxes/{sandboxId}:
+    parameters:
+      - name: sandboxId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getSandbox
+      summary: Get sandbox details
+      tags: [sandbox]
+      responses:
+        '200':
+          description: Sandbox details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxResource'
+        '404':
+          description: Sandbox not found
+    delete:
+      operationId: deleteSandbox
+      summary: Terminate and delete a sandbox
+      tags: [sandbox]
+      responses:
+        '204':
+          description: Sandbox terminated
+        '404':
+          description: Sandbox not found
+
+  /sandboxes/{sandboxId}/execute:
+    post:
+      operationId: executeInSandbox
+      summary: Trigger execution in an existing sandbox
+      tags: [sandbox]
+      parameters:
+        - name: sandboxId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteRequest'
+      responses:
+        '202':
+          description: Execution accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionResult'
+        '404':
+          description: Sandbox not found
+        '409':
+          description: Sandbox already running
+
+  /sandboxes/{sandboxId}/logs:
+    get:
+      operationId: getSandboxLogs
+      summary: Get sandbox execution logs
+      tags: [sandbox]
+      parameters:
+        - name: sandboxId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: tail
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Sandbox logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogsResource'
+        '404':
+          description: Sandbox not found
+
+components:
+  schemas:
+    CreateSandboxRequest:
+      type: object
+      required: [agent_id, sandbox_type]
+      properties:
+        agent_id:
+          type: string
+          format: uuid
+        sandbox_type:
+          type: string
+          enum: [cpu, gpu, isolated]
+        resource_limits:
+          $ref: '#/components/schemas/ResourceLimits'
+        entrypoint:
+          type: string
+          description: Entry point script or command
+        input_ref:
+          type: string
+          description: Reference to input data
+        ttl_seconds:
+          type: integer
+          description: Time-to-live for sandbox
+
+    SandboxResource:
+      type: object
+      required: [sandbox_id, tenant_id, agent_id, status, created_at]
+      properties:
+        sandbox_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [created, running, completed, failed, expired]
+        sandbox_type:
+          type: string
+          enum: [cpu, gpu, isolated]
+        resource_limits:
+          $ref: '#/components/schemas/ResourceLimits'
+        resource_usage:
+          $ref: '#/components/schemas/ResourceUsage'
+        created_at:
+          type: string
+          format: date-time
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        exit_code:
+          type: integer
+          nullable: true
+
+    ResourceLimits:
+      type: object
+      properties:
+        cpu_millicores:
+          type: integer
+        memory_mb:
+          type: integer
+        max_duration_seconds:
+          type: integer
+        gpu:
+          type: boolean
+        tokens_limit:
+          type: integer
+          nullable: true
+
+    ResourceUsage:
+      type: object
+      properties:
+        cpu_percent:
+          type: number
+        memory_mb_used:
+          type: integer
+        tokens_consumed:
+          type: integer
+        api_calls_made:
+          type: integer
+
+    ExecuteRequest:
+      type: object
+      required: [entrypoint]
+      properties:
+        entrypoint:
+          type: string
+        input_ref:
+          type: string
+        arguments:
+          type: array
+          items:
+            type: string
+
+    ExecutionResult:
+      type: object
+      required: [sandbox_id, status]
+      properties:
+        sandbox_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [accepted, failed]
+        execution_id:
+          type: string
+          format: uuid
+        exit_code:
+          type: integer
+          nullable: true
+        output_ref:
+          type: string
+          nullable: true
+        error:
+          type: string
+          nullable: true
+
+    SandboxList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SandboxResource'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    LogsResource:
+      type: object
+      properties:
+        sandbox_id:
+          type: string
+          format: uuid
+        logs:
+          type: string
+        total_lines:
+          type: integer

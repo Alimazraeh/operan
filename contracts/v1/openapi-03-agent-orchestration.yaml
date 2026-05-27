@@ -1,0 +1,762 @@
+openapi: 3.0.3
+info:
+  title: Operan Agent Orchestration Engine API
+  description: Core runtime engine for agent swarms. Event-driven DAG execution, agent scheduling, state checkpointing, retry/timeout/escalation logic. Module 03.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1/orchestration
+
+security:
+  - BearerAuth: []
+  - X-Tenant-ID:
+      schema:
+        type: string
+
+paths:
+  /workflows:
+    post:
+      summary: Submit a new workflow
+      description: Define and start an event-driven DAG workflow. Accepts YAML or JSON workflow definition.
+      operationId: createWorkflow
+      tags: [workflows]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkflowRequest'
+            example:
+              tenant_id: "550e8400-e29b-41d4-a716-446655440000"
+              department_id: "dept-hr-001"
+              name: "onboard-new-employee"
+              version: "1.0"
+              graph:
+                nodes:
+                  - id: verify-docs
+                    type: agent
+                    agent_id: "agent-verify"
+                    timeout_ms: 60000
+                    retry:
+                      max_attempts: 3
+                      backoff: exponential
+                    on_success: notify
+                    on_failure: escalate
+                  - id: notify
+                    type: action
+                    action: send_notification
+                    depends_on:
+                      - verify-docs
+                  - id: escalate
+                    type: human_gate
+                    escalates_to: supervisor
+              variables:
+                employee_id: "emp-2026-042"
+                department: "Engineering"
+      responses:
+        '201':
+          description: Workflow created and started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '400':
+          description: Invalid workflow definition
+
+  /workflows/{id}:
+    get:
+      summary: Get workflow details
+      operationId: getWorkflow
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+
+    delete:
+      summary: Cancel a workflow
+      operationId: cancelWorkflow
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow cancelled
+        '409':
+          description: Workflow cannot be cancelled in current state
+
+  /workflows/{id}/pause:
+    post:
+      summary: Pause a running workflow
+      operationId: pauseWorkflow
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow paused
+
+  /workflows/{id}/resume:
+    post:
+      summary: Resume a paused workflow
+      operationId: resumeWorkflow
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow resumed
+
+  /workflows/{id}/state:
+    get:
+      summary: Get workflow execution state
+      description: Full state including all nodes, checkpoints, and execution history.
+      operationId: getWorkflowState
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: include_history
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Workflow state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowState'
+
+  /workflows/{id}/checkpoint:
+    post:
+      summary: Create a manual checkpoint
+      operationId: createCheckpoint
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Checkpoint created
+
+  /workflows/{id}/replay:
+    post:
+      summary: Replay workflow from a checkpoint
+      description: Deterministic replay from specified checkpoint. All nodes before checkpoint skip execution.
+      operationId: replayWorkflow
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplayRequest'
+      responses:
+        '201':
+          description: Replay started
+        '400':
+          description: Invalid replay point
+
+  /workflows/{id}/variables:
+    get:
+      summary: Get workflow variables
+      operationId: getWorkflowVariables
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow variables
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowVariables'
+
+    patch:
+      summary: Update workflow variables mid-execution
+      operationId: updateWorkflowVariables
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateVariablesRequest'
+      responses:
+        '200':
+          description: Variables updated
+
+  /workflows:
+    get:
+      summary: List workflows
+      operationId: listWorkflows
+      tags: [workflows]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, running, paused, completed, failed, cancelled]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum: [created_at, started_at, completed_at]
+        - name: sort_order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Workflow list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowList'
+
+  /schedules:
+    post:
+      summary: Schedule a recurring workflow
+      operationId: scheduleWorkflow
+      tags: [schedules]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateScheduleRequest'
+      responses:
+        '201':
+          description: Schedule created
+
+  /schedules/{id}:
+    get:
+      summary: Get schedule details
+      operationId: getSchedule
+      tags: [schedules]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Schedule details
+
+    patch:
+      summary: Update schedule
+      operationId: updateSchedule
+      tags: [schedules]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateScheduleRequest'
+      responses:
+        '200':
+          description: Schedule updated
+
+    delete:
+      summary: Delete a schedule
+      operationId: deleteSchedule
+      tags: [schedules]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Schedule deleted
+
+  /schedules/{id}/trigger:
+    post:
+      summary: Manually trigger a scheduled workflow
+      operationId: triggerSchedule
+      tags: [schedules]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Workflow triggered from schedule
+
+  /agents/assign:
+    post:
+      summary: Assign agent to workflow task
+      operationId: assignAgent
+      tags: [scheduling]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignAgentRequest'
+      responses:
+        '201':
+          description: Agent assigned
+        '400':
+          description: No available agent
+
+  /agents/availability:
+    get:
+      summary: Check agent availability
+      operationId: getAgentAvailability
+      tags: [scheduling]
+      parameters:
+        - name: agent_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Agent availability status
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    X-Tenant-ID:
+      name: X-Tenant-ID
+      in: header
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    CreateWorkflowRequest:
+      type: object
+      required:
+        - tenant_id
+        - name
+        - graph
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        department_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        version:
+          type: string
+        graph:
+          $ref: '#/components/schemas/WorkflowGraph'
+        variables:
+          type: object
+          description: Initial workflow variables
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+        description:
+          type: string
+
+    WorkflowGraph:
+      type: object
+      required:
+        - nodes
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowEdge'
+        error_strategy:
+          type: string
+          enum: [abort, continue, retry_all]
+          default: abort
+
+    WorkflowNode:
+      type: object
+      required:
+        - id
+        - type
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [agent, action, human_gate, condition, parallel_branch, delay]
+        agent_id:
+          type: string
+          format: uuid
+        action:
+          type: string
+        timeout_ms:
+          type: integer
+        retry:
+          $ref: '#/components/schemas/RetryPolicy'
+        on_success:
+          type: string
+          description: Next node ID
+        on_failure:
+          type: string
+          description: Next node ID on failure
+        parameters:
+          type: object
+
+    WorkflowEdge:
+      type: object
+      required:
+        - from
+        - to
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+        condition:
+          type: string
+          description: Conditional edge expression
+
+    RetryPolicy:
+      type: object
+      properties:
+        max_attempts:
+          type: integer
+          default: 3
+        backoff:
+          type: string
+          enum: [constant, linear, exponential]
+          default: exponential
+        initial_delay_ms:
+          type: integer
+          default: 1000
+        max_delay_ms:
+          type: integer
+          default: 60000
+
+    Workflow:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - name
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        department_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        version:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, paused, completed, failed, cancelled]
+        current_nodes:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+
+    WorkflowState:
+      type: object
+      required:
+        - workflow_id
+        - status
+        - nodes
+        - checkpoints
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, running, paused, completed, failed, cancelled]
+        variables:
+          type: object
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeState'
+        checkpoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/Checkpoint'
+        execution_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExecutionEvent'
+        errors:
+          type: array
+          items:
+            type: string
+
+    NodeState:
+      type: object
+      required:
+        - node_id
+        - status
+      properties:
+        node_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, completed, failed, skipped]
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        output:
+          type: object
+        error:
+          type: string
+        retry_count:
+          type: integer
+        confidence_score:
+          type: number
+          format: float
+          description: Agent confidence for this node execution
+
+    Checkpoint:
+      type: object
+      required:
+        - id
+        - node_id
+        - timestamp
+      properties:
+        id:
+          type: string
+          format: uuid
+        node_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        state_snapshot:
+          type: object
+        checksum:
+          type: string
+
+    ExecutionEvent:
+      type: object
+      required:
+        - event_id
+        - node_id
+        - event_type
+        - timestamp
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        node_id:
+          type: string
+        event_type:
+          type: string
+          enum: [node_started, node_completed, node_failed, checkpoint, escalation, timeout, retry, human_gate_requested, human_gate_approved, human_gate_rejected]
+        timestamp:
+          type: string
+          format: date-time
+        details:
+          type: object
+
+    WorkflowVariables:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+        variables:
+          type: object
+        version:
+          type: integer
+
+    UpdateVariablesRequest:
+      type: object
+      required:
+        - variables
+      properties:
+        variables:
+          type: object
+
+    ReplayRequest:
+      type: object
+      properties:
+        checkpoint_id:
+          type: string
+          format: uuid
+        node_id:
+          type: string
+        variables:
+          type: object
+
+    WorkflowList:
+      type: object
+      properties:
+        workflows:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workflow'
+        total:
+          type: integer
+        has_more:
+          type: boolean
+
+    CreateScheduleRequest:
+      type: object
+      required:
+        - tenant_id
+        - name
+        - cron
+        - workflow_template_id
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        cron:
+          type: string
+        workflow_template_id:
+          type: string
+          format: uuid
+        variables:
+          type: object
+        enabled:
+          type: boolean
+          default: true
+
+    UpdateScheduleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        cron:
+          type: string
+        workflow_template_id:
+          type: string
+          format: uuid
+        variables:
+          type: object
+        enabled:
+          type: boolean
+
+    AssignAgentRequest:
+      type: object
+      required:
+        - workflow_id
+        - node_id
+        - agent_id
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+        node_id:
+          type: string
+        agent_id:
+          type: string
+          format: uuid
+        parameters:
+          type: object

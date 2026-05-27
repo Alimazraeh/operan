@@ -1,0 +1,1254 @@
+openapi: 3.0.3
+info:
+  title: Operan Cost Governance Engine
+  description: Cost Governance Engine module for managing budgets, throttles, forecasts, billing, and usage metrics across the Operan platform.
+  version: 1.0.0
+  contact:
+    name: Platform Architect
+    email: arch@operan.dev
+  license:
+    name: Proprietary
+servers:
+  - url: https://api.operan.dev/v1
+    description: Production
+  - url: https://api-staging.operan.dev/v1
+    description: Staging
+security:
+  - BearerAuth: []
+tags:
+  - name: budgets
+    description: Budget lifecycle and evaluation
+  - name: throttles
+    description: Cost throttle configuration
+  - name: forecasts
+    description: Consumption forecasting
+  - name: billing
+    description: Tenant billing and invoicing
+  - name: usage
+    description: Usage reporting and queries
+paths:
+  /cost/budgets:
+    post:
+      operationId: createBudget
+      summary: Create a new cost budget
+      description: Create a budget for tracking cost limits across tokens, executions, agents, departments, or tenants.
+      tags:
+        - budgets
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBudgetRequest'
+      responses:
+        '201':
+          description: Budget created successfully
+          headers:
+            X-Tenant-ID:
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /cost/budgets/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: UUID of the budget
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getBudget
+      summary: Get a budget by ID
+      tags:
+        - budgets
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Budget retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      operationId: updateBudget
+      summary: Update a budget
+      tags:
+        - budgets
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBudgetRequest'
+      responses:
+        '200':
+          description: Budget updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      operationId: deleteBudget
+      summary: Delete a budget
+      tags:
+        - budgets
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Budget deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /cost/budgets/{id}/evaluate:
+    post:
+      operationId: evaluateBudget
+      summary: Evaluate budget compliance
+      description: Evaluate current usage against budget thresholds and return compliance status.
+      tags:
+        - budgets
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Budget evaluation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetEvaluation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /cost/budgets/{id}/usage:
+    get:
+      operationId: getBudgetUsage
+      summary: Get budget usage details
+      description: Get detailed usage breakdown for a specific budget.
+      tags:
+        - budgets
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: period_start
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: period_end
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Budget usage retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetUsage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /cost/throttles:
+    post:
+      operationId: createThrottle
+      summary: Create a cost throttle
+      description: Create a throttle rule to control resource consumption based on budget thresholds.
+      tags:
+        - throttles
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateThrottleRequest'
+      responses:
+        '201':
+          description: Throttle created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Throttle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /cost/throttles/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getThrottle
+      summary: Get a throttle by ID
+      tags:
+        - throttles
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Throttle retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Throttle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      operationId: updateThrottle
+      summary: Update a throttle
+      tags:
+        - throttles
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateThrottleRequest'
+      responses:
+        '200':
+          description: Throttle updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Throttle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      operationId: deleteThrottle
+      summary: Delete a throttle
+      tags:
+        - throttles
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Throttle deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /cost/forecasts:
+    post:
+      operationId: createForecast
+      summary: Generate a cost forecast
+      description: Generate a consumption forecast based on historical data and trend analysis.
+      tags:
+        - forecasts
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateForecastRequest'
+      responses:
+        '201':
+          description: Forecast generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forecast'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /cost/forecasts/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getForecast
+      summary: Get a forecast by ID
+      tags:
+        - forecasts
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Forecast retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forecast'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /cost/tenant-billing:
+    get:
+      operationId: getTenantBilling
+      summary: Get tenant billing summary
+      description: Retrieve billing summary for a tenant within a specified period.
+      tags:
+        - billing
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}$'
+            description: Billing period in YYYY-MM format
+      responses:
+        '200':
+          description: Billing summary retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantBilling'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      operationId: generateTenantBilling
+      summary: Generate tenant billing
+      description: Generate a billing report for a tenant, calculating per-token, per-execution, and per-agent charges.
+      tags:
+        - billing
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateBillingRequest'
+      responses:
+        '202':
+          description: Billing generation initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingGeneration'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /cost/usage:
+    get:
+      operationId: getUsage
+      summary: Query usage records
+      description: Query usage records across tenants, modules, and agents with filtering.
+      tags:
+        - usage
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: module
+          in: query
+          schema:
+            type: string
+            description: Module ID or name to filter by
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+            description: Agent ID to filter by
+        - name: period_start
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: period_end
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            description: Pagination cursor
+      responses:
+        '200':
+          description: Usage records retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT bearer token with tenant context
+  responses:
+    BadRequest:
+      description: Bad request — invalid parameters or malformed payload
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Unauthorized — missing or invalid authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Forbidden — insufficient permissions for the requested operation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Not found — the requested resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Conflict — resource conflict (e.g., duplicate budget)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Unprocessable entity — validation failed on structured input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: Internal server error — unexpected server-side failure
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+  schemas:
+    CreateBudgetRequest:
+      type: object
+      required:
+        - tenant_id
+        - name
+        - type
+        - limit
+        - period
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant this budget belongs to
+        name:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Human-readable budget name
+        description:
+          type: string
+          maxLength: 1024
+          description: Optional budget description
+        type:
+          $ref: '#/components/schemas/BudgetType'
+        limit:
+          type: number
+          minimum: 0.01
+          description: Maximum allowed cost (in platform currency units)
+        warning_threshold:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.8
+          description: Percentage of budget at which warnings trigger
+        period:
+          $ref: '#/components/schemas/BudgetPeriod'
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Optional arbitrary metadata
+        created_by:
+          type: string
+          format: uuid
+          description: User ID of the budget creator
+    UpdateBudgetRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 256
+        description:
+          type: string
+          maxLength: 1024
+        limit:
+          type: number
+          minimum: 0.01
+        warning_threshold:
+          type: number
+          minimum: 0
+          maximum: 1
+        period:
+          $ref: '#/components/schemas/BudgetPeriod'
+        metadata:
+          type: object
+          additionalProperties: true
+    BudgetType:
+      type: string
+      enum:
+        - token_budget
+        - execution_budget
+        - agent_budget
+        - department_budget
+        - tenant_budget
+      description: Type of budget governing
+    BudgetPeriod:
+      type: string
+      enum:
+        - daily
+        - weekly
+        - monthly
+        - quarterly
+        - annually
+      description: Budget reset period
+    Budget:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - name
+        - type
+        - limit
+        - period
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          $ref: '#/components/schemas/BudgetType'
+        limit:
+          type: number
+        warning_threshold:
+          type: number
+          minimum: 0
+          maximum: 1
+        period:
+          $ref: '#/components/schemas/BudgetPeriod'
+        status:
+          $ref: '#/components/schemas/BudgetStatus'
+        current_usage:
+          type: number
+          description: Current consumption against this budget
+        metadata:
+          type: object
+          additionalProperties: true
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    BudgetStatus:
+      type: string
+      enum:
+        - active
+        - paused
+        - exceeded
+        - closed
+        - expired
+      description: Current state of the budget
+    BudgetEvaluation:
+      type: object
+      required:
+        - budget_id
+        - status
+        - usage_percentage
+        - evaluated_at
+      properties:
+        budget_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - within_limit
+            - warning
+            - exceeded
+            - critical
+          description: Evaluation result
+        limit:
+          type: number
+        current_usage:
+          type: number
+        usage_percentage:
+          type: number
+          minimum: 0
+        remaining_budget:
+          type: number
+        warning_threshold:
+          type: number
+        throttle_actions_triggered:
+          type: array
+          items:
+            type: string
+            enum:
+              - warn
+              - slow_down
+              - reject
+              - escalate
+        evaluated_at:
+          type: string
+          format: date-time
+    BudgetUsage:
+      type: object
+      required:
+        - budget_id
+        - total_usage
+        - breakdown
+      properties:
+        budget_id:
+          type: string
+          format: uuid
+        total_usage:
+          type: number
+        limit:
+          type: number
+        remaining:
+          type: number
+        usage_percentage:
+          type: number
+        breakdown:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsageBreakdown'
+        period_start:
+          type: string
+          format: date-time
+        period_end:
+          type: string
+          format: date-time
+    UsageBreakdown:
+      type: object
+      required:
+        - metric_type
+        - count
+        - cost
+      properties:
+        metric_type:
+          type: string
+          enum:
+            - token
+            - execution
+            - agent
+          description: Type of usage metric
+        count:
+          type: integer
+          minimum: 0
+        cost:
+          type: number
+          minimum: 0
+    CreateThrottleRequest:
+      type: object
+      required:
+        - tenant_id
+        - budget_id
+        - action
+        - trigger_threshold
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        budget_id:
+          type: string
+          format: uuid
+          description: Budget this throttle applies to
+        action:
+          $ref: '#/components/schemas/ThrottleAction'
+        trigger_threshold:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Usage percentage at which to trigger this throttle
+        description:
+          type: string
+          maxLength: 1024
+        metadata:
+          type: object
+          additionalProperties: true
+        created_by:
+          type: string
+          format: uuid
+    UpdateThrottleRequest:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/ThrottleAction'
+        trigger_threshold:
+          type: number
+          minimum: 0
+          maximum: 1
+        description:
+          type: string
+          maxLength: 1024
+        metadata:
+          type: object
+          additionalProperties: true
+    ThrottleAction:
+      type: string
+      enum:
+        - warn
+        - slow_down
+        - reject
+        - escalate
+      description: Action to take when threshold is triggered
+    Throttle:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - budget_id
+        - action
+        - trigger_threshold
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        budget_id:
+          type: string
+          format: uuid
+        action:
+          $ref: '#/components/schemas/ThrottleAction'
+        trigger_threshold:
+          type: number
+        description:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - inactive
+            - disabled
+        metadata:
+          type: object
+          additionalProperties: true
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CreateForecastRequest:
+      type: object
+      required:
+        - tenant_id
+        - forecast_period
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        forecast_period:
+          $ref: '#/components/schemas/BudgetPeriod'
+        budget_id:
+          type: string
+          format: uuid
+          description: Optional specific budget to forecast
+        module:
+          type: string
+          description: Optional module filter
+        confidence_interval:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.95
+          description: Confidence level for the forecast
+        trend_analysis:
+          type: object
+          properties:
+            lookback_periods:
+              type: integer
+              minimum: 1
+              default: 3
+              description: Number of historical periods to analyze
+            seasonality:
+              type: boolean
+              default: true
+        metadata:
+          type: object
+          additionalProperties: true
+    Forecast:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - forecast_period
+        - projected_cost
+        - confidence_interval
+        - generated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        budget_id:
+          type: string
+          format: uuid
+        forecast_period:
+          $ref: '#/components/schemas/BudgetPeriod'
+        module:
+          type: string
+        projected_cost:
+          type: number
+          description: Projected total cost for the forecast period
+        projected_low:
+          type: number
+          description: Lower bound of confidence interval
+        projected_high:
+          type: number
+          description: Upper bound of confidence interval
+        confidence_interval:
+          type: number
+          minimum: 0
+          maximum: 1
+        trend_data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ForecastDataPoint'
+        methodology:
+          type: string
+          description: Description of forecasting methodology used
+        generated_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+    ForecastDataPoint:
+      type: object
+      properties:
+        period:
+          type: string
+          format: date-time
+        historical_cost:
+          type: number
+        projected_cost:
+          type: number
+    GenerateBillingRequest:
+      type: object
+      required:
+        - tenant_id
+        - period
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        period:
+          type: string
+          pattern: '^\d{4}-\d{2}$'
+          description: Billing period in YYYY-MM format
+        include_tokens:
+          type: boolean
+          default: true
+        include_executions:
+          type: boolean
+          default: true
+        include_agents:
+          type: boolean
+          default: true
+        output_format:
+          type: string
+          enum:
+            - summary
+            - detailed
+          default: detailed
+    TenantBilling:
+      type: object
+      required:
+        - tenant_id
+        - period
+        - total_charges
+        - generated_at
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        period:
+          type: string
+        total_charges:
+          type: number
+        currency:
+          type: string
+          default: USD
+        token_charges:
+          type: number
+        execution_charges:
+          type: number
+        agent_charges:
+          type: number
+        line_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BillingLineItem'
+        generated_at:
+          type: string
+          format: date-time
+    BillingLineItem:
+      type: object
+      required:
+        - metric_type
+        - quantity
+        - unit_cost
+        - total
+      properties:
+        metric_type:
+          type: string
+          enum:
+            - token
+            - execution
+            - agent
+        resource_id:
+          type: string
+          format: uuid
+          description: ID of the specific resource (module, agent, etc.)
+        resource_name:
+          type: string
+        quantity:
+          type: integer
+          minimum: 0
+        unit_cost:
+          type: number
+          minimum: 0
+        total:
+          type: number
+          minimum: 0
+        period_start:
+          type: string
+          format: date-time
+        period_end:
+          type: string
+          format: date-time
+    BillingGeneration:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - status
+        - submitted_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        period:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - processing
+            - completed
+            - failed
+        submitted_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        result_url:
+          type: string
+          format: uri
+          description: URL to retrieve the completed billing report
+    UsageList:
+      type: object
+      required:
+        - items
+        - total
+        - cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsageRecord'
+        total:
+          type: integer
+          minimum: 0
+        cursor:
+          type: string
+          description: Pagination cursor for next page
+        has_more:
+          type: boolean
+    UsageRecord:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - metric_type
+        - count
+        - cost
+        - timestamp
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        module:
+          type: string
+        agent_id:
+          type: string
+          format: uuid
+        metric_type:
+          type: string
+          enum:
+            - token
+            - execution
+            - agent
+        count:
+          type: integer
+          minimum: 0
+        cost:
+          type: number
+          minimum: 0
+        timestamp:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+    ProblemDetail:
+      type: object
+      required:
+        - type
+        - title
+        - status
+        - detail
+        - instance
+      properties:
+        type:
+          type: string
+          format: uri
+          description: Problem type URI
+        title:
+          type: string
+          description: Short error summary
+        status:
+          type: integer
+          description: HTTP status code
+        detail:
+          type: string
+          description: Human-readable error detail
+        instance:
+          type: string
+          description: URI reference to the specific request instance
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string

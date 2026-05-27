@@ -1,0 +1,720 @@
+openapi: 3.0.3
+info:
+  title: Operan Tool Execution Layer API
+  description: Secure external action execution engine. API execution, browser automation, ERP interaction, email, document generation, and workflow triggering with sandboxing, dry-run, and rollback support. Module 08.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1/tools
+
+security:
+  - BearerAuth: []
+  - X-Tenant-ID:
+      schema:
+        type: string
+
+paths:
+  /catalog:
+    get:
+      summary: List available tools
+      operationId: listTools
+      tags: [catalog]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: capability
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tool catalog
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolCatalog'
+
+  /tools/{tool_id}:
+    get:
+      summary: Get tool details
+      operationId: getTool
+      tags: [catalog]
+      parameters:
+        - name: tool_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tool details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolDefinition'
+
+  /tools/{tool_id}/test:
+    post:
+      summary: Test tool connection
+      operationId: testTool
+      tags: [catalog]
+      parameters:
+        - name: tool_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToolTestRequest'
+      responses:
+        '200':
+          description: Tool test result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolTestResult'
+
+  /execute:
+    post:
+      summary: Execute a tool call
+      operationId: executeTool
+      tags: [execution]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToolExecutionRequest'
+      responses:
+        '202':
+          description: Tool execution queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolExecution'
+
+    get:
+      summary: List tool executions
+      operationId: listExecutions
+      tags: [execution]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: tool_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [queued, running, completed, failed, rollback, dry_run]
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Execution list
+
+  /execute/{execution_id}:
+    get:
+      summary: Get execution result
+      operationId: getExecution
+      tags: [execution]
+      parameters:
+        - name: execution_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolExecutionResult'
+
+  /execute/{execution_id}/cancel:
+    post:
+      summary: Cancel an in-flight execution
+      operationId: cancelExecution
+      tags: [execution]
+      parameters:
+        - name: execution_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Execution cancelled
+
+  /execute/{execution_id}/rollback:
+    post:
+      summary: Roll back a completed execution
+      operationId: rollbackExecution
+      tags: [execution]
+      parameters:
+        - name: execution_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RollbackRequest'
+      responses:
+        '202':
+          description: Rollback initiated
+
+  /sandbox:
+    post:
+      summary: Create an isolated sandbox
+      operationId: createSandbox
+      tags: [sandbox]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSandboxRequest'
+      responses:
+        '201':
+          description: Sandbox created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sandbox'
+
+  /sandbox/{sandbox_id}:
+    get:
+      summary: Get sandbox status
+      operationId: getSandbox
+      tags: [sandbox]
+      parameters:
+        - name: sandbox_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sandbox details
+
+    delete:
+      summary: Destroy a sandbox
+      operationId: destroySandbox
+      tags: [sandbox]
+      parameters:
+        - name: sandbox_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Sandbox destroyed
+
+  /sandbox/{sandbox_id}/exec:
+    post:
+      summary: Execute within a sandbox
+      operationId: executeInSandbox
+      tags: [sandbox]
+      parameters:
+        - name: sandbox_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxExecutionRequest'
+      responses:
+        '202':
+          description: Sandbox execution started
+
+  /policies/check:
+    post:
+      summary: Validate a tool execution against policies
+      operationId: checkExecutionPolicy
+      tags: [policy]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyCheckRequest'
+      responses:
+        '200':
+          description: Policy validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyCheckResult'
+
+  /dry-run:
+    post:
+      summary: Dry-run a tool execution (no side effects)
+      operationId: dryRunExecution
+      tags: [dry-run]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToolExecutionRequest'
+      responses:
+        '200':
+          description: Dry-run prediction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DryRunResult'
+
+  /logs/{execution_id}:
+    get:
+      summary: Get execution logs
+      operationId: getExecutionLogs
+      tags: [logs]
+      parameters:
+        - name: execution_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: level
+          in: query
+          schema:
+            type: string
+            enum: [debug, info, warn, error]
+      responses:
+        '200':
+          description: Execution logs
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    X-Tenant-ID:
+      name: X-Tenant-ID
+      in: header
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    ToolCatalog:
+      type: object
+      properties:
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolDefinition'
+        total:
+          type: integer
+        categories:
+          type: array
+          items:
+            type: string
+
+    ToolDefinition:
+      type: object
+      required:
+        - id
+        - name
+        - capability
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        capability:
+          type: string
+          enum:
+            - api_execution
+            - browser_automation
+            - erp_interaction
+            - email
+            - document_generation
+            - workflow_trigger
+            - file_system
+            - database_query
+            - webhook
+        description:
+          type: string
+        input_schema:
+          type: object
+        output_schema:
+          type: object
+        requires_sandbox:
+          type: boolean
+        sandbox_isolation_level:
+          type: string
+          enum: [container, namespace, process]
+        execution_timeout_seconds:
+          type: integer
+        cost_model:
+          type: string
+          enum: [free, per_execution, per_token, usage_based]
+        dependencies:
+          type: array
+          items:
+            type: string
+        version:
+          type: string
+        is_internal:
+          type: boolean
+
+    ToolTestRequest:
+      type: object
+      required:
+        - tenant_id
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        configuration:
+          type: object
+          description: Tool-specific configuration to test
+
+    ToolTestResult:
+      type: object
+      required:
+        - connected
+      properties:
+        connected:
+          type: boolean
+        latency_ms:
+          type: integer
+        error:
+          type: string
+        details:
+          type: object
+
+    ToolExecutionRequest:
+      type: object
+      required:
+        - tenant_id
+        - agent_id
+        - tool_id
+        - input
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        tool_id:
+          type: string
+          format: uuid
+        input:
+          type: object
+          description: Tool-specific input payload
+        sandbox_id:
+          type: string
+          format: uuid
+          description: Optional explicit sandbox ID
+        dry_run:
+          type: boolean
+          default: false
+        timeout_seconds:
+          type: integer
+        max_retries:
+          type: integer
+          default: 0
+        policy_check:
+          type: boolean
+          default: true
+
+    ToolExecution:
+      type: object
+      required:
+        - id
+        - tool_id
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        tool_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, running, completed, failed, rollback, dry_run]
+        input:
+          type: object
+        output:
+          type: object
+        sandbox_id:
+          type: string
+          format: uuid
+        dry_run:
+          type: boolean
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        execution_time_ms:
+          type: integer
+        error:
+          type: string
+
+    ToolExecutionResult:
+      type: object
+      required:
+        - id
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, running, completed, failed, rollback, dry_run]
+        tool_id:
+          type: string
+          format: uuid
+        tool_name:
+          type: string
+        input:
+          type: object
+        output:
+          type: object
+        error:
+          type: string
+        policy_validation:
+          type: object
+        rollback_available:
+          type: boolean
+        rollback_id:
+          type: string
+          format: uuid
+        sandbox_id:
+          type: string
+          format: uuid
+        logs_url:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        execution_time_ms:
+          type: integer
+
+    RollbackRequest:
+      type: object
+      properties:
+        agent_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+        verification_required:
+          type: boolean
+          default: true
+
+    CreateSandboxRequest:
+      type: object
+      required:
+        - tenant_id
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        isolation_level:
+          type: string
+          enum: [container, namespace, process]
+        network_restricted:
+          type: boolean
+          default: true
+        resource_quota:
+          $ref: '#/components/schemas/SandboxResourceQuota'
+        ttl_seconds:
+          type: integer
+          description: Sandbox lifetime in seconds
+
+    Sandbox:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [initializing, ready, running, expired, destroyed]
+        isolation_level:
+          type: string
+          enum: [container, namespace, process]
+        network_restricted:
+          type: boolean
+        resource_quota:
+          $ref: '#/components/schemas/SandboxResourceQuota'
+        container_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+
+    SandboxResourceQuota:
+      type: object
+      properties:
+        cpu_cores:
+          type: number
+        memory_mb:
+          type: integer
+        disk_mb:
+          type: integer
+        network_bandwidth_mbps:
+          type: integer
+        process_limit:
+          type: integer
+
+    SandboxExecutionRequest:
+      type: object
+      required:
+        - command
+      properties:
+        command:
+          type: string
+        args:
+          type: array
+          items:
+            type: string
+        env:
+          type: object
+        timeout_seconds:
+          type: integer
+        stdin:
+          type: string
+
+    PolicyCheckRequest:
+      type: object
+      required:
+        - tenant_id
+        - agent_id
+        - tool_id
+        - action
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        tool_id:
+          type: string
+          format: uuid
+        action:
+          type: string
+        input_summary:
+          type: object
+          description: Redacted input for policy evaluation
+
+    PolicyCheckResult:
+      type: object
+      required:
+        - allowed
+      properties:
+        allowed:
+          type: boolean
+        policy_id:
+          type: string
+        rules_evaluated:
+          type: integer
+        deny_reasons:
+          type: array
+          items:
+            type: string
+        requires_approval:
+          type: boolean
+        approval_chain:
+          type: array
+          items:
+            type: string
+
+    DryRunResult:
+      type: object
+      required:
+        - tool_id
+        - predicted_impact
+      properties:
+        tool_id:
+          type: string
+          format: uuid
+        predicted_impact:
+          type: string
+          enum: [read_only, safe_write, risky, destructive]
+        side_effects:
+          type: array
+          items:
+            type: string
+        estimated_cost:
+          type: object
+        policy_warnings:
+          type: array
+          items:
+            type: string

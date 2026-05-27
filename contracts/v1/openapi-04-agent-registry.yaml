@@ -1,0 +1,587 @@
+openapi: "3.0.3"
+info:
+  title: Operan Agent Registry API
+  description: Central registry for reusable, versioned agents with capability indexing, permissions, and dependency management. Module 04.
+  version: 1.0.0
+  contact:
+    name: Platform Architecture
+
+servers:
+  - url: https://api.operan.io/v1
+    description: Production
+  - url: https://api-staging.operan.io/v1
+    description: Staging
+
+security:
+  - BearerAuth: []
+  - TenantID: []
+
+tags:
+  - name: agents
+    description: Agent lifecycle management
+  - name: versions
+    description: Agent versioning and promotion
+  - name: capabilities
+    description: Capability indexing and search
+  - name: dependencies
+    description: Agent dependency management
+
+paths:
+  /agents:
+    get:
+      tags: [agents]
+      operationId: listAgents
+      summary: List agents with filtering
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+        - name: role
+          in: query
+          schema: { type: string }
+        - name: capability
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, inactive, deprecated, archived] }
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Agent listing
+          content: { application/json: { schema: { $ref: '#/components/schemas/AgentListResponse' } } }
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '403': { $ref: '#/components/responses/ErrorResponse403' }
+    post:
+      tags: [agents]
+      operationId: createAgent
+      summary: Register a new agent
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateAgentRequest' } } }
+      responses:
+        '201':
+          description: Agent created
+          content: { application/json: { schema: { $ref: '#/components/schemas/Agent' } } }
+        '400': { $ref: '#/components/responses/ErrorResponse400' }
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '403': { $ref: '#/components/responses/ErrorResponse403' }
+
+  /agents/{agent_id}:
+    get:
+      tags: [agents]
+      operationId: getAgent
+      summary: Get agent by ID
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Agent details
+          content: { application/json: { schema: { $ref: '#/components/schemas/Agent' } } }
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '403': { $ref: '#/components/responses/ErrorResponse403' }
+        '404': { $ref: '#/components/responses/ErrorResponse404' }
+    patch:
+      tags: [agents]
+      operationId: updateAgent
+      summary: Update agent metadata
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UpdateAgentRequest' } } }
+      responses:
+        '200':
+          description: Agent updated
+          content: { application/json: { schema: { $ref: '#/components/schemas/Agent' } } }
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '403': { $ref: '#/components/responses/ErrorResponse403' }
+        '404': { $ref: '#/components/responses/ErrorResponse404' }
+    delete:
+      tags: [agents]
+      operationId: deleteAgent
+      summary: Deprecate an agent
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204':
+          description: Agent deprecated
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '403': { $ref: '#/components/responses/ErrorResponse403' }
+        '404': { $ref: '#/components/responses/ErrorResponse404' }
+
+  /agents/{agent_id}/capabilities:
+    get:
+      tags: [capabilities]
+      operationId: listAgentCapabilities
+      summary: List agent capabilities with scores
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Agent capabilities
+          content: { application/json: { schema: { $ref: '#/components/schemas/CapabilityList' } } }
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '403': { $ref: '#/components/responses/ErrorResponse403' }
+        '404': { $ref: '#/components/responses/ErrorResponse404' }
+    patch:
+      tags: [capabilities]
+      operationId: updateAgentCapabilities
+      summary: Update agent capabilities
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CapabilityUpdate' } } }
+      responses:
+        '200':
+          description: Capabilities updated
+          content: { application/json: { schema: { $ref: '#/components/schemas/CapabilityList' } } }
+
+  /agents/{agent_id}/capabilities/index:
+    post:
+      tags: [capabilities]
+      operationId: indexCapabilities
+      summary: Full re-index of agent capabilities
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '202':
+          description: Indexing started
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '404': { $ref: '#/components/responses/ErrorResponse404' }
+
+  /agents/{agent_id}/versions:
+    get:
+      tags: [versions]
+      operationId: listAgentVersions
+      summary: List agent versions
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, beta, deprecated, archived] }
+      responses:
+        '200':
+          description: Version list
+          content: { application/json: { schema: { $ref: '#/components/schemas/VersionList' } } }
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '404': { $ref: '#/components/responses/ErrorResponse404' }
+    post:
+      tags: [versions]
+      operationId: createAgentVersion
+      summary: Create a new agent version
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateVersionRequest' } } }
+      responses:
+        '201':
+          description: Version created
+          content: { application/json: { schema: { $ref: '#/components/schemas/AgentVersion' } } }
+
+  /agents/{agent_id}/versions/{version_id}:
+    get:
+      tags: [versions]
+      operationId: getAgentVersion
+      summary: Get agent version details
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: version_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Version details
+          content: { application/json: { schema: { $ref: '#/components/schemas/AgentVersion' } } }
+        '404': { $ref: '#/components/responses/ErrorResponse404' }
+    patch:
+      tags: [versions]
+      operationId: updateAgentVersion
+      summary: Update version metadata
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: version_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UpdateVersionRequest' } } }
+      responses:
+        '200':
+          description: Version updated
+
+  /agents/{agent_id}/versions/{version_id}/promote:
+    post:
+      tags: [versions]
+      operationId: promoteVersion
+      summary: Promote a version to a target environment
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: version_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/PromoteVersionRequest' } } }
+      responses:
+        '200':
+          description: Version promoted
+
+  /agents/{agent_id}/dependencies:
+    get:
+      tags: [dependencies]
+      operationId: listDependencies
+      summary: List agent dependencies
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Dependencies
+          content: { application/json: { schema: { $ref: '#/components/schemas/DependencyList' } } }
+
+  /agents/{agent_id}/dependencies:
+    post:
+      tags: [dependencies]
+      operationId: addDependency
+      summary: Add an agent dependency
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/DependencyRequest' } } }
+      responses:
+        '201':
+          description: Dependency added
+    delete:
+      tags: [dependencies]
+      operationId: removeDependency
+      summary: Remove an agent dependency
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/DependencyRequest' } } }
+      responses:
+        '204':
+          description: Dependency removed
+
+  /agents/search:
+    post:
+      tags: [agents]
+      operationId: searchAgents
+      summary: Search agents by capabilities, constraints, or metadata
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/AgentSearchRequest' } } }
+      responses:
+        '200':
+          description: Search results
+          content: { application/json: { schema: { $ref: '#/components/schemas/AgentSearchResponse' } } }
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    TenantID:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+
+  schemas:
+    AgentStatus:
+      type: string
+      enum: [active, inactive, deprecated, archived]
+
+    Agent:
+      type: object
+      required: [id, name, role, tenant_id, status, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, maxLength: 200 }
+        role: { type: string }
+        description: { type: string }
+        tenant_id: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/AgentStatus' }
+        current_version_id: { type: string, format: uuid, nullable: true }
+        capabilities:
+          type: array
+          items: { type: string }
+        tools:
+          type: array
+          items: { type: string }
+        memory_access:
+          type: array
+          items: { type: string }
+        escalation_rules:
+          type: array
+          items: { type: string }
+        governance_policies:
+          type: array
+          items: { type: string }
+        runtime_constraints:
+          $ref: '#/components/schemas/RuntimeConstraints'
+        cost_profile:
+          $ref: '#/components/schemas/CostProfile'
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateAgentRequest:
+      type: object
+      required: [name, role, tenant_id, capabilities]
+      properties:
+        name: { type: string, maxLength: 200 }
+        role: { type: string }
+        description: { type: string }
+        tenant_id: { type: string, format: uuid }
+        capabilities: { type: array, items: { type: string } }
+        tools: { type: array, items: { type: string } }
+        memory_access: { type: array, items: { type: string } }
+        escalation_rules: { type: array, items: { type: string } }
+        governance_policies: { type: array, items: { type: string } }
+        runtime_constraints: { $ref: '#/components/schemas/RuntimeConstraints' }
+        cost_profile: { $ref: '#/components/schemas/CostProfile' }
+
+    UpdateAgentRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 200 }
+        role: { type: string }
+        description: { type: string }
+        capabilities: { type: array, items: { type: string } }
+        status: { $ref: '#/components/schemas/AgentStatus' }
+        runtime_constraints: { $ref: '#/components/schemas/RuntimeConstraints' }
+
+    CapabilityEntry:
+      type: object
+      required: [capability, score]
+      properties:
+        capability: { type: string }
+        score: { type: number, minimum: 0, maximum: 1 }
+        last_evaluated: { type: string, format: date-time }
+
+    CapabilityList:
+      type: object
+      required: [agent_id, capabilities]
+      properties:
+        agent_id: { type: string, format: uuid }
+        capabilities: { type: array, items: { $ref: '#/components/schemas/CapabilityEntry' } }
+
+    CapabilityUpdate:
+      type: object
+      required: [capabilities]
+      properties:
+        capabilities:
+          type: array
+          items:
+            type: object
+            required: [capability, score]
+            properties:
+              capability: { type: string }
+              score: { type: number, minimum: 0, maximum: 1 }
+
+    AgentVersion:
+      type: object
+      required: [id, agent_id, version, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        agent_id: { type: string, format: uuid }
+        version: { type: string }
+        status: { type: string, enum: [active, beta, deprecated, archived] }
+        model_config: { type: object }
+        prompt_template_ref: { type: string }
+        description: { type: string }
+        created_by: { type: string, format: uuid }
+        promoted_to:
+          type: object
+          additionalProperties: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateVersionRequest:
+      type: object
+      required: [agent_id, version]
+      properties:
+        agent_id: { type: string, format: uuid }
+        version: { type: string }
+        model_config: { type: object }
+        prompt_template_ref: { type: string }
+        description: { type: string }
+
+    UpdateVersionRequest:
+      type: object
+      properties:
+        status: { type: string, enum: [active, beta, deprecated, archived] }
+        description: { type: string }
+
+    PromoteVersionRequest:
+      type: object
+      required: [environment]
+      properties:
+        environment: { type: string, enum: [dev, staging, production] }
+
+    DependencyType:
+      type: string
+      enum: [hard, soft, optional]
+
+    Dependency:
+      type: object
+      required: [agent_id, dependency_type]
+      properties:
+        agent_id: { type: string, format: uuid }
+        dependency_type: { $ref: '#/components/schemas/DependencyType' }
+        version_constraint: { type: string }
+
+    DependencyList:
+      type: object
+      required: [dependencies]
+      properties:
+        dependencies: { type: array, items: { $ref: '#/components/schemas/Dependency' } }
+
+    DependencyRequest:
+      type: object
+      required: [agent_id]
+      properties:
+        agent_id: { type: string, format: uuid }
+        dependency_type: { $ref: '#/components/schemas/DependencyType' }
+        version_constraint: { type: string }
+
+    RuntimeConstraints:
+      type: object
+      properties:
+        max_concurrent: { type: integer, minimum: 1 }
+        max_duration_seconds: { type: integer, minimum: 1 }
+        rate_limit_per_minute: { type: integer, minimum: 1 }
+        resource_quota:
+          type: object
+          properties:
+            cpu_millicores: { type: integer }
+            memory_mb: { type: integer }
+            gpu: { type: boolean }
+
+    CostProfile:
+      type: object
+      properties:
+        estimated_cost_per_run: { type: number, minimum: 0 }
+        currency: { type: string }
+        cost_unit: { type: string }
+
+    AgentListResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/Agent' } }
+        total: { type: integer }
+        page: { type: integer }
+        page_size: { type: integer }
+        has_more: { type: boolean }
+
+    VersionList:
+      type: object
+      required: [agent_id, versions]
+      properties:
+        agent_id: { type: string, format: uuid }
+        versions: { type: array, items: { $ref: '#/components/schemas/AgentVersion' } }
+
+    AgentSearchRequest:
+      type: object
+      required: [tenant_id]
+      properties:
+        tenant_id: { type: string, format: uuid }
+        capabilities: { type: array, items: { type: string } }
+        tools: { type: array, items: { type: string } }
+        min_capability_score: { type: number, minimum: 0, maximum: 1 }
+        constraints: { $ref: '#/components/schemas/RuntimeConstraints' }
+        cost_range:
+          type: object
+          properties:
+            min: { type: number, minimum: 0 }
+            max: { type: number, minimum: 0 }
+
+    AgentSearchResponse:
+      type: object
+      required: [results]
+      properties:
+        results: { type: array, items: { $ref: '#/components/schemas/Agent' } }
+        total: { type: integer }
+
+  responses:
+    ErrorResponse400:
+      description: Bad Request
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    ErrorResponse401:
+      description: Unauthorized
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    ErrorResponse403:
+      description: Forbidden
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    ErrorResponse404:
+      description: Not Found
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+
+  Error:
+    type: object
+    properties:
+      code: { type: integer }
+      message: { type: string }
+      request_id: { type: string, format: uuid }
