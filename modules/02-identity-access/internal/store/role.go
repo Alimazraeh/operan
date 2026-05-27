@@ -98,21 +98,33 @@ func (s *RoleStore) GetByName(tenantID, name string) (*models.Role, error) {
 	return &result, nil
 }
 
-// List returns all roles for a tenant.
-func (s *RoleStore) List(tenantID string) ([]models.Role, error) {
+// List returns a paginated list of roles for a tenant.
+func (s *RoleStore) List(tenantID string, page, pageSize int) ([]models.Role, int, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var result []models.Role
+	var all []models.Role
 	for _, role := range s.roles {
 		if role.TenantID == tenantID {
 			r := *role
 			r.Permissions = unmarshalString(role.PermissionsJSON)
-			result = append(result, r)
+			all = append(all, r)
 		}
 	}
 
-	return result, nil
+	total := len(all)
+
+	// Calculate start/end indices for pagination
+	start := (page - 1) * pageSize
+	if start > total {
+		start = total
+	}
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+
+	return all[start:end], total, nil
 }
 
 // Update updates a role's fields.
