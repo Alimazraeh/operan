@@ -1,317 +1,420 @@
-openapi: "3.1.0"
+openapi: 3.0.3
 info:
-  title: Arabic Language Core Services
+  title: Operan Arabic Language Intelligence Layer API
+  description: Arabic-first NLP capabilities including embeddings, terminology governance, dialect normalization, OCR, semantic retrieval, and translation memory. Module 19: arabic_language_core.
   version: 1.0.0
-  description: Module 19 — Arabic Language Core Services for Operan
 
 servers:
-  - url: /api/v1
+  - url: /api/v1/arabic-language
 
 security:
   - BearerAuth: []
-  - TenantContext: []
+  - X-Tenant-ID:
+      schema:
+        type: string
 
 paths:
-  /arabic/process:
+  /embeddings:
     post:
-      summary: Process Arabic text
-      security:
-        - BearerAuth: []
-        - TenantContext: []
+      summary: Generate Arabic embeddings
+      operationId: generateArabicEmbeddings
+      tags: [embeddings]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ProcessTextRequest"
+              $ref: '#/components/schemas/GenerateArabicEmbeddingsRequest'
       responses:
-        "200":
-          description: Processing complete
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProcessingResult"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+        '200':
+          description: Arabic embeddings generated
 
-  /arabic/translate:
-    post:
-      summary: Translate Arabic text
-      security:
-        - BearerAuth: []
-        - TenantContext: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TranslationRequest"
-      responses:
-        "200":
-          description: Translation complete
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TranslationResult"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /arabic/vocab:
     get:
-      summary: Search vocabulary
-      security:
-        - BearerAuth: []
-        - TenantContext: []
+      summary: List embedding jobs
+      operationId: listArabicEmbeddingJobs
+      tags: [embeddings]
       parameters:
         - name: tenant_id
           in: query
           required: true
           schema:
             type: string
-            format: uuid
-        - name: term
+        - name: status
           in: query
           schema:
             type: string
-        - name: script
-          in: query
-          schema:
-            type: string
-            enum: [standard, vocalized, mangled, normalized]
-        - name: variant
-          in: query
-          schema:
-            type: string
-            enum: [msa, gulf, shami, maghrebi, narrow_regional]
+            enum: [pending, processing, completed, failed]
       responses:
-        "200":
-          description: Vocabulary results
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/VocabEntry"
-                  pagination:
-                    $ref: "#/components/schemas/Pagination"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+        '200':
+          description: Embedding job list
+
+  /embeddings/{id}:
+    get:
+      summary: Get embedding job status
+      operationId: getArabicEmbeddingJob
+      tags: [embeddings]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Embedding job status
+
+  /terminology:
     post:
-      summary: Add vocabulary entry
-      security:
-        - BearerAuth: []
-        - TenantContext: []
+      summary: Create terminology entry
+      operationId: createTerminologyEntry
+      tags: [terminology]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - tenant_id
-                - term
-                - definition
-              properties:
-                tenant_id:
-                  type: string
-                  format: uuid
-                term:
-                  type: string
-                definition:
-                  type: string
-                script:
-                  type: string
-                  enum: [standard, vocalized, mangled, normalized]
-                variant:
-                  type: string
-                  enum: [msa, gulf, shami, maghrebi, narrow_regional]
-                examples:
-                  type: array
-                  items:
-                    type: string
-                  nullable: true
+              $ref: '#/components/schemas/CreateTerminologyEntryRequest'
       responses:
-        "201":
-          description: Vocabulary entry created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/VocabEntry"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+        '201':
+          description: Terminology entry created
 
-  /arabic/models:
     get:
-      summary: List language models
-      security:
-        - BearerAuth: []
-        - TenantContext: []
+      summary: List terminology entries
+      operationId: listTerminologyEntries
+      tags: [terminology]
       parameters:
         - name: tenant_id
           in: query
           required: true
           schema:
             type: string
-            format: uuid
-        - name: variant
+        - name: category
           in: query
           schema:
             type: string
-            enum: [msa, gulf, shami, maghrebi, narrow_regional]
+        - name: language_code
+          in: query
+          schema:
+            type: string
       responses:
-        "200":
-          description: Models list
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/LanguageModel"
-                  pagination:
-                    $ref: "#/components/schemas/Pagination"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    post:
-      summary: Train a new language model
-      security:
-        - BearerAuth: []
-        - TenantContext: []
+        '200':
+          description: Terminology entry list
+
+  /terminology/{id}:
+    get:
+      summary: Get terminology entry
+      operationId: getTerminologyEntry
+      tags: [terminology]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Terminology entry
+
+    patch:
+      summary: Update terminology entry
+      operationId: updateTerminologyEntry
+      tags: [terminology]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - tenant_id
-                - model_name
-                - variant
-                - training_data_uri
-              properties:
-                tenant_id:
-                  type: string
-                  format: uuid
-                model_name:
-                  type: string
-                variant:
-                  type: string
-                  enum: [msa, gulf, shami, maghrebi, narrow_regional]
-                training_data_uri:
-                  type: string
-                hyperparameters:
-                  type: object
-                  nullable: true
+              $ref: '#/components/schemas/UpdateTerminologyEntryRequest'
       responses:
-        "201":
-          description: Training started
+        '200':
+          description: Terminology entry updated
+
+    delete:
+      summary: Delete terminology entry
+      operationId: deleteTerminologyEntry
+      tags: [terminology]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Terminology entry deleted
+
+  /terminology/search:
+    post:
+      summary: Search terminology
+      operationId: searchTerminology
+      tags: [terminology]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchTerminologyRequest'
+      responses:
+        '200':
+          description: Terminology search results
+
+  /dialect-normalization:
+    post:
+      summary: Normalize text to Modern Standard Arabic
+      operationId: normalizeDialect
+      tags: [dialect-normalization]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DialectNormalizationRequest'
+      responses:
+        '200':
+          description: Normalized text
+
+    get:
+      summary: List normalization rules
+      operationId: listNormalizationRules
+      tags: [dialect-normalization]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Normalization rule list
+
+  /dialect-normalization/{id}:
+    get:
+      summary: Get normalization rule
+      operationId: getNormalizationRule
+      tags: [dialect-normalization]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Normalization rule
+
+    patch:
+      summary: Update normalization rule
+      operationId: updateNormalizationRule
+      tags: [dialect-normalization]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNormalizationRuleRequest'
+      responses:
+        '200':
+          description: Normalization rule updated
+
+  /ocr:
+    post:
+      summary: Process Arabic OCR
+      operationId: processArabicOCR
+      tags: [ocr]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArabicOCRRequest'
+      responses:
+        '202':
+          description: OCR processing started
+
+    get:
+      summary: List OCR jobs
+      operationId: listArabicOCRJobs
+      tags: [ocr]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processing, completed, failed]
+      responses:
+        '200':
+          description: OCR job list
+
+  /ocr/{id}:
+    get:
+      summary: Get OCR job results
+      operationId: getArabicOCRJob
+      tags: [ocr]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OCR job results
+
+  /semantic-retrieval:
+    post:
+      summary: Perform semantic search
+      operationId: semanticSearch
+      tags: [semantic-retrieval]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SemanticSearchRequest'
+      responses:
+        '200':
+          description: Semantic search results
+
+  /translation-memory:
+    post:
+      summary: Create translation memory entry
+      operationId: createTranslationMemoryEntry
+      tags: [translation-memory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTranslationMemoryEntryRequest'
+      responses:
+        '201':
+          description: Translation memory entry created
+
+    get:
+      summary: List translation memory entries
+      operationId: listTranslationMemoryEntries
+      tags: [translation-memory]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: source_lang
+          in: query
+          schema:
+            type: string
+        - name: target_lang
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Translation memory entry list
+
+  /translation-memory/{id}:
+    get:
+      summary: Get translation memory entry
+      operationId: getTranslationMemoryEntry
+      tags: [translation-memory]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Translation memory entry
+
+    patch:
+      summary: Update translation memory entry
+      operationId: updateTranslationMemoryEntry
+      tags: [translation-memory]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTranslationMemoryEntryRequest'
+      responses:
+        '200':
+          description: Translation memory entry updated
+
+    delete:
+      summary: Delete translation memory entry
+      operationId: deleteTranslationMemoryEntry
+      tags: [translation-memory]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Translation memory entry deleted
+
+  /translation-memory/search:
+    post:
+      summary: Search translation memory
+      operationId: searchTranslationMemory
+      tags: [translation-memory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchTranslationMemoryRequest'
+      responses:
+        '200':
+          description: Translation memory search results
+
+  /health:
+    get:
+      summary: Service health check
+      operationId: healthCheck
+      tags: [health]
+      responses:
+        '200':
+          description: Health status
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LanguageModel"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/HealthStatus'
 
 components:
   securitySchemes:
@@ -319,247 +422,444 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-    TenantContext:
-      type: apiKey
-      in: header
+    X-Tenant-ID:
       name: X-Tenant-ID
+      in: header
       required: true
+      schema:
+        type: string
 
   schemas:
-    ProcessingResult:
+    # Embedding Schemas
+    GenerateArabicEmbeddingsRequest:
+      type: object
+      required:
+        - tenant_id
+        - texts
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        texts:
+          type: array
+          items:
+            type: string
+        model:
+          type: string
+          default: "arabic-embeddings-v1"
+        normalize_dialect:
+          type: boolean
+          default: false
+        metadata:
+          type: object
+
+    ArabicEmbedding:
       type: object
       required:
         - id
-        - tenant_id
-        - document_id
-        - input_text
-        - processed_text
-        - script
-        - language_variant
-        - confidence_score
-        - processed_at
+        - model
       properties:
         id:
           type: string
           format: uuid
-        tenant_id:
+        model:
           type: string
-          format: uuid
-        document_id:
-          type: string
-          format: uuid
-          nullable: true
-        input_text:
-          type: string
-        processed_text:
-          type: string
-        script:
-          type: string
-          enum: [standard, vocalized, mangled, normalized]
-        language_variant:
-          type: string
-          enum: [msa, gulf, shami, maghrebi, narrow_regional]
-        operations_applied:
+        texts:
           type: array
           items:
-            type: string
-        confidence_score:
-          type: number
-        processing_time_ms:
+            type: object
+        embedding_dimensions:
           type: integer
-        processed_at:
+        created_at:
           type: string
           format: date-time
 
-    ProcessTextRequest:
+    # Terminology Schemas
+    CreateTerminologyEntryRequest:
       type: object
       required:
-        - tenant_id
-        - input_text
-      properties:
-        tenant_id:
-          type: string
-          format: uuid
-        document_id:
-          type: string
-          format: uuid
-          nullable: true
-        input_text:
-          type: string
-        target_script:
-          type: string
-          enum: [standard, vocalized, mangled, normalized]
-        target_variant:
-          type: string
-          enum: [msa, gulf, shami, maghrebi, narrow_regional]
-        operations:
-          type: array
-          items:
-            type: string
-          nullable: true
-
-    TranslationResult:
-      type: object
-      required:
-        - id
-        - tenant_id
-        - request_id
-        - source_script
-        - target_script
-        - translated_content
-        - completed_at
-      properties:
-        id:
-          type: string
-          format: uuid
-        tenant_id:
-          type: string
-          format: uuid
-        request_id:
-          type: string
-          format: uuid
-        document_id:
-          type: string
-          format: uuid
-          nullable: true
-        source_script:
-          type: string
-          enum: [standard, vocalized, mangled]
-        target_script:
-          type: string
-          enum: [standard, vocalized, normalized, mangled]
-        translated_content:
-          type: string
-        confidence_scores:
-          type: array
-          items:
-            type: number
-        completed_at:
-          type: string
-          format: date-time
-
-    TranslationRequest:
-      type: object
-      required:
-        - tenant_id
-        - source_script
-        - target_script
-        - content
-      properties:
-        tenant_id:
-          type: string
-          format: uuid
-        document_id:
-          type: string
-          format: uuid
-          nullable: true
-        source_script:
-          type: string
-          enum: [standard, vocalized, mangled]
-        target_script:
-          type: string
-          enum: [standard, vocalized, normalized, mangled]
-        content:
-          type: string
-        priority:
-          type: string
-          enum: [low, normal, high, urgent]
-
-    VocabEntry:
-      type: object
-      required:
-        - id
         - tenant_id
         - term
-        - definition
-        - script
-        - variant
       properties:
-        id:
-          type: string
-          format: uuid
         tenant_id:
           type: string
           format: uuid
         term:
           type: string
+        translation:
+          type: string
         definition:
           type: string
-        script:
+        category:
           type: string
-          enum: [standard, vocalized, mangled, normalized]
-        variant:
+        source_language:
           type: string
-          enum: [msa, gulf, shami, maghrebi, narrow_regional]
-        examples:
+          default: "ar"
+        target_language:
+          type: string
+        domain:
+          type: string
+        usage_examples:
           type: array
           items:
             type: string
-          nullable: true
-        created_at:
+        status:
           type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
+          enum: [draft, approved, deprecated]
+        metadata:
+          type: object
 
-    LanguageModel:
+    TerminologyEntry:
+      type: object
+      required:
+        - id
+        - term
+      properties: {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "term": { "type": "string" },
+        "translation": { "type": "string" },
+        "definition": { "type": "string" },
+        "category": { "type": "string" },
+        "source_language": { "type": "string" },
+        "target_language": { "type": "string" },
+        "domain": { "type": "string" },
+        "usage_examples": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["draft", "approved", "deprecated"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "metadata": { "type": "object" }
+      }
+
+    UpdateTerminologyEntryRequest:
+      type: object
+      properties: {
+        "term": { "type": "string" },
+        "translation": { "type": "string" },
+        "definition": { "type": "string" },
+        "category": { "type": "string" },
+        "domain": { "type": "string" },
+        "usage_examples": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["draft", "approved", "deprecated"] },
+        "metadata": { "type": "object" }
+      }
+
+    SearchTerminologyRequest:
+      type: object
+      required:
+        - tenant_id
+        - query
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        query:
+          type: string
+        category:
+          type: string
+        domain:
+          type: string
+        language_code:
+          type: string
+        status:
+          type: string
+          enum: [draft, approved, deprecated]
+        limit:
+          type: integer
+          default: 20
+        offset:
+          type: integer
+          default: 0
+
+    # Dialect Normalization Schemas
+    DialectNormalizationRequest:
+      type: object
+      required:
+        - tenant_id
+        - texts
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        texts:
+          type: array
+          items:
+            type: string
+        source_dialect:
+          type: string
+        target_dialect:
+          type: string
+          default: "MSA"
+        preserve_formatting:
+          type: boolean
+          default: true
+
+    DialectNormalizationResult:
+      type: object
+      required:
+        - input
+        - output
+      properties:
+        input:
+          type: string
+        output:
+          type: string
+        source_dialect:
+          type: string
+        target_dialect:
+          type: string
+        confidence:
+          type: number
+
+    NormalizeNormalizationRuleRequest:
+      type: object
+      required:
+        - tenant_id
+        - name
+        - rules
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        rules:
+          type: array
+          items:
+            type: object
+        source_dialect:
+          type: string
+        target_dialect:
+          type: string
+          default: "MSA"
+        metadata:
+          type: object
+
+    NormalizationRule:
+      type: object
+      required:
+        - id
+        - name
+        - rules
+      properties: {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "rules": { "type": "array", "items": { "type": "object" } },
+        "source_dialect": { "type": "string" },
+        "target_dialect": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "metadata": { "type": "object" }
+      }
+
+    UpdateNormalizationRuleRequest:
+      type: object
+      properties: {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "rules": { "type": "array", "items": { "type": "object" } },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "metadata": { "type": "object" }
+      }
+
+    # OCR Schemas
+    ArabicOCRRequest:
+      type: object
+      required:
+        - tenant_id
+        - image
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        image:
+          type: string
+          format: byte
+        image_url:
+          type: string
+        language:
+          type: string
+          default: "ar"
+        output_format:
+          type: string
+          enum: [text, json, hocr]
+        preprocess:
+          type: boolean
+          default: true
+
+    ArabicOCRResult:
       type: object
       required:
         - id
         - tenant_id
-        - model_name
-        - variant
-        - status
-        - trained_at
+        - text
+      properties: {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "text": { "type": "string" },
+        "confidence": { "type": "number" },
+        "language": { "type": "string" },
+        "words": { "type": "array", "items": { "type": "object" } },
+        "pages": { "type": "integer" },
+        "status": { "type": "string", "enum": ["pending", "processing", "completed", "failed"] },
+        "error_message": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" }
+      }
+
+    # Semantic Retrieval Schemas
+    SemanticSearchRequest:
+      type: object
+      required:
+        - tenant_id
+        - query
       properties:
-        id:
-          type: string
-          format: uuid
         tenant_id:
           type: string
           format: uuid
-        model_name:
+        query:
           type: string
-        variant:
+        collection:
           type: string
-          enum: [msa, gulf, shami, maghrebi, narrow_regional]
-        status:
-          type: string
-          enum: [ready, training, failed]
-        training_dataset_size:
+        top_k:
           type: integer
-        accuracy:
+          default: 10
+        min_score:
           type: number
-          nullable: true
-        trained_by:
-          type: string
-          format: uuid
-        trained_at:
-          type: string
-          format: date-time
-        model_uri:
-          type: string
-          nullable: true
-
-    ErrorResponse:
-      type: object
-      properties:
-        code:
-          type: string
-        message:
-          type: string
-        details:
+          default: 0.7
+        filters:
+          type: object
+        metadata:
           type: object
 
-    Pagination:
+    SemanticSearchResult:
       type: object
+      required:
+        - query
+        - results
+      properties: {
+        "query": { "type": "string" },
+        "results": { "type": "array", "items": { "type": "object" } },
+        "query_embedding": { "type": "array", "items": { "type": "number" } },
+        "total_results": { "type": "integer" }
+      }
+
+    # Translation Memory Schemas
+    CreateTranslationMemoryEntryRequest:
+      type: object
+      required:
+        - tenant_id
+        - source_text
+        - target_text
+        - source_lang
+        - target_lang
       properties:
-        page:
+        tenant_id:
+          type: string
+          format: uuid
+        source_text:
+          type: string
+        target_text:
+          type: string
+        source_lang:
+          type: string
+        target_lang:
+          type: string
+        domain:
+          type: string
+        context:
+          type: string
+        quality_score:
+          type: number
+        status:
+          type: string
+          enum: [draft, approved, deprecated]
+        metadata:
+          type: object
+
+    TranslationMemoryEntry:
+      type: object
+      required:
+        - id
+        - source_text
+        - target_text
+      properties: {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "source_text": { "type": "string" },
+        "target_text": { "type": "string" },
+        "source_lang": { "type": "string" },
+        "target_lang": { "type": "string" },
+        "domain": { "type": "string" },
+        "context": { "type": "string" },
+        "quality_score": { "type": "number" },
+        "usage_count": { "type": "integer" },
+        "status": { "type": "string", "enum": ["draft", "approved", "deprecated"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "metadata": { "type": "object" }
+      }
+
+    UpdateTranslationMemoryEntryRequest:
+      type: object
+      properties: {
+        "source_text": { "type": "string" },
+        "target_text": { "type": "string" },
+        "domain": { "type": "string" },
+        "context": { "type": "string" },
+        "quality_score": { "type": "number" },
+        "status": { "type": "string", "enum": ["draft", "approved", "deprecated"] },
+        "metadata": { "type": "object" }
+      }
+
+    SearchTranslationMemoryRequest:
+      type: object
+      required:
+        - tenant_id
+        - source_text
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        source_text:
+          type: string
+        source_lang:
+          type: string
+        target_lang:
+          type: string
+        domain:
+          type: string
+        top_k:
           type: integer
-        limit:
+          default: 5
+        min_similarity:
+          type: number
+          default: 0.5
+
+    # Health Schemas
+    HealthStatus:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        uptime_seconds:
           type: integer
-        total:
+        active_embeddings:
           type: integer
-        has_more:
-          type: boolean
+        active_ocr_jobs:
+          type: integer
+        terminology_entries:
+          type: integer
+        translation_memory_entries:
+          type: integer
+        last_check:
+          type: string
+          format: date-time
