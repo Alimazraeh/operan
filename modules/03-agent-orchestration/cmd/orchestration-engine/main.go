@@ -25,21 +25,22 @@ func main() {
 
 	// ─── Router ────────────────────────────────────────────────────────────
 
+	const base = "/api/v1/orchestration"
 	mux := http.NewServeMux()
 
 	// Workflows - list
-	mux.HandleFunc("GET /workflows", wfHandler.ListWorkflows)
+	mux.HandleFunc("GET "+base+"/workflows", wfHandler.ListWorkflows)
 	// Workflows - create
-	mux.HandleFunc("POST /workflows", wfHandler.CreateWorkflow)
+	mux.HandleFunc("POST "+base+"/workflows", wfHandler.CreateWorkflow)
 	// Schedules - create
-	mux.HandleFunc("POST /schedules", scHandler.ScheduleWorkflow)
+	mux.HandleFunc("POST "+base+"/schedules", scHandler.ScheduleWorkflow)
 	// Agents
-	mux.HandleFunc("POST /agents/assign", schedHandler.AssignAgent)
-	mux.HandleFunc("GET /agents/availability", schedHandler.GetAgentAvailability)
+	mux.HandleFunc("POST "+base+"/agents/assign", schedHandler.AssignAgent)
+	mux.HandleFunc("GET "+base+"/agents/availability", schedHandler.GetAgentAvailability)
 
 	// Dynamic route handlers
-	mux.HandleFunc("workflows/", func(w http.ResponseWriter, r *http.Request) {
-		id := extractIDFromPath(r.URL.Path, "/workflows/")
+	mux.HandleFunc(base+"/workflows/", func(w http.ResponseWriter, r *http.Request) {
+		id := extractIDFromPath(r.URL.Path, base+"/workflows/")
 		if id == "" {
 			writeError(w, http.StatusBadRequest, 400, "workflow id is required")
 			return
@@ -97,8 +98,8 @@ func main() {
 		http.Error(w, "not found", http.StatusNotFound)
 	})
 
-	mux.HandleFunc("schedules/", func(w http.ResponseWriter, r *http.Request) {
-		id := extractIDFromPath(r.URL.Path, "/schedules/")
+	mux.HandleFunc(base+"/schedules/", func(w http.ResponseWriter, r *http.Request) {
+		id := extractIDFromPath(r.URL.Path, base+"/schedules/")
 		if id == "" {
 			writeError(w, http.StatusBadRequest, 400, "schedule id is required")
 			return
