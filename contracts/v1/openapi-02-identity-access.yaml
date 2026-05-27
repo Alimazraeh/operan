@@ -536,24 +536,72 @@ components:
       type: object
       required:
         - provider
+        - type
+        - configuration
+        - status
         - tenant_id
       properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the SSO configuration.
         provider:
           type: string
-          enum: [keycloak, ory, authentik, azure_ad, okta]
+          enum:
+            - azure_ad
+            - google_workspace
+            - okta
+            - keycloak
+            - custom
+            - ory
+            - authentik
+          description: The SSO identity provider.
+        type:
+          type: string
+          enum: [saml, oidc]
+          description: The SSO protocol used by this configuration.
+        configuration:
+          type: object
+          description: Provider-specific configuration details.
+          properties:
+            metadata_url:
+              type: string
+              format: uri
+              description: URL to the identity provider's metadata document.
+            issuer_url:
+              type: string
+              description: OIDC issuer URL for the identity provider.
+            client_id:
+              type: string
+              description: Client identifier for the application.
+            client_secret:
+              type: string
+              description: Client secret for the application (write-only).
+            redirect_uri:
+              type: string
+              format: uri
+              description: Callback URL for the SSO flow.
+            scopes:
+              type: array
+              items:
+                type: string
+              description: OAuth/OIDC scopes to request.
+        status:
+          type: string
+          enum: [active, inactive]
+          description: Whether this SSO configuration is currently enabled.
         tenant_id:
           type: string
           format: uuid
-        issuer_url:
+          description: Unique identifier for the tenant this SSO configuration applies to.
+        created_at:
           type: string
-        client_id:
+          format: date-time
+          description: Timestamp when the SSO configuration was created.
+        updated_at:
           type: string
-        client_secret:
-          type: string
-        scopes:
-          type: array
-          items:
-            type: string
+          format: date-time
+          description: Timestamp when the SSO configuration was last updated.
 
     AuditEntry:
       type: object
