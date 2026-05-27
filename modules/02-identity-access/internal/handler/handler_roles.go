@@ -102,12 +102,11 @@ func (h *RoleHandler) List(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	roles, err := h.Roles.List(tenantID)
+	roles, total, err := h.Roles.List(tenantID, page, pageSize)
 	if err != nil {
 		http.Error(w, `{"error":"failed to list roles"}`, http.StatusInternalServerError)
 		return
 	}
-	total := len(roles)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -165,12 +164,7 @@ func (h *RoleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		Timestamp:    time.Now().UTC(),
 	})
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
-		"status":  "deleted",
-		"role_id": roleID,
-	})
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // extractRoleID extracts the role_id from the URL path.

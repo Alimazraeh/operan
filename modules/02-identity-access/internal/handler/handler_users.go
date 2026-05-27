@@ -229,9 +229,7 @@ func (h *UserHandler) Deactivate(w http.ResponseWriter, r *http.Request) {
 		Timestamp:    time.Now().UTC(),
 	})
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "deactivated"})
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // SetRoles handles PUT /api/v1/iam/users/{user_id}/roles
