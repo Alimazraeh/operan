@@ -1,0 +1,2385 @@
+openapi: "3.0.3"
+info:
+  title: Operan Tenant Control Plane API
+  description: API for managing tenant lifecycle, quotas, status, agents, and resources within the Operan platform.
+  version: 1.0.0
+  contact:
+    name: Platform Architecture
+    email: arch@operan.io
+
+servers:
+  - url: https://api.operan.io/v1
+    description: Production
+  - url: https://api-staging.operan.io/v1
+    description: Staging
+
+security:
+  - BearerAuth: []
+  - TenantHeader: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer token with tenant-scoped claims
+    TenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Tenant identifier header required on every request
+
+  schemas:
+    TenantId:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+    TenantStatus:
+      type: string
+      enum:
+        - provisioning
+        - active
+        - suspended
+        - deprovisioning
+        - deprovisioned
+
+    TenantPlan:
+      type: string
+      enum:
+        - saas
+        - enterprise
+        - sovereign
+
+    TenantRegion:
+      type: string
+      enum:
+        - me-east-1
+        - eu-west-1
+        - us-east-1
+        - ap-south-1
+        - on-prem
+
+    TenantIsolation:
+      type: string
+      enum:
+        - namespace
+        - encryption
+        - network_policy
+
+    QuotaConfig:
+      type: object
+      properties:
+        max_agents:
+          type: integer
+          minimum: 0
+          description: Maximum number of agents allowed per tenant
+          example: 50
+        max_workflows_per_day:
+          type: integer
+          minimum: 0
+          description: Maximum workflows that can be executed per day
+          example: 10000
+        max_storage_gb:
+          type: integer
+          minimum: 0
+          description: Maximum storage allocation in gigabytes
+          example: 500
+        max_monthly_tokens:
+          type: integer
+          minimum: 0
+          description: Maximum tokens per month
+          example: 100000000
+        max_concurrent_workflows:
+          type: integer
+          minimum: 0
+          description: Maximum concurrent running workflows
+          example: 20
+      required:
+        - max_agents
+        - max_workflows_per_day
+        - max_storage_gb
+        - max_monthly_tokens
+        - max_concurrent_workflows
+      additionalProperties: false
+
+    TenantCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: Human-readable tenant name
+          example: "Acme Corp"
+        plan:
+          $ref: "#/components/schemas/TenantPlan"
+        region:
+          $ref: "#/components/schemas/TenantRegion"
+        isolation_level:
+          $ref: "#/components/schemas/TenantIsolation"
+        quota:
+          $ref: "#/components/schemas/QuotaConfig"
+        contact_email:
+          type: string
+          format: email
+          description: Primary contact email for the tenant
+          example: "admin@acmecorp.com"
+        custom_metadata:
+          type: object
+          description: Arbitrary key-value metadata for tenant
+          additionalProperties: true
+      required:
+        - name
+        - plan
+        - region
+        - isolation_level
+        - quota
+      additionalProperties: false
+
+    TenantPatchRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        status:
+          $ref: "#/components/schemas/TenantStatus"
+        plan:
+          $ref: "#/components/schemas/TenantPlan"
+        region:
+          $ref: "#/components/schemas/TenantRegion"
+        isolation_level:
+          $ref: "#/components/schemas/TenantIsolation"
+        contact_email:
+          type: string
+          format: email
+        custom_metadata:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+
+    TenantResponse:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/TenantId"
+        name:
+          type: string
+        plan:
+          $ref: "#/components/schemas/TenantPlan"
+        region:
+          $ref: "#/components/schemas/TenantRegion"
+        isolation_level:
+          $ref: "#/components/schemas/TenantIsolation"
+        status:
+          $ref: "#/components/schemas/TenantStatus"
+        quota:
+          $ref: "#/components/schemas/QuotaConfig"
+        contact_email:
+          type: string
+          format: email
+        custom_metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - plan
+        - region
+        - isolation_level
+        - status
+        - quota
+        - created_at
+        - updated_at
+      additionalProperties: false
+
+    TenantListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TenantResponse"
+        total:
+          type: integer
+          example: 150
+        page:
+          type: integer
+          example: 1
+        page_size:
+          type: integer
+          example: 20
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+
+    # Billing Schemas
+    BillingInvoiceStatus:
+      type: string
+      enum:
+        - draft
+        - posted
+        - paid
+        - overdue
+        - cancelled
+
+    BillingLineItemCategory:
+      type: string
+      enum:
+        - base_subscription
+        - usage_tokens
+        - usage_storage
+        - usage_agents
+        - usage_api_calls
+        - usage_workflows
+        - overage
+        - one_time
+
+    BillingLineItem:
+      type: object
+      properties:
+        description:
+          type: string
+        category:
+          $ref: "#/components/schemas/BillingLineItemCategory"
+        metric:
+          type: string
+          description: Specific metric billed (e.g., tokens, storage_gb, agents)
+        quantity:
+          type: number
+          minimum: 0
+        unit:
+          type: string
+          description: Unit of measurement (e.g., per_1M_tokens, per_gb)
+        unit_price:
+          type: number
+          minimum: 0
+        total:
+          type: number
+          minimum: 0
+      required:
+        - description
+        - quantity
+        - unit_price
+        - total
+      additionalProperties: false
+
+    BillingInvoice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          $ref: "#/components/schemas/TenantId"
+        invoice_number:
+          type: string
+        issue_date:
+          type: string
+          format: date-time
+        due_date:
+          type: string
+          format: date-time
+        period_start:
+          type: string
+          format: date-time
+        period_end:
+          type: string
+          format: date-time
+        currency:
+          type: string
+          description: ISO 4217 currency code
+        status:
+          $ref: "#/components/schemas/BillingInvoiceStatus"
+        line_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BillingLineItem"
+        subtotal:
+          type: number
+          minimum: 0
+        tax_amount:
+          type: number
+          minimum: 0
+        discount_amount:
+          type: number
+          minimum: 0
+        total_amount:
+          type: number
+          minimum: 0
+        amount_paid:
+          type: number
+          minimum: 0
+        amount_due:
+          type: number
+          minimum: 0
+      required:
+        - id
+        - tenant_id
+        - issue_date
+        - due_date
+        - period_start
+        - period_end
+        - currency
+        - status
+        - line_items
+        - total_amount
+        - amount_paid
+        - amount_due
+      additionalProperties: false
+
+    BillingUsageMetric:
+      type: object
+      properties:
+        metric:
+          type: string
+          enum:
+            - tokens
+            - workflows
+            - storage_gb
+            - agents
+            - api_calls
+        consumed:
+          type: number
+          minimum: 0
+        limit:
+          type: number
+          minimum: 0
+        percentage_used:
+          type: number
+          minimum: 0
+          maximum: 100
+      required:
+        - metric
+        - consumed
+        - limit
+        - percentage_used
+      additionalProperties: false
+
+    BillingUsageResponse:
+      type: object
+      properties:
+        tenant_id:
+          $ref: "#/components/schemas/TenantId"
+        period:
+          type: string
+          pattern: "^[0-9]{4}-[0-9]{2}$"
+          description: Billing period in YYYY-MM format
+        period_start:
+          type: string
+          format: date-time
+        period_end:
+          type: string
+          format: date-time
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/BillingUsageMetric"
+        estimated_cost:
+          type: number
+          minimum: 0
+        currency:
+          type: string
+      required:
+        - tenant_id
+        - period
+        - metrics
+        - estimated_cost
+        - currency
+      additionalProperties: false
+
+    PaymentMethodType:
+      type: string
+      enum:
+        - credit_card
+        - bank_account
+        - wire_transfer
+
+    PaymentMethod:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/PaymentMethodType"
+        brand:
+          type: string
+          description: Card brand for credit cards
+        last_four:
+          type: string
+        expiry_month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        expiry_year:
+          type: integer
+        is_default:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - last_four
+        - is_default
+        - created_at
+      additionalProperties: false
+
+    InvoiceListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BillingInvoice"
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
+
+    InvoiceResponse:
+      type: object
+      properties:
+        invoice:
+          $ref: "#/components/schemas/BillingInvoice"
+      required:
+        - invoice
+      additionalProperties: false
+
+    PaymentMethodListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentMethod"
+        total:
+          type: integer
+      required:
+        - items
+        - total
+      additionalProperties: false
+
+    # Secrets Schemas
+    SecretCreateRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Unique key name within the tenant
+        value:
+          type: string
+          minLength: 1
+          description: Plaintext value to encrypt (sent once on creation)
+        description:
+          type: string
+          maxLength: 512
+        tags:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+      required:
+        - key
+        - value
+      additionalProperties: false
+
+    SecretMetadata:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          minimum: 1
+        version_count:
+          type: integer
+          minimum: 1
+      required:
+        - id
+        - key
+        - description
+        - tags
+        - created_at
+        - updated_at
+        - version
+        - version_count
+      additionalProperties: false
+
+    SecretListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SecretMetadata"
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
+
+    SecretResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        value:
+          type: string
+          description: Plaintext value (only returned on get, not on list)
+        encrypted_value:
+          type: string
+          description: Base64-encoded encrypted value
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        version:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - key
+        - value
+        - description
+        - tags
+        - version
+        - created_at
+        - updated_at
+      additionalProperties: false
+
+    SecretUpdateRequest:
+      type: object
+      properties:
+        description:
+          type: string
+          maxLength: 512
+        tags:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+      additionalProperties: false
+
+    SecretRotateRequest:
+      type: object
+      properties:
+        new_value:
+          type: string
+          minLength: 1
+          description: New plaintext value to encrypt
+      required:
+        - new_value
+      additionalProperties: false
+
+    # Subscription Schemas
+    SubscriptionStatus:
+      type: string
+      enum:
+        - active
+        - trialing
+        - past_due
+        - cancelled
+        - cancelling
+        - expired
+
+    SubscriptionBillingCycle:
+      type: string
+      enum:
+        - monthly
+        - annual
+        - quarterly
+
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          $ref: "#/components/schemas/TenantId"
+        plan:
+          $ref: "#/components/schemas/TenantPlan"
+        plan_name:
+          type: string
+        status:
+          $ref: "#/components/schemas/SubscriptionStatus"
+        billing_cycle:
+          $ref: "#/components/schemas/SubscriptionBillingCycle"
+        seat_count:
+          type: integer
+          minimum: 1
+        unit_price:
+          type: number
+          minimum: 0
+        total_amount:
+          type: number
+          minimum: 0
+        currency:
+          type: string
+        current_period_start:
+          type: string
+          format: date-time
+        current_period_end:
+          type: string
+          format: date-time
+        next_billing_date:
+          type: string
+          format: date-time
+        cancel_at_period_end:
+          type: boolean
+        cancelled_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        custom_quotas:
+          $ref: "#/components/schemas/QuotaConfig"
+      required:
+        - id
+        - tenant_id
+        - plan
+        - status
+        - billing_cycle
+        - current_period_start
+        - current_period_end
+        - next_billing_date
+        - created_at
+        - updated_at
+      additionalProperties: false
+
+    SubscriptionListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Subscription"
+        total:
+          type: integer
+      required:
+        - items
+        - total
+      additionalProperties: false
+
+    SubscriptionResponse:
+      type: object
+      properties:
+        subscription:
+          $ref: "#/components/schemas/Subscription"
+      required:
+        - subscription
+      additionalProperties: false
+
+    SubscriptionUpdateRequest:
+      type: object
+      properties:
+        plan:
+          $ref: "#/components/schemas/TenantPlan"
+        billing_cycle:
+          $ref: "#/components/schemas/SubscriptionBillingCycle"
+        seat_count:
+          type: integer
+          minimum: 1
+        custom_quotas:
+          $ref: "#/components/schemas/QuotaConfig"
+      additionalProperties: false
+
+    SubscriptionCancelRequest:
+      type: object
+      properties:
+        cancel_at_period_end:
+          type: boolean
+          description: If true, cancel at end of current period; if false, cancel immediately
+        reason:
+          type: string
+          maxLength: 512
+          description: Optional reason for cancellation
+      required:
+        - cancel_at_period_end
+      additionalProperties: false
+
+    SubscriptionUpgradeRequest:
+      type: object
+      properties:
+        target_plan:
+          $ref: "#/components/schemas/TenantPlan"
+          description: The plan to upgrade to (must be higher tier)
+      required:
+        - target_plan
+      additionalProperties: false
+
+    TenantStatusResponse:
+      type: object
+      properties:
+        tenant_id:
+          $ref: "#/components/schemas/TenantId"
+        status:
+          $ref: "#/components/schemas/TenantStatus"
+        active_agents:
+          type: integer
+          example: 12
+        active_workflows:
+          type: integer
+          example: 5
+        storage_used_gb:
+          type: number
+          format: float
+          example: 234.5
+        tokens_used_this_month:
+          type: integer
+          example: 45000000
+        uptime_percent:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          example: 99.97
+        last_health_check:
+          type: string
+          format: date-time
+      required:
+        - tenant_id
+        - status
+        - active_agents
+        - active_workflows
+        - storage_used_gb
+        - tokens_used_this_month
+        - uptime_percent
+        - last_health_check
+
+    AgentListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                $ref: "#/components/schemas/TenantId"
+              name:
+                type: string
+              role:
+                type: string
+              status:
+                type: string
+                enum: [active, inactive, suspended]
+              capabilities:
+                type: array
+                items:
+                  type: string
+              created_at:
+                type: string
+                format: date-time
+            required:
+              - id
+              - name
+              - role
+              - status
+              - capabilities
+              - created_at
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+
+    ResourceUsageResponse:
+      type: object
+      properties:
+        tenant_id:
+          $ref: "#/components/schemas/TenantId"
+        storage_used_gb:
+          type: number
+          format: float
+        storage_limit_gb:
+          type: number
+          format: float
+        agents_active:
+          type: integer
+        agents_limit:
+          type: integer
+        workflows_run_today:
+          type: integer
+        workflows_daily_limit:
+          type: integer
+        workflows_concurrent_running:
+          type: integer
+        workflows_concurrent_limit:
+          type: integer
+        tokens_used_this_month:
+          type: integer
+        tokens_monthly_limit:
+          type: integer
+        utilization_percent:
+          type: object
+          properties:
+            agents:
+              type: number
+              format: float
+              example: 24.0
+            storage:
+              type: number
+              format: float
+              example: 46.9
+            workflows_daily:
+              type: number
+              format: float
+              example: 12.5
+            workflows_concurrent:
+              type: number
+              format: float
+              example: 25.0
+            tokens:
+              type: number
+              format: float
+              example: 45.0
+          required:
+            - agents
+            - storage
+            - workflows_daily
+            - workflows_concurrent
+            - tokens
+      required:
+        - tenant_id
+        - storage_used_gb
+        - storage_limit_gb
+        - agents_active
+        - agents_limit
+        - workflows_run_today
+        - workflows_daily_limit
+        - workflows_concurrent_running
+        - workflows_concurrent_limit
+        - tokens_used_this_month
+        - tokens_monthly_limit
+        - utilization_percent
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        details:
+          type: string
+        request_id:
+          type: string
+          format: uuid
+      required:
+        - code
+        - message
+        - request_id
+
+    ErrorList:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Error"
+      required:
+        - errors
+
+  parameters:
+    TenantIdPath:
+      name: id
+      in: path
+      required: true
+      description: UUID of the tenant
+      schema:
+        type: string
+        format: uuid
+
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    StatusFilterParam:
+      name: status
+      in: query
+      required: false
+      description: Filter tenants by status
+      schema:
+        type: string
+        enum:
+          - provisioning
+          - active
+          - suspended
+          - deprovisioning
+          - deprovisioned
+    PlanFilterParam:
+      name: plan
+      in: query
+      required: false
+      description: Filter tenants by plan
+      schema:
+        type: string
+        enum:
+          - saas
+          - enterprise
+          - sovereign
+
+paths:
+  /tenants:
+    post:
+      operationId: createTenant
+      summary: Create a new tenant
+      description: Provision a new tenant with specified plan, region, and isolation configuration.
+      tags:
+        - Tenants
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantCreateRequest"
+      responses:
+        "201":
+          description: Tenant created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantResponse"
+        "400":
+          description: Invalid request body or parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden — insufficient permissions to create tenants
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Conflict — tenant name already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Unprocessable entity — quota validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}:
+    get:
+      operationId: getTenant
+      summary: Get tenant details
+      description: Retrieve full details of a specific tenant.
+      tags:
+        - Tenants
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      responses:
+        "200":
+          description: Tenant details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantResponse"
+        "400":
+          description: Invalid tenant ID format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden — no access to this tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    patch:
+      operationId: patchTenant
+      summary: Update tenant
+      description: Partially update a tenant's properties.
+      tags:
+        - Tenants
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantPatchRequest"
+      responses:
+        "200":
+          description: Tenant updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden — cannot modify this tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Conflict — status transition not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Unprocessable entity — validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    delete:
+      operationId: deleteTenant
+      summary: Delete tenant
+      description: Permanently delete a tenant. The tenant must be in deprovisioned state.
+      tags:
+        - Tenants
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      responses:
+        "204":
+          description: Tenant deleted successfully
+        "400":
+          description: Invalid tenant ID or tenant not in deprovisioned state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden — cannot delete this tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Conflict — tenant is not fully deprovisioned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/quota:
+    get:
+      operationId: getTenantQuota
+      summary: Get tenant quota configuration
+      tags:
+        - Tenants
+        - Quota
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      responses:
+        "200":
+          description: Quota configuration retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuotaConfig"
+        "400":
+          description: Invalid tenant ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    patch:
+      operationId: updateTenantQuota
+      summary: Update tenant quota
+      tags:
+        - Tenants
+        - Quota
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuotaConfig"
+      responses:
+        "200":
+          description: Quota updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuotaConfig"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden — cannot modify quota
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Quota exceeds plan limits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/status:
+    get:
+      operationId: getTenantStatus
+      summary: Get tenant status and health
+      tags:
+        - Tenants
+        - Status
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      responses:
+        "200":
+          description: Tenant status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantStatusResponse"
+        "400":
+          description: Invalid tenant ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/agents:
+    get:
+      operationId: listTenantAgents
+      summary: List agents belonging to a tenant
+      tags:
+        - Tenants
+        - Agents
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: Agent list retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentListResponse"
+        "400":
+          description: Invalid tenant ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/resources:
+    get:
+      operationId: getTenantResources
+      summary: Get tenant resource usage and limits
+      tags:
+        - Tenants
+        - Resources
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      responses:
+        "200":
+          description: Resource usage retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceUsageResponse"
+        "400":
+          description: Invalid tenant ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /billing/invoices:
+    get:
+      operationId: listBillingInvoices
+      summary: List tenant billing invoices
+      description: Retrieve paginated list of invoices for the tenant.
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: status
+          in: query
+          required: false
+          description: Filter invoices by status
+          schema:
+            type: string
+            enum: [draft, posted, paid, overdue, cancelled]
+        - name: from
+          in: query
+          required: false
+          description: Filter invoices from date (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: false
+          description: Filter invoices to date (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: Invoice list retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /billing/invoices/{invoice_id}:
+    get:
+      operationId: getBillingInvoice
+      summary: Get invoice details
+      description: Retrieve full details of a specific invoice including line items.
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: invoice_id
+          in: path
+          required: true
+          description: UUID of the invoice
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Invoice details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Invoice not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /billing/invoices/{invoice_id}/download:
+    get:
+      operationId: downloadBillingInvoice
+      summary: Download invoice PDF
+      description: Download a PDF representation of the specified invoice.
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: invoice_id
+          in: path
+          required: true
+          description: UUID of the invoice
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: PDF binary data
+          content:
+            application/pdf: {}
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Invoice not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /billing/usage:
+    get:
+      operationId: getBillingUsage
+      summary: Get tenant billing usage
+      description: Retrieve current billing period usage metrics for quota and cost tracking.
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: period
+          in: query
+          required: false
+          description: Billing period (YYYY-MM)
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-[0-9]{2}$"
+        - name: metric
+          in: query
+          required: false
+          description: Specific metric to retrieve; omit for all
+          schema:
+            type: string
+            enum: [tokens, workflows, storage_gb, agents, api_calls]
+      responses:
+        "200":
+          description: Usage metrics retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingUsageResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /billing/methods:
+    get:
+      operationId: listBillingMethods
+      summary: List payment methods
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      responses:
+        "200":
+          description: Payment methods list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMethodListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /secrets:
+    post:
+      operationId: createSecret
+      summary: Create a new tenant secret
+      description: Add an encrypted secret to the tenant's secrets vault.
+      tags:
+        - Secrets
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SecretCreateRequest"
+      responses:
+        "201":
+          description: Secret created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecretResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Conflict — secret key already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    get:
+      operationId: listSecrets
+      summary: List tenant secrets (metadata only)
+      description: Return secret keys and metadata without revealing values.
+      tags:
+        - Secrets
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: tag
+          in: query
+          required: false
+          description: Filter by tag
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: Secret metadata list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecretListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /secrets/{secret_id}:
+    get:
+      operationId: getSecret
+      summary: Get secret value
+      description: Retrieve the plaintext value of a secret. Requires read permission.
+      tags:
+        - Secrets
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: secret_id
+          in: path
+          required: true
+          description: UUID of the secret
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Secret value retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecretResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Secret not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    patch:
+      operationId: updateSecret
+      summary: Update secret metadata
+      description: Update tag or label of a secret without changing its value.
+      tags:
+        - Secrets
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: secret_id
+          in: path
+          required: true
+          description: UUID of the secret
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SecretUpdateRequest"
+      responses:
+        "200":
+          description: Secret updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecretResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Secret not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    delete:
+      operationId: deleteSecret
+      summary: Delete a secret
+      description: Permanently remove a secret and all its versions.
+      tags:
+        - Secrets
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: secret_id
+          in: path
+          required: true
+          description: UUID of the secret
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Secret deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Secret not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /secrets/{secret_id}/rotate:
+    post:
+      operationId: rotateSecret
+      summary: Rotate secret value
+      description: Generate a new encrypted version of the secret, preserving history.
+      tags:
+        - Secrets
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: secret_id
+          in: path
+          required: true
+          description: UUID of the secret
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SecretRotateRequest"
+      responses:
+        "200":
+          description: Secret rotated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecretResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Secret not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /subscriptions:
+    get:
+      operationId: listSubscriptions
+      summary: List tenant subscriptions
+      tags:
+        - Subscriptions
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      responses:
+        "200":
+          description: Subscription list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /subscriptions/{subscription_id}:
+    get:
+      operationId: getSubscription
+      summary: Get subscription details
+      tags:
+        - Subscriptions
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: subscription_id
+          in: path
+          required: true
+          description: UUID of the subscription
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Subscription details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Subscription not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    patch:
+      operationId: updateSubscription
+      summary: Update subscription
+      description: Modify plan, quota, or configuration of an active subscription.
+      tags:
+        - Subscriptions
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: subscription_id
+          in: path
+          required: true
+          description: UUID of the subscription
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionUpdateRequest"
+      responses:
+        "200":
+          description: Subscription updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Subscription not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Conflict — plan change not allowed in current state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /subscriptions/{subscription_id}/cancel:
+    post:
+      operationId: cancelSubscription
+      summary: Cancel subscription
+      description: Initiate cancellation with optional end-of-period delay.
+      tags:
+        - Subscriptions
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: subscription_id
+          in: path
+          required: true
+          description: UUID of the subscription
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionCancelRequest"
+      responses:
+        "200":
+          description: Subscription cancellation initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Subscription not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Conflict — subscription already cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /subscriptions/{subscription_id}/upgrade:
+    post:
+      operationId: upgradeSubscription
+      summary: Upgrade subscription plan
+      description: Change to a higher-tier plan with prorated billing.
+      tags:
+        - Subscriptions
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: subscription_id
+          in: path
+          required: true
+          description: UUID of the subscription
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionUpgradeRequest"
+      responses:
+        "200":
+          description: Subscription upgraded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionResponse"
+        "400":
+          description: Invalid plan or upgrade path
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Subscription not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"

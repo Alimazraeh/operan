@@ -1,0 +1,432 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "PolicyRule": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "name",
+        "policy_type",
+        "scope",
+        "enforcement",
+        "status",
+        "created_by",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the policy rule"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the tenant this rule belongs to"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name of the policy rule"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the policy rule"
+        },
+        "policy_type": {
+          "type": "string",
+          "enum": [
+            "tool_use",
+            "data_access",
+            "agent_behavior",
+            "safety",
+            "cost",
+            "compliance"
+          ],
+          "description": "Category of the policy rule"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "global",
+            "tenant",
+            "department",
+            "agent"
+          ],
+          "description": "Scope at which the policy rule is enforced"
+        },
+        "enforcement": {
+          "type": "string",
+          "enum": [
+            "enforce",
+            "audit",
+            "warn"
+          ],
+          "description": "Enforcement level of the policy rule"
+        },
+        "rule_body": {
+          "type": "object",
+          "description": "Structured rule definition containing conditions and actions"
+        },
+        "priority": {
+          "type": "integer",
+          "description": "Priority level for evaluating this rule relative to others"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "inactive",
+            "draft"
+          ],
+          "description": "Current lifecycle status of the policy rule"
+        },
+        "created_by": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the user who created the policy rule"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the policy rule was created"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the policy rule was last updated"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CreatePolicyRuleRequest": {
+      "type": "object",
+      "required": [
+        "tenant_id",
+        "name",
+        "policy_type",
+        "rule_body",
+        "scope"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the tenant creating the policy rule"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name of the policy rule"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the policy rule"
+        },
+        "policy_type": {
+          "type": "string",
+          "enum": [
+            "tool_use",
+            "data_access",
+            "agent_behavior",
+            "safety",
+            "cost",
+            "compliance"
+          ],
+          "description": "Category of the policy rule"
+        },
+        "rule_body": {
+          "type": "object",
+          "description": "Structured rule definition containing conditions and actions"
+        },
+        "priority": {
+          "type": "integer",
+          "default": 5,
+          "description": "Priority level for evaluating this rule relative to others"
+        },
+        "enforcement": {
+          "type": "string",
+          "enum": [
+            "enforce",
+            "audit",
+            "warn"
+          ],
+          "default": "enforce",
+          "description": "Enforcement level of the policy rule"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "global",
+            "tenant",
+            "department",
+            "agent"
+          ],
+          "description": "Scope at which the policy rule is enforced"
+        }
+      },
+      "additionalProperties": false
+    },
+    "UpdatePolicyRuleRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Human-readable name of the policy rule"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the policy rule"
+        },
+        "rule_body": {
+          "type": "object",
+          "description": "Structured rule definition containing conditions and actions"
+        },
+        "priority": {
+          "type": "integer",
+          "description": "Priority level for evaluating this rule relative to others"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "inactive",
+            "draft"
+          ],
+          "description": "Current lifecycle status of the policy rule"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "global",
+            "tenant",
+            "department",
+            "agent"
+          ],
+          "description": "Scope at which the policy rule is enforced"
+        },
+        "enforcement": {
+          "type": "string",
+          "enum": [
+            "enforce",
+            "audit",
+            "warn"
+          ],
+          "description": "Enforcement level of the policy rule"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AuditLog": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "agent_id",
+        "action",
+        "decision",
+        "decision_reason",
+        "timestamp"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the audit log entry"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the tenant associated with this audit log"
+        },
+        "agent_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the agent that triggered this audit entry"
+        },
+        "action": {
+          "type": "string",
+          "description": "Action performed by the agent"
+        },
+        "workflow_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid",
+          "description": "UUID of the workflow this action was part of, if applicable"
+        },
+        "rule_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid",
+          "description": "UUID of the policy rule that governed this action, if applicable"
+        },
+        "decision": {
+          "type": "string",
+          "enum": [
+            "allowed",
+            "blocked",
+            "flagged"
+          ],
+          "description": "Decision made by the policy engine"
+        },
+        "decision_reason": {
+          "type": "string",
+          "description": "Human-readable explanation of the decision"
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "description": "Severity level of the audit entry"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the event occurred"
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional contextual details about the audit event"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ComplianceReport": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "report_type",
+        "generated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the compliance report"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the tenant this report belongs to"
+        },
+        "report_type": {
+          "type": "string",
+          "enum": [
+            "daily",
+            "weekly",
+            "monthly",
+            "incident"
+          ],
+          "description": "Type of compliance report"
+        },
+        "summary": {
+          "type": "string",
+          "description": "Human-readable summary of the report findings"
+        },
+        "generated_by": {
+          "type": "string",
+          "description": "Identifier of the system or user who generated this report"
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the report was generated"
+        },
+        "findings_count": {
+          "type": "integer",
+          "description": "Total number of findings in this report"
+        },
+        "severity_breakdown": {
+          "type": "object",
+          "properties": {
+            "low": {
+              "type": "integer"
+            },
+            "medium": {
+              "type": "integer"
+            },
+            "high": {
+              "type": "integer"
+            },
+            "critical": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Count of findings grouped by severity level"
+        },
+        "report_data": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Detailed findings and data backing this report"
+        },
+        "export_format": {
+          "type": "string",
+          "enum": [
+            "json",
+            "pdf",
+            "csv"
+          ],
+          "description": "Format of the exported report"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TenantQuota": {
+      "type": "object",
+      "properties": {
+        "max_agents": {
+          "type": "integer",
+          "description": "Maximum number of agents this tenant can provision"
+        },
+        "max_workflows_per_day": {
+          "type": "integer",
+          "description": "Maximum number of workflows this tenant can execute per day"
+        },
+        "max_storage_gb": {
+          "type": "integer",
+          "description": "Maximum storage allocated to this tenant in gigabytes"
+        },
+        "max_monthly_tokens": {
+          "type": "integer",
+          "description": "Maximum number of tokens this tenant can consume per month"
+        },
+        "max_concurrent_workflows": {
+          "type": "integer",
+          "description": "Maximum number of workflows this tenant can run concurrently"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Machine-readable error code"
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message"
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional contextual information about the error"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

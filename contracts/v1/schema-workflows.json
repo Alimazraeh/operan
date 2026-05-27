@@ -1,0 +1,351 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Operan Workflow Automation Engine Schema (Module 14)",
+  "description": "Workflow orchestration. Pipeline design, execution, state machine, scheduling, human-in-the-loop, error handling, and workflow analytics.",
+  "type": "object",
+  "definitions": {
+    "CreatePipelineRequest": {
+      "type": "object",
+      "required": ["tenant_id", "name", "steps"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "steps": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PipelineStep" }
+        },
+        "error_handling": { "$ref": "#/definitions/ErrorHandlingConfig" },
+        "timeout_minutes": { "type": "integer" },
+        "max_retries": { "type": "integer", "default": 3 },
+        "trigger_type": {
+          "type": "string",
+          "enum": ["manual", "event", "schedule", "webhook", "api"]
+        },
+        "variables": { "type": "object" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "PipelineStep": {
+      "type": "object",
+      "required": ["id", "name", "type"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": [
+            "api_call", "agent_task", "data_transform",
+            "condition", "delay", "human_approval",
+            "parallel", "foreach", "webhook",
+            "code", "notification"
+          ]
+        },
+        "inputs": { "type": "object" },
+        "config": { "type": "object" },
+        "condition": {
+          "type": "string",
+          "description": "Expression for conditional execution"
+        },
+        "timeout_seconds": { "type": "integer" },
+        "on_error": {
+          "type": "string",
+          "enum": ["fail", "retry", "skip", "branch"]
+        },
+        "next_step_id": { "type": "string", "format": "uuid" },
+        "parallel_branches": { "type": "integer", "default": 1 }
+      }
+    },
+    "ErrorHandlingConfig": {
+      "type": "object",
+      "properties": {
+        "default_strategy": {
+          "type": "string",
+          "enum": ["fail", "retry", "skip", "abort"]
+        },
+        "retry_max_attempts": { "type": "integer", "default": 3 },
+        "retry_backoff": {
+          "type": "string",
+          "enum": ["fixed", "exponential", "linear"]
+        },
+        "retry_base_delay_ms": { "type": "integer", "default": 1000 },
+        "dead_letter_enabled": { "type": "boolean", "default": true },
+        "alert_on_failure": { "type": "boolean", "default": true }
+      }
+    },
+    "UpdatePipelineRequest": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "steps": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PipelineStep" }
+        },
+        "error_handling": { "$ref": "#/definitions/ErrorHandlingConfig" },
+        "timeout_minutes": { "type": "integer" },
+        "max_retries": { "type": "integer" },
+        "status": {
+          "type": "string",
+          "enum": ["active", "inactive", "archived"]
+        },
+        "variables": { "type": "object" }
+      }
+    },
+    "ExecutePipelineRequest": {
+      "type": "object",
+      "required": ["inputs"],
+      "properties": {
+        "inputs": { "type": "object" },
+        "variables": { "type": "object" },
+        "execute_immediately": { "type": "boolean", "default": true }
+      }
+    },
+    "Pipeline": {
+      "type": "object",
+      "required": ["id", "name", "status"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "steps": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PipelineStep" }
+        },
+        "error_handling": { "$ref": "#/definitions/ErrorHandlingConfig" },
+        "timeout_minutes": { "type": "integer" },
+        "max_retries": { "type": "integer" },
+        "trigger_type": {
+          "type": "string",
+          "enum": ["manual", "event", "schedule", "webhook", "api"]
+        },
+        "variables": { "type": "object" },
+        "status": {
+          "type": "string",
+          "enum": ["active", "inactive", "archived"]
+        },
+        "execution_count": { "type": "integer" },
+        "last_execution_at": { "type": "string", "format": "date-time" },
+        "success_rate": { "type": "number" },
+        "avg_duration_ms": { "type": "number" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "Execution": {
+      "type": "object",
+      "required": ["id", "pipeline_id", "status"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "pipeline_id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "running", "completed", "failed", "cancelled", "retrying"]
+        },
+        "inputs": { "type": "object" },
+        "outputs": { "type": "object" },
+        "current_step_id": { "type": "string", "format": "uuid" },
+        "current_step_status": { "type": "string" },
+        "error_message": { "type": "string" },
+        "retry_count": { "type": "integer" },
+        "duration_ms": { "type": "number" },
+        "started_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "created_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ExecutionStep": {
+      "type": "object",
+      "required": ["id", "execution_id", "status"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "execution_id": { "type": "string", "format": "uuid" },
+        "step_id": { "type": "string", "format": "uuid" },
+        "step_name": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "running", "completed", "failed", "skipped", "cancelled"]
+        },
+        "inputs": { "type": "object" },
+        "outputs": { "type": "object" },
+        "error_message": { "type": "string" },
+        "started_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "duration_ms": { "type": "number" }
+      }
+    },
+    "CreateScheduleRequest": {
+      "type": "object",
+      "required": ["tenant_id", "pipeline_id", "cron"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "pipeline_id": { "type": "string", "format": "uuid" },
+        "cron": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "inputs": { "type": "object" },
+        "timezone": { "type": "string", "default": "UTC" },
+        "enabled": { "type": "boolean", "default": true },
+        "max_concurrent_runs": { "type": "integer", "default": 1 }
+      }
+    },
+    "UpdateScheduleRequest": {
+      "type": "object",
+      "properties": {
+        "cron": { "type": "string" },
+        "name": { "type": "string" },
+        "inputs": { "type": "object" },
+        "timezone": { "type": "string" },
+        "enabled": { "type": "boolean" },
+        "max_concurrent_runs": { "type": "integer" }
+      }
+    },
+    "Schedule": {
+      "type": "object",
+      "required": ["id", "pipeline_id", "cron"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "pipeline_id": { "type": "string", "format": "uuid" },
+        "cron": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "inputs": { "type": "object" },
+        "timezone": { "type": "string" },
+        "enabled": { "type": "boolean" },
+        "max_concurrent_runs": { "type": "integer" },
+        "last_run_at": { "type": "string", "format": "date-time" },
+        "next_run_at": { "type": "string", "format": "date-time" },
+        "run_count": { "type": "integer" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "CreateHumanTaskRequest": {
+      "type": "object",
+      "required": [
+        "tenant_id",
+        "pipeline_execution_id",
+        "assignee_type",
+        "assignee_id",
+        "task_type",
+        "instructions"
+      ],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "pipeline_execution_id": { "type": "string", "format": "uuid" },
+        "step_id": { "type": "string", "format": "uuid" },
+        "assignee_type": {
+          "type": "string",
+          "enum": ["user", "role", "group", "agent"]
+        },
+        "assignee_id": { "type": "string", "format": "uuid" },
+        "task_type": {
+          "type": "string",
+          "enum": ["approval", "rejection", "input", "review", "confirmation"]
+        },
+        "instructions": { "type": "string" },
+        "context": { "type": "object" },
+        "timeout_minutes": { "type": "integer", "default": 1440 },
+        "label": { "type": "string" },
+        "priority": {
+          "type": "string",
+          "enum": ["low", "normal", "high", "urgent"]
+        }
+      }
+    },
+    "HumanTask": {
+      "type": "object",
+      "required": ["id", "status"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "pipeline_execution_id": { "type": "string", "format": "uuid" },
+        "step_id": { "type": "string", "format": "uuid" },
+        "assignee_type": {
+          "type": "string",
+          "enum": ["user", "role", "group", "agent"]
+        },
+        "assignee_id": { "type": "string", "format": "uuid" },
+        "task_type": {
+          "type": "string",
+          "enum": ["approval", "rejection", "input", "review", "confirmation"]
+        },
+        "instructions": { "type": "string" },
+        "context": { "type": "object" },
+        "timeout_minutes": { "type": "integer" },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected", "timeout", "cancelled"]
+        },
+        "label": { "type": "string" },
+        "priority": {
+          "type": "string",
+          "enum": ["low", "normal", "high", "urgent"]
+        },
+        "response": { "type": "object" },
+        "responded_by": { "type": "string", "format": "uuid" },
+        "responded_at": { "type": "string", "format": "date-time" },
+        "created_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "RespondHumanTaskRequest": {
+      "type": "object",
+      "required": ["action"],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["approve", "reject", "request_info"]
+        },
+        "response": { "type": "object" },
+        "comments": { "type": "string" }
+      }
+    },
+    "PipelineAnalytics": {
+      "type": "object",
+      "required": ["total_executions", "success_rate"],
+      "properties": {
+        "total_executions": { "type": "integer" },
+        "completed_executions": { "type": "integer" },
+        "failed_executions": { "type": "integer" },
+        "cancelled_executions": { "type": "integer" },
+        "success_rate": { "type": "number" },
+        "avg_duration_ms": { "type": "number" },
+        "p50_duration_ms": { "type": "number" },
+        "p95_duration_ms": { "type": "number" },
+        "p99_duration_ms": { "type": "number" },
+        "total_retries": { "type": "integer" },
+        "peak_executions_per_hour": { "type": "integer" },
+        "step_metrics": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    },
+    "HealthStatus": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["healthy", "degraded", "unhealthy"]
+        },
+        "uptime_seconds": { "type": "integer" },
+        "active_executions": { "type": "integer" },
+        "pending_tasks": { "type": "integer" },
+        "active_schedules": { "type": "integer" },
+        "failed_executions_24h": { "type": "integer" },
+        "last_check": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

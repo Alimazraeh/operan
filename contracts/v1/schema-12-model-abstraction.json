@@ -1,0 +1,297 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "ModelProvider": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "provider",
+        "model_name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "provider": {
+          "type": "string",
+          "enum": [
+            "openai",
+            "azure",
+            "google",
+            "aws",
+            "local",
+            "anthropic",
+            "ollama"
+          ]
+        },
+        "model_name": {
+          "type": "string"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tier": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "premium",
+            "experimental"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "inactive",
+            "deprecated"
+          ]
+        },
+        "cost_per_token": {
+          "type": "object",
+          "properties": {
+            "prompt": {
+              "type": "number"
+            },
+            "completion": {
+              "type": "number"
+            },
+            "currency": {
+              "type": "string"
+            }
+          }
+        },
+        "rate_limit": {
+          "type": "object",
+          "properties": {
+            "max_requests_per_minute": {
+              "type": "integer"
+            },
+            "max_tokens_per_minute": {
+              "type": "integer"
+            }
+          }
+        },
+        "max_context_length": {
+          "type": "integer"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ModelCall": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "model_id",
+        "provider",
+        "status",
+        "timestamp"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "model_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "provider": {
+          "type": "string",
+          "enum": [
+            "openai",
+            "azure",
+            "google",
+            "aws",
+            "local",
+            "anthropic",
+            "ollama"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "success",
+            "failed"
+          ]
+        },
+        "agent_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "workflow_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "input_tokens": {
+          "type": "integer"
+        },
+        "output_tokens": {
+          "type": "integer"
+        },
+        "latency_ms": {
+          "type": "integer"
+        },
+        "cost": {
+          "type": "object",
+          "properties": {
+            "currency": {
+              "type": "string"
+            },
+            "amount": {
+              "type": "number"
+            }
+          }
+        },
+        "error_message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RoutingDecision": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "selected_model_id",
+        "reason",
+        "timestamp"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "selected_model_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "candidate_models": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "fallback_triggered": {
+          "type": "boolean"
+        },
+        "selection_criteria": {
+          "type": "object"
+        },
+        "latency_ms": {
+          "type": "integer"
+        },
+        "cost": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ModelHealth": {
+      "type": "object",
+      "required": [
+        "model_id",
+        "tenant_id",
+        "status",
+        "timestamp"
+      ],
+      "properties": {
+        "model_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "healthy",
+            "degraded",
+            "unhealthy"
+          ]
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "current_capacity": {
+          "type": "integer"
+        },
+        "max_capacity": {
+          "type": "integer"
+        },
+        "utilization": {
+          "type": "number"
+        },
+        "error_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "avg_latency_ms": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

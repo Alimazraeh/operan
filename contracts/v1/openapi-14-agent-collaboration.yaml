@@ -1,0 +1,764 @@
+openapi: 3.0.3
+info:
+  title: Operan Agent Collaboration API
+  description: Inter-agent messaging, task coordination, and team management. Module 14.
+  version: 1.0.0
+servers:
+  - url: /api/v1/collaboration
+    description: Agent collaboration API root
+
+paths:
+  /messages:
+    post:
+      operationId: sendMessage
+      summary: Send a collaboration message to other agents
+      tags: [messages]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageSendRequest'
+      responses:
+        '201':
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollaborationMessage'
+        '400':
+          description: Invalid message
+
+    get:
+      operationId: listMessages
+      summary: List messages for the current tenant
+      tags: [messages]
+      parameters:
+        - name: message_type
+          in: query
+          schema:
+            type: string
+            enum: [task_request, task_update, question, answer, resource_share, status_update, escalation]
+        - name: sender_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: conversation_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [low, normal, high, urgent]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Message list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageList'
+
+  /messages/{messageId}:
+    parameters:
+      - name: messageId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getMessage
+      summary: Get message details
+      tags: [messages]
+      responses:
+        '200':
+          description: Message details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollaborationMessage'
+        '404':
+          description: Message not found
+
+  /messages/{messageId}/read:
+    post:
+      operationId: markMessageRead
+      summary: Mark a message as read
+      tags: [messages]
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkReadRequest'
+      responses:
+        '200':
+          description: Message marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollaborationMessage'
+        '404':
+          description: Message not found
+
+  /conversations/{conversationId}:
+    get:
+      operationId: getConversation
+      summary: Get a conversation with its messages
+      tags: [conversations]
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Conversation detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationDetail'
+        '404':
+          description: Conversation not found
+
+  /conversations:
+    post:
+      operationId: createConversation
+      summary: Create a new collaboration conversation
+      tags: [conversations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationCreateRequest'
+      responses:
+        '201':
+          description: Conversation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationDetail'
+
+  /tasks:
+    get:
+      operationId: listTasks
+      summary: List tasks
+      tags: [tasks]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, accepted, in_progress, completed, rejected, expired]
+        - name: assignee_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: requester_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [low, normal, high, urgent]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Task list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskList'
+
+  /tasks/{taskId}:
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getTask
+      summary: Get task details
+      tags: [tasks]
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollaborationTask'
+        '404':
+          description: Task not found
+
+  /tasks:
+    post:
+      operationId: createTask
+      summary: Create and assign a new task to an agent
+      tags: [tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreateRequest'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollaborationTask'
+        '400':
+          description: Invalid task request
+
+  /tasks/{taskId}/complete:
+    post:
+      operationId: completeTask
+      summary: Mark a task as completed
+      tags: [tasks]
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCompleteRequest'
+      responses:
+        '200':
+          description: Task completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollaborationTask'
+        '404':
+          description: Task not found
+
+  /tasks/{taskId}/escalate:
+    post:
+      operationId: escalateTask
+      summary: Escalate a task
+      tags: [tasks]
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskEscalateRequest'
+      responses:
+        '200':
+          description: Task escalated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollaborationTask'
+        '404':
+          description: Task not found
+
+  /teams:
+    get:
+      operationId: listTeams
+      summary: List teams
+      tags: [teams]
+      responses:
+        '200':
+          description: Team list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamList'
+    post:
+      operationId: createTeam
+      summary: Create a new team
+      tags: [teams]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamCreateRequest'
+      responses:
+        '201':
+          description: Team created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+
+  /teams/{teamId}:
+    parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getTeam
+      summary: Get team details
+      tags: [teams]
+      responses:
+        '200':
+          description: Team details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '404':
+          description: Team not found
+
+  /teams/{teamId}/members:
+    get:
+      operationId: listTeamMembers
+      summary: List team members
+      tags: [teams]
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Member list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamMemberList'
+    post:
+      operationId: addTeamMember
+      summary: Add a member to a team
+      tags: [teams]
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberAddRequest'
+      responses:
+        '201':
+          description: Member added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamMembership'
+        '404':
+          description: Team not found
+
+components:
+  schemas:
+    MessageSendRequest:
+      type: object
+      required: [tenant_id, sender_id, content, message_type]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        sender_id:
+          type: string
+          format: uuid
+        content:
+          type: object
+        message_type:
+          type: string
+          enum: [task_request, task_update, question, answer, resource_share, status_update, escalation]
+        recipients:
+          type: array
+          items:
+            type: string
+            format: uuid
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+        conversation_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        expires_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        metadata:
+          type: object
+
+    CollaborationMessage:
+      type: object
+      required: [id, tenant_id, sender_id, content, message_type, sent_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        sender_id:
+          type: string
+          format: uuid
+        content:
+          type: object
+        message_type:
+          type: string
+          enum: [task_request, task_update, question, answer, resource_share, status_update, escalation]
+        sent_at:
+          type: string
+          format: date-time
+        recipients:
+          type: array
+          items:
+            type: string
+            format: uuid
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+        conversation_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        expires_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        read_by:
+          type: array
+          items:
+            type: object
+            required: [user_id, read_at]
+            properties:
+              user_id:
+                type: string
+                format: uuid
+              read_at:
+                type: string
+                format: date-time
+        metadata:
+          type: object
+
+    MessageList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollaborationMessage'
+        total:
+          type: integer
+
+    MarkReadRequest:
+      type: object
+      required: [user_id]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+
+    ConversationDetail:
+      type: object
+      required: [id, tenant_id]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollaborationMessage'
+
+    ConversationCreateRequest:
+      type: object
+      required: [tenant_id, participant_ids]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        participant_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        title:
+          type: string
+        metadata:
+          type: object
+
+    TaskCreateRequest:
+      type: object
+      required: [tenant_id, assignee_id, task_description, task_context]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        assignee_id:
+          type: string
+          format: uuid
+        task_description:
+          type: string
+        task_context:
+          type:
+            - object
+            - 'null'
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+        due_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        message_type:
+          type: string
+
+    CollaborationTask:
+      type: object
+      required: [id, tenant_id, requester_id, assignee_id, task_description, status, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        requester_id:
+          type: string
+          format: uuid
+        assignee_id:
+          type: string
+          format: uuid
+        task_description:
+          type: string
+        status:
+          type: string
+          enum: [pending, accepted, in_progress, completed, rejected, expired]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        task_context:
+          type: object
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+        due_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        result:
+          type:
+            - object
+            - 'null'
+        conversation_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        assignment_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+
+    TaskList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollaborationTask'
+        total:
+          type: integer
+
+    TaskCompleteRequest:
+      type: object
+      required: [result]
+      properties:
+        result:
+          type: object
+
+    TaskEscalateRequest:
+      type: object
+      properties:
+        new_assignee_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+
+    TeamCreateRequest:
+      type: object
+      required: [tenant_id, name, member_ids]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        member_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        metadata:
+          type: object
+
+    Team:
+      type: object
+      required: [id, tenant_id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    TeamList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Team'
+        total:
+          type: integer
+
+    TeamMembership:
+      type: object
+      required: [id, tenant_id, team_id, agent_id, role, joined_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        team_id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [member, lead, observer]
+        joined_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [active, inactive, pending]
+        permissions:
+          type: object
+        left_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+
+    TeamMemberList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamMembership'
+        total:
+          type: integer
+
+    MemberAddRequest:
+      type: object
+      required: [agent_id, role]
+      properties:
+        agent_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [member, lead, observer]
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object

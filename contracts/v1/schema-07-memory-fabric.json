@@ -1,0 +1,430 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "MODULE 07 — Memory Fabric: Schema definitions for vector memory storage, agent memory management, semantic search, vector operations, retention policies, and error handling.",
+  "definitions": {
+    "MemoryVector": {
+      "type": "object",
+      "description": "A semantic memory vector storing embedded content associated with a tenant, document, and embedding type.",
+      "required": [
+        "id",
+        "tenant_id",
+        "document_id",
+        "embedding_type",
+        "semantic_content",
+        "metadata",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for this memory vector."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Tenant identifier this memory vector belongs to."
+        },
+        "document_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Source document identifier."
+        },
+        "embedding_type": {
+          "type": "string",
+          "enum": [
+            "agent_personal",
+            "agent_ephemeral",
+            "department",
+            "platform"
+          ],
+          "description": "Classification of the memory vector by scope and lifetime."
+        },
+        "semantic_content": {
+          "type": "string",
+          "description": "The textual content of the memory vector."
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Arbitrary key-value metadata associated with this vector."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when this memory vector was created."
+        },
+        "embedding_model": {
+          "type": "string",
+          "description": "Name or version of the embedding model used to produce the semantic vector."
+        },
+        "chunk_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Identifier for the source document chunk."
+        },
+        "segment_type": {
+          "type": "string",
+          "enum": [
+            "fact",
+            "context",
+            "memory",
+            "tool_output",
+            "policy"
+          ],
+          "description": "Semantic category of this memory segment."
+        },
+        "embedding_vector": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "Numerical embedding vector representing the semantic content."
+        },
+        "vector_hash": {
+          "type": "string",
+          "description": "Hash of the embedding vector for integrity verification."
+        },
+        "ttl": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Time-to-live expiry timestamp; null means no expiry."
+        }
+      },
+      "additionalProperties": false
+    },
+    "AgentMemory": {
+      "type": "object",
+      "description": "An agent's aggregate memory state, including personal memories and an ephemeral context window.",
+      "required": [
+        "agent_id",
+        "tenant_id"
+      ],
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the agent."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Tenant identifier for this agent."
+        },
+        "personal_memories": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Array of UUIDs referencing the agent's persistent personal memory vectors."
+        },
+        "ephemeral_window": {
+          "$ref": "#/definitions/EphemeralWindow",
+          "description": "Configuration for the agent's temporary/contextual memory window."
+        },
+        "last_updated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last update to this agent's memory state."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "suspended"
+          ],
+          "description": "Current operational status of this agent's memory."
+        }
+      },
+      "additionalProperties": false
+    },
+    "EphemeralWindow": {
+      "type": "object",
+      "description": "Parameters governing an agent's ephemeral (short-lived) memory window.",
+      "required": [],
+      "properties": {
+        "max_tokens": {
+          "type": "integer",
+          "description": "Maximum number of tokens allowed in the ephemeral window."
+        },
+        "ttl_seconds": {
+          "type": "integer",
+          "description": "Time-to-live in seconds for entries in the ephemeral window."
+        }
+      },
+      "additionalProperties": false
+    },
+    "SemanticSearchRequest": {
+      "type": "object",
+      "description": "A request to perform semantic search over memory vectors.",
+      "required": [
+        "tenant_id",
+        "query",
+        "embedding_type"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Tenant identifier to scope the search."
+        },
+        "query": {
+          "type": "string",
+          "description": "The search query string."
+        },
+        "embedding_type": {
+          "type": "string",
+          "enum": [
+            "agent_personal",
+            "agent_ephemeral",
+            "department",
+            "platform"
+          ],
+          "description": "Scope of memory vectors to search."
+        },
+        "top_n": {
+          "type": "integer",
+          "default": 10,
+          "description": "Maximum number of results to return."
+        },
+        "relevance_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0,
+          "description": "Minimum relevance score threshold for results."
+        },
+        "vector_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Optional list of vector UUIDs to limit the search scope."
+        },
+        "filters": {
+          "type": "object",
+          "description": "Additional metadata filters to apply to the search."
+        },
+        "include_context": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to include contextual metadata in the search results."
+        }
+      },
+      "additionalProperties": false
+    },
+    "SearchResult": {
+      "type": "object",
+      "description": "A single result returned from a semantic search operation.",
+      "required": [
+        "id",
+        "vector_id",
+        "score",
+        "content"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for this search result entry."
+        },
+        "vector_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the matching memory vector."
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Relevance score between 0 and 1."
+        },
+        "content": {
+          "type": "string",
+          "description": "The matched semantic content."
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Associated metadata from the memory vector."
+        },
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "knowledge",
+            "memory",
+            "tool_output",
+            "policy"
+          ],
+          "description": "Category of the source document or memory."
+        },
+        "document_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the source document."
+        },
+        "section_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the specific section within the source document."
+        },
+        "rank": {
+          "type": "integer",
+          "description": "Ranking position of this result within the search response (1-based)."
+        },
+        "embedding_model": {
+          "type": "string",
+          "description": "The embedding model used for the matched vector."
+        }
+      },
+      "additionalProperties": false
+    },
+    "VectorOperation": {
+      "type": "object",
+      "description": "A record of a vector store operation such as ingest, search, update, or delete.",
+      "required": [
+        "id",
+        "tenant_id",
+        "operation_type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for this operation."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Tenant identifier for this operation."
+        },
+        "operation_type": {
+          "type": "string",
+          "enum": [
+            "ingest",
+            "search",
+            "update",
+            "delete"
+          ],
+          "description": "Type of vector store operation performed."
+        },
+        "batch_size": {
+          "type": "integer",
+          "default": 1,
+          "description": "Number of items in this operation batch."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "processing",
+            "completed",
+            "failed"
+          ],
+          "description": "Current status of the operation."
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the operation began."
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the operation completed or failed."
+        },
+        "error_message": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Error message if the operation failed; null otherwise."
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional metadata about the operation."
+        }
+      },
+      "additionalProperties": false
+    },
+    "MemoryRetentionPolicy": {
+      "type": "object",
+      "description": "Configuration for how long memory vectors of a given type are retained before garbage collection.",
+      "required": [
+        "id",
+        "tenant_id",
+        "memory_type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for this retention policy."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Tenant identifier this policy applies to."
+        },
+        "memory_type": {
+          "type": "string",
+          "enum": [
+            "personal",
+            "ephemeral",
+            "department",
+            "platform"
+          ],
+          "description": "Type of memory this retention policy governs."
+        },
+        "max_age_days": {
+          "type": "integer",
+          "description": "Maximum number of days before a memory of this type is eligible for deletion."
+        },
+        "max_memory_count": {
+          "type": "integer",
+          "description": "Maximum number of memories of this type allowed per tenant."
+        },
+        "ttl_seconds": {
+          "type": "integer",
+          "description": "Time-to-live in seconds for individual memory entries."
+        },
+        "auto_gc_enabled": {
+          "type": "boolean",
+          "description": "Whether automatic garbage collection is enabled for this policy."
+        },
+        "creation_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when this retention policy was created."
+        }
+      },
+      "additionalProperties": false
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "description": "A standardized error response for Memory Fabric API operations.",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Machine-readable error code."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message."
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional structured details about the error."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

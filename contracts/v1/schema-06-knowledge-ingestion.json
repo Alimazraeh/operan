@@ -1,0 +1,392 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "KnowledgeDocument": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "source_type",
+        "source_uri",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the knowledge document"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the tenant"
+        },
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "pdf",
+            "docx",
+            "pptx",
+            "csv",
+            "json",
+            "xml",
+            "html",
+            "text",
+            "email",
+            "url"
+          ],
+          "description": "Type of the source document"
+        },
+        "source_uri": {
+          "type": "string",
+          "description": "URI or path to the source document"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "parsing",
+            "chunking",
+            "embedding",
+            "indexed",
+            "failed"
+          ],
+          "description": "Current ingestion status of the document"
+        },
+        "file_name": {
+          "type": "string",
+          "description": "Original file name of the source document"
+        },
+        "file_size": {
+          "type": "integer",
+          "description": "Size of the source file in bytes"
+        },
+        "department_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the department owning this document"
+        },
+        "language": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Detected or specified language codes for the document"
+        },
+        "chunk_count": {
+          "type": "integer",
+          "description": "Number of chunks the document has been split into"
+        },
+        "embedding_model": {
+          "type": "string",
+          "description": "Name or identifier of the embedding model used"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the document was created in the system"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the document was last updated"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Represents a knowledge document that has been or will be ingested into the system"
+    },
+    "IngestionRequest": {
+      "type": "object",
+      "required": [
+        "tenant_id",
+        "source_type",
+        "source_uri"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the tenant submitting the ingestion request"
+        },
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "pdf",
+            "docx",
+            "pptx",
+            "csv",
+            "json",
+            "xml",
+            "html",
+            "text",
+            "email",
+            "url"
+          ],
+          "description": "Type of the source document to ingest"
+        },
+        "source_uri": {
+          "type": "string",
+          "description": "URI or path to the source document to ingest"
+        },
+        "file_name": {
+          "type": "string",
+          "description": "Original file name of the source document"
+        },
+        "file_size": {
+          "type": "integer",
+          "description": "Size of the source file in bytes"
+        },
+        "department_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the department owning this document"
+        },
+        "processing_options": {
+          "$ref": "#/definitions/IngestionProcessingOptions",
+          "description": "Optional processing configuration for this ingestion request"
+        },
+        "requested_by": {
+          "type": "string",
+          "description": "Identifier of the user or system that submitted this request"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Request to ingest a knowledge document into the system"
+    },
+    "IngestionProcessingOptions": {
+      "type": "object",
+      "properties": {
+        "language_detection": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to automatically detect the language of the document"
+        },
+        "chunking_strategy": {
+          "type": "string",
+          "enum": [
+            "token",
+            "paragraph",
+            "heading"
+          ],
+          "default": "token",
+          "description": "Strategy to use for splitting the document into chunks"
+        },
+        "max_chunk_size": {
+          "type": "integer",
+          "default": 500,
+          "description": "Maximum number of tokens per chunk"
+        },
+        "overlap_size": {
+          "type": "integer",
+          "default": 50,
+          "description": "Number of overlapping tokens between consecutive chunks"
+        },
+        "extract_tables": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to extract tables from the document"
+        },
+        "extract_images": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to extract images from the document"
+        },
+        "extract_metadata": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to extract metadata from the document"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Configuration options for knowledge document ingestion processing"
+    },
+    "KnowledgeSection": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "content"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the knowledge section"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the knowledge section"
+        },
+        "content": {
+          "type": "string",
+          "description": "Content text of the knowledge section"
+        },
+        "section_number": {
+          "type": "integer",
+          "description": "Hierarchical section number within the document"
+        },
+        "parent_section_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the parent section, if this section is nested"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Arbitrary key-value metadata associated with this section"
+        },
+        "confidence_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence score indicating the quality or reliability of this section"
+        }
+      },
+      "additionalProperties": false,
+      "description": "A discrete section of content extracted from an ingested document"
+    },
+    "SearchQuery": {
+      "type": "object",
+      "required": [
+        "tenant_id",
+        "query_text"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the tenant performing the search"
+        },
+        "query_text": {
+          "type": "string",
+          "description": "Text of the search query"
+        },
+        "filters": {
+          "type": "object",
+          "description": "Additional filters to narrow the search results"
+        },
+        "top_n": {
+          "type": "integer",
+          "default": 10,
+          "description": "Maximum number of results to return"
+        },
+        "retrieval_strategy": {
+          "type": "string",
+          "enum": [
+            "hybrid",
+            "semantic",
+            "keyword",
+            "graph"
+          ],
+          "default": "hybrid",
+          "description": "Strategy to use for retrieving relevant knowledge sections"
+        },
+        "time_range": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Start of the time range filter"
+            },
+            "end": {
+              "type": "string",
+              "format": "date-time",
+              "description": "End of the time range filter"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Time range to filter search results by"
+        },
+        "relevance_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Minimum relevance score for results to be included"
+        },
+        "include_metadata": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to include metadata in search results"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Query for searching ingested knowledge documents and sections"
+    },
+    "SearchResult": {
+      "type": "object",
+      "required": [
+        "id",
+        "document_id",
+        "score",
+        "content"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for this search result entry"
+        },
+        "document_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the document this result belongs to"
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Overall relevance score for this search result"
+        },
+        "content": {
+          "type": "string",
+          "description": "Relevant content text from the matched section"
+        },
+        "section_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the knowledge section this result refers to"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the matched knowledge section"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Metadata associated with the matched section"
+        },
+        "similarity_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Similarity score indicating how closely the content matches the query"
+        },
+        "snippet": {
+          "type": "string",
+          "description": "Short excerpt from the content highlighting the match"
+        }
+      },
+      "additionalProperties": false,
+      "description": "A single result returned from a knowledge search query"
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Machine-readable error code"
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message"
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional error details specific to the error context"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Standard error response for Knowledge Ingestion API operations"
+    }
+  }
+}

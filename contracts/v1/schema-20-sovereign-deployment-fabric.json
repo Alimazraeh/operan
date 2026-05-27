@@ -1,0 +1,609 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "DeploymentTarget": {
+      "type": "string",
+      "enum": [
+        "public-cloud",
+        "private-cloud",
+        "air-gapped",
+        "sovereign",
+        "edge"
+      ],
+      "description": "Deployment target environment type."
+    },
+    "IsolationLevel": {
+      "type": "string",
+      "enum": [
+        "logical",
+        "data",
+        "cryptographic",
+        "execution"
+      ],
+      "description": "Multi-tenant isolation level for this deployment."
+    },
+    "DeploymentStatus": {
+      "type": "string",
+      "enum": [
+        "provisioning",
+        "provisioned",
+        "active",
+        "degraded",
+        "deprovisioning",
+        "deprovisioned",
+        "cancelled",
+        "error",
+        "rolling_update"
+      ],
+      "description": "Lifecycle status of a deployment."
+    },
+    "DeploymentState": {
+      "type": "object",
+      "description": "Full deployment resource as returned by or used for operations on the Sovereign Deployment Fabric API.",
+      "required": [
+        "id",
+        "tenant_id",
+        "name",
+        "version",
+        "status",
+        "target_type",
+        "region_id",
+        "isolation_level",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the deployment."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the tenant that owns this deployment."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable deployment name."
+        },
+        "description": {
+          "type": ["string", "null"],
+          "description": "Optional deployment description."
+        },
+        "version": {
+          "type": "integer",
+          "description": "Monotonically increasing version number for this deployment."
+        },
+        "status": {
+          "$ref": "#/definitions/DeploymentStatus"
+        },
+        "target_type": {
+          "$ref": "#/definitions/DeploymentTarget"
+        },
+        "region_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the sovereign region where this deployment resides."
+        },
+        "isolation_level": {
+          "$ref": "#/definitions/IsolationLevel"
+        },
+        "agent_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of agents in this deployment."
+        },
+        "department_template_id": {
+          "type": ["string", "null"],
+          "format": "uuid",
+          "description": "UUID of the department template that initialized this deployment, if any."
+        },
+        "memory_topology": {
+          "type": "object",
+          "properties": {
+            "vector_enabled": {
+              "type": "boolean",
+              "description": "Whether vector memory is enabled."
+            },
+            "graph_enabled": {
+              "type": "boolean",
+              "description": "Whether graph memory is enabled."
+            },
+            "episodic_enabled": {
+              "type": "boolean",
+              "description": "Whether episodic memory is enabled."
+            },
+            "semantic_enabled": {
+              "type": "boolean",
+              "description": "Whether semantic memory is enabled."
+            }
+          },
+          "description": "Memory fabric topology configuration for this deployment."
+        },
+        "compliance": {
+          "type": "object",
+          "properties": {
+            "data_residency_compliant": {
+              "type": "boolean"
+            },
+            "sovereign_compatible": {
+              "type": "boolean"
+            },
+            "rules_passed": {
+              "type": "integer"
+            },
+            "rules_total": {
+              "type": "integer"
+            },
+            "last_validation_at": {
+              "type": ["string", "null"],
+              "format": "date-time"
+            }
+          },
+          "description": "Compliance state for this deployment."
+        },
+        "health": {
+          "type": "object",
+          "properties": {
+            "overall_status": {
+              "type": "string",
+              "enum": ["healthy", "degraded", "unhealthy"]
+            },
+            "uptime_seconds": {
+              "type": ["integer", "null"]
+            },
+            "last_health_check": {
+              "type": ["string", "null"],
+              "format": "date-time"
+            }
+          },
+          "description": "Current health state of this deployment."
+        },
+        "infrastructure": {
+          "type": "object",
+          "properties": {
+            "compute": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "resource_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "storage": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "resource_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "network": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "resource_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "description": "Provisioned infrastructure resources."
+        },
+        "endpoints": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Resolved service endpoints for this deployment."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "CreateDeploymentRequest": {
+      "type": "object",
+      "description": "Request payload for creating a new deployment.",
+      "required": [
+        "tenant_id",
+        "name",
+        "target_type",
+        "region_id",
+        "isolation_level"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": ["string", "null"]
+        },
+        "target_type": {
+          "$ref": "#/definitions/DeploymentTarget"
+        },
+        "region_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "isolation_level": {
+          "$ref": "#/definitions/IsolationLevel"
+        },
+        "agent_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "department_template_id": {
+          "type": ["string", "null"],
+          "format": "uuid"
+        },
+        "memory_topology": {
+          "type": "object",
+          "properties": {
+            "vector_enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "graph_enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "episodic_enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "semantic_enabled": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "infrastructure_config": {
+          "type": "object",
+          "properties": {
+            "compute_type": {
+              "type": "string"
+            },
+            "storage_type": {
+              "type": "string"
+            },
+            "network_isolation": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "description": "Optional infrastructure provisioning configuration."
+        }
+      }
+    },
+    "UpdateDeploymentRequest": {
+      "type": "object",
+      "description": "Request payload for updating an existing deployment.",
+      "properties": {
+        "name": {
+          "type": ["string", "null"]
+        },
+        "description": {
+          "type": ["string", "null"]
+        },
+        "isolation_level": {
+          "$ref": "#/definitions/IsolationLevel"
+        },
+        "memory_topology": {
+          "type": "object",
+          "properties": {
+            "vector_enabled": {
+              "type": "boolean"
+            },
+            "graph_enabled": {
+              "type": "boolean"
+            },
+            "episodic_enabled": {
+              "type": "boolean"
+            },
+            "semantic_enabled": {
+              "type": "boolean"
+            }
+          }
+        },
+        "agent_count": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        }
+      }
+    },
+    "Region": {
+      "type": "object",
+      "description": "Sovereign region definition — a jurisdictional zone with specific compliance and data residency constraints.",
+      "required": [
+        "id",
+        "name",
+        "code",
+        "status",
+        "data_residency_rules",
+        "compliance_frameworks",
+        "available_targets",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string",
+          "description": "ISO 3166-1 alpha-2 or custom region code."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "deprecated", "maintenance"]
+        },
+        "data_residency_rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "rule_id": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "data_classification": {
+                "type": "string",
+                "enum": ["public", "internal", "confidential", "restricted"]
+              },
+              "allowed_storage_regions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "cross_border_transfer_allowed": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "compliance_frameworks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "GDPR",
+              "NIST-800-53",
+              "FedRAMP",
+              "ISO-27001",
+              "SOC-2",
+              "DISA-IL",
+              "local_regulation"
+            ]
+          }
+        },
+        "available_targets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DeploymentTarget"
+          }
+        },
+        "infrastructure_providers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of approved infrastructure providers in this region."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "ComplianceCheck": {
+      "type": "object",
+      "description": "Compliance validation result for a deployment or region.",
+      "required": [
+        "deployment_id",
+        "region_id",
+        "timestamp",
+        "results"
+      ],
+      "properties": {
+        "deployment_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "region_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ComplianceViolation"
+          }
+        },
+        "overall_status": {
+          "type": "string",
+          "enum": ["pass", "warn", "fail"]
+        },
+        "validated_by": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Policy engine UUID that performed the validation."
+        }
+      }
+    },
+    "ComplianceViolation": {
+      "type": "object",
+      "required": [
+        "policy_name",
+        "status"
+      ],
+      "properties": {
+        "policy_name": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["fail", "warn"]
+        },
+        "message": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["critical", "high", "medium", "low"]
+        },
+        "remediation_steps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "HealthStatus": {
+      "type": "object",
+      "description": "Health status report for a deployment or component.",
+      "required": [
+        "deployment_id",
+        "timestamp"
+      ],
+      "properties": {
+        "deployment_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "overall_status": {
+          "type": "string",
+          "enum": ["healthy", "degraded", "unhealthy"]
+        },
+        "uptime_seconds": {
+          "type": ["integer", "null"]
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["healthy", "degraded", "unhealthy", "unknown"]
+              },
+              "error_rate": {
+                "type": "number"
+              },
+              "latency_ms": {
+                "type": "integer"
+              },
+              "details": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "alerts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "component": {
+                "type": "string"
+              },
+              "severity": {
+                "type": "string",
+                "enum": ["critical", "high", "medium", "low"]
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "description": "Standard error response format for all API endpoints.",
+      "required": [
+        "error_code",
+        "message"
+      ],
+      "properties": {
+        "error_code": {
+          "type": "string",
+          "description": "Machine-readable error code."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error description."
+        },
+        "details": {
+          "type": ["string", "null"],
+          "description": "Optional additional error context."
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Request correlation ID for tracing."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,545 @@
+asyncapi: 2.6.0
+id: urn:io.operan:platform:tenant-control-plane
+info:
+  title: Operan Tenant Control Plane Events
+  description: >
+    AsyncAPI specification for Tenant Control Plane events. This module PUBLISHES
+    lifecycle and quota events to the event bus for all downstream consumers
+    (audit log, alerting, billing, capacity planning, and dashboard services).
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  contact:
+    name: Platform Engineering
+    url: https://operan.internal/docs
+    email: platform@operan.io
+
+servers:
+  production:
+    url: events.operan.internal:9092
+    protocol: kafka
+    description: Production event bus (Kafka)
+    security:
+      - BearerAuth: []
+      - TenantContext: []
+  staging:
+    url: events-staging.operan.internal:9092
+    protocol: kafka
+    description: Staging event bus (Kafka)
+    security:
+      - BearerAuth: []
+      - TenantContext: []
+
+defaultContentType: application/json
+
+channels:
+  operan/events/tenant/provisioned:
+    description: >
+      Emitted when a tenant is successfully provisioned with an isolated
+      namespace, RBAC policies, and encryption keys.
+    publish:
+      summary: Tenant provisioned event
+      operationId: onTenantProvisioned
+      description: >
+        Published by the Tenant Control Plane when a new tenant completes
+        the provisioning workflow including namespace creation, RBAC policy
+        injection, and per-tenant encryption key generation.
+      tags:
+        - name: tenant
+          description: Tenant lifecycle events
+      message:
+        $ref: '#/components/messages/tenantProvisioned'
+
+  operan/events/tenant/suspended:
+    description: >
+      Emitted when tenant access is suspended, blocking all operations
+      while preserving data.
+    publish:
+      summary: Tenant suspended event
+      operationId: onTenantSuspended
+      description: >
+        Published by the Tenant Control Plane when a tenant is suspended
+        due to policy violations, non-payment, or administrative action.
+      tags:
+        - name: tenant
+          description: Tenant lifecycle events
+      message:
+        $ref: '#/components/messages/tenantSuspended'
+
+  operan/events/tenant/deprovisioned:
+    description: >
+      Emitted when tenant soft-deletion completes and data enters the
+      configured retention period.
+    publish:
+      summary: Tenant deprovisioned event
+      operationId: onTenantDeprovisioned
+      description: >
+        Published by the Tenant Control Plane after a tenant's soft-deletion
+        workflow finishes, transitioning the tenant into the data retention
+        phase.
+      tags:
+        - name: tenant
+          description: Tenant lifecycle events
+      message:
+        $ref: '#/components/messages/tenantDeprovisioned'
+
+  operan/events/tenant/quota_exceeded:
+    description: >
+      Emitted when a tenant exceeds one or more quota limits. Triggers
+      enforcement actions and alerting.
+    publish:
+      summary: Tenant quota exceeded event
+      operationId: onTenantQuotaExceeded
+      description: >
+        Published by the Tenant Control Plane quota enforcement service
+        when a tenant crosses any defined resource limit. The action_taken
+        field indicates whether the service rejected the operation, queued
+        it, or allowed it with a warning.
+      tags:
+        - name: tenant
+          description: Tenant lifecycle events
+        - name: quota
+          description: Quota enforcement events
+      message:
+        $ref: '#/components/messages/tenantQuotaExceeded'
+
+components:
+  schemas:
+    TenantId:
+      type: string
+      format: uuid
+      description: Unique identifier for the tenant.
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+    TenantName:
+      type: string
+      minLength: 1
+      maxLength: 128
+      description: Human-readable tenant name.
+      example: "Acme Corporation"
+
+    Region:
+      type: string
+      minLength: 2
+      maxLength: 32
+      description: Cloud region where the tenant namespace was created.
+      example: "us-east-1"
+
+    PlanType:
+      type: string
+      enum:
+        - free
+        - team
+        - enterprise
+        - custom
+      description: Subscription plan tier assigned to the tenant.
+      example: "enterprise"
+
+    Email:
+      type: string
+      format: email
+      description: Valid email address.
+      example: "admin@acme.com"
+
+    TenantQuotas:
+      type: object
+      description: Resource quota limits assigned at provisioning time.
+      properties:
+        max_agents:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          example: 50
+        max_workflows_per_day:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          example: 10000
+        max_storage_gb:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          example: 500
+        max_monthly_tokens:
+          type: integer
+          minimum: 0
+          maximum: 1000000000
+          example: 50000000
+        max_concurrent_workflows:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          example: 20
+      required:
+        - max_agents
+        - max_workflows_per_day
+        - max_storage_gb
+        - max_monthly_tokens
+        - max_concurrent_workflows
+      additionalProperties: false
+
+    IsolationConfig:
+      type: object
+      description: >
+        Configuration defining the isolation guarantees for the tenant
+        namespace (e.g., dedicated resources vs shared with RBAC enforcement).
+      properties:
+        type:
+          type: string
+          enum:
+            - shared
+            - dedicated
+            - air_gapped
+          description: Isolation level.
+          example: "dedicated"
+        dedicated_node_pool:
+          type: boolean
+          description: Whether the tenant has a dedicated node pool.
+          example: false
+        encryption_key_management:
+          type: string
+          enum:
+            - platform_managed
+            - customer_managed
+          description: Who manages the tenant encryption keys.
+          example: "platform_managed"
+      required:
+        - type
+        - encryption_key_management
+      additionalProperties: false
+
+    TenantProvisionedPayload:
+      type: object
+      description: Payload for the tenant.provisioned event.
+      properties:
+        tenant_id:
+          $ref: '#/components/schemas/TenantId'
+        name:
+          $ref: '#/components/schemas/TenantName'
+        region:
+          $ref: '#/components/schemas/Region'
+        plan:
+          $ref: '#/components/schemas/PlanType'
+        admin_email:
+          $ref: '#/components/schemas/Email'
+        quotas:
+          $ref: '#/components/schemas/TenantQuotas'
+        namespace:
+          type: string
+          pattern: "^[a-z0-9][a-z0-9-]{1,62}$"
+          description: Kubernetes namespace assigned to the tenant.
+          example: "tenant-550e8400"
+        isolation_config:
+          $ref: '#/components/schemas/IsolationConfig'
+      required:
+        - tenant_id
+        - name
+        - region
+        - plan
+        - admin_email
+        - quotas
+        - namespace
+        - isolation_config
+      additionalProperties: false
+
+    SuspensionReason:
+      type: string
+      enum:
+        - policy_violation
+        - non_payment
+        - administrative
+        - security_incident
+        - regulatory_hold
+      description: Reason the tenant was suspended.
+      example: "security_incident"
+
+    SuspendedBy:
+      type: string
+      description: Identity of the actor or system that triggered the suspension.
+      example: "system-security-scanner"
+
+    EffectiveAt:
+      type: string
+      format: date-time
+      description: ISO 8601 timestamp when the suspension takes effect.
+      example: "2026-05-27T14:30:00Z"
+
+    TenantSuspendedPayload:
+      type: object
+      description: Payload for the tenant.suspended event.
+      properties:
+        tenant_id:
+          $ref: '#/components/schemas/TenantId'
+        reason:
+          $ref: '#/components/schemas/SuspensionReason'
+        suspended_by:
+          $ref: '#/components/schemas/SuspendedBy'
+        effective_at:
+          $ref: '#/components/schemas/EffectiveAt'
+      required:
+        - tenant_id
+        - reason
+        - suspended_by
+        - effective_at
+      additionalProperties: false
+
+    DeprovisionedBy:
+      type: string
+      description: Identity of the actor or system that triggered deprovisioning.
+      example: "admin-jane.doe@operan.io"
+
+    DataRetentionDays:
+      type: integer
+      minimum: 0
+      maximum: 2555
+      description: Number of days data is retained after soft-deletion (0 = immediate purge).
+      example: 90
+
+    TenantDeprovisionedPayload:
+      type: object
+      description: Payload for the tenant.deprovisioned event.
+      properties:
+        tenant_id:
+          $ref: '#/components/schemas/TenantId'
+        deprovisioned_by:
+          $ref: '#/components/schemas/DeprovisionedBy'
+        data_retention_days:
+          $ref: '#/components/schemas/DataRetentionDays'
+      required:
+        - tenant_id
+        - deprovisioned_by
+        - data_retention_days
+      additionalProperties: false
+
+    QuotaType:
+      type: string
+      enum:
+        - max_agents
+        - max_workflows_per_day
+        - max_storage_gb
+        - max_monthly_tokens
+        - max_concurrent_workflows
+      description: The specific quota type that was exceeded.
+      example: "max_concurrent_workflows"
+
+    CurrentValue:
+      type: integer
+      minimum: 1
+      description: The current usage value at the time the limit was exceeded.
+      example: 21
+
+    LimitValue:
+      type: integer
+      minimum: 1
+      description: The hard limit configured for the tenant on this quota type.
+      example: 20
+
+    EnforcementAction:
+      type: string
+      enum:
+        - rejected
+        - queued
+        - allowed_with_warning
+      description: >
+        Action taken by the quota enforcement service when the limit was
+        exceeded. Rejected = operation denied. Queued = operation deferred
+        until capacity frees. Allowed with warning = operation permitted
+        but a breach alert was raised.
+      example: "rejected"
+
+    TenantQuotaExceededPayload:
+      type: object
+      description: Payload for the tenant.quota_exceeded event.
+      properties:
+        tenant_id:
+          $ref: '#/components/schemas/TenantId'
+        quota_type:
+          $ref: '#/components/schemas/QuotaType'
+        current_value:
+          $ref: '#/components/schemas/CurrentValue'
+        limit:
+          $ref: '#/components/schemas/LimitValue'
+        action_taken:
+          $ref: '#/components/schemas/EnforcementAction'
+      required:
+        - tenant_id
+        - quota_type
+        - current_value
+        - limit
+        - action_taken
+      additionalProperties: false
+
+    CorrelationId:
+      type: string
+      format: uuid
+      description: >
+        Unique identifier that correlates this event with the originating
+        request or workflow run.
+      example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+    TenantIdHeader:
+      type: string
+      format: uuid
+      description: >
+        Header-level tenant identifier injected at the message transport
+        layer for routing and access control.
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+    Timestamp:
+      type: string
+      format: date-time
+      description: ISO 8601 timestamp when the event was published.
+      example: "2026-05-27T14:30:00Z"
+
+    TenantEvent:
+      type: object
+      description: >
+        Common envelope shared by all tenant events. Every tenant message
+        MUST include correlationId, tenantId, and timestamp at this level.
+      properties:
+        correlationId:
+          $ref: '#/components/schemas/CorrelationId'
+        tenantId:
+          $ref: '#/components/schemas/TenantId'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+      required:
+        - correlationId
+        - tenantId
+        - timestamp
+      additionalProperties: false
+
+  messages:
+    tenantProvisioned:
+      messageId: tenantProvisioned
+      name: tenantProvisioned
+      summary: Tenant successfully provisioned
+      correlationId:
+        description: ID correlating this event to the provisioning workflow.
+      traits:
+        - $ref: '#/components/messageTraits/standardHeaders'
+      headers:
+        type: object
+        properties:
+          correlationId:
+            $ref: '#/components/schemas/CorrelationId'
+          tenantId:
+            $ref: '#/components/schemas/TenantIdHeader'
+          timestamp:
+            $ref: '#/components/schemas/Timestamp'
+        required:
+          - correlationId
+          - tenantId
+          - timestamp
+      payload:
+        $ref: '#/components/schemas/TenantProvisionedPayload'
+
+    tenantSuspended:
+      messageId: tenantSuspended
+      name: tenantSuspended
+      summary: Tenant access suspended
+      correlationId:
+        description: ID correlating this event to the suspension workflow.
+      traits:
+        - $ref: '#/components/messageTraits/standardHeaders'
+      headers:
+        type: object
+        properties:
+          correlationId:
+            $ref: '#/components/schemas/CorrelationId'
+          tenantId:
+            $ref: '#/components/schemas/TenantIdHeader'
+          timestamp:
+            $ref: '#/components/schemas/Timestamp'
+        required:
+          - correlationId
+          - tenantId
+          - timestamp
+      payload:
+        $ref: '#/components/schemas/TenantSuspendedPayload'
+
+    tenantDeprovisioned:
+      messageId: tenantDeprovisioned
+      name: tenantDeprovisioned
+      summary: Tenant soft-deletion completed
+      correlationId:
+        description: ID correlating this event to the deprovisioning workflow.
+      traits:
+        - $ref: '#/components/messageTraits/standardHeaders'
+      headers:
+        type: object
+        properties:
+          correlationId:
+            $ref: '#/components/schemas/CorrelationId'
+          tenantId:
+            $ref: '#/components/schemas/TenantIdHeader'
+          timestamp:
+            $ref: '#/components/schemas/Timestamp'
+        required:
+          - correlationId
+          - tenantId
+          - timestamp
+      payload:
+        $ref: '#/components/schemas/TenantDeprovisionedPayload'
+
+    tenantQuotaExceeded:
+      messageId: tenantQuotaExceeded
+      name: tenantQuotaExceeded
+      summary: Tenant quota limit exceeded
+      correlationId:
+        description: ID correlating this event to the quota check trigger.
+      traits:
+        - $ref: '#/components/messageTraits/standardHeaders'
+      headers:
+        type: object
+        properties:
+          correlationId:
+            $ref: '#/components/schemas/CorrelationId'
+          tenantId:
+            $ref: '#/components/schemas/TenantIdHeader'
+          timestamp:
+            $ref: '#/components/schemas/Timestamp'
+        required:
+          - correlationId
+          - tenantId
+          - timestamp
+      payload:
+        $ref: '#/components/schemas/TenantQuotaExceededPayload'
+
+  messageTraits:
+    standardHeaders:
+      description: >
+        All tenant events carry correlationId, tenantId, and timestamp
+        as message headers for traceability and routing.
+      headers:
+        type: object
+        properties:
+          correlationId:
+            $ref: '#/components/schemas/CorrelationId'
+          tenantId:
+            $ref: '#/components/schemas/TenantIdHeader'
+          timestamp:
+            $ref: '#/components/schemas/Timestamp'
+        required:
+          - correlationId
+          - tenantId
+          - timestamp
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        JWT bearer token issued by the Operan Identity Provider.
+        Required for all inter-service and external producer connections.
+
+    TenantContext:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: >
+        Per-request tenant identifier injected at the transport layer.
+        Used for multi-tenant routing, access control, and quota tracking.
+        Must match the tenantId in the message payload.

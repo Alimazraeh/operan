@@ -1,0 +1,474 @@
+openapi: 3.0.3
+info:
+  title: Operan Department Template Engine API
+  description: Deploy reusable organizational structures with agents, workflows, memory topology, governance rules, KPIs, integrations, and operational policies. Module 05.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1/departments
+
+security:
+  - BearerAuth: []
+  - X-Tenant-ID:
+      schema:
+        type: string
+
+paths:
+  /departments:
+    post:
+      summary: Deploy a department from template
+      description: Full deployment flow: select template → configure policies → connect data → provision memory → deploy swarm → begin operations.
+      operationId: createDepartment
+      tags: [departments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDepartmentRequest'
+      responses:
+        '201':
+          description: Department deployed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+
+    get:
+      summary: List departments
+      operationId: listDepartments
+      tags: [departments]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: template
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [deploying, active, paused, decommissioned]
+      responses:
+        '200':
+          description: Department list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartmentList'
+
+  /departments/{id}:
+    get:
+      summary: Get department details
+      operationId: getDepartment
+      tags: [departments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Department details
+
+    patch:
+      summary: Update department configuration
+      operationId: updateDepartment
+      tags: [departments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDepartmentRequest'
+      responses:
+        '200':
+          description: Department updated
+
+    delete:
+      summary: Decommission a department
+      operationId: deleteDepartment
+      tags: [departments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '202':
+          description: Decommissioning initiated
+
+  /departments/{id}/status:
+    get:
+      summary: Get deployment status
+      operationId: getDepartmentStatus
+      tags: [departments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Deployment status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentStatus'
+
+  /departments/{id}/agents:
+    get:
+      summary: List department agents
+      operationId: getDepartmentAgents
+      tags: [departments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Department agents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DepartmentAgent'
+
+  /departments/{id}/workflows:
+    get:
+      summary: List department workflows
+      operationId: getDepartmentWorkflows
+      tags: [departments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Department workflows
+
+  /departments/{id}/kpis:
+    get:
+      summary: Get department KPIs
+      operationId: getDepartmentKPIs
+      tags: [departments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: KPI data
+
+  /templates:
+    get:
+      summary: List available department templates
+      operationId: listTemplates
+      tags: [templates]
+      responses:
+        '200':
+          description: Template catalog
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateList'
+
+  /templates/{id}:
+    get:
+      summary: Get template details
+      operationId: getTemplate
+      tags: [templates]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartmentTemplate'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    X-Tenant-ID:
+      name: X-Tenant-ID
+      in: header
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    CreateDepartmentRequest:
+      type: object
+      required:
+        - tenant_id
+        - template_id
+        - name
+        - purpose
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        template_id:
+          type: string
+        name:
+          type: string
+        purpose:
+          type: string
+        governance_policy:
+          type: string
+        configurations:
+          type: object
+          description: Template-specific configuration overrides
+        integrations:
+          type: array
+          items:
+            type: string
+          description: Integration IDs to connect
+
+    UpdateDepartmentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        purpose:
+          type: string
+        governance_policy:
+          type: string
+        escalation_rules:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [active, paused, decommissioning, decommissioned]
+
+    Department:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - name
+        - purpose
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        purpose:
+          type: string
+        governance_policy:
+          type: string
+        template_id:
+          type: string
+        agents:
+          type: array
+          items:
+            type: string
+            format: uuid
+        workflows:
+          type: array
+          items:
+            type: string
+            format: uuid
+        memory_topology:
+          $ref: '#/components/schemas/MemoryTopology'
+        escalation_rules:
+          type: array
+          items:
+            type: string
+        integrations:
+          type: array
+          items:
+            type: string
+        kpis:
+          type: array
+          items:
+            type: string
+        observability_profile:
+          $ref: '#/components/schemas/ObservabilityProfile'
+        status:
+          type: string
+          enum: [deploying, active, paused, decommissioning, decommissioned]
+        created_at:
+          type: string
+          format: date-time
+        deployed_at:
+          type: string
+          format: date-time
+        operational_since:
+          type: string
+          format: date-time
+
+    DepartmentAgent:
+      type: object
+      required:
+        - agent_id
+        - role
+        - status
+      properties:
+        agent_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+        status:
+          type: string
+          enum: [active, idle, busy, degraded]
+        assigned_workflows:
+          type: integer
+
+    MemoryTopology:
+      type: object
+      properties:
+        semantic_storage:
+          type: string
+          description: Storage backend ID
+        graph_storage:
+          type: string
+          description: Graph database ID
+        episodic_storage:
+          type: string
+        retention_policy:
+          type: string
+        access_level:
+          type: string
+          enum: [tenant, department, restricted]
+
+    ObservabilityProfile:
+      type: object
+      properties:
+        tracing_enabled:
+          type: boolean
+        metrics_enabled:
+          type: boolean
+        log_level:
+          type: string
+          enum: [debug, info, warn, error]
+        alert_rules:
+          type: array
+          items:
+            type: string
+
+    DeploymentStatus:
+      type: object
+      required:
+        - department_id
+        - status
+      properties:
+        department_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [selecting_template, configuring_policies, connecting_data, provisioning_memory, deploying_swarm, beginning_operations, active, failed]
+        progress_percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+        current_stage:
+          type: string
+        errors:
+          type: array
+          items:
+            type: string
+
+    DepartmentTemplate:
+      type: object
+      required:
+        - id
+        - name
+        - category
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+          enum: [HR, Finance, Procurement, Engineering, Translation, Legal, Compliance, Research]
+        description:
+          type: string
+        required_agents:
+          type: array
+          items:
+            type: string
+        required_workflows:
+          type: array
+          items:
+            type: string
+        governance_policies:
+          type: array
+          items:
+            type: string
+        integrations_required:
+          type: array
+          items:
+            type: string
+        estimated_deploy_time_minutes:
+          type: integer
+
+    TemplateList:
+      type: object
+      properties:
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/DepartmentTemplate'
+        total:
+          type: integer
+
+    DepartmentList:
+      type: object
+      properties:
+        departments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Department'
+        total:
+          type: integer
+        has_more:
+          type: boolean

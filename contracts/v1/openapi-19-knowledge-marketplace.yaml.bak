@@ -1,0 +1,703 @@
+openapi: "3.1.0"
+info:
+  title: Operan Module 19 — Knowledge Marketplace API
+  version: "1.0.0"
+  description: Agent-Generated Content Exchange — browse, acquire, and rate marketplace listings
+
+servers:
+  - url: /api/v1
+
+paths:
+  /marketplace/listings:
+    get:
+      summary: Browse marketplace listings
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: tags
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+        - name: pricing_type
+          in: query
+          schema:
+            type: string
+            enum: [free, one_time, subscription, pay_per_use]
+        - name: visibility
+          in: query
+          schema:
+            type: string
+            enum: [public, tenant, department, private]
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum: [created_at, name, rating, downloads, price]
+        - name: sort_order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Listing"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      summary: Create a new marketplace listing
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateListingRequest"
+      responses:
+        "201":
+          description: Listing created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /marketplace/listings/{listing_id}:
+    get:
+      summary: Get listing details
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: listing_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Listing details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Listing not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      summary: Update a listing
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: listing_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateListingRequest"
+      responses:
+        "200":
+          description: Listing updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Listing not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      summary: Remove a listing
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: listing_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Listing removed
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Listing not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /marketplace/listings/{listing_id}/purchase:
+    post:
+      summary: Purchase or acquire a listing
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: listing_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tenant_id
+              properties:
+                tenant_id:
+                  type: string
+                  format: uuid
+                payment_method_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+      responses:
+        "200":
+          description: Purchase completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transaction_id:
+                    type: string
+                    format: uuid
+                  acquired_at:
+                    type: string
+                    format: date-time
+                  access_granted_until:
+                    type: string
+                    format: date-time
+                    nullable: true
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Listing not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /marketplace/listings/{listing_id}/reviews:
+    get:
+      summary: Get reviews for a listing
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: listing_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Reviews list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Review"
+                  avg_rating:
+                    type: number
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Listing not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      summary: Submit a review
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: listing_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tenant_id
+                - rating
+              properties:
+                tenant_id:
+                  type: string
+                  format: uuid
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+                  nullable: true
+      responses:
+        "201":
+          description: Review created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Listing not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    TenantContext:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      required: true
+
+  schemas:
+    Listing:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - listing_type
+        - title
+        - description
+        - visibility
+        - created_by
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        listing_type:
+          type: string
+          enum:
+            - knowledge_base
+            - prompt_template
+            - workflow
+            - agent_tool
+            - department_template
+            - fine_tuned_model
+            - dataset
+        title:
+          type: string
+        description:
+          type: string
+        content_uri:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+        pricing_type:
+          type: string
+          enum:
+            - free
+            - one_time
+            - subscription
+            - pay_per_use
+        price:
+          type: number
+          nullable: true
+        currency:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        visibility:
+          type: string
+          enum:
+            - public
+            - tenant
+            - department
+            - private
+        category:
+          type: string
+        version:
+          type: string
+        content_type:
+          type: string
+        license_type:
+          type: string
+          nullable: true
+        terms_conditions:
+          type: string
+          nullable: true
+        preview:
+          type: object
+          nullable: true
+        downloads_count:
+          type: integer
+          default: 0
+        rating:
+          type: number
+          default: 0
+        minimum_agent_tier:
+          type: string
+          enum:
+            - standard
+            - premium
+            - experimental
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateListingRequest:
+      type: object
+      required:
+        - tenant_id
+        - listing_type
+        - title
+        - description
+        - visibility
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        listing_type:
+          type: string
+          enum:
+            - knowledge_base
+            - prompt_template
+            - workflow
+            - agent_tool
+            - department_template
+            - fine_tuned_model
+            - dataset
+        title:
+          type: string
+        description:
+          type: string
+        content_uri:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+        pricing_type:
+          type: string
+          enum:
+            - free
+            - one_time
+            - subscription
+            - pay_per_use
+          default: free
+        price:
+          type: number
+          nullable: true
+        currency:
+          type: string
+          default: USD
+        tags:
+          type: array
+          items:
+            type: string
+        category:
+          type: string
+        version:
+          type: string
+        content_type:
+          type: string
+        license_type:
+          type: string
+          nullable: true
+        terms_conditions:
+          type: string
+          nullable: true
+        preview:
+          type: object
+          nullable: true
+        minimum_agent_tier:
+          type: string
+          enum:
+            - standard
+            - premium
+            - experimental
+
+    UpdateListingRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        visibility:
+          type: string
+          enum:
+            - public
+            - tenant
+            - department
+            - private
+        category:
+          type: string
+        version:
+          type: string
+
+    Review:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - listing_id
+        - reviewer_id
+        - rating
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        listing_id:
+          type: string
+          format: uuid
+        reviewer_id:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+        helpful_votes:
+          type: integer
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        has_more:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object

@@ -1,0 +1,410 @@
+asyncapi: 2.6.0
+info:
+  title: Operan Knowledge Marketplace Events
+  version: 1.0.0
+  description: MODULE 19 — Knowledge Marketplace Events for the Operan platform.
+    Covers listing lifecycle events including creation, updates, acquisitions,
+    reviews, and recommendations across a multi-tenant marketplace.
+  contact:
+    name: Operan Platform Team
+    url: https://docs.operan.internal
+    email: platform-team@operan.internal
+  license:
+    name: Proprietary
+    url: https://operan.internal/licenses
+
+servers:
+  production:
+    url: rabbitmq-operan.prod.internal:5672
+    protocol: amqp
+    description: Production RabbitMQ broker
+  staging:
+    url: rabbitmq-operan.staging.internal:5672
+    protocol: amqp
+    description: Staging RabbitMQ broker
+
+defaultContentType: application/json
+
+channels:
+  operan/events/marketplace/listing/created:
+    $ref: '#/components/channels/operanEventsMarketplaceListingCreated'
+
+  operan/events/marketplace/listing/updated:
+    $ref: '#/components/channels/operanEventsMarketplaceListingUpdated'
+
+  operan/events/marketplace/listing/acquired:
+    $ref: '#/components/channels/operanEventsMarketplaceListingAcquired'
+
+  operan/events/marketplace/listing/reviewed:
+    $ref: '#/components/channels/operanEventsMarketplaceListingReviewed'
+
+  operan/events/marketplace/listing/recommended:
+    $ref: '#/components/channels/operanEventsMarketplaceListingRecommended'
+
+components:
+  schemas:
+    CorrelationContext:
+      type: object
+      description: Common correlation envelope applied to every marketplace event.
+      required:
+        - correlationId
+        - tenantId
+        - messageId
+        - timestamp
+      properties:
+        correlationId:
+          type: string
+          format: uuid
+          description: UUID that correlates related messages across the marketplace workflow.
+        tenantId:
+          type: string
+          format: uuid
+          description: Tenant identifier for multi-tenant isolation.
+        messageId:
+          type: string
+          format: uuid
+          description: Unique message identifier for deduplication and tracing.
+        timestamp:
+          type: string
+          format: date-time
+          description: Server-side timestamp when the event was emitted.
+
+    ListingType:
+      type: string
+      enum:
+        - knowledge_base
+        - prompt_template
+        - workflow
+        - agent_tool
+        - department_template
+        - fine_tuned_model
+        - dataset
+      description: The type of knowledge asset being listed.
+
+    Visibility:
+      type: string
+      enum:
+        - public
+        - tenant
+        - department
+        - private
+      description: Access visibility level for the listing.
+
+    PricingType:
+      type: string
+      enum:
+        - free
+        - one_time
+        - subscription
+        - pay_per_use
+      description: Pricing model applied to the listing.
+
+    ListingCreatedPayload:
+      type: object
+      description: Payload for a new marketplace listing creation event.
+      required:
+        - listing_id
+        - tenant_id
+        - listing_type
+        - title
+        - created_by
+        - visibility
+        - pricing_type
+        - tags
+        - created_at
+      properties:
+        listing_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the newly created listing.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant that owns the listing.
+        listing_type:
+          $ref: '#/components/schemas/ListingType'
+        title:
+          type: string
+          description: Human-readable title of the listing.
+        category:
+          type: string
+          description: Classification category for the listing.
+        created_by:
+          type: string
+          format: uuid
+          description: UUID of the user who created the listing.
+        visibility:
+          $ref: '#/components/schemas/Visibility'
+        pricing_type:
+          $ref: '#/components/schemas/PricingType'
+        price:
+          type:
+            - number
+            - 'null'
+          description: Price amount; null when pricing_type is free.
+        currency:
+          type: string
+          description: ISO 4217 currency code (e.g., USD, EUR).
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags associated with the listing for discoverability.
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the listing was created.
+
+    ListingUpdatedPayload:
+      type: object
+      description: Payload for a marketplace listing update event.
+      required:
+        - listing_id
+        - tenant_id
+        - updated_by
+        - updated_at
+        - changes
+      properties:
+        listing_id:
+          type: string
+          format: uuid
+          description: Unique identifier of the listing being updated.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant that owns the listing.
+        updated_by:
+          type: string
+          format: uuid
+          description: UUID of the user who made the update.
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp of the update.
+        changes:
+          type: object
+          description: Map of changed field names to their new values.
+          additionalProperties: true
+
+    ListingAcquiredPayload:
+      type: object
+      description: Payload for a marketplace listing acquisition event.
+      required:
+        - listing_id
+        - tenant_id
+        - acquired_by
+        - transaction_id
+        - pricing_type
+        - acquired_at
+      properties:
+        listing_id:
+          type: string
+          format: uuid
+          description: Unique identifier of the acquired listing.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant that owns the acquired listing.
+        acquired_by:
+          type: string
+          format: uuid
+          description: UUID of the user who acquired the listing.
+        transaction_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the acquisition transaction.
+        pricing_type:
+          $ref: '#/components/schemas/PricingType'
+        amount:
+          type:
+            - number
+            - 'null'
+          description: Amount charged for the acquisition; null when pricing_type is free.
+        currency:
+          type: string
+          description: ISO 4217 currency code (e.g., USD, EUR).
+        acquired_at:
+          type: string
+          format: date-time
+          description: Timestamp when the acquisition occurred.
+
+    ListingReviewedPayload:
+      type: object
+      description: Payload for a marketplace listing review event.
+      required:
+        - listing_id
+        - tenant_id
+        - reviewer_id
+        - rating
+        - created_at
+      properties:
+        listing_id:
+          type: string
+          format: uuid
+          description: Unique identifier of the reviewed listing.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant that owns the reviewed listing.
+        reviewer_id:
+          type: string
+          format: uuid
+          description: UUID of the user who wrote the review.
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Rating given by the reviewer on a 1-to-5 scale.
+        comment:
+          type:
+            - string
+            - 'null'
+          description: Optional textual comment from the reviewer.
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the review was created.
+
+    RecommendationSource:
+      type: string
+      enum:
+        - system
+        - user
+        - algorithm
+      description: Source of the recommendation.
+
+    ListingRecommendedPayload:
+      type: object
+      description: Payload for a marketplace listing recommendation event.
+      required:
+        - listing_id
+        - tenant_id
+        - recommended_for
+        - reason
+        - recommended_by
+        - timestamp
+      properties:
+        listing_id:
+          type: string
+          format: uuid
+          description: Unique identifier of the recommended listing.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant for which the recommendation applies.
+        recommended_for:
+          type: string
+          format: uuid
+          description: UUID of the user or tenant being recommended to.
+        reason:
+          type: string
+          description: Explanation of why this listing was recommended.
+        recommended_by:
+          $ref: '#/components/schemas/RecommendationSource'
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the recommendation was generated.
+
+  channels:
+    operanEventsMarketplaceListingCreated:
+      topic: operan/events/marketplace/listing/created
+      description: Published when a new listing is created in the Knowledge Marketplace.
+      messages:
+        ListingCreated:
+          $ref: '#/components/messages/ListingCreated'
+
+    operanEventsMarketplaceListingUpdated:
+      topic: operan/events/marketplace/listing/updated
+      description: Published when an existing listing is updated in the Knowledge Marketplace.
+      messages:
+        ListingUpdated:
+          $ref: '#/components/messages/ListingUpdated'
+
+    operanEventsMarketplaceListingAcquired:
+      topic: operan/events/marketplace/listing/acquired
+      description: Published when a listing is acquired by a user or tenant in the Knowledge Marketplace.
+      messages:
+        ListingAcquired:
+          $ref: '#/components/messages/ListingAcquired'
+
+    operanEventsMarketplaceListingReviewed:
+      topic: operan/events/marketplace/listing/reviewed
+      description: Published when a listing receives a review in the Knowledge Marketplace.
+      messages:
+        ListingReviewed:
+          $ref: '#/components/messages/ListingReviewed'
+
+    operanEventsMarketplaceListingRecommended:
+      topic: operan/events/marketplace/listing/recommended
+      description: Published when a listing is recommended to a user or tenant in the Knowledge Marketplace.
+      messages:
+        ListingRecommended:
+          $ref: '#/components/messages/ListingRecommended'
+
+  messages:
+    ListingCreated:
+      name: ListingCreated
+      correlationId: {}
+      messageId: {}
+      summary: A new marketplace listing has been created.
+      headers:
+        $ref: '#/components/schemas/CorrelationContext'
+      payload:
+        $ref: '#/components/schemas/ListingCreatedPayload'
+
+    ListingUpdated:
+      name: ListingUpdated
+      correlationId: {}
+      messageId: {}
+      summary: An existing marketplace listing has been updated.
+      headers:
+        $ref: '#/components/schemas/CorrelationContext'
+      payload:
+        $ref: '#/components/schemas/ListingUpdatedPayload'
+
+    ListingAcquired:
+      name: ListingAcquired
+      correlationId: {}
+      messageId: {}
+      summary: A marketplace listing has been acquired.
+      headers:
+        $ref: '#/components/schemas/CorrelationContext'
+      payload:
+        $ref: '#/components/schemas/ListingAcquiredPayload'
+
+    ListingReviewed:
+      name: ListingReviewed
+      correlationId: {}
+      messageId: {}
+      summary: A marketplace listing has received a review.
+      headers:
+        $ref: '#/components/schemas/CorrelationContext'
+      payload:
+        $ref: '#/components/schemas/ListingReviewedPayload'
+
+    ListingRecommended:
+      name: ListingRecommended
+      correlationId: {}
+      messageId: {}
+      summary: A marketplace listing has been recommended.
+      headers:
+        $ref: '#/components/schemas/CorrelationContext'
+      payload:
+        $ref: '#/components/schemas/ListingRecommendedPayload'
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: HTTP bearer authentication using a JWT token.
+    TenantContext:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Required header identifying the multi-tenant context.
+
+security:
+  - BearerAuth: []
+  - TenantContext: []

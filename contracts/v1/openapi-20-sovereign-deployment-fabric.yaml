@@ -1,0 +1,1251 @@
+openapi: "3.1.0"
+info:
+  title: Sovereign Deployment Fabric
+  version: 1.0.0
+  description: Module 20 — Sovereign Deployment Fabric for Operan
+
+servers:
+  - url: /api/v1
+
+security:
+  - BearerAuth: []
+  - TenantContext: []
+
+paths:
+  /deployments:
+    get:
+      summary: List all deployments for a tenant
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [provisioning, ready, deprovisioning, degraded, failed, scaling]
+        - name: region
+          in: query
+          schema:
+            type: string
+            enum: [public-cloud, private-cloud, air-gapped, sovereign, edge]
+      responses:
+        "200":
+          description: Deployments list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Deployment"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create a new deployment
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDeploymentRequest"
+      responses:
+        "201":
+          description: Deployment created and provisioning started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deployment"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deployments/{id}:
+    get:
+      summary: Get deployment details
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Deployment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deployment"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update deployment configuration
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDeploymentRequest"
+      responses:
+        "200":
+          description: Deployment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deployment"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Initiate deployment deprovisioning
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "202":
+          description: Deprovisioning initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deployment"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deployments/{id}/validate:
+    post:
+      summary: Validate deployment against sovereign policies
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateRequest"
+      responses:
+        "200":
+          description: Validation results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deployments/{id}/deploy:
+    post:
+      summary: Trigger deployment activation
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeployTriggerRequest"
+      responses:
+        "202":
+          description: Deployment activation started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deployment"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deployments/{id}/rollback:
+    post:
+      summary: Rollback deployment to previous version
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RollbackRequest"
+      responses:
+        "202":
+          description: Rollback initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deployment"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deployments/{id}/cancel:
+    post:
+      summary: Cancel an in-progress deployment
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Deployment cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deployment"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deployments/{id}/health:
+    get:
+      summary: Get deployment health status
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /regions:
+    get:
+      summary: List available deployment regions
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      responses:
+        "200":
+          description: Regions list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Region"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /regions/{region_id}:
+    get:
+      summary: Get region details
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: region_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Region details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Region"
+        "404":
+          description: Region not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /compliance/check:
+    post:
+      summary: Check compliance against sovereign policies
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComplianceCheckRequest"
+      responses:
+        "200":
+          description: Compliance check results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplianceResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /infrastructure/provision:
+    post:
+      summary: Provision infrastructure resources
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProvisionRequest"
+      responses:
+        "202":
+          description: Infrastructure provisioning started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureResources"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    TenantContext:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      required: true
+
+  schemas:
+    Deployment:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - name
+        - target_type
+        - region_id
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Human-readable deployment name
+        purpose:
+          type: string
+          description: Deployment purpose (e.g., department template, full tenant)
+        target_type:
+          $ref: "#/components/schemas/DeploymentTarget"
+        region_id:
+          type: string
+          format: uuid
+          description: Target region UUID
+        configuration:
+          $ref: "#/components/schemas/DeploymentConfiguration"
+        status:
+          $ref: "#/components/schemas/DeploymentStatus"
+        version:
+          type: integer
+          description: Current deployment version
+        previous_version:
+          type: integer
+          nullable: true
+          description: Previous version for rollback tracking
+        compliance_status:
+          $ref: "#/components/schemas/ComplianceStatus"
+        health:
+          $ref: "#/components/schemas/HealthSummary"
+        resources:
+          $ref: "#/components/schemas/InfrastructureResources"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deployed_by:
+          type: string
+          format: uuid
+          nullable: true
+
+    CreateDeploymentRequest:
+      type: object
+      required:
+        - tenant_id
+        - name
+        - target_type
+        - region_id
+        - configuration
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        purpose:
+          type: string
+        target_type:
+          $ref: "#/components/schemas/DeploymentTarget"
+        region_id:
+          type: string
+          format: uuid
+        configuration:
+          $ref: "#/components/schemas/DeploymentConfiguration"
+        auto_validate:
+          type: boolean
+          default: true
+          description: Automatically run compliance validation before deployment
+
+    UpdateDeploymentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        configuration:
+          $ref: "#/components/schemas/DeploymentConfiguration"
+        tags:
+          type: array
+          items:
+            type: string
+
+    ValidateRequest:
+      type: object
+      properties:
+        check_policies:
+          type: boolean
+          default: true
+        check_residency:
+          type: boolean
+          default: true
+        check_data_flow:
+          type: boolean
+          default: true
+
+    DeployTriggerRequest:
+      type: object
+      properties:
+        skip_validation:
+          type: boolean
+          default: false
+        force:
+          type: boolean
+          default: false
+        environment:
+          type: string
+          enum: [staging, production]
+          default: production
+
+    RollbackRequest:
+      type: object
+      properties:
+        target_version:
+          type: integer
+          description: Target version to rollback to. Defaults to previous version.
+        reason:
+          type: string
+          description: Reason for rollback
+
+    ValidationRule:
+      type: object
+      required:
+        - rule_id
+        - policy_name
+        - status
+      properties:
+        rule_id:
+          type: string
+          format: uuid
+        policy_name:
+          type: string
+          description: Name of the policy being validated
+        status:
+          type: string
+          enum: [pass, fail, warn, pending]
+        message:
+          type: string
+          description: Validation result details
+        severity:
+          type: string
+          enum: [critical, high, medium, low]
+          default: medium
+
+    ValidationResult:
+      type: object
+      required:
+        - deployment_id
+        - tenant_id
+        - overall_status
+        - rules
+        - validated_at
+      properties:
+        deployment_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        overall_status:
+          type: string
+          enum: [compliant, non_compliant, warning, pending]
+        rules:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationRule"
+        data_residency_compliant:
+          type: boolean
+        sovereign_compatible:
+          type: boolean
+        validated_at:
+          type: string
+          format: date-time
+
+    HealthSummary:
+      type: object
+      properties:
+        overall:
+          type: string
+          enum: [healthy, degraded, unhealthy, unknown]
+        component_health:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [healthy, degraded, unhealthy, unknown]
+        last_check_at:
+          type: string
+          format: date-time
+
+    HealthStatus:
+      type: object
+      required:
+        - deployment_id
+        - status
+        - components
+        - checked_at
+      properties:
+        deployment_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy, unknown]
+        components:
+          type: array
+          items:
+            $ref: "#/components/schemas/HealthComponent"
+        metrics:
+          $ref: "#/components/schemas/MetricsSnapshot"
+        checked_at:
+          type: string
+          format: date-time
+
+    HealthComponent:
+      type: object
+      required:
+        - name
+        - status
+      properties:
+        name:
+          type: string
+          description: Component name (e.g., agent-orchestration, memory-fabric)
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy, unknown]
+        latency_ms:
+          type: integer
+          nullable: true
+        error_rate:
+          type: number
+          nullable: true
+        details:
+          type: string
+          nullable: true
+
+    MetricsSnapshot:
+      type: object
+      properties:
+        cpu_usage:
+          type: number
+        memory_usage:
+          type: number
+        disk_usage:
+          type: number
+        network_in_bytes:
+          type: integer
+        network_out_bytes:
+          type: integer
+        active_agents:
+          type: integer
+        workflow_queue_depth:
+          type: integer
+        token_rate_per_second:
+          type: number
+
+    Region:
+      type: object
+      required:
+        - id
+        - name
+        - country_code
+        - type
+        - compliant
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Human-readable region name
+        country_code:
+          type: string
+          description: ISO 3166-1 alpha-2 country code
+        data_center:
+          type: string
+          description: Data center identifier
+        type:
+          $ref: "#/components/schemas/DeploymentTarget"
+        compliant:
+          type: boolean
+          description: Whether this region meets sovereign data residency requirements
+        zones:
+          type: array
+          items:
+            type: string
+          description: Availability zones within the region
+        latency_ms:
+          type: integer
+          description: Average latency fromOperan core
+        capacity_status:
+          type: string
+          enum: [available, constrained, full]
+        last_verified_at:
+          type: string
+          format: date-time
+
+    ComplianceCheckRequest:
+      type: object
+      required:
+        - tenant_id
+        - region_id
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        region_id:
+          type: string
+          format: uuid
+        check_residency:
+          type: boolean
+          default: true
+        check_encryption:
+          type: boolean
+          default: true
+        check_isolation:
+          type: boolean
+          default: true
+        check_audit:
+          type: boolean
+          default: true
+
+    ComplianceResult:
+      type: object
+      required:
+        - tenant_id
+        - region_id
+        - overall_compliant
+        - checks
+        - checked_at
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        region_id:
+          type: string
+          format: uuid
+        overall_compliant:
+          type: boolean
+        checks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ComplianceCheck"
+        warnings:
+          type: array
+          items:
+            type: string
+        checked_at:
+          type: string
+          format: date-time
+
+    ComplianceCheck:
+      type: object
+      required:
+        - check_name
+        - status
+      properties:
+        check_name:
+          type: string
+        status:
+          type: string
+          enum: [pass, fail, warn, n/a]
+        details:
+          type: string
+        severity:
+          type: string
+          enum: [critical, high, medium, low]
+          default: medium
+
+    ComplianceStatus:
+      type: object
+      properties:
+        overall:
+          type: string
+          enum: [compliant, non_compliant, pending_review, not_checked]
+        data_residency:
+          type: string
+          enum: [compliant, non_compliant, pending]
+        encryption:
+          type: string
+          enum: [compliant, non_compliant, pending]
+        isolation:
+          type: string
+          enum: [compliant, non_compliant, pending]
+        audit_ready:
+          type: string
+          enum: [compliant, non_compliant, pending]
+        last_check_at:
+          type: string
+          format: date-time
+
+    ProvisionRequest:
+      type: object
+      required:
+        - tenant_id
+        - region_id
+        - target_type
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        region_id:
+          type: string
+          format: uuid
+        target_type:
+          $ref: "#/components/schemas/DeploymentTarget"
+        compute:
+          $ref: "#/components/schemas/ComputeConfig"
+        storage:
+          $ref: "#/components/schemas/StorageConfig"
+        network:
+          $ref: "#/components/schemas/NetworkConfig"
+        isolation_level:
+          $ref: "#/components/schemas/IsolationLevel"
+        encryption_key_management:
+          type: string
+          enum: [platform_managed, tenant_managed, hsm]
+          default: platform_managed
+
+    ComputeConfig:
+      type: object
+      properties:
+        cpu_cores:
+          type: integer
+        memory_gb:
+          type: integer
+        gpu_type:
+          type: string
+          nullable: true
+        gpu_count:
+          type: integer
+          nullable: true
+        replicas:
+          type: integer
+          default: 1
+
+    StorageConfig:
+      type: object
+      properties:
+        vector_store_type:
+          type: string
+          enum: [qdrant, milvus, custom]
+        graph_db_type:
+          type: string
+          enum: [neo4j, custom]
+        sql_db_type:
+          type: string
+          enum: [postgresql, custom]
+        cache_type:
+          type: string
+          enum: [redis, custom]
+        data_size_gb:
+          type: integer
+
+    NetworkConfig:
+      type: object
+      properties:
+        vpc_cidr:
+          type: string
+        subnet_cidrs:
+          type: array
+          items:
+            type: string
+        egress_policy:
+          type: string
+          enum: [allow_all, allow_list, deny_all]
+        ingress_sources:
+          type: array
+          items:
+            type: string
+
+    InfrastructureResources:
+      type: object
+      properties:
+        compute:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+              status:
+                type: string
+                enum: [provisioning, ready, failed]
+              resource_id:
+                type: string
+        storage:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+              status:
+                type: string
+                enum: [provisioning, ready, failed]
+              resource_id:
+                type: string
+        network:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+              status:
+                type: string
+                enum: [provisioning, ready, failed]
+              resource_id:
+                type: string
+
+    DeploymentConfiguration:
+      type: object
+      properties:
+        department_template_id:
+          type: string
+          format: uuid
+          nullable: true
+        agent_count:
+          type: integer
+          default: 0
+        memory_topology:
+          type: object
+          properties:
+            vector_enabled:
+              type: boolean
+              default: true
+            graph_enabled:
+              type: boolean
+              default: true
+            episodic_enabled:
+              type: boolean
+              default: true
+            semantic_enabled:
+              type: boolean
+              default: true
+        integration_endpoints:
+          type: array
+          items:
+            type: string
+          description: URLs of dependent service endpoints
+        policies:
+          type: array
+          items:
+            type: string
+          description: Policy rule IDs to apply
+        isolation_level:
+          $ref: "#/components/schemas/IsolationLevel"
+
+    IsolationLevel:
+      type: string
+      enum:
+        - logical
+        - data
+        - cryptographic
+        - execution
+      description: Multi-tenant isolation level for this deployment.
+
+    DeploymentTarget:
+      type: string
+      enum:
+        - public-cloud
+        - private-cloud
+        - air-gapped
+        - sovereign
+        - edge
+      description: Deployment target environment type.
+
+    DeploymentStatus:
+      type: string
+      enum:
+        - provisioning
+        - ready
+        - deprovisioning
+        - degraded
+        - failed
+        - scaling
+      description: Current deployment lifecycle status.
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        has_more:
+          type: boolean
+
+security:
+  - BearerAuth: []
+  - TenantContext: []

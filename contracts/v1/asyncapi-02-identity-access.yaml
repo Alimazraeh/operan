@@ -1,0 +1,522 @@
+asyncapi: 2.6.0
+info:
+  title: Operan Identity & Access Management Events
+  version: 1.0.0
+  description: AsyncAPI specification for Operan Module 02 — Identity & Access Management. Covers user lifecycle, identity rotation, permission management, session management, MFA, and SSO authentication events.
+  contact:
+    name: Platform Engineering
+    url: https://operan.internal
+  license:
+    name: Proprietary
+
+servers:
+  production:
+    url: mq.operan.internal
+    protocol: amqp
+    description: Production message broker for Operan IAM events
+  staging:
+    url: mq-staging.operan.internal
+    protocol: amqp
+    description: Staging message broker for Operan IAM events
+
+defaultContentType: application/json
+
+channels:
+  operan/events/iam/user/created:
+    description: Published when a new user registers in the Operan platform.
+    publish:
+      summary: A new user has been registered.
+      operationId: receiveUserCreated
+      message:
+        $ref: '#/components/messages/UserCreated'
+
+  operan/events/iam/user/suspended:
+    description: Published when a user access is suspended by an administrator or system process.
+    publish:
+      summary: A user access has been suspended.
+      operationId: receiveUserSuspended
+      message:
+        $ref: '#/components/messages/UserSuspended'
+
+  operan/events/iam/identity/rotated:
+    description: Published when a service or agent API key or certificate is rotated.
+    publish:
+      summary: An identity credential has been rotated.
+      operationId: receiveIdentityRotated
+      message:
+        $ref: '#/components/messages/IdentityRotated'
+
+  operan/events/iam/permission/granted:
+    description: Published when an RBAC or ABAC permission is granted to a principal.
+    publish:
+      summary: A permission has been granted.
+      operationId: receivePermissionGranted
+      message:
+        $ref: '#/components/messages/PermissionGranted'
+
+  operan/events/iam/permission/revoked:
+    description: Published when an RBAC or ABAC permission is revoked from a principal.
+    publish:
+      summary: A permission has been revoked.
+      operationId: receivePermissionRevoked
+      message:
+        $ref: '#/components/messages/PermissionRevoked'
+
+  operan/events/iam/session/created:
+    description: Published when a new session is created via login or token refresh.
+    publish:
+      summary: A new session has been created.
+      operationId: receiveSessionCreated
+      message:
+        $ref: '#/components/messages/SessionCreated'
+
+  operan/events/iam/session/expired:
+    description: Published when a session expires or is terminated.
+    publish:
+      summary: A session has expired or been terminated.
+      operationId: receiveSessionExpired
+      message:
+        $ref: '#/components/messages/SessionExpired'
+
+  operan/events/iam/mfa/enrolled:
+    description: Published when MFA enrollment is completed for a user.
+    publish:
+      summary: MFA has been enrolled for a user.
+      operationId: receiveMfaEnrolled
+      message:
+        $ref: '#/components/messages/MfaEnrolled'
+
+  operan/events/iam/sso/login:
+    description: Published when an SSO authentication assertion is processed.
+    publish:
+      summary: An SSO login assertion has been processed.
+      operationId: receiveSsoLogin
+      message:
+        $ref: '#/components/messages/SsoLogin'
+
+components:
+  schemas:
+    TenantId:
+      type: string
+      format: uuid
+      description: Unique identifier for the tenant.
+
+    UserId:
+      type: string
+      format: uuid
+      description: Unique identifier for a user principal.
+
+    ServiceId:
+      type: string
+      format: uuid
+      description: Unique identifier for a service principal.
+
+    AgentId:
+      type: string
+      format: uuid
+      description: Unique identifier for an agent principal.
+
+    PrincipalId:
+      oneOf:
+        - $ref: '#/components/schemas/UserId'
+        - $ref: '#/components/schemas/ServiceId'
+        - $ref: '#/components/schemas/AgentId'
+      description: Identifies a user, service, or agent principal.
+
+    SessionId:
+      type: string
+      format: uuid
+      description: Unique identifier for an auth session.
+
+    PermissionId:
+      type: string
+      format: uuid
+      description: Unique identifier for a permission definition.
+
+    IdentityId:
+      type: string
+      format: uuid
+      description: Unique identifier for an identity credential (API key or certificate).
+
+    KeyId:
+      type: string
+      description: Identifier or fingerprint of the specific key or certificate rotated.
+
+    AssertionId:
+      type: string
+      description: Unique identifier for the SSO assertion (SAML assertion ID or OIDC nonce).
+
+    PrincipalType:
+      type: string
+      enum:
+        - user
+        - service
+        - agent
+      description: The type of principal receiving or holding the permission.
+
+    AuthenticationMethod:
+      type: string
+      enum:
+        - password
+        - mfa
+        - sso
+        - api_key
+      description: The method used to authenticate the user or session.
+
+    SsoProvider:
+      type: string
+      description: The SSO identity provider name (e.g., Okta, AzureAD, OneLogin).
+
+    SsoAssertionType:
+      type: string
+      enum:
+        - saml
+        - oidc
+      description: The protocol of the SSO assertion.
+
+    MfaType:
+      type: string
+      enum:
+        - totp
+        - webauthn
+        - sms
+        - email
+      description: The type of MFA factor enrolled.
+
+    IdentityType:
+      type: string
+      enum:
+        - service
+        - agent
+      description: The type of identity whose credential was rotated.
+
+    SessionExpiredReason:
+      type: string
+      enum:
+        - expired
+        - logout
+        - revoked
+        - suspicious
+      description: The reason the session was terminated.
+
+    AuthResult:
+      type: string
+      enum:
+        - success
+        - failure
+        - denied
+      description: The result of the SSO authentication assertion processing.
+
+    CommonHeaders:
+      type: object
+      required:
+        - correlationId
+        - tenantId
+        - timestamp
+      properties:
+        correlationId:
+          type: string
+          format: uuid
+          description: Correlation ID linking related events across services.
+        tenantId:
+          type: string
+          format: uuid
+          description: The tenant this event belongs to. Must match the X-Tenant-ID header.
+        timestamp:
+          type: string
+          format: date-time
+          description: The UTC timestamp when the event occurred (ISO 8601).
+
+  messages:
+    UserCreated:
+      name: user.created
+      summary: New user registered event.
+      headers:
+        $ref: '#/components/schemas/CommonHeaders'
+      payload:
+        type: object
+        required:
+          - user_id
+          - tenant_id
+          - email
+          - role
+          - created_by
+          - authentication_method
+        properties:
+          user_id:
+            $ref: '#/components/schemas/UserId'
+          tenant_id:
+            $ref: '#/components/schemas/TenantId'
+          email:
+            type: string
+            format: email
+            description: Email address of the new user.
+          role:
+            type: string
+            description: The default role assigned to the user (e.g., member, editor, viewer).
+          created_by:
+            oneOf:
+              - $ref: '#/components/schemas/UserId'
+              - type: string
+                enum:
+                  - self
+            description: The user who created this account, or self for self-registration.
+          authentication_method:
+            type: string
+            description: The authentication method used at registration (e.g., password, sso).
+
+    UserSuspended:
+      name: user.suspended
+      summary: User access suspended event.
+      headers:
+        $ref: '#/components/schemas/CommonHeaders'
+      payload:
+        type: object
+        required:
+          - user_id
+          - tenant_id
+          - reason
+          - suspended_by
+          - effective_at
+        properties:
+          user_id:
+            $ref: '#/components/schemas/UserId'
+          tenant_id:
+            $ref: '#/components/schemas/TenantId'
+          reason:
+            type: string
+            description: The reason for suspension (e.g., policy violation, admin action, inactivity).
+          suspended_by:
+            oneOf:
+              - $ref: '#/components/schemas/UserId'
+              - type: string
+                enum:
+                  - system
+            description: The user or system that performed the suspension.
+          effective_at:
+            type: string
+            format: date-time
+            description: The UTC time at which the suspension takes effect.
+
+    IdentityRotated:
+      name: identity.rotated
+      summary: Service or agent credential rotation event.
+      headers:
+        $ref: '#/components/schemas/CommonHeaders'
+      payload:
+        type: object
+        required:
+          - identity_id
+          - tenant_id
+          - identity_type
+          - key_id
+          - rotated_by
+        properties:
+          identity_id:
+            $ref: '#/components/schemas/IdentityId'
+          tenant_id:
+            $ref: '#/components/schemas/TenantId'
+          identity_type:
+            $ref: '#/components/schemas/IdentityType'
+          key_id:
+            $ref: '#/components/schemas/KeyId'
+          rotated_by:
+            oneOf:
+              - $ref: '#/components/schemas/UserId'
+              - type: string
+                enum:
+                  - system
+              - type: string
+                description: The ID of a service that performed automated rotation.
+            description: The user or system that triggered the rotation.
+
+    PermissionGranted:
+      name: permission.granted
+      summary: RBAC/ABAC permission granted event.
+      headers:
+        $ref: '#/components/schemas/CommonHeaders'
+      payload:
+        type: object
+        required:
+          - principal_id
+          - principal_type
+          - permission_id
+          - scope
+          - granted_by
+        properties:
+          principal_id:
+            $ref: '#/components/schemas/PrincipalId'
+          principal_type:
+            $ref: '#/components/schemas/PrincipalType'
+          permission_id:
+            $ref: '#/components/schemas/PermissionId'
+          scope:
+            type: string
+            description: The scope of the permission (e.g., tenant-scoped, organization-scoped, resource-scoped).
+          granted_by:
+            oneOf:
+              - $ref: '#/components/schemas/UserId'
+              - type: string
+                enum:
+                  - system
+            description: The user or system that granted the permission.
+
+    PermissionRevoked:
+      name: permission.revoked
+      summary: RBAC/ABAC permission revoked event.
+      headers:
+        $ref: '#/components/schemas/CommonHeaders'
+      payload:
+        type: object
+        required:
+          - principal_id
+          - principal_type
+          - permission_id
+          - scope
+          - revoked_by
+          - reason
+        properties:
+          principal_id:
+            $ref: '#/components/schemas/PrincipalId'
+          principal_type:
+            $ref: '#/components/schemas/PrincipalType'
+          permission_id:
+            $ref: '#/components/schemas/PermissionId'
+          scope:
+            type: string
+            description: The scope of the revoked permission.
+          revoked_by:
+            oneOf:
+              - $ref: '#/components/schemas/UserId'
+              - type: string
+                enum:
+                  - system
+            description: The user or system that revoked the permission.
+          reason:
+            type: string
+            description: The reason for revocation (e.g., role change, policy update, offboarding).
+
+    SessionCreated:
+      name: session.created
+      summary: New session created event.
+      headers:
+        $ref: '#/components/schemas/CommonHeaders'
+      payload:
+        type: object
+        required:
+          - session_id
+          - user_id
+          - tenant_id
+          - auth_method
+          - ip_address
+          - user_agent
+        properties:
+          session_id:
+            $ref: '#/components/schemas/SessionId'
+          user_id:
+            $ref: '#/components/schemas/UserId'
+          tenant_id:
+            $ref: '#/components/schemas/TenantId'
+          auth_method:
+            $ref: '#/components/schemas/AuthenticationMethod'
+          ip_address:
+            type: string
+            format: ipv4
+            description: The IP address from which the session was initiated.
+          user_agent:
+            type: string
+            description: The user-agent string of the client that initiated the session.
+
+    SessionExpired:
+      name: session.expired
+      summary: Session expired or terminated event.
+      headers:
+        $ref: '#/components/schemas/CommonHeaders'
+      payload:
+        type: object
+        required:
+          - session_id
+          - user_id
+          - tenant_id
+          - reason
+        properties:
+          session_id:
+            $ref: '#/components/schemas/SessionId'
+          user_id:
+            $ref: '#/components/schemas/UserId'
+          tenant_id:
+            $ref: '#/components/schemas/TenantId'
+          reason:
+            $ref: '#/components/schemas/SessionExpiredReason'
+
+    MfaEnrolled:
+      name: mfa.enrolled
+      summary: MFA enrollment completed event.
+      headers:
+        $ref: '#/components/schemas/CommonHeaders'
+      payload:
+        type: object
+        required:
+          - user_id
+          - tenant_id
+          - mfa_type
+          - enrolled_by
+        properties:
+          user_id:
+            $ref: '#/components/schemas/UserId'
+          tenant_id:
+            $ref: '#/components/schemas/TenantId'
+          mfa_type:
+            $ref: '#/components/schemas/MfaType'
+          enrolled_by:
+            oneOf:
+              - $ref: '#/components/schemas/UserId'
+              - type: string
+                enum:
+                  - system
+            description: The user who enrolled MFA, or system for forced enrollment.
+
+    SsoLogin:
+      name: sso.login
+      summary: SSO authentication assertion processed event.
+      headers:
+        $ref: '#/components/schemas/CommonHeaders'
+      payload:
+        type: object
+        required:
+          - user_id
+          - tenant_id
+          - sso_provider
+          - assertion_id
+          - assertion_type
+          - auth_result
+        properties:
+          user_id:
+            $ref: '#/components/schemas/UserId'
+          tenant_id:
+            $ref: '#/components/schemas/TenantId'
+          sso_provider:
+            $ref: '#/components/schemas/SsoProvider'
+          assertion_id:
+            $ref: '#/components/schemas/AssertionId'
+          assertion_type:
+            $ref: '#/components/schemas/SsoAssertionType'
+          auth_result:
+            $ref: '#/components/schemas/AuthResult'
+
+  securitySchemes:
+    bearerJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JSON Web Token (JWT) for authenticating API requests.
+
+    tenantIdHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Tenant identifier header required on every request for multi-tenant isolation.
+
+security:
+  - bearerJwt: []
+  - tenantIdHeader: []

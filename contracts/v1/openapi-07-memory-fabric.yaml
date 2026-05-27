@@ -1,0 +1,522 @@
+openapi: 3.0.3
+info:
+  title: Operan Memory Fabric API
+  description: Vector memory storage, semantic search, and retention management. Module 07.
+  version: 1.0.0
+servers:
+  - url: /api/v1/memory
+    description: Memory Fabric API root
+
+paths:
+  /vectors:
+    post:
+      operationId: ingestVectors
+      summary: Ingest one or more memory vectors
+      tags: [vectors]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VectorIngestRequest'
+      responses:
+        '201':
+          description: Vectors ingested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VectorIngestResult'
+        '400':
+          description: Invalid request
+
+    get:
+      operationId: listVectors
+      summary: List memory vectors
+      tags: [vectors]
+      parameters:
+        - name: embedding_type
+          in: query
+          schema:
+            type: string
+            enum: [agent_personal, agent_ephemeral, department, platform]
+        - name: segment_type
+          in: query
+          schema:
+            type: string
+            enum: [fact, context, memory, tool_output, policy]
+        - name: document_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Vector list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VectorList'
+
+  /vectors/{vectorId}:
+    parameters:
+      - name: vectorId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getVector
+      summary: Get vector details
+      tags: [vectors]
+      responses:
+        '200':
+          description: Vector details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryVector'
+        '404':
+          description: Vector not found
+    put:
+      operationId: updateVector
+      summary: Update a memory vector
+      tags: [vectors]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VectorUpdateRequest'
+      responses:
+        '200':
+          description: Vector updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryVector'
+        '404':
+          description: Vector not found
+    delete:
+      operationId: deleteVector
+      summary: Delete a memory vector
+      tags: [vectors]
+      responses:
+        '204':
+          description: Vector deleted
+        '404':
+          description: Vector not found
+
+  /search:
+    post:
+      operationId: searchMemory
+      summary: Perform semantic search over memory vectors
+      tags: [search]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SemanticSearchRequest'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResultList'
+        '400':
+          description: Invalid search request
+
+  /agents/{agentId}:
+    get:
+      operationId: getAgentMemory
+      summary: Get an agent's aggregate memory state
+      tags: [agents]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Agent memory state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentMemory'
+        '404':
+          description: Agent not found
+
+  /gc:
+    post:
+      operationId: triggerGarbageCollection
+      summary: Trigger manual garbage collection for expired memory vectors
+      tags: [gc]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GCRequest'
+      responses:
+        '202':
+          description: GC job started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationStatus'
+
+  /retention-policies:
+    get:
+      operationId: listRetentionPolicies
+      summary: List retention policies
+      tags: [retention]
+      responses:
+        '200':
+          description: Policy list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetentionPolicyList'
+    post:
+      operationId: createRetentionPolicy
+      summary: Create a retention policy
+      tags: [retention]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetentionPolicy'
+      responses:
+        '201':
+          description: Policy created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetentionPolicy'
+
+components:
+  schemas:
+    VectorIngestRequest:
+      type: object
+      required: [tenant_id, items]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VectorWriteItem'
+
+    VectorWriteItem:
+      type: object
+      required: [document_id, embedding_type, semantic_content]
+      properties:
+        document_id:
+          type: string
+          format: uuid
+        embedding_type:
+          type: string
+          enum: [agent_personal, agent_ephemeral, department, platform]
+        semantic_content:
+          type: string
+        metadata:
+          type: object
+        chunk_id:
+          type: string
+          format: uuid
+        segment_type:
+          type: string
+          enum: [fact, context, memory, tool_output, policy]
+        embedding_vector:
+          type: array
+          items:
+            type: number
+        ttl:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+
+    VectorIngestResult:
+      type: object
+      required: [ingested, failed]
+      properties:
+        ingested:
+          type: integer
+        failed:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+
+    MemoryVector:
+      type: object
+      required: [id, tenant_id, document_id, embedding_type, semantic_content, metadata, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        document_id:
+          type: string
+          format: uuid
+        embedding_type:
+          type: string
+          enum: [agent_personal, agent_ephemeral, department, platform]
+        semantic_content:
+          type: string
+        metadata:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        embedding_model:
+          type: string
+        chunk_id:
+          type: string
+          format: uuid
+        segment_type:
+          type: string
+          enum: [fact, context, memory, tool_output, policy]
+        embedding_vector:
+          type: array
+          items:
+            type: number
+        vector_hash:
+          type: string
+        ttl:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+
+    VectorUpdateRequest:
+      type: object
+      properties:
+        semantic_content:
+          type: string
+        metadata:
+          type: object
+        segment_type:
+          type: string
+          enum: [fact, context, memory, tool_output, policy]
+        ttl:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+
+    VectorList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemoryVector'
+        total:
+          type: integer
+        offset:
+          type: integer
+
+    SemanticSearchRequest:
+      type: object
+      required: [tenant_id, query, embedding_type]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        query:
+          type: string
+        embedding_type:
+          type: string
+          enum: [agent_personal, agent_ephemeral, department, platform]
+        top_n:
+          type: integer
+          default: 10
+        relevance_threshold:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0
+        vector_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        filters:
+          type: object
+        include_context:
+          type: boolean
+          default: true
+
+    SearchResult:
+      type: object
+      required: [id, vector_id, score, content]
+      properties:
+        id:
+          type: string
+          format: uuid
+        vector_id:
+          type: string
+          format: uuid
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+        content:
+          type: string
+        metadata:
+          type: object
+        source_type:
+          type: string
+          enum: [knowledge, memory, tool_output, policy]
+        document_id:
+          type: string
+          format: uuid
+        section_id:
+          type: string
+          format: uuid
+        rank:
+          type: integer
+        embedding_model:
+          type: string
+
+    SearchResultList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+        total:
+          type: integer
+
+    AgentMemory:
+      type: object
+      required: [agent_id, tenant_id]
+      properties:
+        agent_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        personal_memories:
+          type: array
+          items:
+            type: string
+            format: uuid
+        ephemeral_window:
+          $ref: '#/components/schemas/EphemeralWindow'
+        last_updated:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [active, suspended]
+
+    EphemeralWindow:
+      type: object
+      properties:
+        max_tokens:
+          type: integer
+        ttl_seconds:
+          type: integer
+
+    GCRequest:
+      type: object
+      properties:
+        memory_type:
+          type: string
+          enum: [personal, ephemeral, department, platform]
+        max_age_days:
+          type: integer
+        dry_run:
+          type: boolean
+          default: false
+
+    OperationStatus:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [processing, completed, failed]
+        batch_size:
+          type: integer
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        error_message:
+          type: string
+
+    RetentionPolicy:
+      type: object
+      required: [id, tenant_id, memory_type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        memory_type:
+          type: string
+          enum: [personal, ephemeral, department, platform]
+        max_age_days:
+          type: integer
+        max_memory_count:
+          type: integer
+        ttl_seconds:
+          type: integer
+        auto_gc_enabled:
+          type: boolean
+        creation_date:
+          type: string
+          format: date-time
+
+    RetentionPolicyList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RetentionPolicy'
+        total:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object

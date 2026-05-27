@@ -1,0 +1,325 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "ResourceConsumption": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "resource_type",
+        "amount",
+        "rate_per_unit",
+        "total_cost",
+        "currency",
+        "timestamp"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "resource_type": {
+          "type": "string",
+          "enum": [
+            "agent_usage",
+            "token_usage",
+            "tool_calls",
+            "storage",
+            "memory_gb",
+            "workflow_runs",
+            "api_calls",
+            "model_invocations",
+            "file_uploads"
+          ]
+        },
+        "amount": {
+          "type": "number"
+        },
+        "rate_per_unit": {
+          "type": "number"
+        },
+        "total_cost": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resource_id": {
+          "type": ["string", "null"],
+          "format": "uuid"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Credit": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "amount",
+        "currency",
+        "credit_type",
+        "billing_period_start",
+        "billing_period_end",
+        "remaining_balance"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "credit_type": {
+          "type": "string",
+          "enum": [
+            "included",
+            "purchase",
+            "bonus",
+            "refund"
+          ]
+        },
+        "billing_period_start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "billing_period_end": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "remaining_balance": {
+          "type": "number"
+        },
+        "applied_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "metadata": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SubscriptionPlan": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "plan_name",
+        "status",
+        "current_billing_period_start",
+        "current_billing_period_end"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "plan_name": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "trial",
+            "past_due",
+            "cancelled"
+          ]
+        },
+        "current_billing_period_start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "current_billing_period_end": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "monthly_quota": {
+          "type": "object",
+          "properties": {
+            "agents": {
+              "type": "integer"
+            },
+            "workflows_per_day": {
+              "type": "integer"
+            },
+            "storage_gb": {
+              "type": "integer"
+            },
+            "monthly_tokens": {
+              "type": "integer"
+            },
+            "concurrent_workflows": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "per_unit_pricing": {
+          "type": "object"
+        },
+        "price_per_month": {
+          "type": "number"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "QuotaStatus": {
+      "type": "object",
+      "required": [
+        "resource_type",
+        "current_usage",
+        "quota_limit",
+        "usage_percent",
+        "checked_at"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "resource_type": {
+          "type": "string",
+          "enum": [
+            "agent_usage",
+            "token_usage",
+            "tool_calls",
+            "storage",
+            "memory_gb",
+            "workflow_runs",
+            "api_calls"
+          ]
+        },
+        "current_usage": {
+          "type": "number"
+        },
+        "quota_limit": {
+          "type": "number"
+        },
+        "usage_percent": {
+          "type": "number"
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "warning",
+            "near_limit",
+            "exceeded",
+            "blocked"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "BillingPeriod": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "start_date",
+        "end_date",
+        "status",
+        "total_usage_cost",
+        "currency"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "closed",
+            "upcoming"
+          ]
+        },
+        "total_usage_cost": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "invoices": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "credits_applied": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

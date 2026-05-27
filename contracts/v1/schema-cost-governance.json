@@ -1,0 +1,315 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Operan Cost Governance Engine Schema (Module 17)",
+  "description": "Prevent runaway operational costs through token budgets, execution quotas, agent throttling, usage forecasting, and tenant billing.",
+  "type": "object",
+  "definitions": {
+    "CreateTokenBudgetRequest": {
+      "type": "object",
+      "required": ["tenant_id", "name", "limit_tokens"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "limit_tokens": { "type": "integer", "minimum": 1 },
+        "period": { "type": "string", "enum": ["daily", "weekly", "monthly", "yearly"] },
+        "target_type": { "type": "string", "enum": ["tenant", "department", "team", "agent", "user", "model"] },
+        "target_id": { "type": "string", "format": "uuid" },
+        "warning_threshold": { "type": "number", "minimum": 0, "maximum": 100, "default": 80 },
+        "alert_actions": { "type": "array", "items": { "type": "string", "enum": ["notify", "throttle", "block", "escalate"] } },
+        "metadata": { "type": "object" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "TokenBudget": {
+      "type": "object",
+      "required": ["id", "name", "limit_tokens"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "limit_tokens": { "type": "integer" },
+        "period": { "type": "string", "enum": ["daily", "weekly", "monthly", "yearly"] },
+        "current_usage": { "type": "integer" },
+        "target_type": { "type": "string", "enum": ["tenant", "department", "team", "agent", "user", "model"] },
+        "target_id": { "type": "string", "format": "uuid" },
+        "warning_threshold": { "type": "number" },
+        "alert_actions": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["active", "warning", "exceeded", "disabled"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "metadata": { "type": "object" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "UpdateTokenBudgetRequest": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "limit_tokens": { "type": "integer" },
+        "warning_threshold": { "type": "number" },
+        "alert_actions": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["active", "warning", "exceeded", "disabled"] },
+        "metadata": { "type": "object" }
+      }
+    },
+    "TokenBudgetUsage": {
+      "type": "object",
+      "required": ["budget_id", "current_usage", "limit"],
+      "properties": {
+        "budget_id": { "type": "string", "format": "uuid" },
+        "current_usage": { "type": "integer" },
+        "limit": { "type": "integer" },
+        "percentage_used": { "type": "number" },
+        "remaining": { "type": "integer" },
+        "period": { "type": "string", "enum": ["daily", "weekly", "monthly"] },
+        "daily_breakdown": { "type": "array", "items": { "type": "object" } },
+        "top_consumers": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+    "CreateExecutionQuotaRequest": {
+      "type": "object",
+      "required": ["tenant_id", "name", "max_executions"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "max_executions": { "type": "integer", "minimum": 1 },
+        "period": { "type": "string", "enum": ["daily", "weekly", "monthly"] },
+        "target_type": { "type": "string", "enum": ["tenant", "department", "team", "agent", "workflow"] },
+        "target_id": { "type": "string", "format": "uuid" },
+        "actions": { "type": "array", "items": { "type": "string" } },
+        "override_roles": { "type": "array", "items": { "type": "string" } },
+        "metadata": { "type": "object" }
+      }
+    },
+    "ExecutionQuota": {
+      "type": "object",
+      "required": ["id", "name", "max_executions"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "max_executions": { "type": "integer" },
+        "period": { "type": "string", "enum": ["daily", "weekly", "monthly"] },
+        "current_executions": { "type": "integer" },
+        "target_type": { "type": "string", "enum": ["tenant", "department", "team", "agent", "workflow"] },
+        "target_id": { "type": "string", "format": "uuid" },
+        "actions": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["active", "warning", "exceeded", "disabled"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "metadata": { "type": "object" }
+      }
+    },
+    "UpdateExecutionQuotaRequest": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "max_executions": { "type": "integer" },
+        "actions": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["active", "warning", "exceeded", "disabled"] },
+        "metadata": { "type": "object" }
+      }
+    },
+    "ExecutionCheckRequest": {
+      "type": "object",
+      "required": ["tenant_id", "target_type", "target_id"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "target_type": { "type": "string", "enum": ["tenant", "department", "team", "agent", "workflow"] },
+        "target_id": { "type": "string", "format": "uuid" },
+        "action_type": { "type": "string" },
+        "requested_executions": { "type": "integer", "default": 1 }
+      }
+    },
+    "ExecutionCheckResult": {
+      "type": "object",
+      "required": ["allowed"],
+      "properties": {
+        "allowed": { "type": "boolean" },
+        "quota_id": { "type": "string", "format": "uuid" },
+        "quota_name": { "type": "string" },
+        "current_usage": { "type": "integer" },
+        "limit": { "type": "integer" },
+        "remaining": { "type": "integer" },
+        "action_taken": { "type": "string" },
+        "retry_after": { "type": "string", "format": "date-time" }
+      }
+    },
+    "CreateThrottlingRuleRequest": {
+      "type": "object",
+      "required": ["tenant_id", "name", "rate_limit"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "rate_limit": { "type": "integer", "minimum": 1 },
+        "window_seconds": { "type": "integer", "minimum": 1, "default": 60 },
+        "target_type": { "type": "string", "enum": ["agent", "model", "tenant", "department"] },
+        "target_id": { "type": "string", "format": "uuid" },
+        "throttle_actions": { "type": "array", "items": { "type": "string", "enum": ["queue", "delay", "reject", "backoff"] } },
+        "priority": { "type": "integer", "minimum": 1, "default": 5 },
+        "metadata": { "type": "object" }
+      }
+    },
+    "ThrottlingRule": {
+      "type": "object",
+      "required": ["id", "name", "rate_limit"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "rate_limit": { "type": "integer" },
+        "window_seconds": { "type": "integer" },
+        "target_type": { "type": "string", "enum": ["agent", "model", "tenant", "department"] },
+        "target_id": { "type": "string", "format": "uuid" },
+        "throttle_actions": { "type": "array", "items": { "type": "string" } },
+        "priority": { "type": "integer" },
+        "current_rate": { "type": "integer" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "metadata": { "type": "object" }
+      }
+    },
+    "UpdateThrottlingRuleRequest": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "rate_limit": { "type": "integer" },
+        "window_seconds": { "type": "integer" },
+        "throttle_actions": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "metadata": { "type": "object" }
+      }
+    },
+    "ThrottlingStatus": {
+      "type": "object",
+      "required": ["rule_id", "throttled"],
+      "properties": {
+        "rule_id": { "type": "string", "format": "uuid" },
+        "rule_name": { "type": "string" },
+        "throttled": { "type": "boolean" },
+        "current_rate": { "type": "integer" },
+        "rate_limit": { "type": "integer" },
+        "window_seconds": { "type": "integer" },
+        "throttled_count": { "type": "integer" },
+        "last_throttled_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "GenerateForecastRequest": {
+      "type": "object",
+      "required": ["tenant_id", "forecast_type"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "forecast_type": { "type": "string", "enum": ["token_usage", "execution_count", "cost", "resource_utilization"] },
+        "horizon_days": { "type": "integer", "minimum": 1, "maximum": 365, "default": 30 },
+        "granularity": { "type": "string", "enum": ["hourly", "daily", "weekly"] },
+        "include_models": { "type": "array", "items": { "type": "string" } },
+        "metadata": { "type": "object" }
+      }
+    },
+    "UsageForecast": {
+      "type": "object",
+      "required": ["id", "tenant_id", "forecast_type", "generated_at"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "forecast_type": { "type": "string" },
+        "horizon_days": { "type": "integer" },
+        "granularity": { "type": "string" },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "predictions": { "type": "array", "items": { "type": "object" } },
+        "confidence_intervals": { "type": "object" },
+        "recommendations": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["generating", "completed", "failed"] }
+      }
+    },
+    "ExportForecastRequest": {
+      "type": "object",
+      "required": ["format"],
+      "properties": {
+        "format": { "type": "string", "enum": ["csv", "json", "pdf"] },
+        "include_raw_data": { "type": "boolean", "default": true }
+      }
+    },
+    "CreateBillingRecordRequest": {
+      "type": "object",
+      "required": ["tenant_id", "period_start", "period_end"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "period_start": { "type": "string", "format": "date-time" },
+        "period_end": { "type": "string", "format": "date-time" },
+        "charge_items": { "type": "array", "items": { "type": "object" } },
+        "currency": { "type": "string", "default": "USD" },
+        "metadata": { "type": "object" }
+      }
+    },
+    "BillingRecord": {
+      "type": "object",
+      "required": ["id", "tenant_id", "period_start", "period_end"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "period_start": { "type": "string", "format": "date-time" },
+        "period_end": { "type": "string", "format": "date-time" },
+        "charge_items": { "type": "array", "items": { "type": "object" } },
+        "total_cost": { "type": "number" },
+        "currency": { "type": "string" },
+        "invoice_id": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "invoiced", "paid", "disputed"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "metadata": { "type": "object" }
+      }
+    },
+    "ExportBillingRequest": {
+      "type": "object",
+      "required": ["tenant_id", "format"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "format": { "type": "string", "enum": ["csv", "json", "pdf"] },
+        "period_start": { "type": "string", "format": "date-time" },
+        "period_end": { "type": "string", "format": "date-time" }
+      }
+    },
+    "CostDashboard": {
+      "type": "object",
+      "required": ["tenant_id"],
+      "properties": {
+        "tenant_id": { "type": "string", "format": "uuid" },
+        "total_tokens_used": { "type": "integer" },
+        "total_tokens_budget": { "type": "integer" },
+        "token_usage_percentage": { "type": "number" },
+        "total_executions": { "type": "integer" },
+        "active_quotas": { "type": "integer" },
+        "throttled_requests": { "type": "integer" },
+        "estimated_cost": { "type": "number" },
+        "currency": { "type": "string" },
+        "top_consumers": { "type": "array", "items": { "type": "object" } },
+        "budget_alerts": { "type": "array", "items": { "type": "object" } },
+        "forecast_summary": { "type": "object" }
+      }
+    },
+    "HealthStatus": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string", "enum": ["healthy", "degraded", "unhealthy"] },
+        "uptime_seconds": { "type": "integer" },
+        "active_budgets": { "type": "integer" },
+        "active_quotas": { "type": "integer" },
+        "active_throttling_rules": { "type": "integer" },
+        "pending_forecasts": { "type": "integer" },
+        "last_check": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

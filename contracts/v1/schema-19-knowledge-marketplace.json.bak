@@ -1,0 +1,429 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "MarketplaceListing": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "listing_type",
+        "title",
+        "description",
+        "visibility",
+        "created_by",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "listing_type": {
+          "type": "string",
+          "enum": [
+            "knowledge_base",
+            "prompt_template",
+            "workflow",
+            "agent_tool",
+            "department_template",
+            "fine_tuned_model",
+            "dataset"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": [
+            "public",
+            "tenant",
+            "department",
+            "private"
+          ]
+        },
+        "created_by": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "content_uri": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "pricing_type": {
+          "type": "string",
+          "enum": [
+            "free",
+            "one_time",
+            "subscription",
+            "pay_per_use"
+          ]
+        },
+        "price": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "currency": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "category": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "content_type": {
+          "type": "string",
+          "enum": [
+            "json",
+            "yaml",
+            "csv",
+            "parquet",
+            "pdf",
+            "md",
+            "custom"
+          ]
+        },
+        "license_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "terms_conditions": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "preview": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "downloads_count": {
+          "type": "integer",
+          "default": 0
+        },
+        "rating": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 5,
+          "default": 0
+        },
+        "minimum_agent_tier": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "premium",
+            "experimental"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "CreateListingRequest": {
+      "type": "object",
+      "required": [
+        "tenant_id",
+        "listing_type",
+        "title",
+        "description",
+        "visibility"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "listing_type": {
+          "type": "string",
+          "enum": [
+            "knowledge_base",
+            "prompt_template",
+            "workflow",
+            "agent_tool",
+            "department_template",
+            "fine_tuned_model",
+            "dataset"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": [
+            "public",
+            "tenant",
+            "department",
+            "private"
+          ]
+        },
+        "content_uri": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "pricing_type": {
+          "type": "string",
+          "enum": [
+            "free",
+            "one_time",
+            "subscription",
+            "pay_per_use"
+          ],
+          "default": "free"
+        },
+        "price": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "currency": {
+          "type": "string",
+          "default": "USD"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "category": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "content_type": {
+          "type": "string"
+        },
+        "license_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "terms_conditions": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "preview": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "minimum_agent_tier": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "premium",
+            "experimental"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "MarketplaceTransaction": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "listing_id",
+        "buyer_id",
+        "transaction_type",
+        "amount",
+        "currency",
+        "status",
+        "created_at",
+        "completed_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "listing_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "buyer_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "transaction_type": {
+          "type": "string",
+          "enum": [
+            "purchase",
+            "free_acquisition",
+            "subscription_active"
+          ]
+        },
+        "amount": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "currency": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "completed",
+            "failed",
+            "refunded"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "payment_method_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "access_granted_until": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "transaction_reference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "Review": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "listing_id",
+        "reviewer_id",
+        "rating",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "listing_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "reviewer_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "rating": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "comment": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "helpful_votes": {
+          "type": "integer",
+          "default": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,403 @@
+asyncapi: 2.6.0
+info:
+  title: Operan Model Abstraction & Routing Service
+  version: 1.0.0
+  description: MODULE 12 — Model Abstraction & Routing. Publishes events for model provisioning, API calls, failures, routing decisions, and capacity changes across all model providers.
+  contact:
+    name: Operan Platform Team
+    url: https://operan.internal/docs
+    email: platform@operan.internal
+servers:
+  production:
+    url: rabbitmq-operan.prod.internal:5672
+    protocol: amqp
+    description: Production RabbitMQ cluster
+  staging:
+    url: rabbitmq-operan.staging.internal:5672
+    protocol: amqp
+    description: Staging RabbitMQ cluster
+
+channels:
+  operan/events/model/provisioned:
+    publish:
+      summary: Emitted when a new model is provisioned for a tenant.
+      description: Publishes details about a newly available model including its capabilities, provider, and pricing.
+      operationId: publishModelProvisioned
+      message:
+        $ref: '#/components/messages/ModelProvisioned'
+
+  operan/events/model/call/made:
+    publish:
+      summary: Emitted when a model API call is made (regardless of outcome).
+      description: Publishes telemetry for every model invocation including token usage, latency, and cost.
+      operationId: publishModelCallMade
+      message:
+        $ref: '#/components/messages/ModelCallMade'
+
+  operan/events/model/call/failed:
+    publish:
+      summary: Emitted when a model API call fails.
+      description: Publishes failure details including error code, message, and whether the call is retryable.
+      operationId: publishModelCallFailed
+      message:
+        $ref: '#/components/messages/ModelCallFailed'
+
+  operan/events/model/route/selected:
+    publish:
+      summary: Emitted when a routing decision selects a model for a given request.
+      description: Publishes the rationale behind model selection, including fallback information and selection criteria.
+      operationId: publishModelRouteSelected
+      message:
+        $ref: '#/components/messages/ModelRouteSelected'
+
+  operan/events/model/capacity/updated:
+    publish:
+      summary: Emitted when a model's capacity changes.
+      description: Publishes updated capacity figures including current usage, maximum capacity, and utilization ratio.
+      operationId: publishModelCapacityUpdated
+      message:
+        $ref: '#/components/messages/ModelCapacityUpdated'
+
+components:
+  messages:
+    ModelProvisioned:
+      messageId: model-provisioned-message
+      correlationId:
+        required: true
+      headers:
+        type: object
+        required:
+          - tenantId
+        properties:
+          tenantId:
+            type: string
+            format: uuid
+            description: The tenant to which this model belongs.
+      payload:
+        type: object
+        required:
+          - model_id
+          - tenant_id
+          - provider
+          - model_name
+          - capabilities
+          - tier
+          - cost_per_token
+          - provisioned_by
+          - provisioned_at
+        properties:
+          model_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the provisioned model.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          provider:
+            $ref: '#/components/schemas/ModelProvider'
+          model_name:
+            type: string
+            description: Human-readable model name (e.g., gpt-4o).
+          capabilities:
+            type: array
+            items:
+              type: string
+            description: List of capabilities the model supports (e.g., text-generation, image-generation, function-calling).
+          tier:
+            $ref: '#/components/schemas/ModelTier'
+          cost_per_token:
+            $ref: '#/components/schemas/CostPerToken'
+          provisioned_by:
+            type: string
+            description: Identity of the user or service that provisioned the model.
+          provisioned_at:
+            type: string
+            format: date-time
+            description: Timestamp when the model was provisioned.
+
+    ModelCallMade:
+      messageId: model-call-made-message
+      correlationId:
+        required: true
+      headers:
+        type: object
+        required:
+          - tenantId
+        properties:
+          tenantId:
+            type: string
+            format: uuid
+            description: The tenant that made the call.
+      payload:
+        type: object
+        required:
+          - call_id
+          - tenant_id
+          - model_id
+          - agent_id
+          - input_tokens
+          - output_tokens
+          - latency_ms
+          - status
+          - cost
+          - timestamp
+        properties:
+          call_id:
+            type: string
+            format: uuid
+            description: Unique identifier for this model call.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          model_id:
+            type: string
+            format: uuid
+            description: The model that was invoked.
+          agent_id:
+            type: string
+            format: uuid
+            description: The agent that initiated the call.
+          workflow_id:
+            type: string
+            format: uuid
+            nullable: true
+            description: The workflow that initiated the call, if applicable.
+          input_tokens:
+            type: integer
+            description: Number of input tokens consumed.
+          output_tokens:
+            type: integer
+            description: Number of output tokens consumed.
+          latency_ms:
+            type: integer
+            description: Response latency in milliseconds.
+          status:
+            $ref: '#/components/schemas/CallStatus'
+          cost:
+            $ref: '#/components/schemas/CallCost'
+          timestamp:
+            type: string
+            format: date-time
+            description: Timestamp when the call was completed.
+
+    ModelCallFailed:
+      messageId: model-call-failed-message
+      correlationId:
+        required: true
+      headers:
+        type: object
+        required:
+          - tenantId
+        properties:
+          tenantId:
+            type: string
+            format: uuid
+            description: The tenant whose call failed.
+      payload:
+        type: object
+        required:
+          - call_id
+          - tenant_id
+          - model_id
+          - error_code
+          - error_message
+          - retryable
+          - timestamp
+        properties:
+          call_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the failed call.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          model_id:
+            type: string
+            format: uuid
+            description: The model that was invoked.
+          error_code:
+            type: string
+            description: Machine-readable error code.
+          error_message:
+            type: string
+            description: Human-readable error message.
+          retryable:
+            type: boolean
+            description: Whether the call can be safely retried.
+          timestamp:
+            type: string
+            format: date-time
+            description: Timestamp when the failure occurred.
+
+    ModelRouteSelected:
+      messageId: model-route-selected-message
+      correlationId:
+        required: true
+      headers:
+        type: object
+        required:
+          - tenantId
+        properties:
+          tenantId:
+            type: string
+            format: uuid
+            description: The tenant for whom a route was selected.
+      payload:
+        type: object
+        required:
+          - route_id
+          - tenant_id
+          - model_id
+          - reason
+          - timestamp
+        properties:
+          route_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the routing decision.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          model_id:
+            type: string
+            format: uuid
+            description: The model that was selected by the route.
+          reason:
+            type: string
+            description: Human-readable explanation of why this model was selected.
+          fallback_triggered:
+            type: boolean
+            nullable: true
+            description: Whether this selection was triggered by a fallback from a primary model.
+          selection_criteria:
+            type: object
+            description: The criteria evaluated during model selection.
+          timestamp:
+            type: string
+            format: date-time
+            description: Timestamp when the routing decision was made.
+
+    ModelCapacityUpdated:
+      messageId: model-capacity-updated-message
+      correlationId:
+        required: true
+      headers:
+        type: object
+        required:
+          - tenantId
+        properties:
+          tenantId:
+            type: string
+            format: uuid
+            description: The tenant whose model capacity was updated.
+      payload:
+        type: object
+        required:
+          - model_id
+          - tenant_id
+          - current_capacity
+          - max_capacity
+          - utilization
+          - timestamp
+        properties:
+          model_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the model.
+          tenant_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the tenant.
+          current_capacity:
+            type: integer
+            description: Current number of concurrent requests the model is handling.
+          max_capacity:
+            type: integer
+            description: Maximum concurrent requests the model can handle.
+          utilization:
+            type: number
+            description: Current utilization ratio (current_capacity / max_capacity).
+          timestamp:
+            type: string
+            format: date-time
+            description: Timestamp when capacity was updated.
+
+  schemas:
+    ModelProvider:
+      type: string
+      enum:
+        - openai
+        - azure
+        - google
+        - aws
+        - local
+        - anthropic
+        - ollama
+      description: The provider of the model.
+
+    ModelTier:
+      type: string
+      enum:
+        - standard
+        - premium
+        - experimental
+      description: The service tier of the model.
+
+    CallStatus:
+      type: string
+      enum:
+        - success
+        - failed
+      description: The outcome status of the model call.
+
+    CostPerToken:
+      type: object
+      description: Pricing information per token for this model.
+      required:
+        - prompt
+        - completion
+        - currency
+      properties:
+        prompt:
+          type: number
+          description: Cost per input token.
+        completion:
+          type: number
+          description: Cost per output token.
+        currency:
+          type: string
+          description: Currency code (e.g., USD).
+
+    CallCost:
+      type: object
+      description: Total cost incurred by this model call.
+      required:
+        - currency
+        - amount
+      properties:
+        currency:
+          type: string
+          description: Currency code (e.g., USD).
+        amount:
+          type: number
+          description: Total cost of the call.
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer token for authentication.
+    TenantContext:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Tenant identification header required on all requests.
+
+security:
+  - BearerAuth: []
+  - TenantContext: []

@@ -1,0 +1,486 @@
+asyncapi: 2.6.0
+info:
+  title: Workflow Orchestration Events
+  version: 1.0.0
+  description: MODULE 13 — Workflow Orchestration Events for Operan platform
+servers:
+  production:
+    url: rabbitmq-operan.prod.internal:5672
+    protocol: amqp
+    description: Production RabbitMQ broker
+  staging:
+    url: rabbitmq-operan.staging.internal:5672
+    protocol: amqp
+    description: Staging RabbitMQ broker
+
+defaultContentType: application/json
+
+channels:
+  operan/events/workflow/started:
+    publish:
+      summary: Workflow execution started
+      description: Published when a workflow begins execution
+      operationId: publishWorkflowStarted
+      message:
+        $ref: '#/components/messages/WorkflowStarted'
+
+  operan/events/workflow/step/completed:
+    publish:
+      summary: Workflow step completed
+      description: Published when an individual workflow step completes successfully
+      operationId: publishWorkflowStepCompleted
+      message:
+        $ref: '#/components/messages/WorkflowStepCompleted'
+
+  operan/events/workflow/step/failed:
+    publish:
+      summary: Workflow step failed
+      description: Published when an individual workflow step fails
+      operationId: publishWorkflowStepFailed
+      message:
+        $ref: '#/components/messages/WorkflowStepFailed'
+
+  operan/events/workflow/completed:
+    publish:
+      summary: Workflow completed
+      description: Published when the entire workflow finishes (any final state)
+      operationId: publishWorkflowCompleted
+      message:
+        $ref: '#/components/messages/WorkflowCompleted'
+
+  operan/events/workflow/cancelled:
+    publish:
+      summary: Workflow cancelled
+      description: Published when a workflow is cancelled by an actor
+      operationId: publishWorkflowCancelled
+      message:
+        $ref: '#/components/messages/WorkflowCancelled'
+
+  operan/events/workflow/paused:
+    publish:
+      summary: Workflow paused
+      description: Published when a workflow is temporarily paused
+      operationId: publishWorkflowPaused
+      message:
+        $ref: '#/components/messages/WorkflowPaused'
+
+  operan/events/workflow/resumed:
+    publish:
+      summary: Workflow resumed
+      description: Published when a paused workflow is resumed
+      operationId: publishWorkflowResumed
+      message:
+        $ref: '#/components/messages/WorkflowResumed'
+
+components:
+  messages:
+    WorkflowStarted:
+      messageId: workflowStartedMessageId
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+      payload:
+        $ref: '#/components/schemas/WorkflowStartedPayload'
+
+    WorkflowStepCompleted:
+      messageId: workflowStepCompletedMessageId
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+      payload:
+        $ref: '#/components/schemas/WorkflowStepCompletedPayload'
+
+    WorkflowStepFailed:
+      messageId: workflowStepFailedMessageId
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+      payload:
+        $ref: '#/components/schemas/WorkflowStepFailedPayload'
+
+    WorkflowCompleted:
+      messageId: workflowCompletedMessageId
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+      payload:
+        $ref: '#/components/schemas/WorkflowCompletedPayload'
+
+    WorkflowCancelled:
+      messageId: workflowCancelledMessageId
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+      payload:
+        $ref: '#/components/schemas/WorkflowCancelledPayload'
+
+    WorkflowPaused:
+      messageId: workflowPausedMessageId
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+      payload:
+        $ref: '#/components/schemas/WorkflowPausedPayload'
+
+    WorkflowResumed:
+      messageId: workflowResumedMessageId
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+      payload:
+        $ref: '#/components/schemas/WorkflowResumedPayload'
+
+  schemas:
+    EventHeaders:
+      type: object
+      required:
+        - correlationId
+        - tenantId
+        - messageId
+        - timestamp
+      properties:
+        correlationId:
+          type: string
+          format: uuid
+          description: Correlation ID to link related workflow events
+        tenantId:
+          type: string
+          format: uuid
+          description: Tenant identifier
+        messageId:
+          type: string
+          format: uuid
+          description: Unique message identifier
+        timestamp:
+          type: string
+          format: date-time
+          description: Message creation timestamp
+
+    StepType:
+      type: string
+      enum:
+        - llm_action
+        - tool_use
+        - human_review
+        - memory_access
+        - parallel_branch
+      description: Type of workflow step
+
+    StepStatus:
+      type: string
+      enum:
+        - pending
+        - running
+        - completed
+        - failed
+        - cancelled
+      description: Status of a workflow step
+
+    OverallStatus:
+      type: string
+      enum:
+        - completed
+        - failed
+        - cancelled
+      description: Overall workflow status
+
+    StepDefinition:
+      type: object
+      properties:
+        step_id:
+          type: string
+          format: uuid
+          description: Unique step identifier
+        name:
+          type: string
+          description: Human-readable step name
+        step_type:
+          $ref: '#/components/schemas/StepType'
+        parameters:
+          type: object
+          description: Step-specific parameters
+        dependencies:
+          type: array
+          items:
+            type: string
+            format: uuid
+            nullable: true
+          description: Step IDs this step depends on
+
+    WorkflowStartedPayload:
+      type: object
+      required:
+        - workflow_id
+        - tenant_id
+        - workflow_name
+        - agent_ids
+        - steps
+        - status
+        - started_at
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique workflow instance identifier
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant identifier
+        template_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Workflow template ID if created from a template
+        workflow_name:
+          type: string
+          description: Human-readable workflow name
+        agent_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of agent IDs assigned to execute this workflow
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/StepDefinition'
+          description: Ordered list of steps in this workflow
+        status:
+          $ref: '#/components/schemas/StepStatus'
+        started_at:
+          type: string
+          format: date-time
+          description: Workflow start timestamp
+
+    WorkflowStepCompletedPayload:
+      type: object
+      required:
+        - step_id
+        - workflow_id
+        - tenant_id
+        - step_type
+        - agent_id
+        - completed_at
+      properties:
+        step_id:
+          type: string
+          format: uuid
+          description: Unique step identifier
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow instance identifier
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant identifier
+        step_type:
+          $ref: '#/components/schemas/StepType'
+        output:
+          type: object
+          nullable: true
+          description: Step execution output
+        duration_ms:
+          type: integer
+          description: Step execution duration in milliseconds
+        agent_id:
+          type: string
+          format: uuid
+          description: Agent that executed this step
+        completed_at:
+          type: string
+          format: date-time
+          description: Step completion timestamp
+
+    WorkflowStepFailedPayload:
+      type: object
+      required:
+        - step_id
+        - workflow_id
+        - tenant_id
+        - error_code
+        - error_message
+        - step_type
+        - agent_id
+        - retriable
+        - retry_count
+        - failed_at
+      properties:
+        step_id:
+          type: string
+          format: uuid
+          description: Unique step identifier
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow instance identifier
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant identifier
+        error_code:
+          type: string
+          description: Machine-readable error code
+        error_message:
+          type: string
+          description: Human-readable error message
+        step_type:
+          $ref: '#/components/schemas/StepType'
+        agent_id:
+          type: string
+          format: uuid
+          description: Agent that was executing this step
+        retriable:
+          type: boolean
+          description: Whether the step can be retried
+        retry_count:
+          type: integer
+          description: Number of retries attempted for this step
+        failed_at:
+          type: string
+          format: date-time
+          description: Step failure timestamp
+
+    WorkflowCompletedPayload:
+      type: object
+      required:
+        - workflow_id
+        - tenant_id
+        - overall_status
+        - total_steps
+        - completed_steps
+        - failed_steps
+        - total_duration_ms
+        - completed_at
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique workflow instance identifier
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant identifier
+        template_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Workflow template ID if created from a template
+        overall_status:
+          $ref: '#/components/schemas/OverallStatus'
+        total_steps:
+          type: integer
+          description: Total number of steps in the workflow
+        completed_steps:
+          type: integer
+          description: Number of steps completed successfully
+        failed_steps:
+          type: integer
+          description: Number of steps that failed
+        total_duration_ms:
+          type: integer
+          description: Total workflow execution duration in milliseconds
+        result:
+          type: object
+          nullable: true
+          description: Final workflow result data
+        completed_at:
+          type: string
+          format: date-time
+          description: Workflow completion timestamp
+
+    WorkflowCancelledPayload:
+      type: object
+      required:
+        - workflow_id
+        - tenant_id
+        - cancelled_by
+        - reason
+        - cancelled_at
+        - completed_steps
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique workflow instance identifier
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant identifier
+        cancelled_by:
+          type: string
+          description: Actor who cancelled the workflow
+        reason:
+          type: string
+          description: Reason for cancellation
+        cancelled_at:
+          type: string
+          format: date-time
+          description: Workflow cancellation timestamp
+        completed_steps:
+          type: integer
+          description: Number of steps completed before cancellation
+
+    WorkflowPausedPayload:
+      type: object
+      required:
+        - workflow_id
+        - tenant_id
+        - paused_by
+        - reason
+        - paused_at
+        - resume_allowed
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique workflow instance identifier
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant identifier
+        paused_by:
+          type: string
+          description: Actor who paused the workflow
+        reason:
+          type: string
+          description: Reason for pausing
+        paused_at:
+          type: string
+          format: date-time
+          description: Workflow pause timestamp
+        resume_allowed:
+          type: boolean
+          description: Whether the workflow can be resumed
+
+    WorkflowResumedPayload:
+      type: object
+      required:
+        - workflow_id
+        - tenant_id
+        - resumed_by
+        - resumed_at
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique workflow instance identifier
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant identifier
+        resumed_by:
+          type: string
+          description: Actor who resumed the workflow
+        resumed_at:
+          type: string
+          format: date-time
+          description: Workflow resume timestamp
+        step_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Step to resume from; null means resume from where it was paused
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT bearer token for authentication
+
+security:
+  - BearerAuth: []

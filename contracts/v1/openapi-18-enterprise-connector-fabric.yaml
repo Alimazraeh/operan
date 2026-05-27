@@ -1,0 +1,902 @@
+openapi: 3.0.3
+info:
+  title: Operan Enterprise Connector Fabric
+  description: Enterprise Connector Fabric module for managing third-party vendor integrations, synchronization, and connector lifecycle.
+  version: 1.0.0
+  contact:
+    name: Platform Architect
+    email: arch@operan.dev
+  license:
+    name: Proprietary
+servers:
+  - url: https://api.operan.dev/v1
+    description: Production
+  - url: https://api-staging.operan.dev/v1
+    description: Staging
+security:
+  - BearerAuth: []
+tags:
+  - name: connectors
+    description: Connector registration, configuration, and lifecycle management
+  - name: sync
+    description: Data synchronization operations
+  - name: supported
+    description: Supported vendor catalog
+paths:
+  /connectors/register:
+    post:
+      operationId: registerConnector
+      summary: Register a new connector
+      description: Register a connector for a vendor integration with connection configuration.
+      tags:
+        - connectors
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterConnectorRequest'
+      responses:
+        '201':
+          description: Connector registered successfully
+          headers:
+            X-Tenant-ID:
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Connector'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /connectors/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: UUID of the connector
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getConnector
+      summary: Get a connector by ID
+      tags:
+        - connectors
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Connector retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Connector'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      operationId: updateConnector
+      summary: Update a connector
+      tags:
+        - connectors
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConnectorRequest'
+      responses:
+        '200':
+          description: Connector updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Connector'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      operationId: deleteConnector
+      summary: Delete a connector
+      tags:
+        - connectors
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Connector deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /connectors/{id}/test:
+    post:
+      operationId: testConnector
+      summary: Test a connector connection
+      description: Test the connectivity and authentication of a registered connector.
+      tags:
+        - connectors
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Connection test completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectionTestResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /connectors/{id}/status:
+    get:
+      operationId: getConnectorStatus
+      summary: Get connector status
+      description: Get the current operational status of a connector.
+      tags:
+        - connectors
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Connector status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /connectors/{id}/sync:
+    post:
+      operationId: triggerSync
+      summary: Trigger a data sync
+      description: Trigger a data synchronization run for a connector.
+      tags:
+        - sync
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriggerSyncRequest'
+      responses:
+        '202':
+          description: Sync initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncRun'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /connectors/{id}/sync/{run_id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getSyncRun
+      summary: Get sync run status
+      description: Get the status and results of a specific sync run.
+      tags:
+        - sync
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Sync run details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncRun'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /connectors/batch-sync:
+    post:
+      operationId: batchSync
+      summary: Batch trigger syncs
+      description: Trigger synchronization for multiple connectors simultaneously.
+      tags:
+        - sync
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchSyncRequest'
+      responses:
+        '202':
+          description: Batch sync initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchSyncResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /connectors:
+    get:
+      operationId: listConnectors
+      summary: List connectors
+      description: List connectors with optional vendor filter.
+      tags:
+        - connectors
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: vendor
+          in: query
+          schema:
+            type: string
+            description: Filter by vendor identifier
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - connected
+              - disconnected
+              - error
+              - degraded
+              - testing
+          description: Filter by connection status
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            description: Pagination cursor
+      responses:
+        '200':
+          description: Connectors list retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /connectors/supported:
+    get:
+      operationId: getSupportedConnectors
+      summary: Get supported connector catalog
+      description: Get the catalog of all supported vendor connectors.
+      tags:
+        - supported
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Supported connectors catalog retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportedConnectorsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT bearer token with tenant context
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+  schemas:
+    VendorType:
+      type: string
+      enum:
+        - sap
+        - oracle
+        - salesforce
+        - microsoft_365
+        - google_workspace
+        - servicenow
+        - slack
+        - teams
+        - jira
+        - github
+        - custom
+      description: Supported vendor type
+    SyncMode:
+      type: string
+      enum:
+        - full
+        - incremental
+        - real_time
+        - scheduled
+      description: Data synchronization mode
+    ConnectionStatus:
+      type: string
+      enum:
+        - connected
+        - disconnected
+        - error
+        - degraded
+        - testing
+      description: Connection status
+    RegisterConnectorRequest:
+      type: object
+      required:
+        - tenant_id
+        - vendor
+        - display_name
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        vendor:
+          $ref: '#/components/schemas/VendorType'
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Human-readable connector name
+        description:
+          type: string
+          maxLength: 1024
+        connection_config:
+          type: object
+          description: Vendor-specific connection configuration (credentials, endpoints, etc.)
+          additionalProperties: true
+        sync_mode:
+          $ref: '#/components/schemas/SyncMode'
+        rate_limit:
+          type: object
+          properties:
+            requests_per_minute:
+              type: integer
+              minimum: 1
+            burst_limit:
+              type: integer
+              minimum: 1
+            queue_enabled:
+              type: boolean
+              default: true
+              description: Whether to queue requests when rate limit is reached
+        metadata:
+          type: object
+          additionalProperties: true
+        created_by:
+          type: string
+          format: uuid
+    UpdateConnectorRequest:
+      type: object
+      properties:
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 256
+        description:
+          type: string
+          maxLength: 1024
+        connection_config:
+          type: object
+          additionalProperties: true
+        sync_mode:
+          $ref: '#/components/schemas/SyncMode'
+        rate_limit:
+          type: object
+          properties:
+            requests_per_minute:
+              type: integer
+              minimum: 1
+            burst_limit:
+              type: integer
+              minimum: 1
+            queue_enabled:
+              type: boolean
+        enabled:
+          type: boolean
+        metadata:
+          type: object
+          additionalProperties: true
+    Connector:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - vendor
+        - display_name
+        - status
+        - sync_mode
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        vendor:
+          $ref: '#/components/schemas/VendorType'
+        display_name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/ConnectionStatus'
+        sync_mode:
+          $ref: '#/components/schemas/SyncMode'
+        connection_config:
+          type: object
+          description: Vendor-specific connection configuration (secrets excluded)
+          additionalProperties: true
+        rate_limit:
+          $ref: '#/components/schemas/RateLimitConfig'
+        last_sync_at:
+          type: string
+          format: date-time
+          description: Timestamp of the last successful sync
+        last_error:
+          type: string
+        enabled:
+          type: boolean
+          default: true
+        metadata:
+          type: object
+          additionalProperties: true
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ConnectorStatus:
+      type: object
+      required:
+        - id
+        - status
+        - status_details
+        - checked_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/ConnectionStatus'
+        status_details:
+          type: string
+          description: Additional status information
+        last_sync_at:
+          type: string
+          format: date-time
+        last_error:
+          type: string
+        uptime_percentage:
+          type: number
+          minimum: 0
+          maximum: 100
+        connected_at:
+          type: string
+          format: date-time
+        checked_at:
+          type: string
+          format: date-time
+    RateLimitConfig:
+      type: object
+      properties:
+        requests_per_minute:
+          type: integer
+          minimum: 1
+        burst_limit:
+          type: integer
+          minimum: 1
+        queue_enabled:
+          type: boolean
+          default: true
+    ConnectionTestResult:
+      type: object
+      required:
+        - connector_id
+        - success
+        - message
+        - tested_at
+      properties:
+        connector_id:
+          type: string
+          format: uuid
+        success:
+          type: boolean
+        message:
+          type: string
+        latency_ms:
+          type: integer
+          minimum: 0
+        authentication_status:
+          type: string
+          enum:
+            - valid
+            - invalid
+            - expired
+            - pending
+        details:
+          type: object
+          additionalProperties: true
+        tested_at:
+          type: string
+          format: date-time
+    TriggerSyncRequest:
+      type: object
+      properties:
+        sync_mode:
+          $ref: '#/components/schemas/SyncMode'
+        object_types:
+          type: array
+          items:
+            type: string
+            description: Specific object types to sync (e.g., contacts, accounts)
+        target_range:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date-time
+            end_date:
+              type: string
+              format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+    SyncRun:
+      type: object
+      required:
+        - id
+        - connector_id
+        - status
+        - started_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        connector_id:
+          type: string
+          format: uuid
+        sync_mode:
+          $ref: '#/components/schemas/SyncMode'
+        status:
+          type: string
+          enum:
+            - pending
+            - running
+            - completed
+            - failed
+            - cancelled
+        progress_percentage:
+          type: number
+          minimum: 0
+          maximum: 100
+        objects_synced:
+          type: integer
+          minimum: 0
+        objects_failed:
+          type: integer
+          minimum: 0
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        error_message:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+    BatchSyncRequest:
+      type: object
+      required:
+        - connector_ids
+      properties:
+        connector_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+            description: List of connector IDs to sync
+        sync_mode:
+          $ref: '#/components/schemas/SyncMode'
+        priority:
+          type: string
+          enum:
+            - low
+            - normal
+            - high
+          default: normal
+    BatchSyncResult:
+      type: object
+      required:
+        - id
+        - initiated_at
+        - connector_results
+      properties:
+        id:
+          type: string
+          format: uuid
+        connector_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        initiated_at:
+          type: string
+          format: date-time
+        connector_results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchSyncConnectorResult'
+    BatchSyncConnectorResult:
+      type: object
+      properties:
+        connector_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - initiated
+            - completed
+            - failed
+        sync_run_id:
+          type: string
+          format: uuid
+        error:
+          type: string
+    ConnectorList:
+      type: object
+      required:
+        - items
+        - total
+        - cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Connector'
+        total:
+          type: integer
+          minimum: 0
+        cursor:
+          type: string
+        has_more:
+          type: boolean
+    SupportedConnectorsResponse:
+      type: object
+      required:
+        - vendors
+      properties:
+        vendors:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportedVendor'
+    SupportedVendor:
+      type: object
+      required:
+        - vendor
+        - display_name
+        - supported_sync_modes
+      properties:
+        vendor:
+          $ref: '#/components/schemas/VendorType'
+        display_name:
+          type: string
+        description:
+          type: string
+        supported_sync_modes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncMode'
+        features:
+          type: array
+          items:
+            type: string
+            description: Supported features for this vendor
+        authentication_methods:
+          type: array
+          items:
+            type: string
+            description: Supported authentication methods (OAuth2, API Key, etc.)
+        rate_limits:
+          type: object
+          additionalProperties: true
+    ProblemDetail:
+      type: object
+      required:
+        - type
+        - title
+        - status
+        - detail
+        - instance
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string

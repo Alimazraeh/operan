@@ -1,0 +1,544 @@
+asyncapi: 2.6.0
+info:
+  title: Agent Orchestration Engine Events
+  version: 1.0.0
+  description: Module 03 — Agent Orchestration Engine. Events emitted by the orchestration engine for workflow lifecycle management, agent assignment, scheduling, checkpointing, replay, and agent availability.
+servers:
+  production:
+    url: api.operan.io:5672
+    protocol: mqtt
+    description: Production MQTT broker
+  development:
+    url: localhost:1883
+    protocol: mqtt
+    description: Local development MQTT broker
+channels:
+  operan/events/orchestration/workflow/created:
+    description: Emitted when a new workflow is created in the orchestration engine.
+    publish:
+      operationId: onCreateWorkflow
+      message:
+        $ref: '#/components/messages/WorkflowCreated'
+  operan/events/orchestration/workflow/started:
+    description: Emitted when a workflow begins execution.
+    publish:
+      operationId: onStartWorkflow
+      message:
+        $ref: '#/components/messages/WorkflowStarted'
+  operan/events/orchestration/workflow/paused:
+    description: Emitted when a running workflow is paused.
+    publish:
+      operationId: onPauseWorkflow
+      message:
+        $ref: '#/components/messages/WorkflowPaused'
+  operan/events/orchestration/workflow/resumed:
+    description: Emitted when a paused workflow is resumed.
+    publish:
+      operationId: onResumeWorkflow
+      message:
+        $ref: '#/components/messages/WorkflowResumed'
+  operan/events/orchestration/workflow/completed:
+    description: Emitted when a workflow finishes with a successful outcome.
+    publish:
+      operationId: onCompleteWorkflow
+      message:
+        $ref: '#/components/messages/WorkflowCompleted'
+  operan/events/orchestration/workflow/failed:
+    description: Emitted when a workflow fails during execution.
+    publish:
+      operationId: onFailWorkflow
+      message:
+        $ref: '#/components/messages/WorkflowFailed'
+  operan/events/orchestration/workflow/cancelled:
+    description: Emitted when a workflow is cancelled.
+    publish:
+      operationId: onCancelWorkflow
+      message:
+        $ref: '#/components/messages/WorkflowCancelled'
+  operan/events/orchestration/workflow/checkpointed:
+    description: Emitted when a workflow state is checkpointed for durability.
+    publish:
+      operationId: onCheckpointWorkflow
+      message:
+        $ref: '#/components/messages/WorkflowCheckpointed'
+  operan/events/orchestration/workflow/replayed:
+    description: Emitted when a workflow is replayed from a checkpoint.
+    publish:
+      operationId: onReplayWorkflow
+      message:
+        $ref: '#/components/messages/WorkflowReplayed'
+  operan/events/orchestration/schedule/triggered:
+    description: Emitted when a scheduled workflow trigger fires.
+    publish:
+      operationId: onScheduleTriggered
+      message:
+        $ref: '#/components/messages/ScheduleTriggered'
+  operan/events/orchestration/agent/assigned:
+    description: Emitted when an agent is assigned to execute a workflow node.
+    publish:
+      operationId: onAgentAssigned
+      message:
+        $ref: '#/components/messages/AgentAssigned'
+  operan/events/orchestration/agent/unavailable:
+    description: Emitted when an agent becomes unavailable for work.
+    publish:
+      operationId: onAgentUnavailable
+      message:
+        $ref: '#/components/messages/AgentUnavailable'
+components:
+  schemas:
+    WorkflowCreatedPayload:
+      type: object
+      required:
+        - workflow_id
+        - tenant_id
+        - department_id
+        - name
+        - version
+        - graph
+        - created_by
+        - created_at
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the workflow.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the tenant.
+        department_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the department.
+        name:
+          type: string
+          description: Human-readable name of the workflow.
+        version:
+          type: string
+          description: Semantic version of the workflow definition.
+        graph:
+          type: object
+          required:
+            - nodes
+            - edges
+          properties:
+            nodes:
+              type: array
+              items:
+                type: object
+                required:
+                  - id
+                  - type
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: Unique identifier for the node.
+                  type:
+                    type: string
+                    description: Node type (e.g., agent, condition, loop, terminal).
+                  label:
+                    type: string
+                    description: Human-readable label for the node.
+                  config:
+                    type: object
+                    description: Node-specific configuration.
+            edges:
+              type: array
+              items:
+                type: object
+                required:
+                  - from
+                  - to
+                properties:
+                  from:
+                    type: string
+                    format: uuid
+                    description: Source node ID.
+                  to:
+                    type: string
+                    format: uuid
+                    description: Target node ID.
+                  label:
+                    type: string
+                    description: Label for the edge (e.g., condition branch name).
+        variables:
+          type: object
+          additionalProperties: true
+          description: Initial workflow variables.
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+          description: Workflow execution priority (1 = lowest, 100 = highest).
+        created_by:
+          type: string
+          format: uuid
+          description: Unique identifier of the user or system that created the workflow.
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the workflow was created.
+    WorkflowStartedPayload:
+      type: object
+      required:
+        - workflow_id
+        - started_by
+        - started_at
+        - initial_nodes
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the workflow.
+        started_by:
+          type: string
+          format: uuid
+          description: Unique identifier of the user or system that started the workflow.
+        started_at:
+          type: string
+          format: date-time
+          description: Timestamp when the workflow started execution.
+        initial_nodes:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of node IDs that are ready to execute at startup.
+    WorkflowPausedPayload:
+      type: object
+      required:
+        - workflow_id
+        - paused_by
+        - paused_at
+        - reason
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the workflow.
+        paused_by:
+          type: string
+          format: uuid
+          description: Unique identifier of the user or system that paused the workflow.
+        paused_at:
+          type: string
+          format: date-time
+          description: Timestamp when the workflow was paused.
+        reason:
+          type: string
+          description: Reason for pausing the workflow.
+    WorkflowResumedPayload:
+      type: object
+      required:
+        - workflow_id
+        - resumed_by
+        - resumed_at
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the workflow.
+        resumed_by:
+          type: string
+          format: uuid
+          description: Unique identifier of the user or system that resumed the workflow.
+        resumed_at:
+          type: string
+          format: date-time
+          description: Timestamp when the workflow was resumed.
+    WorkflowCompletedPayload:
+      type: object
+      required:
+        - workflow_id
+        - completed_at
+        - duration_ms
+        - final_status
+        - outcome
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the workflow.
+        completed_at:
+          type: string
+          format: date-time
+          description: Timestamp when the workflow completed.
+        duration_ms:
+          type: integer
+          minimum: 0
+          description: Total duration of the workflow execution in milliseconds.
+        final_status:
+          type: string
+          enum:
+            - success
+            - partial
+            - skipped
+          description: Final status of the workflow.
+        outcome:
+          type: object
+          additionalProperties: true
+          description: Final outcome data produced by the workflow.
+    WorkflowFailedPayload:
+      type: object
+      required:
+        - workflow_id
+        - failed_at
+        - error_code
+        - error_message
+        - failed_node_id
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the workflow.
+        failed_at:
+          type: string
+          format: date-time
+          description: Timestamp when the workflow failed.
+        error_code:
+          type: string
+          description: Machine-readable error code.
+        error_message:
+          type: string
+          description: Human-readable error message describing the failure.
+        failed_node_id:
+          type: string
+          format: uuid
+          description: ID of the node where the failure occurred.
+    WorkflowCancelledPayload:
+      type: object
+      required:
+        - workflow_id
+        - cancelled_by
+        - cancelled_at
+        - cancellation_reason
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the workflow.
+        cancelled_by:
+          type: string
+          format: uuid
+          description: Unique identifier of the user or system that cancelled the workflow.
+        cancelled_at:
+          type: string
+          format: date-time
+          description: Timestamp when the workflow was cancelled.
+        cancellation_reason:
+          type: string
+          description: Reason for cancelling the workflow.
+    WorkflowCheckpointedPayload:
+      type: object
+      required:
+        - workflow_id
+        - checkpoint_id
+        - node_id
+        - timestamp
+        - state_snapshot_size
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the workflow.
+        checkpoint_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the checkpoint.
+        node_id:
+          type: string
+          format: uuid
+          description: ID of the node at which the checkpoint was taken.
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the checkpoint was created.
+        state_snapshot_size:
+          type: integer
+          minimum: 0
+          description: Size of the state snapshot in bytes.
+    WorkflowReplayedPayload:
+      type: object
+      required:
+        - workflow_id
+        - replay_id
+        - from_checkpoint_id
+        - replayed_by
+        - started_at
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the workflow.
+        replay_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the replay operation.
+        from_checkpoint_id:
+          type: string
+          format: uuid
+          description: ID of the checkpoint from which the replay began.
+        replayed_by:
+          type: string
+          format: uuid
+          description: Unique identifier of the user or system that initiated the replay.
+        started_at:
+          type: string
+          format: date-time
+          description: Timestamp when the replay started.
+    ScheduleTriggeredPayload:
+      type: object
+      required:
+        - schedule_id
+        - workflow_id
+        - triggered_by
+        - next_run_at
+      properties:
+        schedule_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the schedule.
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the workflow associated with this schedule.
+        triggered_by:
+          type: string
+          enum:
+            - cron
+            - manual
+          description: Whether the trigger was fired by a cron expression or manually.
+        cron_expression:
+          type: string
+          description: The cron expression associated with this schedule, if applicable.
+        next_run_at:
+          type: string
+          format: date-time
+          description: Timestamp when the next scheduled run is due.
+    AgentAssignedPayload:
+      type: object
+      required:
+        - assignment_id
+        - workflow_id
+        - node_id
+        - agent_id
+        - assigned_at
+        - parameters
+      properties:
+        assignment_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the agent assignment.
+        workflow_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the workflow.
+        node_id:
+          type: string
+          format: uuid
+          description: ID of the workflow node being executed by the agent.
+        agent_id:
+          type: string
+          format: uuid
+          description: Unique identifier of the assigned agent.
+        assigned_at:
+          type: string
+          format: date-time
+          description: Timestamp when the agent was assigned.
+        parameters:
+          type: object
+          additionalProperties: true
+          description: Parameters passed to the agent for node execution.
+    AgentUnavailablePayload:
+      type: object
+      required:
+        - agent_id
+        - reason
+        - affected_workflows
+        - detected_at
+      properties:
+        agent_id:
+          type: string
+          format: uuid
+          description: Unique identifier of the unavailable agent.
+        reason:
+          type: string
+          enum:
+            - overloaded
+            - degraded
+            - offline
+            - deprecated
+          description: Reason the agent is unavailable.
+        affected_workflows:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of workflow IDs that are impacted by the agent's unavailability.
+        detected_at:
+          type: string
+          format: date-time
+          description: Timestamp when the unavailability was detected.
+  messages:
+    WorkflowCreated:
+      payload:
+        $ref: '#/components/schemas/WorkflowCreatedPayload'
+      name: operan.events.orchestration.workflow.created
+    WorkflowStarted:
+      payload:
+        $ref: '#/components/schemas/WorkflowStartedPayload'
+      name: operan.events.orchestration.workflow.started
+    WorkflowPaused:
+      payload:
+        $ref: '#/components/schemas/WorkflowPausedPayload'
+      name: operan.events.orchestration.workflow.paused
+    WorkflowResumed:
+      payload:
+        $ref: '#/components/schemas/WorkflowResumedPayload'
+      name: operan.events.orchestration.workflow.resumed
+    WorkflowCompleted:
+      payload:
+        $ref: '#/components/schemas/WorkflowCompletedPayload'
+      name: operan.events.orchestration.workflow.completed
+    WorkflowFailed:
+      payload:
+        $ref: '#/components/schemas/WorkflowFailedPayload'
+      name: operan.events.orchestration.workflow.failed
+    WorkflowCancelled:
+      payload:
+        $ref: '#/components/schemas/WorkflowCancelledPayload'
+      name: operan.events.orchestration.workflow.cancelled
+    WorkflowCheckpointed:
+      payload:
+        $ref: '#/components/schemas/WorkflowCheckpointedPayload'
+      name: operan.events.orchestration.workflow.checkpointed
+    WorkflowReplayed:
+      payload:
+        $ref: '#/components/schemas/WorkflowReplayedPayload'
+      name: operan.events.orchestration.workflow.replayed
+    ScheduleTriggered:
+      payload:
+        $ref: '#/components/schemas/ScheduleTriggeredPayload'
+      name: operan.events.orchestration.schedule.triggered
+    AgentAssigned:
+      payload:
+        $ref: '#/components/schemas/AgentAssignedPayload'
+      name: operan.events.orchestration.agent.assigned
+    AgentUnavailable:
+      payload:
+        $ref: '#/components/schemas/AgentUnavailablePayload'
+      name: operan.events.orchestration.agent.unavailable
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT bearer token for authentication.
+    TenantContext:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Required tenant identification header. All messages must include this header.

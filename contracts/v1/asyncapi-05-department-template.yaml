@@ -1,0 +1,444 @@
+asyncapi: 2.6.0
+info:
+  title: Operan Module 05 — Department Template Hub Events
+  version: 1.0.0
+  description: Event schema for the Department Template Hub module — template lifecycle, agent templating, cloning, and workflow attachment.
+  contact:
+    name: Operan Platform Team
+    url: https://operan.internal
+  license:
+    name: Proprietary
+
+servers:
+  production:
+    url: amqp://rabbitmq.prod.operan.internal:5672
+    protocol: amqp
+    description: Production AMQP broker
+    security:
+      - bearerAuth: []
+      - tenantContext: []
+  staging:
+    url: amqp://rabbitmq.staging.operan.internal:5672
+    protocol: amqp
+    description: Staging AMQP broker
+    security:
+      - bearerAuth: []
+      - tenantContext: []
+
+channels:
+  operan/events/template/department/created:
+    x-module: 05
+    description: Published when a new department template is created.
+    publish:
+      summary: A department template has been created.
+      operationId: receiveDepartmentTemplateCreated
+      message:
+        $ref: '#/components/messages/DepartmentTemplateCreated'
+
+  operan/events/template/department/updated:
+    x-module: 05
+    description: Published when a department template is updated.
+    publish:
+      summary: A department template has been updated.
+      operationId: receiveDepartmentTemplateUpdated
+      message:
+        $ref: '#/components/messages/DepartmentTemplateUpdated'
+
+  operan/events/template/agent/created:
+    x-module: 05
+    description: Published when a new agent template is added to a department template.
+    publish:
+      summary: An agent template has been created within a department template.
+      operationId: receiveAgentTemplateCreated
+      message:
+        $ref: '#/components/messages/AgentTemplateCreated'
+
+  operan/events/template/agent/updated:
+    x-module: 05
+    description: Published when an agent template is updated.
+    publish:
+      summary: An agent template has been updated within a department template.
+      operationId: receiveAgentTemplateUpdated
+      message:
+        $ref: '#/components/messages/AgentTemplateUpdated'
+
+  operan/events/template/department/cloned:
+    x-module: 05
+    description: Published when a department template is cloned.
+    publish:
+      summary: A department template has been cloned.
+      operationId: receiveDepartmentTemplateCloned
+      message:
+        $ref: '#/components/messages/DepartmentTemplateCloned'
+
+  operan/events/template/workflow/attached:
+    x-module: 05
+    description: Published when a workflow is attached to a department template.
+    publish:
+      summary: A workflow has been attached to a department template.
+      operationId: receiveWorkflowAttached
+      message:
+        $ref: '#/components/messages/WorkflowAttached'
+
+components:
+  schemas:
+    DepartmentTemplateCreatedPayload:
+      type: object
+      required: [template_id, tenant_id, department_id, name, created_by, created_at]
+      properties:
+        template_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the department template.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant that owns this template.
+        department_id:
+          type: string
+          format: uuid
+          description: Associated department identifier.
+        name:
+          type: string
+          description: Display name of the department template.
+        description:
+          type: string
+          description: Human-readable description of the template purpose and scope.
+        default_governance_policies:
+          type: array
+          items:
+            type: string
+          description: List of governance policy identifiers applied by default.
+        initial_agents:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Initial agent template references attached to this department template.
+        created_by:
+          type: string
+          format: uuid
+          description: User or system that created the template.
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp of template creation.
+
+    DepartmentTemplateUpdatedPayload:
+      type: object
+      required: [template_id, department_id, updated_by, updated_at, changes]
+      properties:
+        template_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the department template.
+        department_id:
+          type: string
+          format: uuid
+          description: Associated department identifier.
+        updated_by:
+          type: string
+          format: uuid
+          description: User or system that performed the update.
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp of the update.
+        changes:
+          type: object
+          description: Object describing the fields that were modified and their new values.
+
+    AgentTemplateCreatedPayload:
+      type: object
+      required: [template_id, agent_role, created_by]
+      properties:
+        template_id:
+          type: string
+          format: uuid
+          description: Department template this agent belongs to.
+        agent_role:
+          type: string
+          description: Role designation for the agent (e.g., analyst, coordinator).
+        capabilities:
+          type: array
+          items:
+            type: string
+          description: List of capabilities the agent template provides.
+        memory_scope:
+          type: array
+          items:
+            type: string
+          description: Memory scope settings (e.g., session, conversation, persistent).
+        escalation_rules:
+          type: array
+          items:
+            type: string
+          description: Escalation rule identifiers applicable to this agent.
+        created_by:
+          type: string
+          format: uuid
+          description: User or system that created the agent template.
+
+    AgentTemplateUpdatedPayload:
+      type: object
+      required: [template_id, agent_role, updated_by, updated_at, changes]
+      properties:
+        template_id:
+          type: string
+          format: uuid
+          description: Department template this agent belongs to.
+        agent_role:
+          type: string
+          description: Updated role designation for the agent.
+        updated_by:
+          type: string
+          format: uuid
+          description: User or system that performed the update.
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp of the update.
+        changes:
+          type: object
+          description: Object describing the fields that were modified and their new values.
+
+    DepartmentTemplateClonedPayload:
+      type: object
+      required: [source_template_id, new_template_id, department_id, cloned_by, cloned_at, clone_type]
+      properties:
+        source_template_id:
+          type: string
+          format: uuid
+          description: ID of the original department template being cloned.
+        new_template_id:
+          type: string
+          format: uuid
+          description: ID of the newly created clone.
+        department_id:
+          type: string
+          format: uuid
+          description: Associated department identifier for the clone.
+        cloned_by:
+          type: string
+          format: uuid
+          description: User or system that performed the clone.
+        cloned_at:
+          type: string
+          format: date-time
+          description: Timestamp of the clone operation.
+        clone_type:
+          type: string
+          enum:
+            - full
+            - partial
+          description: Clone type — full copies all nested templates and workflows; partial copies only the department-level configuration.
+
+    WorkflowAttachedPayload:
+      type: object
+      required: [template_id, workflow_id, attached_by, attached_at]
+      properties:
+        template_id:
+          type: string
+          format: uuid
+          description: Department template the workflow is being attached to.
+        workflow_id:
+          type: string
+          format: uuid
+          description: Identifier of the workflow being attached.
+        attached_by:
+          type: string
+          format: uuid
+          description: User or system that attached the workflow.
+        attached_at:
+          type: string
+          format: date-time
+          description: Timestamp of the attachment.
+        parameters_override:
+          type: object
+          description: Key-value pairs overriding default workflow parameters for this attachment.
+
+    MessageMetadata:
+      type: object
+      description: Standard message metadata included in every event.
+      required: [correlationId, tenantId, messageId, timestamp]
+      properties:
+        correlationId:
+          type: string
+          format: uuid
+          description: Correlation identifier linking related events across modules.
+        tenantId:
+          type: string
+          format: uuid
+          description: Tenant identifier for multi-tenant routing.
+        messageId:
+          type: string
+          format: uuid
+          description: Unique identifier for this specific message.
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when the event was published.
+
+  messages:
+    DepartmentTemplateCreated:
+      name: DepartmentTemplateCreated
+      summary: Event published when a department template is created.
+      messageId: DepartmentTemplateCreatedMessageId
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId:
+            type: string
+            format: uuid
+          tenantId:
+            type: string
+            format: uuid
+          messageId:
+            type: string
+            format: uuid
+          timestamp:
+            type: string
+            format: date-time
+      payload:
+        $ref: '#/components/schemas/DepartmentTemplateCreatedPayload'
+      correlationId:
+        $ref: '#/components/schemas/MessageMetadata/properties/correlationId'
+
+    DepartmentTemplateUpdated:
+      name: DepartmentTemplateUpdated
+      summary: Event published when a department template is updated.
+      messageId: DepartmentTemplateUpdatedMessageId
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId:
+            type: string
+            format: uuid
+          tenantId:
+            type: string
+            format: uuid
+          messageId:
+            type: string
+            format: uuid
+          timestamp:
+            type: string
+            format: date-time
+      payload:
+        $ref: '#/components/schemas/DepartmentTemplateUpdatedPayload'
+      correlationId:
+        $ref: '#/components/schemas/MessageMetadata/properties/correlationId'
+
+    AgentTemplateCreated:
+      name: AgentTemplateCreated
+      summary: Event published when an agent template is created.
+      messageId: AgentTemplateCreatedMessageId
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId:
+            type: string
+            format: uuid
+          tenantId:
+            type: string
+            format: uuid
+          messageId:
+            type: string
+            format: uuid
+          timestamp:
+            type: string
+            format: date-time
+      payload:
+        $ref: '#/components/schemas/AgentTemplateCreatedPayload'
+      correlationId:
+        $ref: '#/components/schemas/MessageMetadata/properties/correlationId'
+
+    AgentTemplateUpdated:
+      name: AgentTemplateUpdated
+      summary: Event published when an agent template is updated.
+      messageId: AgentTemplateUpdatedMessageId
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId:
+            type: string
+            format: uuid
+          tenantId:
+            type: string
+            format: uuid
+          messageId:
+            type: string
+            format: uuid
+          timestamp:
+            type: string
+            format: date-time
+      payload:
+        $ref: '#/components/schemas/AgentTemplateUpdatedPayload'
+      correlationId:
+        $ref: '#/components/schemas/MessageMetadata/properties/correlationId'
+
+    DepartmentTemplateCloned:
+      name: DepartmentTemplateCloned
+      summary: Event published when a department template is cloned.
+      messageId: DepartmentTemplateClonedMessageId
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId:
+            type: string
+            format: uuid
+          tenantId:
+            type: string
+            format: uuid
+          messageId:
+            type: string
+            format: uuid
+          timestamp:
+            type: string
+            format: date-time
+      payload:
+        $ref: '#/components/schemas/DepartmentTemplateClonedPayload'
+      correlationId:
+        $ref: '#/components/schemas/MessageMetadata/properties/correlationId'
+
+    WorkflowAttached:
+      name: WorkflowAttached
+      summary: Event published when a workflow is attached to a department template.
+      messageId: WorkflowAttachedMessageId
+      headers:
+        type: object
+        required: [correlationId, tenantId, messageId, timestamp]
+        properties:
+          correlationId:
+            type: string
+            format: uuid
+          tenantId:
+            type: string
+            format: uuid
+          messageId:
+            type: string
+            format: uuid
+          timestamp:
+            type: string
+            format: date-time
+      payload:
+        $ref: '#/components/schemas/WorkflowAttachedPayload'
+      correlationId:
+        $ref: '#/components/schemas/MessageMetadata/properties/correlationId'
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT-based bearer token authentication.
+    tenantContext:
+      type: userInput
+      description: X-Tenant-ID header required for multi-tenant event routing.
+      name: X-Tenant-ID
+      in: header
+      required: true

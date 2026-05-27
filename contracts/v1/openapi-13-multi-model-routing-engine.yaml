@@ -1,0 +1,1002 @@
+openapi: "3.0.3"
+info:
+  title: Operan Multi-Model Routing Engine API
+  description: >
+    Operan Multi-Model Routing Engine (Module 13) provides intelligent
+    routing decisions across multiple AI models based on quality, cost,
+    latency, and environmental factors. Supports query-type-aware routing,
+    quality scoring across dimensions, energy-aware model selection, and
+    comprehensive metrics and capability matrix endpoints.
+  version: 1.0.0
+  contact:
+    name: Operan Platform Engineering
+    url: https://operan.adri.dev
+  license:
+    name: Proprietary
+    url: https://operan.adri.dev/licenses
+
+servers:
+  - url: https://api.operan.adri.dev/v1
+    description: Production
+  - url: https://staging-api.operan.adri.dev/v1
+    description: Staging
+
+security:
+  - BearerAuth: []
+  - X-Tenant-ID: []
+
+tags:
+  - name: routing/decisions
+    description: Routing decision management and queries
+  - name: routing/strategies
+    description: Routing strategy lifecycle management
+  - name: routing/metrics
+    description: Routing performance and cost metrics
+  - name: routing/capability-matrix
+    description: Model capability matrix and availability
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT bearer token issued by Operan Identity Provider
+    X-Tenant-ID:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Operan tenant identifier (uuid format)
+
+  schemas:
+    RoutingDecision:
+      type: object
+      required:
+        - query_type
+        - input
+        - tenant_id
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique routing decision identifier
+        query_type:
+          $ref: "#/components/schemas/QueryType"
+        input:
+          type: object
+          description: Input payload to route
+        quality_threshold:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+          description: Minimum acceptable quality score
+          default: 0.7
+        optimization_target:
+          $ref: "#/components/schemas/OptimizationTarget"
+          description: Primary optimization objective
+        selected_model:
+          $ref: "#/components/schemas/ModelSelection"
+        fallback_model:
+          $ref: "#/components/schemas/ModelSelection"
+        quality_scores:
+          type: object
+          description: Per-dimension quality scores for selected model
+          additionalProperties:
+            type: number
+            format: double
+            minimum: 0.0
+            maximum: 1.0
+        cost:
+          type: number
+          format: double
+          description: Estimated cost for the routed request
+          minimum: 0.0
+        latency_estimate_ms:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Estimated latency in milliseconds
+        carbon_intensity_factor:
+          type: number
+          format: double
+          minimum: 0.0
+          description: Carbon intensity factor at time of routing
+        rationale:
+          type: string
+          description: Human-readable explanation of routing decision
+        is_fallback:
+          type: boolean
+          description: Whether this decision routed to a fallback model
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    RoutingStrategy:
+      type: object
+      required:
+        - name
+        - query_types
+        - scoring_rules
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 256
+        description:
+          type: string
+          maxLength: 2048
+        query_types:
+          type: array
+          items:
+            $ref: "#/components/schemas/QueryType"
+          minItems: 1
+        scoring_rules:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScoringRule"
+        optimization_goals:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptimizationTarget"
+        is_active:
+          type: boolean
+          default: true
+        priority:
+          type: integer
+          format: int32
+          description: Strategy priority (lower = higher priority)
+          default: 100
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ScoringRule:
+      type: object
+      required:
+        - model_id
+        - dimensions
+      properties:
+        model_id:
+          type: string
+          format: uuid
+        dimensions:
+          type: object
+          description: Per-dimension scores (0.0-1.0)
+          additionalProperties:
+            type: number
+            format: double
+            minimum: 0.0
+            maximum: 1.0
+        cost_per_request:
+          type: number
+          format: double
+          minimum: 0.0
+        estimated_latency_ms:
+          type: integer
+          format: int64
+          minimum: 0
+        carbon_intensity_factor:
+          type: number
+          format: double
+          minimum: 0.0
+          description: Carbon intensity factor for this model
+        availability:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+          description: Current availability percentage
+
+    ModelSelection:
+      type: object
+      required:
+        - model_id
+        - vendor
+      properties:
+        model_id:
+          type: string
+          format: uuid
+        vendor:
+          type: string
+        model_name:
+          type: string
+        version:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          additionalProperties: true
+
+    RoutingMetrics:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        period:
+          type: string
+          format: date-time
+        total_decisions:
+          type: integer
+          format: int64
+          minimum: 0
+        decisions_by_query_type:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+        average_quality_score:
+          type: number
+          format: double
+        average_cost_per_decision:
+          type: number
+          format: double
+        average_latency_ms:
+          type: number
+          format: double
+        total_carbon_impact:
+          type: number
+          format: double
+        fallback_rate:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+        utilization_by_model:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+
+    CapabilityMatrix:
+      type: object
+      properties:
+        models:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModelCapability"
+        last_updated:
+          type: string
+          format: date-time
+
+    ModelCapability:
+      type: object
+      required:
+        - model_id
+        - vendor
+        - query_type_capabilities
+      properties:
+        model_id:
+          type: string
+          format: uuid
+        vendor:
+          type: string
+        model_name:
+          type: string
+        version:
+          type: string
+        query_type_capabilities:
+          type: object
+          description: Map of query type to capability details
+          additionalProperties:
+            $ref: "#/components/schemas/QueryTypeCapability"
+        is_available:
+          type: boolean
+        metadata:
+          type: object
+          additionalProperties: true
+
+    QueryTypeCapability:
+      type: object
+      required:
+        - supported
+        - max_quality_score
+      properties:
+        supported:
+          type: boolean
+        max_quality_score:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+        average_cost:
+          type: number
+          format: double
+          minimum: 0.0
+        average_latency_ms:
+          type: number
+          format: double
+          minimum: 0.0
+        max_input_tokens:
+          type: integer
+          format: int32
+          minimum: 0
+
+    QueryType:
+      type: string
+      enum:
+        - translation
+        - reasoning
+        - summarization
+        - classification
+        - generation
+        - embedding
+        - vision
+        - code
+        - data_analysis
+
+    OptimizationTarget:
+      type: string
+      enum:
+        - quality
+        - cost
+        - latency
+
+    PaginationParams:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 1
+          default: 1
+        page_size:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+          default: 20
+
+    PaginatedResponse:
+      type: object
+      required:
+        - items
+        - total
+        - page
+        - page_size
+      properties:
+        items:
+          type: array
+          items: {}
+        total:
+          type: integer
+          format: int64
+          minimum: 0
+        page:
+          type: integer
+          format: int32
+        page_size:
+          type: integer
+          format: int32
+        has_more:
+          type: boolean
+
+    StandardError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+        request_id:
+          type: string
+          format: uuid
+
+    EvaluateRequest:
+      type: object
+      required:
+        - input
+      properties:
+        input:
+          type: object
+          description: Sample input for evaluation
+        query_type:
+          $ref: "#/components/schemas/QueryType"
+        quality_threshold:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+        optimization_target:
+          $ref: "#/components/schemas/OptimizationTarget"
+
+    EvaluateResult:
+      type: object
+      required:
+        - strategy_id
+        - ranked_models
+      properties:
+        strategy_id:
+          type: string
+          format: uuid
+        ranked_models:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModelRanking"
+        recommended_model:
+          $ref: "#/components/schemas/ModelSelection"
+        evaluation_metadata:
+          type: object
+          additionalProperties: true
+
+    ModelRanking:
+      type: object
+      required:
+        - model_id
+        - score
+      properties:
+        model_id:
+          type: string
+          format: uuid
+        vendor:
+          type: string
+        model_name:
+          type: string
+        score:
+          type: number
+          format: double
+        quality_score:
+          type: number
+          format: double
+        cost:
+          type: number
+          format: double
+        latency_estimate_ms:
+          type: integer
+          format: int64
+          minimum: 0
+        carbon_intensity_factor:
+          type: number
+          format: double
+
+  parameters:
+    DecisionId:
+      name: id
+      in: path
+      required: true
+      description: Routing decision identifier
+      schema:
+        type: string
+        format: uuid
+    StrategyId:
+      name: id
+      in: path
+      required: true
+      description: Routing strategy identifier
+      schema:
+        type: string
+        format: uuid
+    QueryTypeParam:
+      name: query_type
+      in: query
+      required: false
+      description: Filter by query type
+      schema:
+        type: string
+        enum:
+          - translation
+          - reasoning
+          - summarization
+          - classification
+          - generation
+          - embedding
+          - vision
+          - code
+          - data_analysis
+    QualityThresholdParam:
+      name: quality_threshold
+      in: query
+      required: false
+      description: Minimum quality score filter
+      schema:
+        type: number
+        format: double
+        minimum: 0.0
+        maximum: 1.0
+        default: 0.7
+    TenantIdParam:
+      name: tenant_id
+      in: query
+      required: false
+      description: Filter by tenant
+      schema:
+        type: string
+        format: uuid
+    PeriodParam:
+      name: period
+      in: query
+      required: false
+      description: ISO 8601 date range (e.g., P7D for last 7 days)
+      schema:
+        type: string
+
+  requestBodies:
+    CreateDecision:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - query_type
+              - input
+            properties:
+              query_type:
+                $ref: "#/components/schemas/QueryType"
+              input:
+                type: object
+                description: Input payload to route
+              quality_threshold:
+                type: number
+                format: double
+                minimum: 0.0
+                maximum: 1.0
+                default: 0.7
+              optimization_target:
+                $ref: "#/components/schemas/OptimizationTarget"
+    CreateStrategy:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RoutingStrategy"
+    UpdateStrategy:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                minLength: 1
+                maxLength: 256
+              description:
+                type: string
+                maxLength: 2048
+              query_types:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QueryType"
+              scoring_rules:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScoringRule"
+              optimization_goals:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OptimizationTarget"
+              is_active:
+                type: boolean
+              priority:
+                type: integer
+                format: int32
+              metadata:
+                type: object
+                additionalProperties: true
+    EvaluateStrategy:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/EvaluateRequest"
+
+paths:
+  /routing/decisions:
+    post:
+      tags:
+        - routing/decisions
+      summary: Create a routing decision
+      description: >
+        Submit input for routing analysis. The engine evaluates all active
+        strategies and returns the best model based on the specified
+        optimization target (quality, cost, or latency).
+      operationId: createRoutingDecision
+      requestBody:
+        $ref: "#/components/requestBodies/CreateDecision"
+      responses:
+        "201":
+          description: Routing decision created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingDecision"
+        "400":
+          $ref: "#/components/responses/InvalidInput"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    get:
+      tags:
+        - routing/decisions
+      summary: Search routing decisions
+      description: >
+        Query routing decisions with optional filters for query type and
+        quality threshold. Returns paginated results.
+      operationId: searchRoutingDecisions
+      parameters:
+        - $ref: "#/components/parameters/QueryTypeParam"
+        - $ref: "#/components/parameters/QualityThresholdParam"
+        - $ref: "#/components/parameters/TenantIdParam"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Paginated routing decisions
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - items
+                  - total
+                  - page
+                  - page_size
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RoutingDecision"
+                  total:
+                    type: integer
+                    format: int64
+                    minimum: 0
+                  page:
+                    type: integer
+                    format: int32
+                  page_size:
+                    type: integer
+                    format: int32
+                  has_more:
+                    type: boolean
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /routing/decisions/{id}:
+    get:
+      tags:
+        - routing/decisions
+      summary: Get a routing decision by ID
+      operationId: getRoutingDecision
+      parameters:
+        - $ref: "#/components/parameters/DecisionId"
+      responses:
+        "200":
+          description: Routing decision details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingDecision"
+        "400":
+          $ref: "#/components/responses/InvalidInput"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /routing/strategies:
+    post:
+      tags:
+        - routing/strategies
+      summary: Create a routing strategy
+      description: >
+        Define a new routing strategy with scoring rules for models.
+        The strategy applies to specified query types and optimization
+        goals.
+      operationId: createRoutingStrategy
+      requestBody:
+        $ref: "#/components/requestBodies/CreateStrategy"
+      responses:
+        "201":
+          description: Routing strategy created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingStrategy"
+        "400":
+          $ref: "#/components/responses/InvalidInput"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /routing/strategies/{id}:
+    get:
+      tags:
+        - routing/strategies
+      summary: Get a routing strategy by ID
+      operationId: getRoutingStrategy
+      parameters:
+        - $ref: "#/components/parameters/StrategyId"
+      responses:
+        "200":
+          description: Routing strategy details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingStrategy"
+        "400":
+          $ref: "#/components/responses/InvalidInput"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    patch:
+      tags:
+        - routing/strategies
+      summary: Update a routing strategy
+      operationId: updateRoutingStrategy
+      parameters:
+        - $ref: "#/components/parameters/StrategyId"
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateStrategy"
+      responses:
+        "200":
+          description: Routing strategy updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingStrategy"
+        "400":
+          $ref: "#/components/responses/InvalidInput"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    delete:
+      tags:
+        - routing/strategies
+      summary: Delete a routing strategy
+      operationId: deleteRoutingStrategy
+      parameters:
+        - $ref: "#/components/parameters/StrategyId"
+      responses:
+        "204":
+          description: Routing strategy deleted successfully
+        "400":
+          $ref: "#/components/responses/InvalidInput"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /routing/strategies/{id}/evaluate:
+    post:
+      tags:
+        - routing/strategies
+      summary: Evaluate a routing strategy
+      description: >
+        Simulate a routing decision using the specified strategy and input.
+        Returns ranked models with quality, cost, and latency estimates.
+      operationId: evaluateRoutingStrategy
+      parameters:
+        - $ref: "#/components/parameters/StrategyId"
+      requestBody:
+        $ref: "#/components/requestBodies/EvaluateStrategy"
+      responses:
+        "200":
+          description: Strategy evaluation results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluateResult"
+        "400":
+          $ref: "#/components/responses/InvalidInput"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /routing/metrics:
+    get:
+      tags:
+        - routing/metrics
+      summary: Get routing metrics
+      description: >
+        Retrieve aggregated routing performance and cost metrics for a
+        tenant over a specified time period.
+      operationId: getRoutingMetrics
+      parameters:
+        - $ref: "#/components/parameters/TenantIdParam"
+        - $ref: "#/components/parameters/PeriodParam"
+      responses:
+        "200":
+          description: Routing metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingMetrics"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /routing/capability-matrix:
+    get:
+      tags:
+        - routing/capability-matrix
+      summary: Get model capability matrix
+      description: >
+        Retrieve the full matrix of model capabilities across all query
+        types. Updated in real-time based on vendor health checks.
+      operationId: getCapabilityMatrix
+      responses:
+        "200":
+          description: Model capability matrix
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CapabilityMatrix"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  responses:
+    InvalidInput:
+      description: Invalid request input
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/StandardError"
+          example:
+            code: INVALID_INPUT
+            message: "Query parameter 'query_type' must be one of: translation, reasoning, summarization, classification, generation, embedding, vision, code, data_analysis"
+            details:
+              field: query_type
+              value: "invalid_type"
+            request_id: "00000000-0000-0000-0000-000000000000"
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/StandardError"
+          example:
+            code: UNAUTHORIZED
+            message: "Invalid or expired authentication token"
+            request_id: "00000000-0000-0000-0000-000000000000"
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/StandardError"
+          example:
+            code: FORBIDDEN
+            message: "Access denied to this resource"
+            details:
+              required_permission: routing:access
+              granted_permissions: []
+            request_id: "00000000-0000-0000-0000-000000000000"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/StandardError"
+          example:
+            code: NOT_FOUND
+            message: "The requested resource was not found"
+            details:
+              resource_type: routing_decision
+              resource_id: "00000000-0000-0000-0000-000000000000"
+            request_id: "00000000-0000-0000-0000-000000000000"
+    Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/StandardError"
+          example:
+            code: CONFLICT
+            message: "A resource with this name already exists"
+            details:
+              conflict_field: name
+              conflict_value: "quality_first_strategy"
+            request_id: "00000000-0000-0000-0000-000000000000"
+    UnprocessableEntity:
+      description: Unprocessable entity
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/StandardError"
+          example:
+            code: UNPROCESSABLE_ENTITY
+            message: "Request body validation failed"
+            details:
+              violations:
+                - field: scoring_rules
+                  message: "At least one scoring rule is required"
+            request_id: "00000000-0000-0000-0000-000000000000"
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/StandardError"
+          example:
+            code: INTERNAL_ERROR
+            message: "An unexpected error occurred"
+            request_id: "00000000-0000-0000-0000-000000000000"

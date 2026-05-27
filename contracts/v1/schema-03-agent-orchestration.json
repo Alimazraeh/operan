@@ -1,0 +1,545 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "CreateWorkflowRequest": {
+      "type": "object",
+      "required": [
+        "tenant_id",
+        "name",
+        "graph"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the tenant"
+        },
+        "department_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the department"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the workflow"
+        },
+        "version": {
+          "type": "string",
+          "description": "Version identifier for the workflow"
+        },
+        "graph": {
+          "$ref": "#/definitions/WorkflowGraph",
+          "description": "The workflow graph definition"
+        },
+        "variables": {
+          "type": "object",
+          "description": "Initial workflow variables"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 5,
+          "description": "Workflow execution priority from 1 to 10"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the workflow"
+        },
+        "created_by": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier of the user who created the workflow"
+        }
+      },
+      "additionalProperties": false
+    },
+    "WorkflowGraph": {
+      "type": "object",
+      "required": [
+        "nodes"
+      ],
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkflowNode"
+          },
+          "description": "Array of workflow nodes"
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkflowEdge"
+          },
+          "description": "Array of workflow edges connecting nodes"
+        },
+        "error_strategy": {
+          "type": "string",
+          "enum": [
+            "abort",
+            "continue",
+            "retry_all"
+          ],
+          "default": "abort",
+          "description": "Strategy for handling workflow-level errors"
+        }
+      },
+      "additionalProperties": false
+    },
+    "WorkflowNode": {
+      "type": "object",
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the node"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "agent",
+            "action",
+            "human_gate",
+            "condition",
+            "parallel_branch",
+            "delay"
+          ],
+          "description": "Type of the workflow node"
+        },
+        "agent_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier of the agent assigned to this node"
+        },
+        "action": {
+          "type": "string",
+          "description": "Action to be performed by the node"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "description": "Timeout in milliseconds for node execution"
+        },
+        "retry": {
+          "$ref": "#/definitions/RetryPolicy",
+          "description": "Retry policy for this node"
+        },
+        "on_success": {
+          "type": "string",
+          "description": "ID of the next node to execute on success"
+        },
+        "on_failure": {
+          "type": "string",
+          "description": "ID of the next node to execute on failure"
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Parameters for the node execution"
+        }
+      },
+      "additionalProperties": false
+    },
+    "WorkflowEdge": {
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "ID of the source node"
+        },
+        "to": {
+          "type": "string",
+          "description": "ID of the destination node"
+        },
+        "condition": {
+          "type": "string",
+          "description": "Conditional expression evaluated to determine if the edge is taken"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RetryPolicy": {
+      "type": "object",
+      "properties": {
+        "max_attempts": {
+          "type": "integer",
+          "default": 3,
+          "description": "Maximum number of retry attempts"
+        },
+        "backoff": {
+          "type": "string",
+          "enum": [
+            "constant",
+            "linear",
+            "exponential"
+          ],
+          "default": "exponential",
+          "description": "Backoff strategy for retries"
+        },
+        "initial_delay_ms": {
+          "type": "integer",
+          "default": 1000,
+          "description": "Initial delay in milliseconds before the first retry"
+        },
+        "max_delay_ms": {
+          "type": "integer",
+          "default": 60000,
+          "description": "Maximum delay in milliseconds between retries"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Workflow": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "name",
+        "status",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the workflow instance"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the tenant"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the workflow"
+        },
+        "department_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the department"
+        },
+        "version": {
+          "type": "string",
+          "description": "Version of the workflow"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "running",
+            "paused",
+            "completed",
+            "failed",
+            "cancelled"
+          ],
+          "description": "Current status of the workflow"
+        },
+        "current_nodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "IDs of the currently active nodes"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the workflow started execution"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the workflow completed"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the workflow was created"
+        },
+        "created_by": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier of the user who created the workflow"
+        }
+      },
+      "additionalProperties": false
+    },
+    "WorkflowState": {
+      "type": "object",
+      "required": [
+        "workflow_id",
+        "status",
+        "nodes",
+        "checkpoints"
+      ],
+      "properties": {
+        "workflow_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the workflow instance"
+        },
+        "status": {
+          "type": "string",
+          "description": "Overall status of the workflow execution"
+        },
+        "variables": {
+          "type": "object",
+          "description": "Current workflow variables"
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NodeState"
+          },
+          "description": "Current state of each node in the workflow"
+        },
+        "checkpoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Checkpoint"
+          },
+          "description": "List of checkpoints taken during execution"
+        },
+        "execution_history": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExecutionEvent"
+          },
+          "description": "Complete history of execution events"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of error messages encountered during execution"
+        }
+      },
+      "additionalProperties": false
+    },
+    "NodeState": {
+      "type": "object",
+      "required": [
+        "node_id",
+        "status"
+      ],
+      "properties": {
+        "node_id": {
+          "type": "string",
+          "description": "Unique identifier of the node"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "running",
+            "completed",
+            "failed",
+            "skipped"
+          ],
+          "description": "Current status of the node"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the node started execution"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the node completed execution"
+        },
+        "output": {
+          "type": "object",
+          "description": "Output produced by the node execution"
+        },
+        "error": {
+          "type": "string",
+          "description": "Error message if the node failed"
+        },
+        "retry_count": {
+          "type": "integer",
+          "description": "Number of retry attempts made for this node"
+        },
+        "confidence_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence score for the node output between 0 and 1"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Checkpoint": {
+      "type": "object",
+      "required": [
+        "id",
+        "node_id",
+        "timestamp"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the checkpoint"
+        },
+        "node_id": {
+          "type": "string",
+          "description": "ID of the node at which the checkpoint was taken"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the checkpoint was created"
+        },
+        "state_snapshot": {
+          "type": "object",
+          "description": "Snapshot of the workflow state at the checkpoint"
+        },
+        "checksum": {
+          "type": "string",
+          "description": "Checksum of the state snapshot for integrity verification"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ExecutionEvent": {
+      "type": "object",
+      "required": [
+        "event_id",
+        "node_id",
+        "event_type",
+        "timestamp"
+      ],
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the event"
+        },
+        "node_id": {
+          "type": "string",
+          "description": "ID of the node associated with this event"
+        },
+        "event_type": {
+          "type": "string",
+          "enum": [
+            "node_started",
+            "node_completed",
+            "node_failed",
+            "checkpoint",
+            "escalation",
+            "timeout",
+            "retry",
+            "human_gate_requested",
+            "human_gate_approved",
+            "human_gate_rejected"
+          ],
+          "description": "Type of the execution event"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the event occurred"
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional details about the event"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CreateScheduleRequest": {
+      "type": "object",
+      "required": [
+        "tenant_id",
+        "name",
+        "cron",
+        "workflow_template_id"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "description": "Unique identifier for the tenant"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the scheduled workflow"
+        },
+        "cron": {
+          "type": "string",
+          "description": "Cron expression defining the schedule"
+        },
+        "workflow_template_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier of the workflow template to schedule"
+        },
+        "variables": {
+          "type": "object",
+          "description": "Variables to pass to each scheduled workflow execution"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the schedule is enabled"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AssignAgentRequest": {
+      "type": "object",
+      "required": [
+        "workflow_id",
+        "node_id",
+        "agent_id"
+      ],
+      "properties": {
+        "workflow_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the workflow instance"
+        },
+        "node_id": {
+          "type": "string",
+          "description": "ID of the node to assign the agent to"
+        },
+        "agent_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier of the agent to assign"
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Parameters for the agent execution"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Error code"
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message"
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional error details"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

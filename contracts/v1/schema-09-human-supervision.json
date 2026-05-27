@@ -1,0 +1,468 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "SupervisionGate": {
+      "type": "object",
+      "description": "Represents a human supervision gate that must be acted upon before a workflow step can proceed.",
+      "required": [
+        "id",
+        "tenant_id",
+        "workflow_id",
+        "gate_type",
+        "status",
+        "raised_by",
+        "raised_at",
+        "priority",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the supervision gate."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The tenant this gate belongs to."
+        },
+        "workflow_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The workflow that raised this gate."
+        },
+        "gate_type": {
+          "type": "string",
+          "enum": [
+            "human_approval",
+            "human_input",
+            "human_review",
+            "human_override"
+          ],
+          "description": "The type of human supervision required."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "approved",
+            "rejected",
+            "revoked",
+            "escalated",
+            "timed_out",
+            "auto_resolved"
+          ],
+          "description": "Current status of the gate."
+        },
+        "node_id": {
+          "type": "string",
+          "description": "The workflow node that triggered this gate."
+        },
+        "human_approver_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid",
+          "description": "The human assigned to act on this gate."
+        },
+        "escalation_reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Reason for escalation if the gate was escalated."
+        },
+        "raised_by": {
+          "type": "string",
+          "description": "The agent_id that raised this gate."
+        },
+        "raised_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the gate was raised."
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "urgent"
+          ],
+          "description": "Priority level of the gate."
+        },
+        "approval_threshold": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Approval threshold value, if applicable."
+        },
+        "response": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "approve",
+            "reject",
+            "request_revision",
+            "escalate"
+          ],
+          "description": "The human response to this gate."
+        },
+        "response_by": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Deadline for responding to this gate."
+        },
+        "response_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Timestamp when the gate was responded to."
+        },
+        "comments": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Optional comments from the human or system."
+        },
+        "conditions": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Optional conditions or metadata associated with the gate."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the gate was created."
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the gate was last updated."
+        }
+      },
+      "additionalProperties": false
+    },
+    "RaiseGateRequest": {
+      "type": "object",
+      "description": "Request to raise a human supervision gate for a workflow step.",
+      "required": [
+        "tenant_id",
+        "workflow_id",
+        "gate_type",
+        "node_id",
+        "raised_by"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The tenant raising the gate."
+        },
+        "workflow_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The workflow that requires supervision."
+        },
+        "gate_type": {
+          "type": "string",
+          "enum": [
+            "human_approval",
+            "human_input",
+            "human_review",
+            "human_override"
+          ],
+          "description": "The type of human supervision required."
+        },
+        "node_id": {
+          "type": "string",
+          "description": "The workflow node that triggered this gate."
+        },
+        "raised_by": {
+          "type": "string",
+          "description": "The agent_id raising this gate."
+        },
+        "human_approver_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid",
+          "description": "The specific human to act on this gate. If null, assigned by policy."
+        },
+        "escalation_reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Reason for escalating this gate."
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "urgent"
+          ],
+          "description": "Priority level of the gate request."
+        },
+        "approval_threshold": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Approval threshold value, if applicable."
+        },
+        "conditions": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Optional conditions or metadata for the gate."
+        }
+      },
+      "additionalProperties": false
+    },
+    "RespondToGateRequest": {
+      "type": "object",
+      "description": "Response from a human supervisor to a raised supervision gate.",
+      "required": [
+        "tenant_id",
+        "gate_id",
+        "response"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The tenant for which the gate is being responded to."
+        },
+        "gate_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The supervision gate being responded to."
+        },
+        "response": {
+          "type": "string",
+          "enum": [
+            "approve",
+            "reject",
+            "request_revision",
+            "escalate"
+          ],
+          "description": "The human's decision on this gate."
+        },
+        "comments": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Optional comments from the human supervisor."
+        },
+        "conditions": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Optional conditions or constraints attached to the response."
+        }
+      },
+      "additionalProperties": false
+    },
+    "GateEscalationRequest": {
+      "type": "object",
+      "description": "Request to escalate a supervision gate to a higher authority or different approver.",
+      "required": [
+        "tenant_id",
+        "gate_id",
+        "escalation_reason",
+        "escalation_level"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The tenant for which the gate is being escalated."
+        },
+        "gate_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The supervision gate being escalated."
+        },
+        "escalation_reason": {
+          "type": "string",
+          "description": "Reason for escalating the gate."
+        },
+        "new_approver_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid",
+          "description": "The new human approver to take ownership of the escalated gate."
+        },
+        "escalation_level": {
+          "type": "integer",
+          "description": "The escalation level. Higher values indicate greater escalation."
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "urgent"
+          ],
+          "description": "Priority level of the escalation request."
+        }
+      },
+      "additionalProperties": false
+    },
+    "PolicyViolation": {
+      "type": "object",
+      "description": "Records a policy violation detected during agent or workflow execution.",
+      "required": [
+        "id",
+        "tenant_id",
+        "agent_id",
+        "violation_type",
+        "severity",
+        "detected_by",
+        "detected_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the policy violation."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The tenant in which the violation occurred."
+        },
+        "agent_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The agent responsible for the violation."
+        },
+        "violation_type": {
+          "type": "string",
+          "enum": [
+            "unauthorized_tool_use",
+            "quota_breach",
+            "safety_threshold_exceeded",
+            "governance_bypass",
+            "unauthorized_access_attempt"
+          ],
+          "description": "The type of policy violation detected."
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "description": "Severity level of the violation."
+        },
+        "detected_by": {
+          "type": "string",
+          "description": "The system or agent that detected the violation."
+        },
+        "detected_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the violation was detected."
+        },
+        "workflow_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid",
+          "description": "The workflow associated with the violation, if applicable."
+        },
+        "policy_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid",
+          "description": "The policy that was violated, if applicable."
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional details about the violation."
+        },
+        "resolution_status": {
+          "type": "string",
+          "enum": [
+            "open",
+            "acknowledged",
+            "resolved",
+            "ignored"
+          ],
+          "description": "Current resolution status of the violation."
+        },
+        "resolved_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Timestamp when the violation was resolved."
+        },
+        "resolved_by": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The person or system that resolved the violation."
+        },
+        "resolution_notes": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Notes describing how the violation was resolved."
+        }
+      },
+      "additionalProperties": false
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "description": "Standard error response format for the Human Supervision module.",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Machine-readable error code."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message."
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional error details."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

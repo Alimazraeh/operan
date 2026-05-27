@@ -1,0 +1,414 @@
+openapi: 3.0.3
+info:
+  title: Operan Knowledge Ingestion API
+  description: Knowledge document ingestion, chunking, and semantic search. Module 06.
+  version: 1.0.0
+servers:
+  - url: /api/v1/knowledge
+    description: Knowledge ingestion API root
+
+paths:
+  /ingest:
+    post:
+      operationId: ingestKnowledge
+      summary: Initiate knowledge document ingestion
+      tags: [ingestion]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestRequest'
+      responses:
+        '202':
+          description: Ingestion accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestionStatus'
+        '400':
+          description: Invalid request
+
+  /documents:
+    get:
+      operationId: listDocuments
+      summary: List knowledge documents for the current tenant
+      tags: [documents]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, parsing, chunking, embedding, indexed, failed]
+        - name: source_type
+          in: query
+          schema:
+            type: string
+            enum: [pdf, docx, pptx, csv, json, xml, html, text, email, url]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Document list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentList'
+
+  /documents/{documentId}:
+    parameters:
+      - name: documentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getDocument
+      summary: Get document details
+      tags: [documents]
+      responses:
+        '200':
+          description: Document details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeDocument'
+        '404':
+          description: Document not found
+    delete:
+      operationId: deleteDocument
+      summary: Delete a knowledge document and its chunks
+      tags: [documents]
+      responses:
+        '204':
+          description: Document deleted
+        '404':
+          description: Document not found
+
+  /documents/{documentId}/chunks:
+    get:
+      operationId: listDocumentChunks
+      summary: List chunks for a document
+      tags: [documents, chunks]
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Chunk list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChunkList'
+
+  /search:
+    post:
+      operationId: searchKnowledge
+      summary: Search ingested knowledge documents and sections
+      tags: [search]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchQuery'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResultList'
+        '400':
+          description: Invalid search query
+
+  /ingestion/{ingestionId}:
+    get:
+      operationId: getIngestionStatus
+      summary: Get ingestion job status
+      tags: [ingestion]
+      parameters:
+        - name: ingestionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Ingestion status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestionStatus'
+        '404':
+          description: Ingestion not found
+
+components:
+  schemas:
+    IngestRequest:
+      type: object
+      required: [tenant_id, source_type, source_uri]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        source_type:
+          type: string
+          enum: [pdf, docx, pptx, csv, json, xml, html, text, email, url]
+        source_uri:
+          type: string
+          description: URI or path to the source document
+        file_name:
+          type: string
+        file_size:
+          type: integer
+        department_id:
+          type: string
+          format: uuid
+        processing_options:
+          $ref: '#/components/schemas/ProcessingOptions'
+        requested_by:
+          type: string
+
+    ProcessingOptions:
+      type: object
+      properties:
+        language_detection:
+          type: boolean
+          default: true
+        chunking_strategy:
+          type: string
+          enum: [token, paragraph, heading]
+          default: token
+        max_chunk_size:
+          type: integer
+          default: 500
+        overlap_size:
+          type: integer
+          default: 50
+        extract_tables:
+          type: boolean
+          default: true
+        extract_images:
+          type: boolean
+          default: false
+        extract_metadata:
+          type: boolean
+          default: true
+
+    KnowledgeDocument:
+      type: object
+      required: [id, tenant_id, source_type, source_uri, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        source_type:
+          type: string
+          enum: [pdf, docx, pptx, csv, json, xml, html, text, email, url]
+        source_uri:
+          type: string
+        status:
+          type: string
+          enum: [pending, parsing, chunking, embedding, indexed, failed]
+        file_name:
+          type: string
+        file_size:
+          type: integer
+        department_id:
+          type: string
+          format: uuid
+        language:
+          type: array
+          items:
+            type: string
+        chunk_count:
+          type: integer
+        embedding_model:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    IngestionStatus:
+      type: object
+      required: [id, tenant_id, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        document_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, parsing, chunking, embedding, indexed, completed, failed]
+        progress:
+          type: number
+          minimum: 0
+          maximum: 1
+        error_message:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DocumentList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/KnowledgeDocument'
+        total:
+          type: integer
+        offset:
+          type: integer
+
+    KnowledgeSection:
+      type: object
+      required: [id, title, content]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        content:
+          type: string
+        section_number:
+          type: integer
+        parent_section_id:
+          type: string
+          format: uuid
+        metadata:
+          type: object
+        confidence_score:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    ChunkList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/KnowledgeSection'
+        total:
+          type: integer
+        offset:
+          type: integer
+
+    SearchQuery:
+      type: object
+      required: [tenant_id, query_text]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        query_text:
+          type: string
+        filters:
+          type: object
+        top_n:
+          type: integer
+          default: 10
+        retrieval_strategy:
+          type: string
+          enum: [hybrid, semantic, keyword, graph]
+          default: hybrid
+        relevance_threshold:
+          type: number
+          minimum: 0
+          maximum: 1
+        include_metadata:
+          type: boolean
+          default: true
+
+    SearchResult:
+      type: object
+      required: [id, document_id, score, content]
+      properties:
+        id:
+          type: string
+          format: uuid
+        document_id:
+          type: string
+          format: uuid
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+        content:
+          type: string
+        section_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        snippet:
+          type: string
+        metadata:
+          type: object
+        similarity_score:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    SearchResultList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+        total:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object

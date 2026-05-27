@@ -1,0 +1,434 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "Agent": {
+      "type": "object",
+      "description": "A registered AI agent within the Operan platform, identified by a unique UUID and associated with a tenant.",
+      "required": [
+        "id",
+        "name",
+        "role",
+        "tenant_id",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the agent."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name of the agent."
+        },
+        "role": {
+          "type": "string",
+          "description": "The functional role the agent fills within the platform."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the tenant that owns this agent."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "registered",
+            "active",
+            "deprecated",
+            "archived"
+          ],
+          "description": "Lifecycle status of the agent."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of capabilities the agent provides."
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of tool identifiers the agent can invoke."
+        },
+        "memory_access": {
+          "type": "object",
+          "description": "Configuration for the agent's memory access permissions."
+        },
+        "escalation_rules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Rules governing when and how the agent escalates tasks."
+        },
+        "governance_policies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Governance policies that apply to this agent."
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Semantic version of the agent's current configuration."
+        },
+        "cost_profile": {
+          "$ref": "#/definitions/CostProfile",
+          "description": "Cost-related configuration for the agent."
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of agent UUIDs this agent depends on."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the agent was created."
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the agent was last updated."
+        },
+        "created_by": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the user or system that created the agent."
+        }
+      }
+    },
+    "CreateAgentRequest": {
+      "type": "object",
+      "description": "Request payload for creating a new agent.",
+      "required": [
+        "name",
+        "role",
+        "tenant_id"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Human-readable name of the agent."
+        },
+        "role": {
+          "type": "string",
+          "description": "The functional role the agent will fill."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the tenant that will own the agent."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of capabilities the agent provides."
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of tool identifiers the agent can invoke."
+        },
+        "memory_access": {
+          "type": "object",
+          "description": "Configuration for the agent's memory access permissions."
+        },
+        "escalation_rules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Rules governing when and how the agent escalates tasks."
+        },
+        "governance_policies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Governance policies that apply to this agent."
+        },
+        "description": {
+          "type": "string",
+          "description": "Additional description of the agent's purpose."
+        },
+        "cost_profile": {
+          "$ref": "#/definitions/CostProfile",
+          "description": "Cost-related configuration for the agent."
+        }
+      }
+    },
+    "UpdateAgentRequest": {
+      "type": "object",
+      "description": "Request payload for updating an existing agent. All fields are optional; only provided fields will be modified.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Human-readable name of the agent."
+        },
+        "role": {
+          "type": "string",
+          "description": "The functional role the agent fills."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of capabilities the agent provides."
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of tool identifiers the agent can invoke."
+        },
+        "memory_access": {
+          "type": "object",
+          "description": "Configuration for the agent's memory access permissions."
+        },
+        "escalation_rules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Rules governing when and how the agent escalates tasks."
+        },
+        "governance_policies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Governance policies that apply to this agent."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "registered",
+            "active",
+            "deprecated",
+            "archived"
+          ],
+          "description": "New lifecycle status for the agent."
+        },
+        "description": {
+          "type": "string",
+          "description": "Additional description of the agent's purpose."
+        },
+        "cost_profile": {
+          "$ref": "#/definitions/CostProfile",
+          "description": "Cost-related configuration for the agent."
+        }
+      }
+    },
+    "CapabilityIndex": {
+      "type": "object",
+      "description": "Describes a specific capability offered by an agent, including its version, tooling, and performance characteristics.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the capability."
+        },
+        "version": {
+          "type": "string",
+          "description": "Version of the capability."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the capability."
+        },
+        "required_tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of tools required to execute this capability."
+        },
+        "memory_scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of memory stores or scopes this capability can access."
+        },
+        "supported_languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of language identifiers this capability supports."
+        },
+        "performance_metrics": {
+          "type": "object",
+          "description": "Performance-related metrics for this capability."
+        }
+      }
+    },
+    "CostProfile": {
+      "type": "object",
+      "description": "Defines the cost and budget parameters for an agent or capability.",
+      "properties": {
+        "cost_per_execution": {
+          "type": "number",
+          "description": "Fixed cost incurred each time the agent is executed."
+        },
+        "cost_per_token": {
+          "type": "number",
+          "description": "Variable cost per token consumed."
+        },
+        "estimated_monthly_cost": {
+          "type": "number",
+          "description": "Estimated monthly cost based on projected usage."
+        },
+        "budget_limit": {
+          "type": "integer",
+          "description": "Maximum budget limit for the agent."
+        },
+        "throttle_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Threshold (0.0 to 1.0) at which the agent should be throttled."
+        },
+        "billing_tag": {
+          "type": "string",
+          "description": "Tag used for billing allocation."
+        }
+      }
+    },
+    "AgentDependency": {
+      "type": "object",
+      "description": "Describes a dependency relationship between two agents.",
+      "required": [
+        "agent_id",
+        "dependency_id",
+        "type"
+      ],
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the agent that has the dependency."
+        },
+        "dependency_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the agent being depended upon."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "required",
+            "optional",
+            "runtime"
+          ],
+          "description": "Nature of the dependency: required, optional, or resolved at runtime."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of this dependency."
+        },
+        "version_constraint": {
+          "type": "string",
+          "description": "Version constraint for the dependency."
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Whether this dependency is currently active."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the dependency was created."
+        }
+      }
+    },
+    "AgentVersion": {
+      "type": "object",
+      "description": "Represents a versioned snapshot of an agent's configuration.",
+      "required": [
+        "id",
+        "agent_id",
+        "version"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for this agent version."
+        },
+        "agent_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the agent this version belongs to."
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Semantic version of this agent configuration."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when this version was created."
+        },
+        "created_by": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the user or system that created this version."
+        },
+        "change_summary": {
+          "type": "string",
+          "description": "Summary of changes in this version."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "build",
+            "staging",
+            "production",
+            "archived"
+          ],
+          "description": "Lifecycle status of this agent version."
+        },
+        "diff_from_previous": {
+          "type": "string",
+          "description": "Detailed diff or description of changes from the previous version."
+        }
+      }
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "description": "Standard error response format for API requests.",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Machine-readable error code."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message."
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional structured error details."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,483 @@
+openapi: 3.0.3
+info:
+  title: Operan Agent Marketplace API
+  description: Procure and onboard agents from internal registries and external vendors. Negotiate pricing, verify trust/audits, license, deploy, and monitor. Module 15.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1/marketplace
+
+security:
+  - BearerAuth: []
+  - X-Tenant-ID:
+      schema:
+        type: string
+
+paths:
+  /catalog:
+    get:
+      summary: Browse agent catalog
+      operationId: browseCatalog
+      tags: [catalog]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: min_trust_score
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10
+      responses:
+        '200':
+          description: Agent catalog
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Catalog'
+
+  /catalog/{agent_id}:
+    get:
+      summary: Get agent details
+      operationId: getAgentDetails
+      tags: [catalog]
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Agent details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketplaceAgent'
+
+  /catalog/{agent_id}/trust:
+    get:
+      summary: Get agent trust score and audits
+      operationId: getAgentTrust
+      tags: [trust]
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Trust score and audit history
+
+  /orders:
+    post:
+      summary: Submit an order for an agent
+      operationId: submitOrder
+      tags: [orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitOrderRequest'
+      responses:
+        '201':
+          description: Order submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+
+    get:
+      summary: List orders
+      operationId: listOrders
+      tags: [orders]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order list
+
+  /orders/{order_id}:
+    get:
+      summary: Get order status
+      operationId: getOrderStatus
+      tags: [orders]
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Order details
+
+  /orders/{order_id}/approve:
+    post:
+      summary: Approve an order (governance)
+      operationId: approveOrder
+      tags: [orders]
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderApproval'
+      responses:
+        '200':
+          description: Order approved
+
+  /orders/{order_id}/reject:
+    post:
+      summary: Reject an order (governance)
+      operationId: rejectOrder
+      tags: [orders]
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRejection'
+      responses:
+        '200':
+          description: Order rejected
+
+  /licenses:
+    get:
+      summary: List active licenses
+      operationId: listLicenses
+      tags: [licenses]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Active licenses
+
+  /licenses/{license_id}:
+    get:
+      summary: Get license details
+      operationId: getLicense
+      tags: [licenses]
+      parameters:
+        - name: license_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: License details
+
+    delete:
+      summary: Revoke a license
+      operationId: revokeLicense
+      tags: [licenses]
+      parameters:
+        - name: license_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: License revoked
+
+  /agents/{agent_id}/install:
+    post:
+      summary: Install an acquired agent
+      operationId: installAgent
+      tags: [installation]
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: license_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InstallRequest'
+      responses:
+        '202':
+          description: Agent installation in progress
+
+  /agents/{agent_id}/telemetry:
+    get:
+      summary: Get agent usage telemetry
+      operationId: getAgentTelemetry
+      tags: [telemetry]
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Usage telemetry
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    X-Tenant-ID:
+      name: X-Tenant-ID
+      in: header
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    MarketplaceAgent:
+      type: object
+      required:
+        - id
+        - name
+        - vendor
+        - trust_score
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        vendor:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        trust_score:
+          type: integer
+          minimum: 0
+          maximum: 10
+        audit_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditRecord'
+        pricing_model:
+          type: string
+          enum: [subscription, per_task, per_token, custom]
+        pricing_details:
+          type: object
+        documentation_url:
+          type: string
+        is_internal:
+          type: boolean
+        requires_license:
+          type: boolean
+        license_terms:
+          type: string
+
+    AuditRecord:
+      type: object
+      required:
+        - date
+        - auditor
+        - result
+      properties:
+        date:
+          type: string
+          format: date-time
+        auditor:
+          type: string
+        result:
+          type: string
+          enum: [pass, fail, conditional]
+        findings:
+          type: array
+          items:
+            type: string
+        security_review_passed:
+          type: boolean
+        cost_audit_passed:
+          type: boolean
+        capability_verified:
+          type: boolean
+
+    SubmitOrderRequest:
+      type: object
+      required:
+        - tenant_id
+        - agent_id
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        license_type:
+          type: string
+        custom_terms:
+          type: string
+
+    Order:
+      type: object
+      required:
+        - id
+        - agent_id
+        - tenant_id
+        - status
+        - requires_approval
+      properties:
+        id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [submitted, pending_approval, approved, rejected, installed, revoked]
+        requires_approval:
+          type: boolean
+        submitted_at:
+          type: string
+          format: date-time
+        approved_at:
+          type: string
+          format: date-time
+        license_id:
+          type: string
+          format: uuid
+
+    OrderApproval:
+      type: object
+      required:
+        - approver_id
+      properties:
+        approver_id:
+          type: string
+          format: uuid
+        comments:
+          type: string
+
+    OrderRejection:
+      type: object
+      required:
+        - approver_id
+        - reason
+      properties:
+        approver_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+
+    InstallRequest:
+      type: object
+      required:
+        - tenant_id
+        - department_id
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        department_id:
+          type: string
+          format: uuid
+        configuration:
+          type: object
+        environment_variables:
+          type: object
+
+    Catalog:
+      type: object
+      properties:
+        agents:
+          type: array
+          items:
+            $ref: '#/components/schemas/MarketplaceAgent'
+        total:
+          type: integer
+        has_more:
+          type: boolean
+
+    UsageTelemetry:
+      type: object
+      properties:
+        agent_id:
+          type: string
+          format: uuid
+        total_tasks:
+          type: integer
+        successful_tasks:
+          type: integer
+        failed_tasks:
+          type: integer
+        total_cost:
+          type: number
+        average_latency_ms:
+          type: integer
+        peak_concurrent:
+          type: integer

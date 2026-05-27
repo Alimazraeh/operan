@@ -1,0 +1,565 @@
+openapi: "3.1.0"
+info:
+  title: Arabic Language Core Services
+  version: 1.0.0
+  description: Module 19 — Arabic Language Core Services for Operan
+
+servers:
+  - url: /api/v1
+
+security:
+  - BearerAuth: []
+  - TenantContext: []
+
+paths:
+  /arabic/process:
+    post:
+      summary: Process Arabic text
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcessTextRequest"
+      responses:
+        "200":
+          description: Processing complete
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessingResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /arabic/translate:
+    post:
+      summary: Translate Arabic text
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TranslationRequest"
+      responses:
+        "200":
+          description: Translation complete
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslationResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /arabic/vocab:
+    get:
+      summary: Search vocabulary
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: term
+          in: query
+          schema:
+            type: string
+        - name: script
+          in: query
+          schema:
+            type: string
+            enum: [standard, vocalized, mangled, normalized]
+        - name: variant
+          in: query
+          schema:
+            type: string
+            enum: [msa, gulf, shami, maghrebi, narrow_regional]
+      responses:
+        "200":
+          description: Vocabulary results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/VocabEntry"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Add vocabulary entry
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tenant_id
+                - term
+                - definition
+              properties:
+                tenant_id:
+                  type: string
+                  format: uuid
+                term:
+                  type: string
+                definition:
+                  type: string
+                script:
+                  type: string
+                  enum: [standard, vocalized, mangled, normalized]
+                variant:
+                  type: string
+                  enum: [msa, gulf, shami, maghrebi, narrow_regional]
+                examples:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+      responses:
+        "201":
+          description: Vocabulary entry created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VocabEntry"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /arabic/models:
+    get:
+      summary: List language models
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: variant
+          in: query
+          schema:
+            type: string
+            enum: [msa, gulf, shami, maghrebi, narrow_regional]
+      responses:
+        "200":
+          description: Models list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LanguageModel"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Train a new language model
+      security:
+        - BearerAuth: []
+        - TenantContext: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tenant_id
+                - model_name
+                - variant
+                - training_data_uri
+              properties:
+                tenant_id:
+                  type: string
+                  format: uuid
+                model_name:
+                  type: string
+                variant:
+                  type: string
+                  enum: [msa, gulf, shami, maghrebi, narrow_regional]
+                training_data_uri:
+                  type: string
+                hyperparameters:
+                  type: object
+                  nullable: true
+      responses:
+        "201":
+          description: Training started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LanguageModel"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    TenantContext:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      required: true
+
+  schemas:
+    ProcessingResult:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - document_id
+        - input_text
+        - processed_text
+        - script
+        - language_variant
+        - confidence_score
+        - processed_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        document_id:
+          type: string
+          format: uuid
+          nullable: true
+        input_text:
+          type: string
+        processed_text:
+          type: string
+        script:
+          type: string
+          enum: [standard, vocalized, mangled, normalized]
+        language_variant:
+          type: string
+          enum: [msa, gulf, shami, maghrebi, narrow_regional]
+        operations_applied:
+          type: array
+          items:
+            type: string
+        confidence_score:
+          type: number
+        processing_time_ms:
+          type: integer
+        processed_at:
+          type: string
+          format: date-time
+
+    ProcessTextRequest:
+      type: object
+      required:
+        - tenant_id
+        - input_text
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        document_id:
+          type: string
+          format: uuid
+          nullable: true
+        input_text:
+          type: string
+        target_script:
+          type: string
+          enum: [standard, vocalized, mangled, normalized]
+        target_variant:
+          type: string
+          enum: [msa, gulf, shami, maghrebi, narrow_regional]
+        operations:
+          type: array
+          items:
+            type: string
+          nullable: true
+
+    TranslationResult:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - request_id
+        - source_script
+        - target_script
+        - translated_content
+        - completed_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        request_id:
+          type: string
+          format: uuid
+        document_id:
+          type: string
+          format: uuid
+          nullable: true
+        source_script:
+          type: string
+          enum: [standard, vocalized, mangled]
+        target_script:
+          type: string
+          enum: [standard, vocalized, normalized, mangled]
+        translated_content:
+          type: string
+        confidence_scores:
+          type: array
+          items:
+            type: number
+        completed_at:
+          type: string
+          format: date-time
+
+    TranslationRequest:
+      type: object
+      required:
+        - tenant_id
+        - source_script
+        - target_script
+        - content
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        document_id:
+          type: string
+          format: uuid
+          nullable: true
+        source_script:
+          type: string
+          enum: [standard, vocalized, mangled]
+        target_script:
+          type: string
+          enum: [standard, vocalized, normalized, mangled]
+        content:
+          type: string
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+
+    VocabEntry:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - term
+        - definition
+        - script
+        - variant
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        term:
+          type: string
+        definition:
+          type: string
+        script:
+          type: string
+          enum: [standard, vocalized, mangled, normalized]
+        variant:
+          type: string
+          enum: [msa, gulf, shami, maghrebi, narrow_regional]
+        examples:
+          type: array
+          items:
+            type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    LanguageModel:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - model_name
+        - variant
+        - status
+        - trained_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        model_name:
+          type: string
+        variant:
+          type: string
+          enum: [msa, gulf, shami, maghrebi, narrow_regional]
+        status:
+          type: string
+          enum: [ready, training, failed]
+        training_dataset_size:
+          type: integer
+        accuracy:
+          type: number
+          nullable: true
+        trained_by:
+          type: string
+          format: uuid
+        trained_at:
+          type: string
+          format: date-time
+        model_uri:
+          type: string
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        has_more:
+          type: boolean

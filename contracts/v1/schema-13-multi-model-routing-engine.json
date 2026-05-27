@@ -1,0 +1,671 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.operan.adri.dev/v1/module-13/routing.json",
+  "title": "Operan Multi-Model Routing Engine JSON Schemas",
+  "description": "Comprehensive JSON Schema definitions for the Operan Multi-Model Routing Engine (Module 13) domain objects, including routing decisions, strategies, scoring rules, model selections, metrics, and capability matrix.",
+  "definitions": {
+    "Uuid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "Universally Unique Identifier (UUID v4)"
+    },
+    "DateTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 date-time string"
+    },
+    "QueryType": {
+      "type": "string",
+      "enum": [
+        "translation",
+        "reasoning",
+        "summarization",
+        "classification",
+        "generation",
+        "embedding",
+        "vision",
+        "code",
+        "data_analysis"
+      ],
+      "description": "Supported AI query types for model routing"
+    },
+    "OptimizationTarget": {
+      "type": "string",
+      "enum": [
+        "quality",
+        "cost",
+        "latency"
+      ],
+      "description": "Primary optimization objective for model routing"
+    },
+    "QualityScore": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Quality score on a 0.0 to 1.0 scale per dimension"
+    },
+    "CarbonIntensityFactor": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Carbon intensity factor for energy-aware model selection"
+    },
+    "ModelId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Model identifier (UUID)"
+    },
+    "Vendor": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "AI model vendor name"
+    },
+    "ModelName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Model name/identifier"
+    },
+    "ModelVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[a-zA-Z0-9.]+)?(\\+[a-zA-Z0-9.]+)?$",
+      "description": "Semantic version string for models and strategies"
+    },
+    "RoutingDecision": {
+      "type": "object",
+      "required": [
+        "query_type",
+        "input",
+        "tenant_id",
+        "id",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/Uuid",
+          "description": "Unique routing decision identifier"
+        },
+        "query_type": {
+          "$ref": "#/definitions/QueryType",
+          "description": "Type of query being routed"
+        },
+        "input": {
+          "type": "object",
+          "description": "Input payload to be routed to an AI model",
+          "additionalProperties": true
+        },
+        "quality_threshold": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.7,
+          "description": "Minimum acceptable quality score for routing"
+        },
+        "optimization_target": {
+          "$ref": "#/definitions/OptimizationTarget",
+          "default": "quality",
+          "description": "Primary optimization objective"
+        },
+        "selected_model": {
+          "$ref": "#/definitions/ModelSelection",
+          "description": "The model selected by the routing engine"
+        },
+        "fallback_model": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ModelSelection"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Fallback model if primary model is unavailable"
+        },
+        "quality_scores": {
+          "type": "object",
+          "description": "Per-dimension quality scores for the selected model",
+          "additionalProperties": {
+            "$ref": "#/definitions/QualityScore"
+          }
+        },
+        "cost": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Estimated cost for the routed request"
+        },
+        "latency_estimate_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Estimated latency in milliseconds"
+        },
+        "carbon_intensity_factor": {
+          "$ref": "#/definitions/CarbonIntensityFactor",
+          "description": "Carbon intensity factor at time of routing"
+        },
+        "rationale": {
+          "type": "string",
+          "maxLength": 4096,
+          "description": "Human-readable explanation of the routing decision"
+        },
+        "is_fallback": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this decision routed to a fallback model"
+        },
+        "strategy_id": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Uuid"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Strategy used for this routing decision"
+        },
+        "tenant_id": {
+          "$ref": "#/definitions/Uuid",
+          "description": "Tenant identifier"
+        },
+        "created_at": {
+          "$ref": "#/definitions/DateTime"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/DateTime"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ModelSelection": {
+      "type": "object",
+      "required": [
+        "model_id",
+        "vendor"
+      ],
+      "properties": {
+        "model_id": {
+          "$ref": "#/definitions/ModelId"
+        },
+        "vendor": {
+          "$ref": "#/definitions/Vendor"
+        },
+        "model_name": {
+          "$ref": "#/definitions/ModelName"
+        },
+        "version": {
+          "$ref": "#/definitions/ModelVersion"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of supported capabilities"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "ScoringRule": {
+      "type": "object",
+      "required": [
+        "model_id",
+        "dimensions"
+      ],
+      "properties": {
+        "model_id": {
+          "$ref": "#/definitions/ModelId"
+        },
+        "dimensions": {
+          "type": "object",
+          "description": "Per-dimension quality scores (0.0-1.0)",
+          "additionalProperties": {
+            "$ref": "#/definitions/QualityScore"
+          }
+        },
+        "cost_per_request": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Cost per routed request"
+        },
+        "estimated_latency_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Estimated processing latency in milliseconds"
+        },
+        "carbon_intensity_factor": {
+          "$ref": "#/definitions/CarbonIntensityFactor",
+          "description": "Carbon intensity factor for this model"
+        },
+        "availability": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Current availability ratio (0.0 to 1.0)"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "RoutingStrategy": {
+      "type": "object",
+      "required": [
+        "name",
+        "query_types",
+        "scoring_rules",
+        "id",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/Uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Unique strategy name"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "Human-readable strategy description"
+        },
+        "query_types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/QueryType"
+          },
+          "minItems": 1,
+          "description": "Query types this strategy applies to"
+        },
+        "scoring_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ScoringRule"
+          },
+          "minItems": 1,
+          "description": "Scoring rules for each candidate model"
+        },
+        "optimization_goals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OptimizationTarget"
+          },
+          "description": "Supported optimization targets"
+        },
+        "is_active": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the strategy is active for routing"
+        },
+        "priority": {
+          "type": "integer",
+          "format": "int32",
+          "default": 100,
+          "description": "Strategy priority (lower number = higher priority)"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "created_at": {
+          "$ref": "#/definitions/DateTime"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/DateTime"
+        }
+      },
+      "additionalProperties": false
+    },
+    "EvaluateRequest": {
+      "type": "object",
+      "required": [
+        "input"
+      ],
+      "properties": {
+        "input": {
+          "type": "object",
+          "description": "Sample input for strategy evaluation",
+          "additionalProperties": true
+        },
+        "query_type": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/QueryType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Query type for evaluation"
+        },
+        "quality_threshold": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.7,
+          "description": "Minimum quality threshold"
+        },
+        "optimization_target": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/OptimizationTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Optimization target for evaluation"
+        }
+      },
+      "additionalProperties": false
+    },
+    "EvaluateResult": {
+      "type": "object",
+      "required": [
+        "strategy_id",
+        "ranked_models"
+      ],
+      "properties": {
+        "strategy_id": {
+          "$ref": "#/definitions/Uuid"
+        },
+        "ranked_models": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ModelRanking"
+          },
+          "description": "Ranked list of models"
+        },
+        "recommended_model": {
+          "$ref": "#/definitions/ModelSelection",
+          "description": "Top recommended model"
+        },
+        "evaluation_metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "ModelRanking": {
+      "type": "object",
+      "required": [
+        "model_id",
+        "score"
+      ],
+      "properties": {
+        "model_id": {
+          "$ref": "#/definitions/ModelId"
+        },
+        "vendor": {
+          "$ref": "#/definitions/Vendor"
+        },
+        "model_name": {
+          "$ref": "#/definitions/ModelName"
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Overall ranking score"
+        },
+        "quality_score": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Quality dimension score"
+        },
+        "cost": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Cost estimate"
+        },
+        "latency_estimate_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Estimated latency in milliseconds"
+        },
+        "carbon_intensity_factor": {
+          "$ref": "#/definitions/CarbonIntensityFactor",
+          "description": "Carbon intensity factor"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RoutingMetrics": {
+      "type": "object",
+      "properties": {
+        "tenant_id": {
+          "$ref": "#/definitions/Uuid"
+        },
+        "period": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 period identifier"
+        },
+        "total_decisions": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total routing decisions in the period"
+        },
+        "decisions_by_query_type": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "description": "Decision counts grouped by query type"
+        },
+        "average_quality_score": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Average quality score across all decisions"
+        },
+        "average_cost_per_decision": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Average cost per decision"
+        },
+        "average_latency_ms": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Average latency in milliseconds"
+        },
+        "total_carbon_impact": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Total carbon impact in CO2e equivalent"
+        },
+        "fallback_rate": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Rate of fallback routing"
+        },
+        "utilization_by_model": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "description": "Decision counts per model"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CapabilityMatrix": {
+      "type": "object",
+      "required": [
+        "models",
+        "last_updated"
+      ],
+      "properties": {
+        "models": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ModelCapability"
+          },
+          "description": "List of all available models with capabilities"
+        },
+        "last_updated": {
+          "$ref": "#/definitions/DateTime",
+          "description": "Timestamp of last matrix update"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ModelCapability": {
+      "type": "object",
+      "required": [
+        "model_id",
+        "vendor",
+        "query_type_capabilities"
+      ],
+      "properties": {
+        "model_id": {
+          "$ref": "#/definitions/ModelId"
+        },
+        "vendor": {
+          "$ref": "#/definitions/Vendor"
+        },
+        "model_name": {
+          "$ref": "#/definitions/ModelName"
+        },
+        "version": {
+          "$ref": "#/definitions/ModelVersion"
+        },
+        "query_type_capabilities": {
+          "type": "object",
+          "description": "Map of query type to capability details",
+          "additionalProperties": {
+            "$ref": "#/definitions/QueryTypeCapability"
+          }
+        },
+        "is_available": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the model is currently available"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "QueryTypeCapability": {
+      "type": "object",
+      "required": [
+        "supported",
+        "max_quality_score"
+      ],
+      "properties": {
+        "supported": {
+          "type": "boolean",
+          "description": "Whether the model supports this query type"
+        },
+        "max_quality_score": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Maximum achievable quality score"
+        },
+        "average_cost": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Average cost per request"
+        },
+        "average_latency_ms": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Average latency in milliseconds"
+        },
+        "max_input_tokens": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum input token limit"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RoutingDecisionListResponse": {
+      "type": "object",
+      "required": [
+        "items",
+        "total",
+        "page",
+        "page_size",
+        "has_more"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RoutingDecision"
+          },
+          "description": "List of routing decisions"
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of matching decisions"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Current page number"
+        },
+        "page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Number of items per page"
+        },
+        "has_more": {
+          "type": "boolean",
+          "description": "Whether more pages are available"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Error": {
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Machine-readable error code"
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Additional error context"
+        },
+        "request_id": {
+          "$ref": "#/definitions/Uuid",
+          "description": "Unique request identifier for tracing"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,409 @@
+asyncapi: 2.6.0
+info:
+  title: Operan Cost Governance Engine Events
+  description: Event-driven API for the Cost Governance Engine module covering budget lifecycle, throttle actions, forecasting, billing, and usage reporting.
+  version: 1.0.0
+  contact:
+    name: Platform Architect
+    email: arch@operan.dev
+  license:
+    name: Proprietary
+servers:
+  - url: wss://events.operan.dev/v1
+    description: Production event stream
+  - url: wss://events-staging.operan.dev/v1
+    description: Staging event stream
+defaultContentType: application/json
+channels:
+  /cost-governance/budget/created:
+    description: Published when a new budget is created.
+    publish:
+      summary: Budget created event
+      operationId: receiveBudgetCreated
+      message:
+        $ref: '#/components/messages/BudgetCreated'
+  /cost-governance/budget/exceeded:
+    description: Published when a budget's consumption exceeds its limit.
+    publish:
+      summary: Budget exceeded event
+      operationId: receiveBudgetExceeded
+      message:
+        $ref: '#/components/messages/BudgetExceeded'
+  /cost-governance/budget/warned:
+    description: Published when a budget's consumption reaches the warning threshold.
+    publish:
+      summary: Budget warned event
+      operationId: receiveBudgetWarned
+      message:
+        $ref: '#/components/messages/BudgetWarned'
+  /cost-governance/throttle/applied:
+    description: Published when a throttle action is triggered and applied.
+    publish:
+      summary: Throttle applied event
+      operationId: receiveThrottleApplied
+      message:
+        $ref: '#/components/messages/ThrottleApplied'
+  /cost-governance/cost/forecast-generated:
+    description: Published when a cost forecast is generated successfully.
+    publish:
+      summary: Cost forecast generated event
+      operationId: receiveForecastGenerated
+      message:
+        $ref: '#/components/messages/ForecastGenerated'
+  /cost-governance/billing/generated:
+    description: Published when tenant billing is generated successfully.
+    publish:
+      summary: Billing generated event
+      operationId: receiveBillingGenerated
+      message:
+        $ref: '#/components/messages/BillingGenerated'
+  /cost-governance/usage/reported:
+    description: Published when a new usage record is reported.
+    publish:
+      summary: Usage reported event
+      operationId: receiveUsageReported
+      message:
+        $ref: '#/components/messages/UsageReported'
+components:
+  messages:
+    BudgetCreated:
+      name: budget.created
+      summary: A budget was created
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BudgetCreatedPayload'
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+    BudgetExceeded:
+      name: budget.exceeded
+      summary: A budget has been exceeded
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BudgetExceededPayload'
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+    BudgetWarned:
+      name: budget.warned
+      summary: A budget has reached its warning threshold
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BudgetWarnedPayload'
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+    ThrottleApplied:
+      name: throttle.applied
+      summary: A throttle action was applied
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ThrottleAppliedPayload'
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+    ForecastGenerated:
+      name: cost.forecast_generated
+      summary: A cost forecast was generated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ForecastGeneratedPayload'
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+    BillingGenerated:
+      name: billing.generated
+      summary: Tenant billing was generated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BillingGeneratedPayload'
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+    UsageReported:
+      name: usage.reported
+      summary: A usage record was reported
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/UsageReportedPayload'
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+  schemas:
+    EventHeaders:
+      type: object
+      required:
+        - id
+        - type
+        - source
+        - time
+        - tenant_id
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique event identifier
+        type:
+          type: string
+          description: Full event type name
+        source:
+          type: string
+          description: Event source identifier
+          enum:
+            - cost-governance-engine
+        time:
+          type: string
+          format: date-time
+          description: Event timestamp
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant context for the event
+        correlation_id:
+          type: string
+          format: uuid
+          description: Correlation ID for tracing related events
+    BudgetCreatedPayload:
+      type: object
+      required:
+        - budget_id
+        - tenant_id
+        - name
+        - type
+        - limit
+        - period
+      properties:
+        budget_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum:
+            - token_budget
+            - execution_budget
+            - agent_budget
+            - department_budget
+            - tenant_budget
+        limit:
+          type: number
+        warning_threshold:
+          type: number
+        period:
+          type: string
+          enum:
+            - daily
+            - weekly
+            - monthly
+            - quarterly
+            - annually
+        created_by:
+          type: string
+          format: uuid
+    BudgetExceededPayload:
+      type: object
+      required:
+        - budget_id
+        - tenant_id
+        - limit
+        - current_usage
+      properties:
+        budget_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        limit:
+          type: number
+        current_usage:
+          type: number
+        usage_percentage:
+          type: number
+        exceeded_by:
+          type: number
+        triggered_throttles:
+          type: array
+          items:
+            type: string
+            enum:
+              - warn
+              - slow_down
+              - reject
+              - escalate
+        budget_type:
+          type: string
+          enum:
+            - token_budget
+            - execution_budget
+            - agent_budget
+            - department_budget
+            - tenant_budget
+    BudgetWarnedPayload:
+      type: object
+      required:
+        - budget_id
+        - tenant_id
+        - limit
+        - current_usage
+      properties:
+        budget_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        limit:
+          type: number
+        current_usage:
+          type: number
+        usage_percentage:
+          type: number
+        warning_threshold:
+          type: number
+        budget_type:
+          type: string
+          enum:
+            - token_budget
+            - execution_budget
+            - agent_budget
+            - department_budget
+            - tenant_budget
+    ThrottleAppliedPayload:
+      type: object
+      required:
+        - throttle_id
+        - budget_id
+        - tenant_id
+        - action
+      properties:
+        throttle_id:
+          type: string
+          format: uuid
+        budget_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        action:
+          type: string
+          enum:
+            - warn
+            - slow_down
+            - reject
+            - escalate
+        trigger_threshold:
+          type: number
+        current_usage:
+          type: number
+        affected_resource:
+          type: string
+          description: ID of the resource affected by the throttle
+        triggered_at:
+          type: string
+          format: date-time
+    ForecastGeneratedPayload:
+      type: object
+      required:
+        - forecast_id
+        - tenant_id
+        - projected_cost
+        - forecast_period
+      properties:
+        forecast_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        budget_id:
+          type: string
+          format: uuid
+        forecast_period:
+          type: string
+          enum:
+            - daily
+            - weekly
+            - monthly
+            - quarterly
+            - annually
+        module:
+          type: string
+        projected_cost:
+          type: number
+        projected_low:
+          type: number
+        projected_high:
+          type: number
+        confidence_interval:
+          type: number
+        methodology:
+          type: string
+    BillingGeneratedPayload:
+      type: object
+      required:
+        - billing_id
+        - tenant_id
+        - period
+        - total_charges
+      properties:
+        billing_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        period:
+          type: string
+          description: Billing period in YYYY-MM format
+        total_charges:
+          type: number
+        currency:
+          type: string
+        token_charges:
+          type: number
+        execution_charges:
+          type: number
+        agent_charges:
+          type: number
+        line_items_count:
+          type: integer
+          minimum: 0
+    UsageReportedPayload:
+      type: object
+      required:
+        - tenant_id
+        - metric_type
+        - count
+        - cost
+        - timestamp
+      properties:
+        record_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        module:
+          type: string
+        agent_id:
+          type: string
+          format: uuid
+        metric_type:
+          type: string
+          enum:
+            - token
+            - execution
+            - agent
+        count:
+          type: integer
+          minimum: 0
+        cost:
+          type: number
+          minimum: 0
+        timestamp:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true

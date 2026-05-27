@@ -1,0 +1,639 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "User": {
+      "type": "object",
+      "description": "Represents a human user within the Operan platform, including authentication and authorization attributes.",
+      "required": [
+        "id",
+        "tenant_id",
+        "email",
+        "status",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the user."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the tenant this user belongs to."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Primary email address for the user."
+        },
+        "username": {
+          "type": "string",
+          "description": "Unique username for the user."
+        },
+        "display_name": {
+          "type": "string",
+          "description": "Human-readable display name for the user."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "inactive",
+            "suspended",
+            "pending"
+          ],
+          "description": "Current status of the user account."
+        },
+        "role_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "List of role IDs assigned to the user."
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Explicit permissions granted to the user."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the user record was created."
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the user record was last updated."
+        },
+        "last_login_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the user's most recent successful login."
+        },
+        "authentication_method": {
+          "type": "string",
+          "enum": [
+            "password",
+            "mfa",
+            "sso",
+            "scim"
+          ],
+          "description": "Primary authentication method used by the user."
+        },
+        "mfa_enabled": {
+          "type": "boolean",
+          "description": "Indicates whether multi-factor authentication is enabled for the user."
+        }
+      }
+    },
+    "Identity": {
+      "type": "object",
+      "description": "Represents a non-human identity such as a service, agent, or system within the Operan platform.",
+      "required": [
+        "id",
+        "tenant_id",
+        "name",
+        "type",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the identity."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the tenant this identity belongs to."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name for the identity."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "service",
+            "agent",
+            "system"
+          ],
+          "description": "Category of the non-human identity."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "inactive",
+            "revoked"
+          ],
+          "description": "Current operational status of the identity."
+        },
+        "credentials": {
+          "type": "object",
+          "description": "Credential metadata associated with this identity.",
+          "properties": {
+            "key_id": {
+              "type": "string",
+              "description": "Identifier for the credential key."
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the credentials were created."
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the credentials will expire."
+            },
+            "last_used_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the credentials were last used."
+            }
+          }
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Permissions granted to this identity."
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Arbitrary key-value metadata associated with this identity."
+        }
+      }
+    },
+    "Permission": {
+      "type": "object",
+      "description": "Defines a granular permission within the Operan platform, specifying what actions can be performed on resources.",
+      "required": [
+        "id",
+        "name",
+        "scope",
+        "action"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the permission."
+        },
+        "name": {
+          "type": "string",
+          "description": "Unique name of the permission."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of what this permission allows."
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "tenant",
+            "department",
+            "workflow",
+            "agent",
+            "resource",
+            "system"
+          ],
+          "description": "The scope boundary within which this permission applies."
+        },
+        "resource_type": {
+          "type": "string",
+          "description": "The type of resource this permission applies to."
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "read",
+            "write",
+            "execute",
+            "approve",
+            "admin",
+            "none"
+          ],
+          "description": "The action this permission grants on the resource."
+        },
+        "condition": {
+          "type": "string",
+          "description": "Optional ABAC (Attribute-Based Access Control) expression that must evaluate to true for this permission to be active."
+        },
+        "assigned_to": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "List of entity IDs (users, roles, or identities) to which this permission is directly assigned."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the permission was created."
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the permission was last updated."
+        }
+      }
+    },
+    "Session": {
+      "type": "object",
+      "description": "Represents an active or historical authentication session for a user.",
+      "required": [
+        "id",
+        "tenant_id",
+        "user_id",
+        "status",
+        "auth_method",
+        "created_at",
+        "expires_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the session."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the tenant this session belongs to."
+        },
+        "user_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the user who owns this session."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "expired",
+            "revoked"
+          ],
+          "description": "Current state of the session."
+        },
+        "auth_method": {
+          "type": "string",
+          "enum": [
+            "password",
+            "mfa",
+            "sso",
+            "api_key"
+          ],
+          "description": "Authentication method used to establish this session."
+        },
+        "ip_address": {
+          "type": "string",
+          "description": "IP address from which the session was initiated."
+        },
+        "user_agent": {
+          "type": "string",
+          "description": "User-Agent header string from the client that initiated the session."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the session was created."
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the session will expire."
+        },
+        "last_activity_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last activity recorded for this session."
+        },
+        "device_fingerprint": {
+          "type": "string",
+          "description": "Hash or unique identifier representing the device that initiated the session."
+        }
+      }
+    },
+    "Role": {
+      "type": "object",
+      "description": "Represents a named collection of permissions that can be assigned to users, services, or agents.",
+      "required": [
+        "id",
+        "tenant_id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the role."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the tenant this role belongs to."
+        },
+        "name": {
+          "type": "string",
+          "description": "Unique name of the role within the tenant."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the role's purpose."
+        },
+        "permission_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "List of permission IDs included in this role."
+        },
+        "assignable_to": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "user",
+              "service",
+              "agent"
+            ]
+          },
+          "description": "Entity types that can be assigned this role."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the role was created."
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the role was last updated."
+        }
+      }
+    },
+    "SSOConfig": {
+      "type": "object",
+      "description": "Represents a single sign-on configuration for a tenant, defining the identity provider and protocol settings.",
+      "required": [
+        "id",
+        "tenant_id",
+        "provider",
+        "type",
+        "configuration",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the SSO configuration."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the tenant this SSO configuration applies to."
+        },
+        "provider": {
+          "type": "string",
+          "enum": [
+            "azure_ad",
+            "google_workspace",
+            "okta",
+            "keycloak",
+            "custom"
+          ],
+          "description": "The SSO identity provider."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "saml",
+            "oidc"
+          ],
+          "description": "The SSO protocol used by this configuration."
+        },
+        "configuration": {
+          "type": "object",
+          "description": "Provider-specific configuration details.",
+          "properties": {
+            "metadata_url": {
+              "type": "string",
+              "format": "uri",
+              "description": "URL to the identity provider's metadata document."
+            },
+            "client_id": {
+              "type": "string",
+              "description": "Client identifier for the application."
+            },
+            "redirect_uri": {
+              "type": "string",
+              "format": "uri",
+              "description": "Callback URL for the SSO flow."
+            }
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "inactive"
+          ],
+          "description": "Whether this SSO configuration is currently enabled."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the SSO configuration was created."
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the SSO configuration was last updated."
+        }
+      }
+    },
+    "AuditLog": {
+      "type": "object",
+      "description": "Records an auditable event within the Operan platform for compliance and security monitoring.",
+      "required": [
+        "id",
+        "tenant_id",
+        "actor_id",
+        "action",
+        "result",
+        "timestamp"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the audit log entry."
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the tenant this audit log entry belongs to."
+        },
+        "actor_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier of the entity (user or identity) that performed the action."
+        },
+        "action": {
+          "type": "string",
+          "description": "The action that was performed."
+        },
+        "resource_type": {
+          "type": "string",
+          "description": "The type of resource the action was performed on."
+        },
+        "resource_id": {
+          "type": "string",
+          "description": "Unique identifier of the resource the action was performed on."
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "success",
+            "failure"
+          ],
+          "description": "Outcome of the action."
+        },
+        "ip_address": {
+          "type": "string",
+          "description": "IP address from which the action was performed."
+        },
+        "user_agent": {
+          "type": "string",
+          "description": "User-Agent header string from the client that performed the action."
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional contextual information about the audit event."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the auditable event occurred."
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "description": "Severity level of the audit event."
+        }
+      }
+    },
+    "SCIMUser": {
+      "type": "object",
+      "description": "Represents a user managed via SCIM (System for Cross-domain Identity Management) provisioning.",
+      "required": [
+        "id",
+        "userName"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the SCIM-managed user."
+        },
+        "userName": {
+          "type": "string",
+          "description": "Unique login identifier for the user."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Human-readable display name for the user."
+        },
+        "emails": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "format": "email",
+                "description": "Email address value."
+              },
+              "primary": {
+                "type": "boolean",
+                "description": "Whether this is the primary email address."
+              }
+            }
+          },
+          "description": "List of email addresses associated with the user."
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of role identifiers assigned to the user."
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Whether the user is currently active."
+        },
+        "meta": {
+          "type": "object",
+          "description": "SCIM metadata about the resource lifecycle.",
+          "properties": {
+            "created": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp when the resource was created."
+            },
+            "lastModified": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of the last modification to the resource."
+            },
+            "location": {
+              "type": "string",
+              "format": "uri",
+              "description": "URI of the SCIM resource."
+            }
+          }
+        }
+      }
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "description": "Standard error response format used across the Operan Identity & Access Management API.",
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Machine-readable error code for programmatic handling."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message describing what went wrong."
+        },
+        "details": {
+          "type": "object",
+          "description": "Optional structured details providing additional context about the error."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,479 @@
+syntax = "proto3";
+
+package operan.v20.sovereign_deployment_fabric;
+
+option go_package = "github.com/operan/api/gen/go/operan/v20/sovereign_deployment_fabric";
+
+// =============================================================================
+// Module 20 — Sovereign Deployment Fabric (gRPC Service Contracts)
+// =============================================================================
+// Mirror of openapi-20-sovereign-deployment-fabric.yaml for CODER consumption.
+// REST (HTTP/JSON) → OpenAPI, Remote Procedure Calls → gRPC/Protobuf.
+// =============================================================================
+
+// ─── Service ─────────────────────────────────────────────────────────────────
+
+service SovereignDeploymentFabric {
+  // ── Deployments ──────────────────────────────────────────────────────────
+
+  // List all deployments for a tenant (mirrors GET /deployments)
+  rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
+
+  // Create a new deployment (mirrors POST /deployments)
+  rpc CreateDeployment(CreateDeploymentRequest) returns (Deployment);
+
+  // Get deployment details (mirrors GET /deployments/{id})
+  rpc GetDeployment(GetDeploymentRequest) returns (Deployment);
+
+  // Update deployment configuration (mirrors PATCH /deployments/{id})
+  rpc UpdateDeployment(UpdateDeploymentRequest) returns (Deployment);
+
+  // Initiate deployment deprovisioning (mirrors DELETE /deployments/{id})
+  rpc DeprovisionDeployment(DeprovisionDeploymentRequest) returns (Deployment);
+
+  // ── Deployment Actions ───────────────────────────────────────────────────
+
+  // Validate deployment against sovereign policies (mirrors POST /deployments/{id}/validate)
+  rpc ValidateDeployment(ValidateDeploymentRequest) returns (ValidateDeploymentResponse);
+
+  // Trigger deployment activation (mirrors POST /deployments/{id}/deploy)
+  rpc DeployDeployment(DeployDeploymentRequest) returns (Deployment);
+
+  // Rollback deployment to previous version (mirrors POST /deployments/{id}/rollback)
+  rpc RollbackDeployment(RollbackDeploymentRequest) returns (Deployment);
+
+  // Cancel an in-progress deployment (mirrors POST /deployments/{id}/cancel)
+  rpc CancelDeployment(CancelDeploymentRequest) returns (Deployment);
+
+  // Get deployment health status (mirrors GET /deployments/{id}/health)
+  rpc GetDeploymentHealth(GetDeploymentHealthRequest) returns (HealthStatus);
+
+  // ── Regions ──────────────────────────────────────────────────────────────
+
+  // List available deployment regions (mirrors GET /regions)
+  rpc ListRegions(ListRegionsRequest) returns (ListRegionsResponse);
+
+  // Get region details (mirrors GET /regions/{region_id})
+  rpc GetRegion(GetRegionRequest) returns (Region);
+
+  // ── Compliance ───────────────────────────────────────────────────────────
+
+  // Check compliance against sovereign policies (mirrors POST /compliance/check)
+  rpc CheckCompliance(CheckComplianceRequest) returns (CheckComplianceResponse);
+
+  // ── Infrastructure ───────────────────────────────────────────────────────
+
+  // Provision infrastructure resources (mirrors POST /infrastructure/provision)
+  rpc ProvisionInfrastructure(ProvisionInfrastructureRequest) returns (InfrastructureResources);
+}
+
+// ─── Request/Response Messages ───────────────────────────────────────────────
+
+// ── Deployments ──────────────────────────────────────────────────────────────
+
+message ListDeploymentsRequest {
+  string tenant_id = 1;                     // UUID — required
+  DeploymentStatus status = 2;              // Optional filter
+  DeploymentTarget region = 3;              // Optional filter by target type
+  int32 page_size = 4;                      // Pagination page size
+  string page_token = 5;                    // Pagination token
+}
+
+message ListDeploymentsResponse {
+  repeated Deployment data = 1;
+  Pagination pagination = 2;
+}
+
+message CreateDeploymentRequest {
+  string tenant_id = 1;                     // UUID — required
+  string name = 2;                          // Human-readable deployment name
+  string purpose = 3;                       // Deployment purpose (e.g., department template, full tenant)
+  DeploymentTarget target_type = 4;         // Deployment target environment type
+  string region_id = 5;                     // UUID — target region
+  DeploymentConfiguration configuration = 6;
+  bool auto_validate = 7;                   // Automatically run compliance validation before deployment
+}
+
+message UpdateDeploymentRequest {
+  string id = 1;                            // UUID — required
+  string name = 2;                          // Optional update
+  DeploymentConfiguration configuration = 3;
+  repeated string tags = 4;                 // Optional tags
+}
+
+message DeprovisionDeploymentRequest {
+  string id = 1;                            // UUID — required
+  bool graceful = 2;                        // Whether to drain active workflows before deprovisioning
+  string reason = 3;                        // Optional reason
+}
+
+message ValidateDeploymentRequest {
+  string id = 1;                            // UUID — required
+  bool check_policies = 2;                  // Default: true
+  bool check_residency = 3;                 // Default: true
+  bool check_data_flow = 4;                 // Default: true
+}
+
+message ValidateDeploymentResponse {
+  string deployment_id = 1;                 // UUID
+  string tenant_id = 2;                     // UUID
+  OverallValidationStatus overall_status = 3;
+  repeated ValidationRule rules = 4;
+  bool data_residency_compliant = 5;
+  bool sovereign_compatible = 6;
+  string validated_at = 7;                  // ISO 8601 date-time
+}
+
+message DeployDeploymentRequest {
+  string id = 1;                            // UUID — required
+  bool skip_validation = 2;                 // Default: false
+  bool force = 3;                           // Default: false
+  DeploymentEnvironment environment = 4;    // Default: production
+}
+
+message RollbackDeploymentRequest {
+  string id = 1;                            // UUID — required
+  int32 target_version = 2;                 // Defaults to previous version
+  string reason = 3;                        // Optional reason
+}
+
+message CancelDeploymentRequest {
+  string id = 1;                            // UUID — required
+}
+
+message GetDeploymentRequest {
+  string id = 1;                            // UUID — required
+}
+
+message GetDeploymentHealthRequest {
+  string id = 1;                            // UUID — required
+}
+
+// ── Regions ──────────────────────────────────────────────────────────────────
+
+message ListRegionsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message ListRegionsResponse {
+  repeated Region data = 1;
+}
+
+message GetRegionRequest {
+  string id = 1;                            // UUID — required
+}
+
+// ── Compliance ───────────────────────────────────────────────────────────────
+
+message CheckComplianceRequest {
+  string deployment_id = 1;                 // UUID — required
+  string region_id = 2;                     // UUID — required
+  repeated string frameworks = 3;           // Optional framework filters (e.g., GDPR, NIST-800-53)
+}
+
+message CheckComplianceResponse {
+  string deployment_id = 1;
+  string region_id = 2;
+  string timestamp = 3;                     // ISO 8601 date-time
+  ComplianceCheckStatus overall_status = 4;
+  repeated ComplianceViolation results = 5;
+  string validated_by = 6;                  // UUID — policy engine
+}
+
+// ── Infrastructure ───────────────────────────────────────────────────────────
+
+message ProvisionInfrastructureRequest {
+  string deployment_id = 1;                 // UUID — required
+  DeploymentTarget target_type = 2;
+  RegionSpec region = 3;
+  ComputeSpec compute = 4;
+  StorageSpec storage = 5;
+  NetworkSpec network = 6;
+  IsolationLevel isolation_level = 7;
+}
+
+message ComputeSpec {
+  repeated string instance_types = 1;       // e.g., ["n2-standard-4", "m5.xlarge"]
+  int32 min_replicas = 2;
+  int32 max_replicas = 3;
+  CpuScalingPolicy cpu_scaling = 4;
+}
+
+message StorageSpec {
+  string type = 1;                          // e.g., "ssd", "hdd", "nvme"
+  int64 capacity_gib = 2;
+  bool encrypted = 3;
+}
+
+message NetworkSpec {
+  bool isolated = 1;
+  repeated string vpc_ids = 2;
+  repeated string security_groups = 3;
+  bool private_endpoint = 4;
+}
+
+message RegionSpec {
+  string id = 1;                            // UUID — required
+  string name = 2;
+  string country_code = 3;                  // ISO 3166-1 alpha-2
+  string data_center = 4;
+  repeated string zones = 5;
+}
+
+message CpuScalingPolicy {
+  bool enabled = 1;
+  double target_utilization = 2;            // 0.0–1.0
+}
+
+// ─── Shared Schemas (matching JSON Schema) ────────────────────────────────────
+
+enum DeploymentTarget {
+  DEPLOYMENT_TARGET_UNSPECIFIED = 0;
+  DEPLOYMENT_TARGET_PUBLIC_CLOUD = 1;
+  DEPLOYMENT_TARGET_PRIVATE_CLOUD = 2;
+  DEPLOYMENT_TARGET_AIR_GAPPED = 3;
+  DEPLOYMENT_TARGET_SOVEREIGN = 4;
+  DEPLOYMENT_TARGET_EDGE = 5;
+}
+
+enum IsolationLevel {
+  ISOLATION_LEVEL_UNSPECIFIED = 0;
+  ISOLATION_LEVEL_LOGICAL = 1;
+  ISOLATION_LEVEL_DATA = 2;
+  ISOLATION_LEVEL_CRYPTOGRAPHIC = 3;
+  ISOLATION_LEVEL_EXECUTION = 4;
+}
+
+enum DeploymentStatus {
+  DEPLOYMENT_STATUS_UNSPECIFIED = 0;
+  DEPLOYMENT_STATUS_PROVISIONING = 1;
+  DEPLOYMENT_STATUS_PROVISIONED = 2;
+  DEPLOYMENT_STATUS_ACTIVE = 3;
+  DEPLOYMENT_STATUS_DEGRADED = 4;
+  DEPLOYMENT_STATUS_DEPROVISIONING = 5;
+  DEPLOYMENT_STATUS_DEPROVISIONED = 6;
+  DEPLOYMENT_STATUS_CANCELLED = 7;
+  DEPLOYMENT_STATUS_ERROR = 8;
+  DEPLOYMENT_STATUS_ROLLING_UPDATE = 9;
+}
+
+enum DeploymentEnvironment {
+  DEPLOYMENT_ENVIRONMENT_UNSPECIFIED = 0;
+  DEPLOYMENT_ENVIRONMENT_STAGING = 1;
+  DEPLOYMENT_ENVIRONMENT_PRODUCTION = 2;
+}
+
+enum OverallValidationStatus {
+  OVERALL_VALIDATION_STATUS_UNSPECIFIED = 0;
+  OVERALL_VALIDATION_STATUS_COMPLIANT = 1;
+  OVERALL_VALIDATION_STATUS_NON_COMPLIANT = 2;
+  OVERALL_VALIDATION_STATUS_WARNING = 3;
+  OVERALL_VALIDATION_STATUS_PENDING = 4;
+}
+
+enum ComplianceCheckStatus {
+  COMPLIANCE_CHECK_STATUS_UNSPECIFIED = 0;
+  COMPLIANCE_CHECK_STATUS_PASS = 1;
+  COMPLIANCE_CHECK_STATUS_WARN = 2;
+  COMPLIANCE_CHECK_STATUS_FAIL = 3;
+}
+
+enum HealthStatusValue {
+  HEALTH_STATUS_VALUE_UNSPECIFIED = 0;
+  HEALTH_STATUS_VALUE_HEALTHY = 1;
+  HEALTH_STATUS_VALUE_DEGRADED = 2;
+  HEALTH_STATUS_VALUE_UNHEALTHY = 3;
+  HEALTH_STATUS_VALUE_UNKNOWN = 4;
+}
+
+enum SeverityLevel {
+  SEVERITY_LEVEL_UNSPECIFIED = 0;
+  SEVERITY_LEVEL_CRITICAL = 1;
+  SEVERITY_LEVEL_HIGH = 2;
+  SEVERITY_LEVEL_MEDIUM = 3;
+  SEVERITY_LEVEL_LOW = 4;
+}
+
+enum ValidationRuleStatus {
+  VALIDATION_RULE_STATUS_UNSPECIFIED = 0;
+  VALIDATION_RULE_STATUS_PASS = 1;
+  VALIDATION_RULE_STATUS_FAIL = 2;
+  VALIDATION_RULE_STATUS_WARN = 3;
+  VALIDATION_RULE_STATUS_PENDING = 4;
+}
+
+enum ComplianceViolationStatus {
+  COMPLIANCE_VIOLATION_STATUS_UNSPECIFIED = 0;
+  COMPLIANCE_VIOLATION_STATUS_FAIL = 1;
+  COMPLIANCE_VIOLATION_STATUS_WARN = 2;
+}
+
+message Deployment {
+  string id = 1;                            // UUID
+  string tenant_id = 2;                     // UUID
+  string name = 3;                          // Human-readable
+  string purpose = 4;                       // Purpose description
+  DeploymentTarget target_type = 5;
+  string region_id = 6;                     // UUID
+  DeploymentConfiguration configuration = 7;
+  DeploymentStatus status = 8;
+  int32 version = 9;
+  int32 previous_version = 10;              // Nullable — rollback tracking
+  ComplianceStatus compliance = 11;
+  HealthSummary health = 12;
+  InfrastructureResources resources = 13;
+  string deployed_by = 14;                  // UUID, nullable
+  string created_at = 15;                   // ISO 8601 date-time
+  string updated_at = 16;                   // ISO 8601 date-time
+}
+
+message DeploymentConfiguration {
+  string department_template_id = 1;        // UUID, nullable
+  int32 agent_count = 2;
+  MemoryTopology memory_topology = 3;
+  IsolationLevel isolation_level = 4;
+}
+
+message MemoryTopology {
+  bool vector_enabled = 1;
+  bool graph_enabled = 2;
+  bool episodic_enabled = 3;
+  bool semantic_enabled = 4;
+}
+
+message ComplianceStatus {
+  bool data_residency_compliant = 1;
+  bool sovereign_compatible = 2;
+  int32 rules_passed = 3;
+  int32 rules_total = 4;
+  string last_validation_at = 5;            // ISO 8601 date-time, nullable
+}
+
+message HealthSummary {
+  HealthStatusValue overall = 1;
+  map<string, HealthStatusValue> component_health = 2;
+  string last_check_at = 3;                 // ISO 8601 date-time
+}
+
+message HealthStatus {
+  string deployment_id = 1;                 // UUID
+  HealthStatusValue status = 2;
+  repeated HealthComponent components = 3;
+  MetricsSnapshot metrics = 4;
+  string checked_at = 5;                    // ISO 8601 date-time
+}
+
+message HealthComponent {
+  string name = 1;                          // e.g., agent-orchestration, memory-fabric
+  HealthStatusValue status = 2;
+  optional int32 latency_ms = 3;
+  optional double error_rate = 4;
+  optional string details = 5;
+}
+
+message MetricsSnapshot {
+  double cpu_usage = 1;
+  double memory_usage = 2;
+  double disk_usage = 3;
+  int64 network_in_bytes = 4;
+  int64 network_out_bytes = 5;
+  int32 active_agents = 6;
+  int32 workflow_queue_depth = 7;
+  double token_rate_per_second = 8;
+}
+
+message InfrastructureResources {
+  repeated ComputeResource compute = 1;
+  repeated StorageResource storage = 2;
+  repeated NetworkResource network = 3;
+}
+
+message ComputeResource {
+  string id = 1;
+  string type = 2;
+  string resource_id = 3;
+}
+
+message StorageResource {
+  string id = 1;
+  string type = 2;
+  string resource_id = 3;
+}
+
+message NetworkResource {
+  string id = 1;
+  string type = 2;
+  string resource_id = 3;
+}
+
+message Region {
+  string id = 1;                            // UUID
+  string name = 2;
+  string code = 3;                          // ISO 3166-1 alpha-2 or custom
+  RegionStatus status = 4;
+  repeated DataResidencyRule data_residency_rules = 5;
+  repeated string compliance_frameworks = 6;
+  repeated DeploymentTarget available_targets = 7;
+  repeated string infrastructure_providers = 8;
+  string created_at = 9;                    // ISO 8601 date-time
+  string updated_at = 10;                   // ISO 8601 date-time
+}
+
+enum RegionStatus {
+  REGION_STATUS_UNSPECIFIED = 0;
+  REGION_STATUS_ACTIVE = 1;
+  REGION_STATUS_DEPRECATED = 2;
+  REGION_STATUS_MAINTENANCE = 3;
+}
+
+message DataResidencyRule {
+  string rule_id = 1;
+  string description = 2;
+  DataClassification data_classification = 3;
+  repeated string allowed_storage_regions = 4;
+  bool cross_border_transfer_allowed = 5;
+}
+
+enum DataClassification {
+  DATA_CLASSIFICATION_UNSPECIFIED = 0;
+  DATA_CLASSIFICATION_PUBLIC = 1;
+  DATA_CLASSIFICATION_INTERNAL = 2;
+  DATA_CLASSIFICATION_CONFIDENTIAL = 3;
+  DATA_CLASSIFICATION_RESTRICTED = 4;
+}
+
+message ValidationRule {
+  string rule_id = 1;                       // UUID
+  string policy_name = 2;
+  ValidationRuleStatus status = 3;
+  string message = 4;
+  SeverityLevel severity = 5;
+}
+
+message ComplianceViolation {
+  string policy_name = 1;
+  ComplianceViolationStatus status = 2;
+  string message = 3;
+  SeverityLevel severity = 4;
+  repeated string remediation_steps = 5;
+}
+
+message Pagination {
+  int32 total_count = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  string next_page_token = 4;
+}
+
+// ─── Error Schema ─────────────────────────────────────────────────────────────
+
+// gRPC status codes map to OpenAPI:
+//   INVALID_ARGUMENT (3) → 400
+//   UNAUTHENTICATED (16) → 401
+//   NOT_FOUND (5) → 404
+//   INTERNAL (13) → 500
+//   RESOURCE_EXHAUSTED (8) → 429/503
+//
+// CODER note: gRPC errors use Status details protobuf with:
+//   { "error_code": string, "message": string, "details": string, "request_id": uuid }

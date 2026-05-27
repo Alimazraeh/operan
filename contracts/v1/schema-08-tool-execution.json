@@ -1,0 +1,464 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "ToolExecution": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "agent_id",
+        "tool_name",
+        "status",
+        "retry_count",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the tool execution record"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Tenant identifier for multi-tenancy isolation"
+        },
+        "agent_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Agent that initiated the tool execution"
+        },
+        "tool_name": {
+          "type": "string",
+          "description": "Name of the tool being executed"
+        },
+        "tool_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Semantic version of the tool executed"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "queued",
+            "running",
+            "completed",
+            "failed",
+            "cancelled"
+          ],
+          "description": "Current execution status"
+        },
+        "input": {
+          "type": "object",
+          "description": "Input parameters passed to the tool"
+        },
+        "output": {
+          "type": ["object", "null"],
+          "description": "Tool output, null if not completed successfully"
+        },
+        "execution_time_ms": {
+          "type": ["integer", "null"],
+          "description": "Total execution time in milliseconds"
+        },
+        "error_code": {
+          "type": ["string", "null"],
+          "description": "Structured error code for programmatic handling"
+        },
+        "error_message": {
+          "type": ["string", "null"],
+          "description": "Human-readable error message"
+        },
+        "retry_count": {
+          "type": "integer",
+          "description": "Number of retry attempts made"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the execution was created"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last status update"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ToolExecutionRequest": {
+      "type": "object",
+      "required": [
+        "tenant_id",
+        "agent_id",
+        "tool_name",
+        "input"
+      ],
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Tenant identifier for multi-tenancy isolation"
+        },
+        "agent_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Agent submitting the tool execution request"
+        },
+        "tool_name": {
+          "type": "string",
+          "description": "Name of the tool to execute"
+        },
+        "tool_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Semantic version of the tool to execute; omits to use latest active version"
+        },
+        "input": {
+          "type": "object",
+          "description": "Input parameters for the tool invocation"
+        },
+        "cost_estimate": {
+          "type": "object",
+          "properties": {
+            "currency": {
+              "type": "string",
+              "description": "Currency code (e.g., USD, EUR)"
+            },
+            "amount": {
+              "type": "number",
+              "description": "Estimated cost amount"
+            }
+          },
+          "required": ["currency", "amount"],
+          "description": "Estimated cost for this tool call"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "description": "Maximum execution time in milliseconds before timeout"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 5,
+          "description": "Execution priority from 1 (lowest) to 10 (highest)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Tool": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the tool"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Tenant identifier for multi-tenancy isolation"
+        },
+        "name": {
+          "type": "string",
+          "description": "Unique tool name within the tenant"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Current semantic version of the tool"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the tool's purpose"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "knowledge",
+            "communication",
+            "enterprise",
+            "utility",
+            "business_logic",
+            "security",
+            "ai_model"
+          ],
+          "description": "Functional category of the tool"
+        },
+        "input_schema": {
+          "type": "object",
+          "description": "JSON Schema describing the expected input parameters"
+        },
+        "output_schema": {
+          "type": "object",
+          "description": "JSON Schema describing the tool's output structure"
+        },
+        "auth_requirements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of authentication requirements or scopes needed"
+        },
+        "rate_limit": {
+          "$ref": "#/definitions/RateLimit",
+          "description": "Rate limiting configuration for this tool"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "deprecated",
+            "disabled"
+          ],
+          "description": "Current availability status of the tool"
+        },
+        "cost_per_call": {
+          "type": "object",
+          "properties": {
+            "currency": {
+              "type": "string",
+              "description": "Currency code (e.g., USD, EUR)"
+            },
+            "amount": {
+              "type": "number",
+              "description": "Cost per individual tool call"
+            }
+          },
+          "required": ["currency", "amount"],
+          "description": "Standard cost charged per tool invocation"
+        },
+        "security_requirements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of security requirements or compliance tags"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the tool was registered"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last tool metadata update"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RateLimit": {
+      "type": "object",
+      "properties": {
+        "max_requests_per_minute": {
+          "type": "integer",
+          "description": "Maximum number of requests allowed per minute"
+        },
+        "max_burst": {
+          "type": "integer",
+          "description": "Maximum burst size for traffic spikes"
+        },
+        "retry_after_ms": {
+          "type": ["integer", "null"],
+          "description": "Suggested wait time in milliseconds when rate limited"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ToolCall": {
+      "type": "object",
+      "required": [
+        "id",
+        "tenant_id",
+        "agent_id",
+        "tool_name",
+        "status",
+        "cost",
+        "token_usage",
+        "timestamp"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the tool call record"
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Tenant identifier for multi-tenancy isolation"
+        },
+        "agent_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Agent that made the tool call"
+        },
+        "tool_name": {
+          "type": "string",
+          "description": "Name of the tool being called"
+        },
+        "input": {
+          "type": "object",
+          "description": "Input parameters passed to the tool"
+        },
+        "output": {
+          "type": ["object", "null"],
+          "description": "Tool response output, null if not completed"
+        },
+        "execution_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Corresponding ToolExecution record ID"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "requested",
+            "running",
+            "completed",
+            "failed",
+            "timeout"
+          ],
+          "description": "Current status of the tool call"
+        },
+        "cost": {
+          "type": "object",
+          "properties": {
+            "currency": {
+              "type": "string",
+              "description": "Currency code (e.g., USD, EUR)"
+            },
+            "amount": {
+              "type": "number",
+              "description": "Actual cost incurred for this call"
+            }
+          },
+          "required": ["currency", "amount"],
+          "description": "Actual cost for this tool call"
+        },
+        "token_usage": {
+          "type": "object",
+          "properties": {
+            "input_tokens": {
+              "type": "integer",
+              "description": "Number of input tokens consumed"
+            },
+            "output_tokens": {
+              "type": "integer",
+              "description": "Number of output tokens produced"
+            },
+            "total_tokens": {
+              "type": "integer",
+              "description": "Total tokens consumed (input + output)"
+            }
+          },
+          "required": ["input_tokens", "output_tokens", "total_tokens"],
+          "description": "Token usage metrics for this call"
+        },
+        "error_message": {
+          "type": ["string", "null"],
+          "description": "Error message if the call failed or timed out"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the tool call was initiated"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "description": "Timeout threshold in milliseconds for this call"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ToolVersion": {
+      "type": "object",
+      "required": [
+        "id",
+        "tool_id",
+        "version"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for this version record"
+        },
+        "tool_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Parent tool this version belongs to"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Semantic version string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when this version was created"
+        },
+        "created_by": {
+          "type": "string",
+          "format": "uuid",
+          "description": "User who created this version"
+        },
+        "change_summary": {
+          "type": "string",
+          "enum": [
+            "major",
+            "minor",
+            "patch",
+            "breaking"
+          ],
+          "description": "Type of change in this version"
+        },
+        "input_schema": {
+          "type": "object",
+          "description": "JSON Schema for inputs at this version"
+        },
+        "output_schema": {
+          "type": "object",
+          "description": "JSON Schema for outputs at this version"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "deprecated",
+            "draft"
+          ],
+          "description": "Lifecycle status of this version"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Machine-readable error code"
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error description"
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional error context as key-value pairs"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

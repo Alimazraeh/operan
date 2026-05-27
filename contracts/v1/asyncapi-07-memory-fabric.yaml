@@ -1,0 +1,348 @@
+asyncapi: 2.6.0
+info:
+  title: Operan Memory Fabric Events
+  version: 1.0.0
+  description: Events published by Module 07 — Memory Fabric for vector store lifecycle operations.
+servers:
+  production:
+    url: rabbitmq-operan.prod.internal:5672
+    protocol: amqp
+    description: Production AMQP broker for Memory Fabric events
+    variables:
+      vhost:
+        default: /operan
+        description: RabbitMQ virtual host
+  staging:
+    url: rabbitmq-operan.staging.internal:5672
+    protocol: amqp
+    description: Staging AMQP broker for Memory Fabric events
+    variables:
+      vhost:
+        default: /operan-staging
+        description: RabbitMQ virtual host for staging
+channels:
+  operan/events/memory/vector/ingested:
+    publish:
+      summary: Vector embedding ingested into memory fabric
+      description: Published when a new vector embedding is created and stored in the memory fabric after processing a document chunk.
+      message:
+        $ref: '#/components/messages/MemoryVectorIngested'
+  operan/events/memory/vector/searched:
+    publish:
+      summary: Vector search query executed
+      description: Published after a similarity search query completes against the memory fabric vector store.
+      message:
+        $ref: '#/components/messages/MemoryVectorSearched'
+  operan/events/memory/vector/updated:
+    publish:
+      summary: Vector embedding updated in memory fabric
+      description: Published when an existing vector embedding is modified — metadata, content, or embedding refresh.
+      message:
+        $ref: '#/components/messages/MemoryVectorUpdated'
+  operan/events/memory/vector/deleted:
+    publish:
+      summary: Vector embeddings deleted from memory fabric
+      description: Published when one or more vector embeddings are removed from the memory fabric.
+      message:
+        $ref: '#/components/messages/MemoryVectorDeleted'
+  operan/events/memory/vector/garbage_collected:
+    publish:
+      summary: Garbage collection batch completed on memory fabric
+      description: Published when a garbage collection batch finishes, removing stale or expired vectors based on retention policies.
+      message:
+        $ref: '#/components/messages/MemoryVectorGarbageCollected'
+components:
+  messages:
+    MemoryVectorIngested:
+      name: MemoryVectorIngested
+      summary: A vector embedding has been ingested into the memory fabric.
+      payload:
+        type: object
+        required:
+          - vector_id
+          - tenant_id
+          - document_id
+          - chunk_id
+          - embedding_model
+          - embedding_dimensions
+          - segment_type
+          - created_at
+          - correlationId
+          - tenantId
+          - messageId
+          - timestamp
+        properties:
+          vector_id:
+            $ref: '#/components/schemas/Uuid'
+          tenant_id:
+            $ref: '#/components/schemas/Uuid'
+          document_id:
+            $ref: '#/components/schemas/Uuid'
+          chunk_id:
+            $ref: '#/components/schemas/Uuid'
+          embedding_model:
+            type: string
+            description: Name or identifier of the embedding model used.
+          embedding_dimensions:
+            type: integer
+            description: Dimensionality of the stored embedding vector.
+          segment_type:
+            $ref: '#/components/schemas/SegmentType'
+          created_at:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the vector was created.
+          correlationId:
+            $ref: '#/components/schemas/Uuid'
+          tenantId:
+            $ref: '#/components/schemas/Uuid'
+          messageId:
+            $ref: '#/components/schemas/Uuid'
+          timestamp:
+            type: string
+            format: date-time
+      contentType: application/json
+      externalDocs:
+        url: https://docs.operan.io/modules/memory/ingested
+    MemoryVectorSearched:
+      name: MemoryVectorSearched
+      summary: A vector search query has been executed.
+      payload:
+        type: object
+        required:
+          - query_id
+          - tenant_id
+          - query_type
+          - top_n
+          - results_count
+          - response_time_ms
+          - timestamp
+          - correlationId
+          - tenantId
+          - messageId
+          - timestamp
+        properties:
+          query_id:
+            $ref: '#/components/schemas/Uuid'
+          tenant_id:
+            $ref: '#/components/schemas/Uuid'
+          query_type:
+            $ref: '#/components/schemas/QueryType'
+          top_n:
+            type: integer
+            description: Number of top results requested.
+          results_count:
+            type: integer
+            description: Actual number of results returned.
+          response_time_ms:
+            type: integer
+            description: Latency of the search query in milliseconds.
+          timestamp:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the search was executed.
+          correlationId:
+            $ref: '#/components/schemas/Uuid'
+          tenantId:
+            $ref: '#/components/schemas/Uuid'
+          messageId:
+            $ref: '#/components/schemas/Uuid'
+      contentType: application/json
+      externalDocs:
+        url: https://docs.operan.io/modules/memory/searched
+    MemoryVectorUpdated:
+      name: MemoryVectorUpdated
+      summary: A vector embedding has been updated in the memory fabric.
+      payload:
+        type: object
+        required:
+          - vector_id
+          - tenant_id
+          - document_id
+          - update_type
+          - updated_by
+          - updated_at
+          - correlationId
+          - tenantId
+          - messageId
+          - timestamp
+        properties:
+          vector_id:
+            $ref: '#/components/schemas/Uuid'
+          tenant_id:
+            $ref: '#/components/schemas/Uuid'
+          document_id:
+            $ref: '#/components/schemas/Uuid'
+          update_type:
+            $ref: '#/components/schemas/UpdateType'
+          updated_by:
+            type: string
+            description: Identifier of the actor or system that triggered the update.
+          updated_at:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the update occurred.
+          correlationId:
+            $ref: '#/components/schemas/Uuid'
+          tenantId:
+            $ref: '#/components/schemas/Uuid'
+          messageId:
+            $ref: '#/components/schemas/Uuid'
+          timestamp:
+            type: string
+            format: date-time
+      contentType: application/json
+      externalDocs:
+        url: https://docs.operan.io/modules/memory/updated
+    MemoryVectorDeleted:
+      name: MemoryVectorDeleted
+      summary: Vector embeddings have been deleted from the memory fabric.
+      payload:
+        type: object
+        required:
+          - vector_ids
+          - tenant_id
+          - reason
+          - deleted_by
+          - deleted_at
+          - correlationId
+          - tenantId
+          - messageId
+          - timestamp
+        properties:
+          vector_ids:
+            type: array
+            items:
+              $ref: '#/components/schemas/Uuid'
+            description: List of vector IDs removed.
+          tenant_id:
+            $ref: '#/components/schemas/Uuid'
+          reason:
+            $ref: '#/components/schemas/DeleteReason'
+          deleted_by:
+            type: string
+            description: Identifier of the actor or system that triggered the deletion.
+          deleted_at:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the deletion occurred.
+          correlationId:
+            $ref: '#/components/schemas/Uuid'
+          tenantId:
+            $ref: '#/components/schemas/Uuid'
+          messageId:
+            $ref: '#/components/schemas/Uuid'
+          timestamp:
+            type: string
+            format: date-time
+      contentType: application/json
+      externalDocs:
+        url: https://docs.operan.io/modules/memory/deleted
+    MemoryVectorGarbageCollected:
+      name: MemoryVectorGarbageCollected
+      summary: A garbage collection batch has been completed.
+      payload:
+        type: object
+        required:
+          - batch_size
+          - deleted_at
+          - reason
+          - triggered_by
+          - correlationId
+          - tenantId
+          - messageId
+          - timestamp
+        properties:
+          batch_size:
+            type: integer
+            description: Number of vectors removed in this garbage collection batch.
+          deleted_at:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp when the garbage collection ran.
+          reason:
+            $ref: '#/components/schemas/GarbageCollectionReason'
+          triggered_by:
+            type: string
+            description: Identifier of the actor, job, or policy that triggered the collection.
+          correlationId:
+            $ref: '#/components/schemas/Uuid'
+          tenantId:
+            $ref: '#/components/schemas/Uuid'
+          messageId:
+            $ref: '#/components/schemas/Uuid'
+          timestamp:
+            type: string
+            format: date-time
+      contentType: application/json
+      externalDocs:
+        url: https://docs.operan.io/modules/memory/garbage-collected
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+      description: A UUID v4 identifier.
+      examples:
+        - "a3f5b8c1-2d4e-4a6f-9b1c-7e8d3f5a0b2c"
+    SegmentType:
+      type: string
+      enum:
+        - fact
+        - context
+        - memory
+        - tool_output
+        - policy
+      description: Categorization of the source segment associated with the vector embedding.
+      examples:
+        - fact
+        - context
+    QueryType:
+      type: string
+      enum:
+        - agent_personal
+        - agent_ephemeral
+        - department
+        - platform
+      description: Scope of the vector search query.
+      examples:
+        - agent_personal
+        - department
+    UpdateType:
+      type: string
+      enum:
+        - metadata_refresh
+        - content_update
+        - embedding_refresh
+      description: Type of update applied to a vector embedding.
+      examples:
+        - metadata_refresh
+    DeleteReason:
+      type: string
+      enum:
+        - document_deleted
+        - policy_retention
+        - data_subject_request
+        - tenant_deprovisioned
+      description: Reason for vector embedding deletion.
+      examples:
+        - document_deleted
+    GarbageCollectionReason:
+      type: string
+      enum:
+        - retention_policy
+        - tenant_deprovisioned
+        - cleanup_job
+      description: Reason the garbage collection batch was triggered.
+      examples:
+        - retention_policy
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT bearer token for authenticated access.
+    TenantContext:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Required tenant identifier header for multi-tenancy isolation.

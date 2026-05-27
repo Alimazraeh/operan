@@ -1,0 +1,425 @@
+openapi: 3.0.3
+info:
+  title: Operan Observability & Tracing API
+  description: Telemetry ingestion, span queries, alerts, and health monitoring. Module 11.
+  version: 1.0.0
+servers:
+  - url: /api/v1/observability
+    description: Observability API root
+
+paths:
+  /metrics:
+    post:
+      operationId: recordMetric
+      summary: Record a metric value
+      tags: [metrics]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetricRecord'
+      responses:
+        '201':
+          description: Metric recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metric'
+        '400':
+          description: Invalid metric
+
+    get:
+      operationId: listMetrics
+      summary: Query recorded metrics
+      tags: [metrics]
+      parameters:
+        - name: metric_type
+          in: query
+          schema:
+            type: string
+            enum: [counter, gauge, histogram, timer]
+        - name: metric_name
+          in: query
+          schema:
+            type: string
+        - name: source_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: start
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Metric list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricList'
+
+  /spans:
+    get:
+      operationId: listSpans
+      summary: Query trace spans
+      tags: [spans]
+      parameters:
+        - name: trace_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: span_type
+          in: query
+          schema:
+            type: string
+            enum: [orchestration, tool, memory, policy, human_gate]
+        - name: workflow_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ok, error, cancelled]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Span list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpanList'
+
+  /traces/{traceId}:
+    get:
+      operationId: getTrace
+      summary: Get a full trace with all spans
+      tags: [spans]
+      parameters:
+        - name: traceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Trace with spans
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraceDetail'
+        '404':
+          description: Trace not found
+
+  /alerts:
+    get:
+      operationId: listAlerts
+      summary: List alerts
+      tags: [alerts]
+      parameters:
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [info, warning, critical]
+        - name: resolved
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Alert list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertList'
+
+  /alerts/{alertId}/resolve:
+    post:
+      operationId: resolveAlert
+      summary: Resolve an alert
+      tags: [alerts]
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Alert resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          description: Alert not found
+
+  /health:
+    get:
+      operationId: getHealthStatus
+      summary: Get overall system health status
+      tags: [health]
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthOverview'
+
+  /health/{componentId}:
+    get:
+      operationId: getComponentHealth
+      summary: Get health status for a specific component
+      tags: [health]
+      parameters:
+        - name: componentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Component health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '404':
+          description: Component not found
+
+components:
+  schemas:
+    MetricRecord:
+      type: object
+      required: [tenant_id, metric_name, metric_value, metric_type]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        metric_name:
+          type: string
+        metric_value:
+          type: number
+        metric_type:
+          type: string
+          enum: [counter, gauge, histogram, timer]
+        labels:
+          type: object
+        source_id:
+          type: string
+          format: uuid
+
+    Metric:
+      type: object
+      required: [id, tenant_id, metric_name, metric_value, metric_type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        metric_name:
+          type: string
+        metric_value:
+          type: number
+        metric_type:
+          type: string
+          enum: [counter, gauge, histogram, timer]
+        labels:
+          type: object
+        source_id:
+          type: string
+          format: uuid
+        recorded_at:
+          type: string
+          format: date-time
+
+    MetricList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metric'
+        total:
+          type: integer
+
+    TraceSpan:
+      type: object
+      required: [trace_id, span_id, tenant_id, span_name, span_type, start_time, duration_ms]
+      properties:
+        trace_id:
+          type: string
+          format: uuid
+        span_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        span_name:
+          type: string
+        span_type:
+          type: string
+          enum: [orchestration, tool, memory, policy, human_gate]
+        start_time:
+          type: string
+          format: date-time
+        duration_ms:
+          type: integer
+        workflow_id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        end_time:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [ok, error, cancelled]
+        tags:
+          type: object
+
+    SpanList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TraceSpan'
+        total:
+          type: integer
+
+    TraceDetail:
+      type: object
+      required: [trace_id]
+      properties:
+        trace_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        spans:
+          type: array
+          items:
+            $ref: '#/components/schemas/TraceSpan'
+        total_duration_ms:
+          type: integer
+
+    Alert:
+      type: object
+      required: [id, tenant_id, alert_name, severity, triggered_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        alert_name:
+          type: string
+        severity:
+          type: string
+          enum: [info, warning, critical]
+        triggered_at:
+          type: string
+          format: date-time
+        condition_description:
+          type: string
+        current_value:
+          type: number
+        threshold:
+          type: number
+        resolved_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+
+    AlertList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+        total:
+          type: integer
+
+    HealthStatus:
+      type: object
+      required: [tenant_id, component_id, component_type, new_status, changed_at]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        component_id:
+          type: string
+        component_type:
+          type: string
+          enum: [agent, workflow, tool, memory, policy, gateway]
+        new_status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        changed_at:
+          type: string
+          format: date-time
+        previous_status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        reason:
+          type: string
+
+    HealthOverview:
+      type: object
+      required: [tenant_id, components]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/HealthStatus'
+        overall_status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
