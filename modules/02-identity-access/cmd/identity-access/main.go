@@ -36,7 +36,7 @@ func main() {
 	auditHandler := handler.NewAuditHandler(audit)
 	rbacHandler := handler.NewRBACHandler(users, roles, audit)
 
-	// Setup routes
+	// Setup routes — base path: /api/v1/iam
 	mux := http.NewServeMux()
 
 	// Health check
@@ -46,42 +46,200 @@ func main() {
 		fmt.Fprint(w, `{"status":"healthy"}`)
 	})
 
-	// User routes
-	mux.HandleFunc("/tenants/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/tenants/" || r.URL.Path == "/tenants" {
-			http.NotFound(w, r)
-			return
-		}
-
-		parts := splitPath(r.URL.Path)
-		if len(parts) < 5 {
-			http.NotFound(w, r)
-			return
-		}
-
-		// paths: /tenants/{id}/iam/...
-		if parts[2] != "iam" {
-			http.NotFound(w, r)
-			return
-		}
-
-		switch parts[4] {
-		case "roles", "service-identities", "agent-identities", "sso", "scim", "audit", "rbac":
-			// Handle sub-routes
-			handleSubRoute(w, r, parts, userHandler, roleHandler, serviceIDHandler, agentIDHandler, ssoHandler, scimHandler, auditHandler, rbacHandler)
-		case "users":
-			// Handle user routes
-			switch r.Method {
-			case http.MethodPost:
-				userHandler.Create(w, r)
-			case http.MethodGet:
-				userHandler.List(w, r)
-			default:
-				http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
-			}
+	// POST /api/v1/iam/users
+	mux.HandleFunc("/api/v1/iam/users", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			userHandler.Create(w, r)
+		case http.MethodGet:
+			userHandler.List(w, r)
 		default:
-			http.NotFound(w, r)
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
 		}
+	})
+
+	// /api/v1/iam/users/{id} → delegates
+	mux.HandleFunc("/api/v1/iam/users/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			userHandler.GetByID(w, r)
+		case http.MethodPatch:
+			userHandler.Update(w, r)
+		case http.MethodDelete:
+			userHandler.Deactivate(w, r)
+		default:
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		}
+	})
+
+	// PUT /api/v1/iam/users/{id}/roles
+	mux.HandleFunc("/api/v1/iam/users/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPut {
+			// only hit this if path is /api/v1/iam/users/{id}/roles
+			if len(r.URL.Path) > len("/api/v1/iam/users/") {
+				remaining := r.URL.Path[len("/api/v1/iam/users"):]
+				if remaining == "/roles" {
+					userHandler.SetRoles(w, r)
+					return
+				}
+			}
+		}
+		// fall through to other methods
+		switch r.Method {
+		case http.MethodGet:
+			userHandler.GetByID(w, r)
+		case http.MethodPatch:
+			userHandler.Update(w, r)
+		case http.MethodDelete:
+			userHandler.Deactivate(w, r)
+		default:
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		}
+	})
+
+	// POST /api/v1/iam/roles
+	mux.HandleFunc("/api/v1/iam/roles", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			roleHandler.Create(w, r)
+		case http.MethodGet:
+			roleHandler.List(w, r)
+		default:
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		}
+	})
+
+	// DELETE /api/v1/iam/roles/{id}
+	mux.HandleFunc("/api/v1/iam/roles/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			roleHandler.GetByID(w, r)
+		case http.MethodDelete:
+			roleHandler.Delete(w, r)
+		default:
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		}
+	})
+
+	// POST /api/v1/iam/service-identities
+	mux.HandleFunc("/api/v1/iam/service-identities", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			serviceIDHandler.Create(w, r)
+		case http.MethodGet:
+			serviceIDHandler.List(w, r)
+		default:
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		}
+	})
+
+	// GET /api/v1/iam/service-identities/{id}
+	mux.HandleFunc("/api/v1/iam/service-identities/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			serviceIDHandler.GetByID(w, r)
+			return
+		}
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+	})
+
+	// POST /api/v1/iam/agent-identities
+	mux.HandleFunc("/api/v1/iam/agent-identities", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			agentIDHandler.Register(w, r)
+		case http.MethodGet:
+			agentIDHandler.List(w, r)
+		default:
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		}
+	})
+
+	// GET /api/v1/iam/agent-identities/agent/{agent_id}
+	mux.HandleFunc("/api/v1/iam/agent-identities/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			agentIDHandler.GetByAgent(w, r)
+			return
+		}
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+	})
+
+	// POST /api/v1/iam/auth/sso/configure
+	mux.HandleFunc("/api/v1/iam/auth/sso/", func(w http.ResponseWriter, r *http.Request) {
+		// Determine sub-route
+		sub := ""
+		if len(r.URL.Path) > len("/api/v1/iam/auth/sso/") {
+			sub = r.URL.Path[len("/api/v1/iam/auth/sso/"):]
+			// strip trailing slash
+			sub = sub[:len(sub)-1]
+		}
+
+		switch r.Method {
+		case http.MethodPost:
+			switch sub {
+			case "configure":
+				ssoHandler.Configure(w, r)
+				return
+			case "test":
+				ssoHandler.Test(w, r)
+				return
+			}
+		case http.MethodGet:
+			if sub == "config" {
+				ssoHandler.GetConfig(w, r)
+				return
+			}
+		}
+		http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
+	})
+
+	// SCIM endpoints
+	mux.HandleFunc("/api/v1/iam/scim/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			scimHandler.ListUsers(w, r)
+		case http.MethodPost:
+			scimHandler.Provision(w, r)
+		default:
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		}
+	})
+
+	// GET /api/v1/iam/audit/trails
+	mux.HandleFunc("/api/v1/iam/audit/", func(w http.ResponseWriter, r *http.Request) {
+		sub := ""
+		if len(r.URL.Path) > len("/api/v1/iam/audit/") {
+			sub = r.URL.Path[len("/api/v1/iam/audit/"):]
+			sub = sub[:len(sub)-1]
+		}
+
+		switch r.Method {
+		case http.MethodGet:
+			if sub == "trails" {
+				// Check if trail_id is present
+				if len(r.URL.Path) > len("/api/v1/iam/audit/trails/") {
+					auditHandler.GetByID(w, r)
+					return
+				}
+				auditHandler.GetTrails(w, r)
+				return
+			}
+			if sub == "session-replay" {
+				if len(r.URL.Path) > len("/api/v1/iam/audit/session-replay/") {
+					auditHandler.GetSessionReplay(w, r)
+					return
+				}
+			}
+		}
+		http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
+	})
+
+	// POST /api/v1/iam/rbac/evaluate
+	mux.HandleFunc("/api/v1/iam/rbac/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			rbacHandler.Evaluate(w, r)
+			return
+		}
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
 	})
 
 	// Wrap with middleware chain
@@ -98,189 +256,4 @@ func main() {
 	if err := http.ListenAndServe(addr, chain); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
-}
-
-// handleSubRoute dispatches to the appropriate handler based on the URL path.
-func handleSubRoute(w http.ResponseWriter, r *http.Request, parts []string,
-	userHandler *handler.UserHandler, roleHandler *handler.RoleHandler,
-	serviceIDHandler *handler.ServiceIdentityHandler, agentIDHandler *handler.AgentIdentityHandler,
-	ssoHandler *handler.SSOHandler, scimHandler *handler.SCIMHandler,
-	auditHandler *handler.AuditHandler, rbacHandler *handler.RBACHandler) {
-
-	if len(parts) < 6 {
-		http.NotFound(w, r)
-		return
-	}
-
-	resource := parts[4]
-
-	switch resource {
-	case "users":
-		handleUserRoutes(w, r, parts, userHandler)
-	case "roles":
-		handleRoleRoutes(w, r, parts, roleHandler)
-	case "service-identities":
-		handleServiceIdentityRoutes(w, r, parts, serviceIDHandler)
-	case "agent-identities":
-		handleAgentIdentityRoutes(w, r, parts, agentIDHandler)
-	case "sso":
-		handleSSORoutes(w, r, parts, ssoHandler)
-	case "scim":
-		handleSCIMRoutes(w, r, scimHandler)
-	case "audit":
-		handleAuditRoutes(w, r, parts, auditHandler)
-	case "rbac":
-		handleRBACRoutes(w, r, rbacHandler)
-	default:
-		http.NotFound(w, r)
-	}
-}
-
-// handleUserRoutes dispatches user sub-routes.
-func handleUserRoutes(w http.ResponseWriter, r *http.Request, parts []string, userHandler *handler.UserHandler) {
-	// /tenants/{id}/iam/users/{user_id}/roles
-	if len(parts) >= 7 && parts[5] == "users" && parts[6] == "roles" {
-		if r.Method == http.MethodPost {
-			userHandler.SetRoles(w, r)
-			return
-		}
-	}
-
-	// /tenants/{id}/iam/users/{user_id}
-	if len(parts) >= 6 && parts[5] == "users" {
-		switch r.Method {
-		case http.MethodGet:
-			userHandler.GetByID(w, r)
-		case http.MethodPatch:
-			userHandler.Update(w, r)
-		case http.MethodDelete:
-			userHandler.Deactivate(w, r)
-		default:
-			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
-		}
-		return
-	}
-}
-
-// handleRoleRoutes dispatches role sub-routes.
-func handleRoleRoutes(w http.ResponseWriter, r *http.Request, parts []string, roleHandler *handler.RoleHandler) {
-	if len(parts) >= 6 && parts[5] == "roles" {
-		switch r.Method {
-		case http.MethodGet:
-			roleHandler.GetByID(w, r)
-		case http.MethodPost:
-			roleHandler.Create(w, r)
-		default:
-			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
-		}
-	}
-}
-
-// handleServiceIdentityRoutes dispatches service identity sub-routes.
-func handleServiceIdentityRoutes(w http.ResponseWriter, r *http.Request, parts []string, serviceIDHandler *handler.ServiceIdentityHandler) {
-	if len(parts) >= 6 && parts[5] == "service-identities" {
-		switch r.Method {
-		case http.MethodGet:
-			serviceIDHandler.GetByID(w, r)
-		case http.MethodPost:
-			serviceIDHandler.Create(w, r)
-		default:
-			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
-		}
-	}
-}
-
-// handleAgentIdentityRoutes dispatches agent identity sub-routes.
-func handleAgentIdentityRoutes(w http.ResponseWriter, r *http.Request, parts []string, agentIDHandler *handler.AgentIdentityHandler) {
-	if len(parts) >= 6 && parts[5] == "agent-identities" {
-		switch r.Method {
-		case http.MethodGet:
-			agentIDHandler.GetByAgent(w, r)
-		case http.MethodPost:
-			agentIDHandler.Register(w, r)
-		default:
-			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
-		}
-	}
-}
-
-// handleSSORoutes dispatches SSO sub-routes.
-func handleSSORoutes(w http.ResponseWriter, r *http.Request, parts []string, ssoHandler *handler.SSOHandler) {
-	if len(parts) >= 6 && parts[5] == "sso" {
-		switch r.Method {
-		case http.MethodPost:
-			if len(parts) >= 7 && parts[6] == "configure" {
-				ssoHandler.Configure(w, r)
-				return
-			}
-		case http.MethodGet:
-			if len(parts) >= 7 && parts[6] == "config" {
-				ssoHandler.GetConfig(w, r)
-				return
-			}
-		}
-	}
-}
-
-// handleSCIMRoutes dispatches SCIM sub-routes.
-func handleSCIMRoutes(w http.ResponseWriter, r *http.Request, scimHandler *handler.SCIMHandler) {
-	if r.URL.Path != "" && len(r.URL.Path) > 10 && r.URL.Path[10:14] == "scim" {
-		if r.Method == http.MethodPost {
-			scimHandler.Provision(w, r)
-			return
-		}
-	}
-}
-
-// handleAuditRoutes dispatches audit sub-routes.
-func handleAuditRoutes(w http.ResponseWriter, r *http.Request, parts []string, auditHandler *handler.AuditHandler) {
-	if len(parts) >= 6 && parts[5] == "audit" {
-		switch r.Method {
-		case http.MethodGet:
-			if len(parts) >= 8 && parts[6] == "trails" && parts[7] != "" {
-				auditHandler.GetByID(w, r)
-			} else {
-				auditHandler.GetTrails(w, r)
-			}
-		default:
-			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
-		}
-	}
-}
-
-// handleRBACRoutes dispatches RBAC sub-routes.
-func handleRBACRoutes(w http.ResponseWriter, r *http.Request, rbacHandler *handler.RBACHandler) {
-	if r.URL.Path != "" && len(r.URL.Path) > 9 && r.URL.Path[9:13] == "rbac" {
-		if r.Method == http.MethodPost {
-			rbacHandler.Evaluate(w, r)
-			return
-		}
-	}
-}
-
-// splitPath splits a URL path into segments (copied from handler_users.go for now).
-func splitPath(path string) []string {
-	if path == "/" {
-		return []string{""}
-	}
-	if len(path) > 0 && path[0] == '/' {
-		path = path[1:]
-	}
-	return splitString(path, '/')
-}
-
-// splitString splits a string by a separator (copied from handler_users.go).
-func splitString(s string, sep rune) []string {
-	var result []string
-	var current string
-	for _, r := range s {
-		if r == sep {
-			result = append(result, current)
-			current = ""
-		} else {
-			current += string(r)
-		}
-	}
-	result = append(result, current)
-	return result
 }

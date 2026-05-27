@@ -13,9 +13,9 @@ type User struct {
 	MFARolesJSON        string     `json:"-" db:"roles_json"`
 	MFAEnabled          bool       `json:"mfa_enabled" db:"mfa_enabled"`
 	LDAPDN              *string    `json:"ldap_dn,omitempty" db:"ldap_dn"`
-	AuthenticationMethod string    `json:"-" db:"-"` // derived, not stored
+	AuthenticationMethod string    `json:"authentication_method" db:"-"` // derived, not stored
 	CreatedAt           time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt           time.Time  `json:"-" db:"updated_at"`
+	UpdatedAt           time.Time  `json:"updated_at" db:"updated_at"`
 	LastLoginAt         *time.Time `json:"last_login_at,omitempty" db:"last_login_at"`
 }
 

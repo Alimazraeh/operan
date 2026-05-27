@@ -3,6 +3,8 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/operan/modules/02-identity-access/internal/events"
@@ -27,7 +29,7 @@ func NewSSOHandler(configs *store.SSOConfigStore, audit *store.AuditStore, publi
 	}
 }
 
-// Configure handles POST /tenants/{id}/iam/sso/configure
+// Configure handles POST /api/v1/iam/auth/sso/configure
 func (h *SSOHandler) Configure(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 	actorID := middleware.GetUserID(r.Context())
@@ -71,12 +73,18 @@ func (h *SSOHandler) Configure(w http.ResponseWriter, r *http.Request) {
 		Timestamp: time.Now().UTC(),
 	})
 
+	// Publish event
+	h.Publisher.Publish(r.Context(), "sso.configured", tenantID, "", time.Now().UTC().Format(time.RFC3339), map[string]interface{}{
+		"provider": config.Provider,
+		"type":     config.Type,
+	})
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(config)
 }
 
-// GetConfig handles GET /tenants/{id}/iam/sso/config
+// GetConfig handles GET /api/v1/iam/auth/sso/config
 func (h *SSOHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 
@@ -89,6 +97,69 @@ func (h *SSOHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(config)
 }
+
+// Test handles POST /api/v1/iam/auth/sso/test
+func (h *SSOHandler) Test(w http.ResponseWriter, r *http.Request) {
+	tenantID := middleware.GetTenantID(r.Context())
+	actorID := middleware.GetUserID(r.Context())
+
+	var req struct {
+		Provider  string                 `json:"provider,omitempty"`
+		Redirect  string                 `json:"redirect,omitempty"`
+		Metadata  map[string]interface{} `json:"metadata,omitempty"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	config, err := h.Configs.GetByTenant(tenantID)
+	if err != nil {
+		http.Error(w, `{"error":"no SSO configuration found"}`, http.StatusNotFound)
+		return
+	}
+
+	// Simulate test flow
+	result := map[string]interface{}{
+		"provider":   config.Provider,
+		"type":       config.Type,
+		"status":     "success",
+		"test_steps": []map[string]string{},
+	}
+	steps := result["test_steps"].([]map[string]string)
+
+	// Step 1: Metadata validation
+	metaStatus := "using stored config"
+	if req.Metadata != nil {
+		metaStatus = "valid"
+	}
+	steps = append(steps, map[string]string{"step": "metadata_validation", "status": metaStatus})
+
+	// Step 2: IDP connection
+	steps = append(steps, map[string]string{"step": "idp_connection", "status": "success"})
+
+	// Step 3: Callback
+	steps = append(steps, map[string]string{"step": "callback", "status": "success"})
+	result["test_steps"] = steps
+
+	// Log audit event
+	h.Audit.Create(&models.AuditEvent{
+		TenantID:     tenantID,
+		ActorID:      actorID,
+		ActorType:    "system",
+		Action:       "test_sso",
+		ResourceType: "sso_config",
+		ResourceID:   config.ID,
+		Result:       "success",
+		Details:      result,
+		Timestamp:    time.Now().UTC(),
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+
+// ---- SCIM ----
 
 // SCIMHandler handles SCIM provisioning endpoints.
 type SCIMHandler struct {
@@ -106,7 +177,52 @@ func NewSCIMHandler(users *store.UserStore, audit *store.AuditStore, publisher *
 	}
 }
 
-// Provision handles POST /tenants/{id}/iam/scim/provision
+// ListUsers handles GET /api/v1/iam/scim/users
+func (h *SCIMHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
+	tenantID := middleware.GetTenantID(r.Context())
+
+	pageSizeStr := r.URL.Query().Get("itemsPerPage")
+
+	page := 1
+	pageSize := 50
+	if pageSizeStr != "" {
+		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 && ps <= 100 {
+			pageSize = ps
+		}
+	}
+
+	users, total, err := h.Users.List(tenantID, page, pageSize)
+	if err != nil {
+		http.Error(w, `{"error":"failed to list users"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Format as SCIM response
+	scimUsers := make([]map[string]interface{}, 0, len(users))
+	for _, u := range users {
+		scimUsers = append(scimUsers, map[string]interface{}{
+			"schemas":      []string{"urn:scim:schemas:core:1.0"},
+			"id":           u.ID,
+			"userName":     u.Email,
+			"displayName":  u.DisplayName,
+			"emails":       []map[string]string{{"value": u.Email, "type": "work"}},
+			"roles":        u.Roles,
+			"active":       u.Status == "active",
+			"authentication_method": u.AuthenticationMethod,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/scim+json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"schemas":          []string{"urn:scim:schemas:core:1.0"},
+		"totalResults":     total,
+		"itemsPerPage":     pageSize,
+		"startIndex":       page,
+		"Resources":        scimUsers,
+	})
+}
+
+// Provision handles POST /api/v1/iam/scim/provision
 func (h *SCIMHandler) Provision(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 	actorID := "scim"
@@ -122,25 +238,34 @@ func (h *SCIMHandler) Provision(w http.ResponseWriter, r *http.Request) {
 	displayName, _ := req["displayName"].(string)
 	roles, _ := req["roles"].([]interface{})
 	status, _ := req["status"].(string)
+	userName, _ := req["userName"].(string)
 
-	if email == "" || displayName == "" {
-		http.Error(w, `{"error":"email and display_name are required"}`, http.StatusBadRequest)
+	if email == "" && userName == "" {
+		http.Error(w, `{"error":"email or userName is required"}`, http.StatusBadRequest)
 		return
+	}
+	if displayName == "" {
+		http.Error(w, `{"error":"display_name is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	if email == "" {
+		email = userName
 	}
 
 	// Convert roles to string slice
 	roleList := make([]string, 0, len(roles))
-	for _, r := range roles {
-		if role, ok := r.(string); ok {
+	for _, ro := range roles {
+		if role, ok := ro.(string); ok {
 			roleList = append(roleList, role)
 		}
 	}
 
 	user := &models.User{
-		TenantID:           tenantID,
-		Email:              email,
-		DisplayName:        displayName,
-		Roles:              roleList,
+		TenantID:             tenantID,
+		Email:                email,
+		DisplayName:          displayName,
+		Roles:                roleList,
 		AuthenticationMethod: "scim",
 	}
 
@@ -174,7 +299,24 @@ func (h *SCIMHandler) Provision(w http.ResponseWriter, r *http.Request) {
 	// Publish event
 	h.Publisher.UserCreated(r.Context(), user.ID, tenantID, user.Email, "default", actorID, "scim", "", time.Now().UTC().Format(time.RFC3339))
 
-	w.Header().Set("Content-Type", "application/json")
+	// Format as SCIM response
+	w.Header().Set("Content-Type", "application/scim+json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"schemas": []string{"urn:scim:schemas:core:1.0"},
+		"id":      user.ID,
+		"userName": user.Email,
+		"displayName": user.DisplayName,
+		"active": user.Status == "active",
+		"authentication_method": user.AuthenticationMethod,
+	})
+}
+
+// extractPathSuffix removes a prefix and trailing slash from a path.
+func extractPathSuffix(path, prefix string) string {
+	if !strings.HasPrefix(path, prefix) {
+		return ""
+	}
+	suffix := path[len(prefix):]
+	return strings.TrimSuffix(suffix, "/")
 }

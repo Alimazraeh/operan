@@ -3,6 +3,8 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/operan/modules/02-identity-access/internal/events"
@@ -27,7 +29,7 @@ func NewRoleHandler(roles *store.RoleStore, audit *store.AuditStore, publisher *
 	}
 }
 
-// Create handles POST /tenants/{id}/iam/roles
+// Create handles POST /api/v1/iam/roles
 func (h *RoleHandler) Create(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 	actorID := middleware.GetUserID(r.Context())
@@ -80,25 +82,45 @@ func (h *RoleHandler) Create(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(role)
 }
 
-// List handles GET /tenants/{id}/iam/roles
+// List handles GET /api/v1/iam/roles
 func (h *RoleHandler) List(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
+
+	pageStr := r.URL.Query().Get("page")
+	pageSizeStr := r.URL.Query().Get("page_size")
+
+	page := 1
+	pageSize := 50
+	if pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+	if pageSizeStr != "" {
+		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 && ps <= 100 {
+			pageSize = ps
+		}
+	}
 
 	roles, err := h.Roles.List(tenantID)
 	if err != nil {
 		http.Error(w, `{"error":"failed to list roles"}`, http.StatusInternalServerError)
 		return
 	}
+	total := len(roles)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"roles": roles,
+		"roles":       roles,
+		"total":       total,
+		"page":        page,
+		"page_size":   pageSize,
+		"total_pages": (total + pageSize - 1) / pageSize,
 	})
 }
 
-// GetByID handles GET /tenants/{id}/iam/roles/{role_id}
+// GetByID handles GET /api/v1/iam/roles/{id}
 func (h *RoleHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	// Extract role_id from URL path
 	roleID := extractRoleID(r.URL.Path)
 	if roleID == "" {
 		http.Error(w, `{"error":"role_id is required"}`, http.StatusBadRequest)
@@ -115,11 +137,49 @@ func (h *RoleHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(role)
 }
 
-// extractRoleID extracts the role_id from the URL path.
-func extractRoleID(path string) string {
-	parts := splitPath(path)
-	if len(parts) >= 6 && parts[4] == "roles" {
-		return parts[5]
+// Delete handles DELETE /api/v1/iam/roles/{id}
+func (h *RoleHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	tenantID := middleware.GetTenantID(r.Context())
+	actorID := middleware.GetUserID(r.Context())
+
+	roleID := extractRoleID(r.URL.Path)
+	if roleID == "" {
+		http.Error(w, `{"error":"role_id is required"}`, http.StatusBadRequest)
+		return
 	}
-	return ""
+
+	if err := h.Roles.Delete(roleID); err != nil {
+		http.Error(w, `{"error":"role not found"}`, http.StatusNotFound)
+		return
+	}
+
+	// Log audit event
+	h.Audit.Create(&models.AuditEvent{
+		TenantID:     tenantID,
+		ActorID:      actorID,
+		ActorType:    "system",
+		Action:       "delete_role",
+		ResourceType: "role",
+		ResourceID:   roleID,
+		Result:       "success",
+		Timestamp:    time.Now().UTC(),
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "deleted",
+		"role_id": roleID,
+	})
+}
+
+// extractRoleID extracts the role_id from the URL path.
+// Handles: /api/v1/iam/roles/{id}
+func extractRoleID(path string) string {
+	path = strings.TrimPrefix(path, "/api/v1/iam/roles/")
+	path = strings.TrimSuffix(path, "/")
+	if path == "" {
+		return ""
+	}
+	return path
 }

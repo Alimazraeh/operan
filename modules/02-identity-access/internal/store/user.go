@@ -103,6 +103,11 @@ func (s *UserStore) GetByTenantAndEmail(tenantID, email string) (*models.User, e
 	return nil, ErrUserNotFound
 }
 
+// GetByActorID retrieves a user by tenant and actor ID (email).
+func (s *UserStore) GetByActorID(tenantID, actorID string) (*models.User, error) {
+	return s.GetByTenantAndEmail(tenantID, actorID)
+}
+
 // List returns all users for a tenant with pagination.
 func (s *UserStore) List(tenantID string, page, pageSize int) ([]models.User, int, error) {
 	s.mu.RLock()

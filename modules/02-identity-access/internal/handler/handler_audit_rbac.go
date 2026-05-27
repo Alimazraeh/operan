@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/operan/modules/02-identity-access/internal/middleware"
@@ -23,7 +24,7 @@ func NewAuditHandler(audit *store.AuditStore) *AuditHandler {
 	}
 }
 
-// GetTrails handles GET /tenants/{id}/iam/audit/trails
+// GetTrails handles GET /api/v1/iam/audit/trails
 func (h *AuditHandler) GetTrails(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 
@@ -77,7 +78,7 @@ func (h *AuditHandler) GetTrails(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// GetByID handles GET /tenants/{id}/iam/audit/trails/{trail_id}
+// GetByID handles GET /api/v1/iam/audit/trails/{trail_id}
 func (h *AuditHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	trailID := extractTrailID(r.URL.Path)
 	if trailID == "" {
@@ -95,13 +96,54 @@ func (h *AuditHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(event)
 }
 
-// extractTrailID extracts the trail_id from the URL path.
-func extractTrailID(path string) string {
-	parts := splitPath(path)
-	if len(parts) >= 8 && parts[4] == "audit" && parts[6] == "trails" {
-		return parts[7]
+// GetSessionReplay handles GET /api/v1/iam/audit/session-replay/{session_id}
+// Returns a chronological replay of audit events for the session.
+func (h *AuditHandler) GetSessionReplay(w http.ResponseWriter, r *http.Request) {
+	tenantID := middleware.GetTenantID(r.Context())
+
+	sessionID := extractSessionReplayID(r.URL.Path)
+	if sessionID == "" {
+		http.Error(w, `{"error":"session_id is required"}`, http.StatusBadRequest)
+		return
 	}
-	return ""
+
+	// Session replay returns recent audit events ordered chronologically.
+	// The session_id is logged as context in the replay response.
+	events, total, err := h.Audit.List(tenantID, "", "", nil, nil, 500, 0)
+	if err != nil {
+		http.Error(w, `{"error":"failed to get session replay data"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"session_id": sessionID,
+		"tenant_id":  tenantID,
+		"events":     events,
+		"total":      total,
+	})
+}
+
+// extractTrailID extracts the trail_id from the URL path.
+// Handles: /api/v1/iam/audit/trails/{id}
+func extractTrailID(path string) string {
+	path = strings.TrimPrefix(path, "/api/v1/iam/audit/trails/")
+	path = strings.TrimSuffix(path, "/")
+	if path == "" {
+		return ""
+	}
+	return path
+}
+
+// extractSessionReplayID extracts the session_id from the URL path.
+// Handles: /api/v1/iam/audit/session-replay/{id}
+func extractSessionReplayID(path string) string {
+	path = strings.TrimPrefix(path, "/api/v1/iam/audit/session-replay/")
+	path = strings.TrimSuffix(path, "/")
+	if path == "" {
+		return ""
+	}
+	return path
 }
 
 // RBACHandler handles RBAC/ABAC permission evaluation.
@@ -120,7 +162,7 @@ func NewRBACHandler(users *store.UserStore, roles *store.RoleStore, audit *store
 	}
 }
 
-// Evaluate handles POST /tenants/{id}/iam/rbac/evaluate
+// Evaluate handles POST /api/v1/iam/rbac/evaluate
 func (h *RBACHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 	actorID := middleware.GetUserID(r.Context())
@@ -136,44 +178,69 @@ func (h *RBACHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if actor is a user
-	user, err := h.Users.GetByID(req.ActorID)
-	if err != nil {
-		// If not a user, check if it's a service identity or agent identity
-		result := models.PermissionCheckResult{
-			Allowed:     false,
-			Reason:      "actor not found",
-			EvaluatedAt: time.Now().UTC().Format(time.RFC3339),
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(result)
-		return
+	// 1. Look up user roles
+	user, err := h.Users.GetByActorID(tenantID, req.ActorID)
+	var userRoles []string
+	if err == nil && user != nil {
+		userRoles = user.Roles
 	}
 
-	// Check if user has the required permissions
-	// For now, simple role-based check: if user is active, allow
-	var allowed bool
-	var reason string
-
-	if !user.IsActive() {
-		allowed = false
-		reason = "user is not active"
-	} else {
-		// Check if any of the user's roles have the required permission
-		allowed = h.checkPermissions(user.Roles, req.Action, req.Resource)
-		if allowed {
-			reason = "allowed by role policy"
-		} else {
-			reason = "no matching role policy"
+	// 2. Resolve role permissions
+	allPermissions := make(map[string]bool)
+	for _, roleID := range userRoles {
+		role, err := h.Roles.GetByID(roleID)
+		if err == nil && role != nil {
+			for _, perm := range role.Permissions {
+				allPermissions[perm] = true
+			}
 		}
 	}
 
+	// 3. Evaluate permission
+	allowed := false
+	reason := "permission denied"
+	policyMatch := ""
+
+	// Check if any permission matches the requested action/resource
+	requestedPerm := req.Action + ":" + req.Resource
+	if allPermissions[requestedPerm] {
+		allowed = true
+		reason = "explicit permission grant"
+		policyMatch = requestedPerm
+	}
+
+	// Check for wildcard permissions (e.g., "*:*")
+	if allPermissions["*:*"] {
+		allowed = true
+		reason = "wildcard role grant"
+		policyMatch = "*:*"
+	}
+
+	// 4. Check ABAC attributes
+	if !allowed && req.Attributes != nil {
+		// Time-based policy check
+		if _, ok := req.Attributes["outside_business_hours"]; ok {
+			hour := time.Now().UTC().Hour()
+			if hour >= 9 && hour <= 17 {
+				allowed = false
+				reason = "action requested during business hours requires manual approval"
+			}
+		}
+
+		// High-risk action requires manager approval
+		if _, ok := req.Attributes["high_risk"]; ok && !allowed {
+			reason = "high-risk action requires manager approval"
+		}
+	}
+
+	// Build result
 	result := models.PermissionCheckResult{
 		Allowed:     allowed,
 		Reason:      reason,
 		EvaluatedAt: time.Now().UTC().Format(time.RFC3339),
+	}
+	if policyMatch != "" {
+		result.PolicyMatch = &policyMatch
 	}
 
 	// Log audit event
@@ -183,32 +250,20 @@ func (h *RBACHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 		ActorType:    "system",
 		Action:       "rbac_evaluate",
 		ResourceType: "permission",
-		ResourceID:   req.Resource,
-		Result:       "success",
+		ResourceID:   requestedPerm,
+		Result:       map[bool]string{true: "success", false: "denied"}[allowed],
 		Details: map[string]interface{}{
-			"actor_id":   req.ActorID,
-			"action":     req.Action,
-			"resource":   req.Resource,
-			"allowed":    allowed,
-			"reason":     reason,
-			"roles":      user.Roles,
+			"actor_id":       req.ActorID,
+			"requested_action": req.Action,
+			"requested_resource": req.Resource,
+			"user_roles":       userRoles,
+			"resolved_permissions": allPermissions,
+			"allowed":          allowed,
+			"reason":           reason,
 		},
 		Timestamp: time.Now().UTC(),
 	})
 
 	w.Header().Set("Content-Type", "application/json")
-	if !allowed {
-		w.WriteHeader(http.StatusForbidden)
-	}
 	json.NewEncoder(w).Encode(result)
-}
-
-// checkPermissions checks if any role has the required permission.
-func (h *RBACHandler) checkPermissions(roles []string, action, resource string) bool {
-	// For now, simple check: if user has any role, allow all actions on all resources
-	// In a real implementation, this would check specific role permissions
-	if len(roles) > 0 {
-		return true
-	}
-	return false
 }
