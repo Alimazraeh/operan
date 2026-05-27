@@ -46,7 +46,7 @@ func (s *RoleStore) Create(role *models.Role) error {
 		return fmt.Errorf("role with name %s already exists in tenant %s", role.Name, role.TenantID)
 	}
 
-	if role.IsSystem {
+	if role.CreatedAt.IsZero() {
 		role.CreatedAt = time.Now().UTC()
 	}
 
