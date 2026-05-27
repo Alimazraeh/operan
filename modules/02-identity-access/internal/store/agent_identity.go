@@ -16,7 +16,7 @@ var ErrAgentIdentityNotFound = errors.New("agent identity not found")
 
 // AgentIdentityStore provides in-memory CRUD operations for agent identities with tenant isolation.
 type AgentIdentityStore struct {
-	mu        sync.RWMutex
+	mu        sync.Mutex // upgraded to full mutex for atomic create-lookup
 	idByAgent map[string]*models.AgentIdentity // key: agentID
 	idByID    map[string]*models.AgentIdentity   // key: agent identity ID
 }
@@ -41,12 +41,7 @@ func (s *AgentIdentityStore) Create(identity *models.AgentIdentity) error {
 		return fmt.Errorf("agent_id is required")
 	}
 
-	// Check uniqueness per tenant
-	if existing, exists := s.idByAgent[identity.AgentID]; exists && existing.TenantID == identity.TenantID {
-		return fmt.Errorf("agent identity for agent %s already exists in tenant %s", identity.AgentID, identity.TenantID)
-	}
-
-	// Store capabilities as JSON
+	// Store capabilities as JSON (before lock, to validate)
 	if len(identity.Capabilities) > 0 {
 		data, err := json.Marshal(identity.Capabilities)
 		if err != nil {
@@ -87,6 +82,11 @@ func (s *AgentIdentityStore) Create(identity *models.AgentIdentity) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// Check uniqueness per tenant inside the lock to prevent race
+	if existing, exists := s.idByAgent[identity.AgentID]; exists && existing.TenantID == identity.TenantID {
+		return fmt.Errorf("agent identity for agent %s already exists in tenant %s", identity.AgentID, identity.TenantID)
+	}
+
 	s.idByID[identity.ID] = identity
 	s.idByAgent[identity.AgentID] = identity
 
@@ -95,8 +95,8 @@ func (s *AgentIdentityStore) Create(identity *models.AgentIdentity) error {
 
 // GetByAgent retrieves an agent identity by agent ID within a tenant.
 func (s *AgentIdentityStore) GetByAgent(agentID string) (*models.AgentIdentity, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	identity, exists := s.idByAgent[agentID]
 	if !exists {
@@ -113,8 +113,8 @@ func (s *AgentIdentityStore) GetByAgent(agentID string) (*models.AgentIdentity, 
 
 // GetByID retrieves an agent identity by ID.
 func (s *AgentIdentityStore) GetByID(id string) (*models.AgentIdentity, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	identity, exists := s.idByID[id]
 	if !exists {
@@ -131,8 +131,8 @@ func (s *AgentIdentityStore) GetByID(id string) (*models.AgentIdentity, error) {
 
 // ListByTenant returns all agent identities for a tenant.
 func (s *AgentIdentityStore) ListByTenant(tenantID string) ([]models.AgentIdentity, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	var result []models.AgentIdentity
 	for _, identity := range s.idByID {

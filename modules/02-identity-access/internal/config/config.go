@@ -20,7 +20,7 @@ type Config struct {
 
 // Load reads configuration from environment variables with sensible defaults.
 func Load() *Config {
-	return &Config{
+	cfg := &Config{
 		Port:             getEnvInt("IAM_PORT", 8002),
 		DBDriver:         getEnvString("IAM_DB_DRIVER", "memory"),
 		DBSource:         getEnvString("IAM_DB_SOURCE", ""),
@@ -30,6 +30,15 @@ func Load() *Config {
 		TracerEnabled:    getEnvBool("IAM_OTEL_ENABLED", true),
 		OtelCollectorURL: getEnvString("IAM_OTEL_COLLECTOR_URL", "http://otel-collector:4317"),
 	}
+
+	// Fail-closed: refuse to start if the token secret is still the default.
+	// This prevents accidental deployments with a known secret.
+	if cfg.TokenSecret == "change-me-in-production" {
+		fmt.Fprintln(os.Stderr, "FATAL: IAM_TOKEN_SECRET has the default value. Set a strong secret via IAM_TOKEN_SECRET environment variable before starting.")
+		os.Exit(1)
+	}
+
+	return cfg
 }
 
 func getEnvString(key, fallback string) string {
