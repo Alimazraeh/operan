@@ -170,10 +170,12 @@ func (h *RoleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 // extractRoleID extracts the role_id from the URL path.
 // Handles: /api/v1/iam/roles/{id}
 func extractRoleID(path string) string {
-	path = strings.TrimPrefix(path, "/api/v1/iam/roles/")
+	// Remove trailing slash if present
 	path = strings.TrimSuffix(path, "/")
-	if path == "" {
+	// Exact match means no role ID
+	if path == "/api/v1/iam/roles" {
 		return ""
 	}
-	return path
+	// Trim the prefix
+	return strings.TrimPrefix(path, "/api/v1/iam/roles/")
 }
