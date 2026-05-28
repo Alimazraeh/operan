@@ -1,8 +1,27 @@
 # Operan: Master Contract Index
+Last Updated: 2026-05-27
+Owner: You (Human Orchestrator)
+Project: Operan — Agentic Department Operating System (ADOS)
 
-## Last Updated: 2025-06-10
+## Platform Standards Refactoring (In Progress)
+Goal: Refactor all v1 OpenAPI contracts to adhere to strict Operan platform standards:
+- Security: `BearerAuth` (JWT) + `X-Tenant-ID` (apiKey header)
+- Pagination: `page`, `page_size`, `has_more` (replacing `limit`/`offset`)
+- Error handling: Standard `Error` schema (`{ code: int, message: string, request_id: uuid }`) applied to all 4xx/5xx responses
+- Schema integrity: `additionalProperties: false` on all request/response schemas
+- Tags: Capitalized consistently (e.g., `Vectors`, `Search`, `Agents`)
+**Progress:**
 
-## Owner: You (Human Orchestrator)
+| Module | Status | Changes Applied |
+|--------|--------|-----------------|
+| 05-department-template-engine | ✅ Done | BearerAuth, X-Tenant-ID, pagination, Error schema, additionalProperties, tags |
+| 08-tool-execution | ✅ Done | BearerAuth, X-Tenant-ID, pagination, Error schema, additionalProperties, tags |
+| 11-observability | ✅ Done | BearerAuth, X-Tenant-ID, pagination, Error schema, additionalProperties, tags |
+| 12-model-abstraction | ✅ Done | BearerAuth, X-Tenant-ID, pagination, Error schema, additionalProperties, tags |
+| 13-multi-model-routing-engine | ✅ Done | BearerAuth, X-Tenant-ID, pagination, Error schema, additionalProperties, tags |
+| 14-agent-collaboration | ✅ Done | BearerAuth, X-Tenant-ID, pagination, Error schema, additionalProperties, tags |
+| 15-agent-marketplace | ✅ Done | BearerAuth, X-Tenant-ID, pagination, Error schema, additionalProperties, tags |
+| 16-execution-sandbox | ✅ Done | BearerAuth, X-Tenant-ID, pagination, Error schema, additionalProperties, tags |
 
 ### Module Contract Status
 
@@ -146,7 +165,44 @@ Use these as the gold standard for OpenAPI contract structure:
 - **Module 02** (`openapi-02-identity-access.yaml`) — IAM patterns; 15 endpoints; 627 lines
 - **Module 10** (`openapi-10-policy-governance.yaml`) — Policy patterns; 931 lines
 
-### Cross-Spec Inconsistency Tracker
+### Cross-Spec Inconsistency Tracker (Modules 08, 11, 12, 14, 15, 16)
+
+**Audit Date:** 2025-06-10
+
+| Module | Issue | OpenAPI | JSON Schema | Severity |
+|--------|-------|---------|-------------|----------|
+| **15-agent-marketplace** | Wrong JSON Schema file entirely | Agent marketplace schemas | Notification schemas (`Notification`, `NotificationQueueRequest`, `NotificationRoute`, `BulkNotificationRequest`) | **Critical** |
+| **16-execution-sandbox** | Wrong JSON Schema file entirely | Execution sandbox schemas | Cost-governance/billing schemas (`ResourceConsumption`, `Credit`, `SubscriptionPlan`, `QuotaStatus`, `BillingPeriod`) | **Critical** |
+| **14-collaboration** | Schema name mismatch | `Message` | `CollaborationMessage` | **High** |
+| **14-collaboration** | Schema name mismatch | `Conversation` | `CollaborationConversation` | **High** |
+| **14-collaboration** | Schema name mismatch | `Task` | `CollaborationTask` | **High** |
+| **14-collaboration** | Schema name mismatch | `ConversationContext` | `CollaborationContext` | **High** |
+| **14-collaboration** | Required/nullable mismatch | `Message.conversation_id` required | `Message.conversation_id` nullable | **High** |
+| **14-collaboration** | Required/nullable mismatch | `Message.expires_at` required | `Message.expires_at` nullable | **High** |
+| **14-collaboration** | Required/nullable mismatch | `Task.assigned_to` required | `Task.assigned_to` nullable | **High** |
+| **14-collaboration** | Required/nullable mismatch | `Task.due_at` required | `Task.due_at` nullable | **High** |
+| **14-collaboration** | Required/nullable mismatch | `Task.result` required | `Task.result` nullable | **High** |
+| **14-collaboration** | Required/nullable mismatch | `Task.conversation_id` required | `Task.conversation_id` nullable | **High** |
+| **14-collaboration** | Missing fields | `Conversation.title` present | `Conversation.title` absent | **High** |
+| **14-collaboration** | Missing fields | `Conversation.metadata` present | `Conversation.metadata` absent | **High** |
+| **14-collaboration** | Required/nullable mismatch | `Conversation.created_at` required | `Conversation.created_at` nullable | **Medium** |
+| **14-collaboration** | Required/nullable mismatch | `Conversation.updated_at` required | `Conversation.updated_at` nullable | **Medium** |
+| **14-collaboration** | Structural mismatch | `ConversationContext.context_type, data` | `CollaborationContext.shared_context, metadata` | **High** |
+| **14-collaboration** | Missing field | `Task.assigner_id` present | `Task.assigner_id` absent | **Medium** |
+| **08-tool-execution** | Nullable mismatch | `ToolExecutionRecord.output` non-nullable | `ToolExecutionRecord.output` nullable | **Medium** |
+| **08-tool-execution** | Nullable mismatch | `ToolExecutionRecord.execution_time_ms` non-nullable | `ToolExecutionRecord.execution_time_ms` nullable | **Medium** |
+| **08-tool-execution** | Nullable mismatch | `ToolExecutionRecord.error_code` non-nullable | `ToolExecutionRecord.error_code` nullable | **Medium** |
+| **08-tool-execution** | Nullable mismatch | `ToolExecutionRecord.error_message` non-nullable | `ToolExecutionRecord.error_message` nullable | **Medium** |
+| **08-tool-execution** | Missing field | `ToolExecutionRecord` has no `execution_log` | `ToolExecutionRecord.execution_log` (array of strings) | **Medium** |
+| **11-observability** | Extra field | `Alert.resolved_by` present | `Alert.resolved_by` absent | **Low** |
+| **All 6** | Naming inconsistency | `Error` (code: int, message: string, request_id: uuid) | `ErrorResponse` (code: string, message: string, data: object) | **Medium** |
+| **All 6** | Missing schemas | `Error` adds `details: string` in modules 11, 12 | Inconsistent across modules | **Low** |
+| **All 6** | Missing `*List` schemas | `ToolList`, `MetricList`, `ModelProviderList`, `SandboxList`, `AgentList`, etc. (~20 total) | Absent | **High** |
+| **08-tool-execution** | Missing schemas | `ToolRegisterRequest`, `ToolUpdateRequest`, `CostSummary` | Absent | **High** |
+| **12-model-abstraction** | Missing schemas | `CostPerToken`, `CostPerCall`, `RateLimit`, `TokenUsage`, `CapacitySummary` | Absent | **High** |
+| **12-model-abstraction** | Missing schemas | `ModelProvisionRequest`, `ModelUpdateRequest`, `RoutingRequest` | Absent | **High** |
+
+### Cross-Spec Inconsistency Tracker (Modules 01–03)
 
 | Module | Issue | OpenAPI | JSON Schema | Severity |
 |--------|-------|---------|-------------|----------|
@@ -157,6 +213,22 @@ Use these as the gold standard for OpenAPI contract structure:
 | 02-identity | AuditEntry vs AuditLog | `actor_type` (enum), `details` | `actor_id`, `metadata` | Medium |
 | 02-identity | User.status enum | `active`, `suspended`, `deactivated` | `active`, `inactive`, `suspended`, `pending` | Medium |
 | 02-identity | Identity type grouping | Separate endpoints (service/agent) | Unified enum (`service`, `agent`, `system`) | Low |
+
+### Cross-Spec Action Items
+
+| Priority | Action | Affected Modules |
+|----------|--------|------------------|
+| **Critical** | Replace JSON Schema files for modules 15 and 16 | 15, 16 |
+| **High** | Generate missing `*List` schemas across all 6 modules | 08, 11, 12, 14, 15, 16 |
+| **High** | Generate missing domain schemas for modules 08 and 12 | 08, 12 |
+| **High** | Rename schemas in module 14 JSON Schema to match OpenAPI | 14 |
+| **High** | Fix required/nullable mismatches in Message, Task, Conversation | 14 |
+| **High** | Add missing fields (Conversation.title/metadata, Task.assigner_id, ConversationContext restructuring) | 14 |
+| **Medium** | Align nullable fields in ToolExecutionRecord (module 08) | 08 |
+| **Medium** | Resolve `Error` vs `ErrorResponse` naming inconsistency across all modules | All |
+| **Medium** | Add `execution_log` to module 08 OpenAPI | 08 |
+| **Low** | Add `resolved_by` to module 11 JSON Schema | 11 |
+| **Low** | Standardize `Error` schema (remove `details` in modules 11, 12) | 11, 12 |
 
 ### AsyncAPI Event Patterns
 
