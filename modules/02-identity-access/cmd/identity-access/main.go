@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/operan/modules/02-identity-access/internal/authentik"
 	"github.com/operan/modules/02-identity-access/internal/config"
 	"github.com/operan/modules/02-identity-access/internal/events"
 	"github.com/operan/modules/02-identity-access/internal/handler"
@@ -18,30 +19,26 @@ func main() {
 
 	// Initialize stores
 	users := store.NewUserStore()
-	roles := store.NewRoleStore()
-	serviceIDs := store.NewServiceIdentityStore()
-	agentIDs := store.NewAgentIdentityStore()
-	ssoConfigs := store.NewSSOConfigStore()
 	audit := store.NewAuditStore()
-	ldapConfigs := store.NewLDAPConfigStore()
-	adConfigs := store.NewADConfigStore()
-	delegationRoles := store.NewDelegationRoleStore()
 
 	// Initialize event publisher
 	publisher := events.NewPublisher(cfg.EventBrokerURL)
 
+	// Initialize Authentik client
+	authClient := authentik.NewClient(cfg.AuthentikServerURL, cfg.AuthentikAdminToken)
+
 	// Initialize handlers
-	userHandler := handler.NewUserHandler(users, audit, publisher)
-	roleHandler := handler.NewRoleHandler(roles, audit, publisher)
-	serviceIDHandler := handler.NewServiceIdentityHandler(serviceIDs, audit, publisher)
-	agentIDHandler := handler.NewAgentIdentityHandler(agentIDs, audit, publisher)
-	ssoHandler := handler.NewSSOHandler(ssoConfigs, audit, publisher)
-	scimHandler := handler.NewSCIMHandler(users, audit, publisher)
-	auditHandler := handler.NewAuditHandler(audit)
-	rbacHandler := handler.NewRBACHandler(users, roles, serviceIDs, agentIDs, audit)
-	ldapHandler := handler.NewLDAPHandler(ldapConfigs, audit, publisher)
-	adHandler := handler.NewADHandler(adConfigs, audit, publisher)
-	delegationHandler := handler.NewDelegationHandler(delegationRoles, audit, publisher)
+	userHandler := handler.NewUserHandler(authClient, users, audit, publisher)
+	roleHandler := handler.NewRoleHandler(authClient, publisher)
+	serviceIDHandler := handler.NewServiceIdentityHandler(authClient, publisher)
+	agentIDHandler := handler.NewAgentIdentityHandler(authClient, publisher)
+	ssoHandler := handler.NewSSOHandler(authClient, publisher)
+	scimHandler := handler.NewSCIMHandler(authClient, publisher)
+	auditHandler := handler.NewAuditHandler(authClient)
+	rbacHandler := handler.NewRBACHandler(authClient)
+	ldapHandler := handler.NewLDAPHandler(authClient, publisher)
+	adHandler := handler.NewADHandler(authClient, publisher)
+	delegationHandler := handler.NewDelegationHandler(authClient, publisher)
 
 	// Setup routes — base path: /api/v1/iam
 	mux := http.NewServeMux()
@@ -414,10 +411,14 @@ func main() {
 		http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
 	})
 
+	// Initialize JWKS cache for JWT validation
+	jwksURL := cfg.AuthentikServerURL + "/.well-known/jwks.json"
+	jwksCache := middleware.NewJWKSCache(jwksURL, &http.Client{})
+
 	// Wrap with middleware chain
 	var chain http.Handler = mux
 	chain = middleware.TraceInjector(chain)
-	chain = middleware.AuthValidator(cfg.TokenSecret, chain)
+	chain = middleware.AuthValidator(jwksCache, jwksURL, cfg.TokenSecret, chain)
 	chain = middleware.TenantInjector(chain)
 
 	// Start server
