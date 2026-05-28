@@ -82,6 +82,8 @@ func main() {
 	nodesHdlr := handler.NewNodesResultsHandler(store.WorkflowStore())
 	agentWorkersHdlr := handler.NewAgentWorkersHandler(store.AgentStore())
 	stackHealthHdlr := handler.NewStackHealthHandler(store.StackHealthStore())
+	delegateHdlr := handler.NewDelegationHandler(store.DelegationStore(), store.WorkflowStore(), store.AgentStore())
+	delegateHdlr.WithEvents(pub)
 
 	// ─── Router ───────────────────────────────────────────────────────────────
 	mux := http.NewServeMux()
@@ -89,7 +91,7 @@ func main() {
 	// ═══ Workflows ═══
 	mux.HandleFunc("GET "+base+"/workflows", wfHandler.ListWorkflows)
 	mux.HandleFunc("POST "+base+"/workflows", wfHandler.CreateWorkflow)
-	mux.HandleFunc(base+"/workflows/", handleWorkflowDetail(wfHandler))
+	mux.HandleFunc(base+"/workflows/", handleWorkflowDetail(wfHandler, delegateHdlr))
 
 	// ═══ Schedules ═══
 	mux.HandleFunc("GET "+base+"/schedules", scHandler.ListSchedules)
@@ -133,7 +135,7 @@ func main() {
 	})
 
 	// ═══ Retry Records ═══
-	mux.HandleFunc(base+"/workflows/"+workflowIDPath+"/retries", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(base+"/workflows/"+workflowIDPath+"/retry-records", func(w http.ResponseWriter, r *http.Request) {
 		workflowID := r.PathValue("workflowId")
 		retryHdlr.ListWorkflowRetryRecords(w, r, workflowID)
 	})
@@ -232,6 +234,7 @@ func main() {
 		}
 	})
 	mux.HandleFunc(base+"/stack/celery/queues/"+idPath+"/consumers", func(w http.ResponseWriter, r *http.Request) {
+		// Contract uses {name} param but implementation uses {id} — note the path param name mismatch
 		stackHealthHdlr.ListCeleryConsumers(w, r, r.PathValue("id"))
 	})
 
@@ -272,7 +275,7 @@ const (
 
 // ─── Dynamic route handlers ──────────────────────────────────────────────────
 
-func handleWorkflowDetail(wf *handler.WorkflowHandler) http.HandlerFunc {
+func handleWorkflowDetail(wf *handler.WorkflowHandler, del *handler.DelegationHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := extractIDFromPath(r.URL.Path, base+"/workflows/")
 		if id == "" {
@@ -283,6 +286,8 @@ func handleWorkflowDetail(wf *handler.WorkflowHandler) http.HandlerFunc {
 		r = r.WithContext(ctx)
 
 		switch {
+		case strings.HasSuffix(r.URL.Path, "/delegate") && r.Method == "POST":
+			del.DelegateNodeTask(w, r, id)
 		case strings.HasSuffix(r.URL.Path, "/execute") && r.Method == "POST":
 			wf.ExecuteWorkflow(w, r)
 		case strings.HasSuffix(r.URL.Path, "/state") && r.Method == "GET":

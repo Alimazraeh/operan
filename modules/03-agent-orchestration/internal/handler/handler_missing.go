@@ -809,13 +809,131 @@ func (h *StackHealthHandler) DeleteCeleryQueue(w http.ResponseWriter, r *http.Re
 
 // ListCeleryConsumers handles GET /stacks/celery/{id}/consumers.
 func (h *StackHealthHandler) ListCeleryConsumers(w http.ResponseWriter, r *http.Request, queueID string) {
+	// Contract uses {name} param but implementation uses {id} — accept both
 	tenantID := middleware.TenantIDFromContext(r.Context())
 	entries := h.HealthStore.ListByStack(tenantID, "celery-consumer")
+	// Filter by queue name if provided
+	if queueID != "" {
+		filtered := make([]*store.StackHealthEntry, 0)
+		for _, e := range entries {
+			if e.StackName == queueID {
+				filtered = append(filtered, e)
+			}
+		}
+		entries = filtered
+	}
 	h.WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"consumers": entries,
 		"total":     len(entries),
 		"has_more":  false,
 	})
+}
+
+// ─── DelegationHandler ───────────────────────────────────────────────────────
+
+// DelegationHandler handles delegation-related HTTP endpoints.
+type DelegationHandler struct {
+	DelegationStore *store.DelegationStore
+	WorkflowStore   repository.WorkflowStoreIface
+	AgentStore      repository.AgentStoreIface
+	Events          *events.Publisher
+}
+
+// NewDelegationHandler creates a new DelegationHandler.
+func NewDelegationHandler(ds *store.DelegationStore, wf repository.WorkflowStoreIface, ag repository.AgentStoreIface) *DelegationHandler {
+	return &DelegationHandler{
+		DelegationStore: ds,
+		WorkflowStore:   wf,
+		AgentStore:      ag,
+	}
+}
+
+// WithEvents sets the event publisher on the DelegationHandler.
+func (h *DelegationHandler) WithEvents(e *events.Publisher) *DelegationHandler {
+	h.Events = e
+	return h
+}
+
+func (h *DelegationHandler) WriteJSON(w http.ResponseWriter, status int, v interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(v)
+}
+
+func (h *DelegationHandler) WriteError(w http.ResponseWriter, status int, code int, message string) {
+	resp := middleware.ErrorResponse{
+		Code:      code,
+		Message:   message,
+		RequestID: generateID(),
+	}
+	h.WriteJSON(w, status, resp)
+}
+
+// DelegateNodeTask handles POST /workflows/{id}/delegate.
+func (h *DelegationHandler) DelegateNodeTask(w http.ResponseWriter, r *http.Request, workflowID string) {
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	wf, err := h.WorkflowStore.GetByID(workflowID)
+	if err != nil || wf == nil {
+		h.WriteError(w, http.StatusNotFound, 404, "workflow not found")
+		return
+	}
+	if wf.TenantID != tenantID {
+		h.WriteError(w, http.StatusForbidden, 403, "tenant mismatch")
+		return
+	}
+
+	var req struct {
+		NodeID           string `json:"node_id"`
+		DelegatedAgentID string `json:"delegated_agent_id"`
+		Reason           string `json:"reason"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.WriteError(w, http.StatusBadRequest, 400, "invalid request body")
+		return
+	}
+	if req.NodeID == "" || req.DelegatedAgentID == "" {
+		h.WriteError(w, http.StatusBadRequest, 400, "node_id and delegated_agent_id are required")
+		return
+	}
+
+	// Verify the target agent exists
+	_, err = h.AgentStore.GetByID(req.DelegatedAgentID)
+	if err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "delegated agent not found")
+		return
+	}
+
+	delegate := &store.Delegation{
+		ID:              generateID(),
+		WorkflowID:      workflowID,
+		NodeID:          req.NodeID,
+		OriginalAgentID: wf.CurrentNodes[0], // Use first current node as original agent (simplified)
+		DelegatedAgentID: req.DelegatedAgentID,
+		TenantID:        tenantID,
+		DepartmentID:    wf.DepartmentID,
+		Status:          store.DelegationPending,
+		Reason:          req.Reason,
+		CreatedAt:       time.Now().UTC(),
+	}
+
+	h.DelegationStore.Create(delegate)
+
+	// Publish delegation event
+	if h.Events != nil {
+		h.Events.PublishWorkflowDelegation(events.StackLangGraph, events.WorkflowDelegationPayload{
+			DelegationID:    delegate.ID,
+			WorkflowID:      delegate.WorkflowID,
+			NodeID:          delegate.NodeID,
+			OriginalAgentID: delegate.OriginalAgentID,
+			DelegatedAgentID: delegate.DelegatedAgentID,
+			Status:          string(delegate.Status),
+			Reason:          delegate.Reason,
+			CreatedAt:       delegate.CreatedAt,
+		})
+	}
+
+	h.WriteJSON(w, http.StatusCreated, delegate)
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

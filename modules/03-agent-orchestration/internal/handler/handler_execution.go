@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/operan/modules/03-agent-orchestration/internal/events"
+	"github.com/operan/modules/03-agent-orchestration/internal/middleware"
 	"github.com/operan/modules/03-agent-orchestration/internal/repository"
 	"github.com/operan/modules/03-agent-orchestration/internal/store"
 )
@@ -283,12 +284,47 @@ func (h *ExecutionHandler) GetExecutionsByPipeline(w http.ResponseWriter, r *htt
 
 // GetExecutionAnalytics handles GET /executions/analytics
 func (h *ExecutionHandler) GetExecutionAnalytics(w http.ResponseWriter, r *http.Request) {
-	// For now, return a placeholder — real analytics would aggregate across executions
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Get all executions for the tenant
+	execs, total, _ := h.ExecutionStore.ListByTenant(tenantID, 1, 0)
+
+	// Aggregate analytics
+	totalExecutions := total
+	completed := 0
+	failed := 0
+	cancelled := 0
+	totalDuration := float64(0)
+
+	for _, ex := range execs {
+		switch ex.Status {
+		case store.PipelineExecutionCompleted:
+			completed++
+			totalDuration += ex.DurationMS
+		case store.PipelineExecutionFailed:
+			failed++
+		case store.PipelineExecutionCancelled:
+			cancelled++
+		}
+	}
+
+	avgDuration := float64(0)
+	if completed > 0 {
+		avgDuration = totalDuration / float64(completed)
+	}
+
+	successRate := 0.0
+	if totalExecutions > 0 {
+		successRate = float64(completed) / float64(totalExecutions) * 100
+	}
+
 	analytics := store.PipelineAnalytics{
-		TotalExecutions: 0,
-		CompletedExecutions: 0,
-		FailedExecutions:    0,
-		CancelledExecutions: 0,
+		TotalExecutions:       totalExecutions,
+		CompletedExecutions:   completed,
+		FailedExecutions:      failed,
+		CancelledExecutions:   cancelled,
+		SuccessRate:           successRate,
+		AvgDurationMS:         avgDuration,
 	}
 
 	h.WriteJSON(w, http.StatusOK, analytics)
