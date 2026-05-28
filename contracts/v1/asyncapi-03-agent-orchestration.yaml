@@ -2,16 +2,22 @@ asyncapi: 2.6.0
 info:
   title: Agent Orchestration Engine Events
   version: 1.0.0
-  description: Module 03 — Agent Orchestration Engine. Events emitted by the orchestration engine for workflow lifecycle management, agent assignment, scheduling, checkpointing, replay, and agent availability.
+  description: Module 03 — Agent Orchestration Engine. Events emitted by the orchestration engine for workflow lifecycle management, agent assignment, scheduling, checkpointing, replay, and multi-stack (LangGraph, Temporal, Ray, Celery/Kafka) operations.
 servers:
   production:
-    url: api.operan.io:5672
-    protocol: mqtt
-    description: Production MQTT broker
+    url: "${KAFKA_BROKER_URL:-kafka.prod.operan.io:9092}"
+    protocol: kafka
+    description: Production Kafka broker
+    bindings:
+      kafka:
+        schemaRegistryUrl: "${SCHEMA_REGISTRY_URL:-https://schema-registry.prod.operan.io}"
   development:
-    url: localhost:1883
-    protocol: mqtt
-    description: Local development MQTT broker
+    url: "${KAFKA_BROKER_URL:-localhost:9092}"
+    protocol: kafka
+    description: Local development Kafka broker
+    bindings:
+      kafka:
+        schemaRegistryUrl: "${SCHEMA_REGISTRY_URL:-http://localhost:8081}"
 channels:
   operan/events/orchestration/workflow/created:
     description: Emitted when a new workflow is created in the orchestration engine.
@@ -85,6 +91,287 @@ channels:
       operationId: onAgentUnavailable
       message:
         $ref: '#/components/messages/AgentUnavailable'
+  operan/events/orchestration/agent/online:
+    description: Emitted when an agent comes online and becomes available for work.
+    publish:
+      operationId: onAgentOnline
+      message:
+        $ref: '#/components/messages/AgentOnline'
+  operan/events/orchestration/agent/offline:
+    description: Emitted when an agent goes offline.
+    publish:
+      operationId: onAgentOffline
+      message:
+        $ref: '#/components/messages/AgentOffline'
+  operan/events/orchestration/workflow/escalation/created:
+    description: Emitted when a new escalation is created for a workflow.
+    publish:
+      operationId: onEscalationCreated
+      message:
+        $ref: '#/components/messages/EscalationCreated'
+  operan/events/orchestration/workflow/escalation/acknowledged:
+    description: Emitted when an escalation is acknowledged.
+    publish:
+      operationId: onEscalationAcknowledged
+      message:
+        $ref: '#/components/messages/EscalationAcknowledged'
+  operan/events/orchestration/workflow/escalation/resolved:
+    description: Emitted when an escalation is resolved.
+    publish:
+      operationId: onEscalationResolved
+      message:
+        $ref: '#/components/messages/EscalationResolved'
+  operan/events/orchestration/workflow/retry/requested:
+    description: Emitted when a retry is requested for a workflow node.
+    publish:
+      operationId: onRetryRequested
+      message:
+        $ref: '#/components/messages/RetryRequested'
+  operan/events/orchestration/workflow/retry/completed:
+    description: Emitted when a retry attempt completes.
+    publish:
+      operationId: onRetryCompleted
+      message:
+        $ref: '#/components/messages/RetryCompleted'
+  operan/events/orchestration/workflow/priority_changed:
+    description: Emitted when a workflow's priority is changed during execution.
+    publish:
+      operationId: onWorkflowPriorityChanged
+      message:
+        $ref: '#/components/messages/WorkflowPriorityChanged'
+  operan/events/orchestration/workflow/delegate:
+    description: Emitted when a workflow node task is delegated to another agent.
+    publish:
+      operationId: onWorkflowDelegation
+      message:
+        $ref: '#/components/messages/WorkflowDelegation'
+  operan/events/orchestration/workflow/delegate/completed:
+    description: Emitted when a delegation is completed.
+    publish:
+      operationId: onDelegationCompleted
+      message:
+        $ref: '#/components/messages/DelegationCompleted'
+  operan/events/orchestration/node/started:
+    description: Emitted when a node begins execution within a workflow.
+    publish:
+      operationId: onNodeStarted
+      message:
+        $ref: '#/components/messages/NodeStarted'
+  operan/events/orchestration/node/completed:
+    description: Emitted when a node completes execution successfully.
+    publish:
+      operationId: onNodeCompleted
+      message:
+        $ref: '#/components/messages/NodeCompleted'
+  operan/events/orchestration/node/failed:
+    description: Emitted when a node fails during execution.
+    publish:
+      operationId: onNodeFailed
+      message:
+        $ref: '#/components/messages/NodeFailed'
+
+  # ─── LangGraph Channels ───
+
+  operan/events/orchestration/langgraph/graph/registered:
+    description: Emitted when a new LangGraph workflow graph is registered.
+    publish:
+      operationId: onLangGraphGraphRegistered
+      message:
+        $ref: '#/components/messages/LangGraphGraphRegistered'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.langgraph.graph.registered"
+        partitions: 6
+        replicationFactor: 3
+
+  operan/events/orchestration/langgraph/state/updated:
+    description: Emitted when a LangGraph node's state is updated during execution.
+    publish:
+      operationId: onLangGraphStateUpdated
+      message:
+        $ref: '#/components/messages/LangGraphStateUpdated'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.langgraph.state.updated"
+        partitions: 12
+        replicationFactor: 3
+
+  operan/events/orchestration/langgraph/graph/deployed:
+    description: Emitted when a LangGraph graph is deployed for execution.
+    publish:
+      operationId: onLangGraphGraphDeployed
+      message:
+        $ref: '#/components/messages/LangGraphGraphDeployed'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.langgraph.graph.deployed"
+        partitions: 6
+        replicationFactor: 3
+
+  # ─── Temporal Channels ───
+
+  operan/events/orchestration/temporal/workflow/registered:
+    description: Emitted when a Temporal durable workflow is registered.
+    publish:
+      operationId: onTemporalWorkflowRegistered
+      message:
+        $ref: '#/components/messages/TemporalWorkflowRegistered'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.temporal.workflow.registered"
+        partitions: 6
+        replicationFactor: 3
+
+  operan/events/orchestration/temporal/checkpoint/created:
+    description: Emitted when a durable checkpoint is created by Temporal.
+    publish:
+      operationId: onTemporalCheckpointCreated
+      message:
+        $ref: '#/components/messages/TemporalCheckpointCreated'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.temporal.checkpoint.created"
+        partitions: 12
+        replicationFactor: 3
+
+  operan/events/orchestration/temporal/workflow/replayed:
+    description: Emitted when a Temporal workflow is replayed from a checkpoint.
+    publish:
+      operationId: onTemporalWorkflowReplayed
+      message:
+        $ref: '#/components/messages/TemporalWorkflowReplayed'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.temporal.workflow.replayed"
+        partitions: 6
+        replicationFactor: 3
+
+  # ─── Ray Channels ───
+
+  operan/events/orchestration/ray/worker/pooled:
+    description: Emitted when a Ray worker pool is created or scaled.
+    publish:
+      operationId: onRayWorkerPooled
+      message:
+        $ref: '#/components/messages/RayWorkerPooled'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.ray.worker.pooled"
+        partitions: 6
+        replicationFactor: 3
+
+  operan/events/orchestration/ray/task/submitted:
+    description: Emitted when a distributed task is submitted to Ray.
+    publish:
+      operationId: onRayTaskSubmitted
+      message:
+        $ref: '#/components/messages/RayTaskSubmitted'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.ray.task.submitted"
+        partitions: 12
+        replicationFactor: 3
+
+  operan/events/orchestration/ray/task/completed:
+    description: Emitted when a Ray distributed task completes.
+    publish:
+      operationId: onRayTaskCompleted
+      message:
+        $ref: '#/components/messages/RayTaskCompleted'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.ray.task.completed"
+        partitions: 12
+        replicationFactor: 3
+
+  operan/events/orchestration/ray/worker/status:
+    description: Emitted when a Ray worker's status changes.
+    publish:
+      operationId: onRayWorkerStatus
+      message:
+        $ref: '#/components/messages/RayWorkerStatus'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.ray.worker.status"
+        partitions: 12
+        replicationFactor: 3
+
+  # ─── Celery/Kafka Channels ───
+
+  operan/events/orchestration/celery/queue/created:
+    description: Emitted when a Celery/Kafka task queue is created.
+    publish:
+      operationId: onCeleryQueueCreated
+      message:
+        $ref: '#/components/messages/CeleryQueueCreated'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.celery.queue.created"
+        partitions: 6
+        replicationFactor: 3
+
+  operan/events/orchestration/celery/task/published:
+    description: Emitted when a task is published to a Celery/Kafka queue.
+    publish:
+      operationId: onCeleryTaskPublished
+      message:
+        $ref: '#/components/messages/CeleryTaskPublished'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.celery.task.published"
+        partitions: 12
+        replicationFactor: 3
+
+  operan/events/orchestration/celery/task/consumed:
+    description: Emitted when a Celery task is consumed by a worker.
+    publish:
+      operationId: onCeleryTaskConsumed
+      message:
+        $ref: '#/components/messages/CeleryTaskConsumed'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.celery.task.consumed"
+        partitions: 12
+        replicationFactor: 3
+
+  operan/events/orchestration/celery/task/completed:
+    description: Emitted when a Celery task completes execution.
+    publish:
+      operationId: onCeleryTaskCompleted
+      message:
+        $ref: '#/components/messages/CeleryTaskCompleted'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.celery.task.completed"
+        partitions: 12
+        replicationFactor: 3
+
+  operan/events/orchestration/celery/worker/heartbeat:
+    description: Emitted when a Celery worker sends a heartbeat.
+    publish:
+      operationId: onCeleryWorkerHeartbeat
+      message:
+        $ref: '#/components/messages/CeleryWorkerHeartbeat'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.celery.worker.heartbeat"
+        partitions: 12
+        replicationFactor: 3
+
+  # ─── Stack Health ───
+
+  operan/events/orchestration/stack/health:
+    description: Periodic health status events for all orchestration stacks.
+    publish:
+      operationId: onStackHealth
+      message:
+        $ref: '#/components/messages/StackHealth'
+    bindings:
+      kafka:
+        topic: "operan.orchestration.stack.health"
+        partitions: 3
+        replicationFactor: 3
+
 components:
   schemas:
     WorkflowCreatedPayload:
@@ -482,6 +769,984 @@ components:
           type: string
           format: date-time
           description: Timestamp when the unavailability was detected.
+    AgentOnlinePayload:
+      type: object
+      required:
+        - agent_id
+        - detected_at
+      properties:
+        agent_id:
+          type: string
+          format: uuid
+          description: Unique identifier of the agent.
+        detected_at:
+          type: string
+          format: date-time
+          description: Timestamp when the agent came online.
+        capabilities:
+          type: array
+          items:
+            type: string
+          description: Agent capabilities that are now available.
+    AgentOfflinePayload:
+      type: object
+      required:
+        - agent_id
+        - detected_at
+      properties:
+        agent_id:
+          type: string
+          format: uuid
+          description: Unique identifier of the agent.
+        detected_at:
+          type: string
+          format: date-time
+          description: Timestamp when the agent went offline.
+        reason:
+          type: string
+          enum:
+            - user_initiated
+            - heartbeat_timeout
+            - system_shutdown
+          description: Reason the agent went offline.
+    EscalationCreatedPayload:
+      type: object
+      required:
+        - escalation_id
+        - workflow_id
+        - node_id
+        - severity
+        - reason
+        - created_at
+      properties:
+        escalation_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the escalation.
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow ID this escalation belongs to.
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID that triggered the escalation.
+        severity:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - critical
+          description: Escalation severity level.
+        reason:
+          type: string
+          description: Reason for escalation.
+        escalated_to:
+          type: string
+          format: uuid
+          description: User or role ID to escalate to.
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when escalation was created.
+    EscalationAcknowledgedPayload:
+      type: object
+      required:
+        - escalation_id
+        - acknowledged_by
+        - acknowledged_at
+      properties:
+        escalation_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the escalation.
+        acknowledged_by:
+          type: string
+          format: uuid
+          description: User ID who acknowledged the escalation.
+        acknowledged_at:
+          type: string
+          format: date-time
+          description: Timestamp when escalation was acknowledged.
+    EscalationResolvedPayload:
+      type: object
+      required:
+        - escalation_id
+        - resolved_by
+        - resolved_at
+      properties:
+        escalation_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the escalation.
+        resolved_by:
+          type: string
+          format: uuid
+          description: User ID who resolved the escalation.
+        resolved_at:
+          type: string
+          format: date-time
+          description: Timestamp when escalation was resolved.
+        resolution_notes:
+          type: string
+          description: Notes about how the escalation was resolved.
+    RetryRequestedPayload:
+      type: object
+      required:
+        - workflow_id
+        - node_id
+        - attempt_number
+        - requested_at
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow ID this retry belongs to.
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID being retried.
+        attempt_number:
+          type: integer
+          description: Current retry attempt number.
+        requested_at:
+          type: string
+          format: date-time
+          description: Timestamp when retry was requested.
+    RetryCompletedPayload:
+      type: object
+      required:
+        - workflow_id
+        - node_id
+        - attempt_number
+        - status
+        - completed_at
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow ID this retry belongs to.
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID being retried.
+        attempt_number:
+          type: integer
+          description: Current retry attempt number.
+        status:
+          type: string
+          enum:
+            - success
+            - exhausted
+          description: Result of the retry attempt.
+        completed_at:
+          type: string
+          format: date-time
+          description: Timestamp when retry completed.
+    WorkflowPriorityChangedPayload:
+      type: object
+      required:
+        - workflow_id
+        - old_priority
+        - new_priority
+        - changed_by
+        - changed_at
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow ID whose priority changed.
+        old_priority:
+          type: integer
+          description: Previous priority value.
+        new_priority:
+          type: integer
+          description: New priority value.
+        changed_by:
+          type: string
+          format: uuid
+          description: User or system ID that changed the priority.
+        changed_at:
+          type: string
+          format: date-time
+          description: Timestamp when priority was changed.
+    WorkflowDelegationPayload:
+      type: object
+      required:
+        - delegation_id
+        - workflow_id
+        - node_id
+        - original_agent_id
+        - delegated_agent_id
+        - status
+        - created_at
+      properties:
+        delegation_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the delegation.
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow ID this delegation belongs to.
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID being delegated.
+        original_agent_id:
+          type: string
+          format: uuid
+          description: Original assigned agent ID.
+        delegated_agent_id:
+          type: string
+          format: uuid
+          description: Agent delegated to.
+        status:
+          type: string
+          enum:
+            - pending
+            - accepted
+            - rejected
+          description: Current status of the delegation.
+        reason:
+          type: string
+          description: Reason for delegation.
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when delegation was created.
+    DelegationCompletedPayload:
+      type: object
+      required:
+        - delegation_id
+        - workflow_id
+        - node_id
+        - status
+        - completed_at
+      properties:
+        delegation_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the delegation.
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow ID this delegation belongs to.
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID that was delegated.
+        status:
+          type: string
+          enum:
+            - completed
+            - rejected
+          description: Final status of the delegation.
+        completed_at:
+          type: string
+          format: date-time
+          description: Timestamp when delegation completed.
+    NodeStartedPayload:
+      type: object
+      required:
+        - workflow_id
+        - node_id
+        - agent_id
+        - started_at
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow ID this node belongs to.
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID that started execution.
+        agent_id:
+          type: string
+          format: uuid
+          description: Agent ID executing the node.
+        started_at:
+          type: string
+          format: date-time
+          description: Timestamp when node started execution.
+    NodeCompletedPayload:
+      type: object
+      required:
+        - workflow_id
+        - node_id
+        - agent_id
+        - status
+        - completed_at
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow ID this node belongs to.
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID that completed execution.
+        agent_id:
+          type: string
+          format: uuid
+          description: Agent ID that executed the node.
+        status:
+          type: string
+          enum:
+            - success
+            - skipped
+          description: Node execution result.
+        output:
+          type: object
+          description: Node execution output.
+        duration_ms:
+          type: integer
+          minimum: 0
+          description: Execution duration in milliseconds.
+        completed_at:
+          type: string
+          format: date-time
+          description: Timestamp when node completed execution.
+    NodeFailedPayload:
+      type: object
+      required:
+        - workflow_id
+        - node_id
+        - agent_id
+        - error_code
+        - error_message
+        - failed_at
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow ID this node belongs to.
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID that failed.
+        agent_id:
+          type: string
+          format: uuid
+          description: Agent ID that executed the node.
+        error_code:
+          type: string
+          description: Machine-readable error code.
+        error_message:
+          type: string
+          description: Human-readable error message.
+        retry_count:
+          type: integer
+          description: Number of retry attempts made.
+        failed_at:
+          type: string
+          format: date-time
+          description: Timestamp when node failed.
+
+    # ─── LangGraph Event Schemas ───
+    LangGraphGraphRegisteredPayload:
+    type: object
+    required:
+      - tenant_id
+      - graph_id
+      - name
+      - version
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      graph_id:
+        type: string
+        format: uuid
+        description: LangGraph graph ID.
+      name:
+        type: string
+        description: Graph name.
+      version:
+        type: string
+        description: Graph version.
+      graph_type:
+        type: string
+        enum: [dag, stateful, stateless]
+        description: Graph execution model.
+      node_count:
+        type: integer
+        description: Number of nodes in the graph.
+      edge_count:
+        type: integer
+        description: Number of edges in the graph.
+      registered_at:
+        type: string
+        format: date-time
+        description: Registration timestamp.
+
+    LangGraphStateUpdatedPayload:
+    type: object
+    required:
+      - tenant_id
+      - graph_id
+      - node_id
+      - state
+      - timestamp
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      graph_id:
+        type: string
+        format: uuid
+        description: LangGraph graph ID.
+      workflow_id:
+        type: string
+        format: uuid
+        description: Workflow execution ID.
+      node_id:
+        type: string
+        format: uuid
+        description: Node ID whose state was updated.
+      state:
+        type: object
+        description: Complete state snapshot.
+      state_version:
+        type: integer
+        description: State version number.
+      timestamp:
+        type: string
+        format: date-time
+        description: State update timestamp.
+
+    LangGraphGraphDeployedPayload:
+    type: object
+    required:
+      - tenant_id
+      - graph_id
+      - deployment_id
+      - status
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      graph_id:
+        type: string
+        format: uuid
+        description: LangGraph graph ID.
+      deployment_id:
+        type: string
+        format: uuid
+        description: Deployment execution ID.
+      status:
+        type: string
+        enum: [deployed, failed, rolling_back]
+        description: Deployment status.
+      deployed_at:
+        type: string
+        format: date-time
+        description: Deployment timestamp.
+
+    # ─── Temporal Event Schemas ───
+    TemporalWorkflowRegisteredPayload:
+    type: object
+    required:
+      - tenant_id
+      - workflow_type
+      - version
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      workflow_type:
+        type: string
+        description: Temporal workflow type name.
+      version:
+        type: string
+        description: Workflow version.
+      task_queue:
+        type: string
+        description: Temporal task queue.
+      durable:
+        type: boolean
+        description: Whether durable execution is enabled.
+      registered_at:
+        type: string
+        format: date-time
+        description: Registration timestamp.
+
+    TemporalCheckpointCreatedPayload:
+    type: object
+    required:
+      - tenant_id
+      - workflow_id
+      - checkpoint_id
+      - timestamp
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      workflow_id:
+        type: string
+        format: uuid
+        description: Temporal workflow execution ID.
+      run_id:
+        type: string
+        description: Temporal run ID.
+      checkpoint_id:
+        type: string
+        format: uuid
+        description: Checkpoint unique ID.
+      node_id:
+        type: string
+        format: uuid
+        description: Node ID at checkpoint.
+      state_version:
+        type: integer
+        description: State version at checkpoint.
+      timestamp:
+        type: string
+        format: date-time
+        description: Checkpoint timestamp.
+      variables:
+        type: object
+        description: Workflow variables at checkpoint.
+
+    TemporalWorkflowReplayedPayload:
+    type: object
+    required:
+      - tenant_id
+      - workflow_id
+      - replay_id
+      - source_checkpoint_id
+      - status
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      workflow_id:
+        type: string
+        format: uuid
+        description: Temporal workflow execution ID.
+      run_id:
+        type: string
+        description: New run ID after replay.
+      replay_id:
+        type: string
+        format: uuid
+        description: Replay operation ID.
+      source_checkpoint_id:
+        type: string
+        format: uuid
+        description: Source checkpoint ID.
+      strategy:
+        type: string
+        enum: [full, partial, until_node]
+        description: Replay strategy used.
+      status:
+        type: string
+        enum: [replaying, completed, failed]
+        description: Replay status.
+      timestamp:
+        type: string
+        format: date-time
+        description: Replay timestamp.
+
+    # ─── Ray Event Schemas ───
+    RayWorkerPooledPayload:
+    type: object
+    required:
+      - tenant_id
+      - pool_id
+      - name
+      - status
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      pool_id:
+        type: string
+        format: uuid
+        description: Worker pool ID.
+      name:
+        type: string
+        description: Pool name.
+      status:
+        type: string
+        enum: [active, draining, stopped, scaling]
+        description: Pool status.
+      min_workers:
+        type: integer
+        description: Minimum workers.
+      max_workers:
+        type: integer
+        description: Maximum workers.
+      current_workers:
+        type: integer
+        description: Current active workers.
+      cluster_id:
+        type: string
+        format: uuid
+        description: Ray cluster ID.
+      timestamp:
+        type: string
+        format: date-time
+        description: Event timestamp.
+
+    RayTaskSubmittedPayload:
+    type: object
+    required:
+      - tenant_id
+      - task_id
+      - node_id
+      - timestamp
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      task_id:
+        type: string
+        format: uuid
+        description: Ray task ID.
+      node_id:
+        type: string
+        format: uuid
+        description: Orchestrator node ID.
+      workflow_id:
+        type: string
+        format: uuid
+        description: Parent workflow ID.
+      function_ref:
+        type: string
+        description: Ray remote function reference.
+      num_workers:
+        type: integer
+        description: Number of workers to distribute across.
+      resources:
+        type: object
+        description: Resource requirements.
+      timestamp:
+        type: string
+        format: date-time
+        description: Submission timestamp.
+
+    RayTaskCompletedPayload:
+    type: object
+    required:
+      - tenant_id
+      - task_id
+      - status
+      - timestamp
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      task_id:
+        type: string
+        format: uuid
+        description: Ray task ID.
+      node_id:
+        type: string
+        format: uuid
+        description: Orchestrator node ID.
+      status:
+        type: string
+        enum: [succeeded, failed, cancelled, timed_out]
+        description: Task status.
+      worker_id:
+        type: string
+        format: uuid
+        description: Ray worker that executed the task.
+      duration_ms:
+        type: integer
+        description: Execution duration in milliseconds.
+      timestamp:
+        type: string
+        format: date-time
+        description: Completion timestamp.
+
+    RayWorkerStatusPayload:
+    type: object
+    required:
+      - tenant_id
+      - worker_id
+      - status
+      - timestamp
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      worker_id:
+        type: string
+        format: uuid
+        description: Ray worker ID.
+      pool_id:
+        type: string
+        format: uuid
+        description: Worker pool ID.
+      status:
+        type: string
+        enum: [starting, running, stopping, stopped, error]
+        description: Worker status.
+      resources:
+        type: object
+        description: Worker resources.
+      tasks_completed:
+        type: integer
+        description: Number of tasks completed by this worker.
+      timestamp:
+        type: string
+        format: date-time
+        description: Status update timestamp.
+
+    # ─── Celery/Kafka Event Schemas ───
+    CeleryQueueCreatedPayload:
+    type: object
+    required:
+      - tenant_id
+      - queue_name
+      - broker
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      queue_name:
+        type: string
+        description: Celery queue name.
+      broker:
+        type: string
+        enum: [kafka, redis, rabbitmq]
+        description: Message broker type.
+      broker_url:
+        type: string
+        description: Broker connection URL.
+      partitions:
+        type: integer
+        description: Kafka partitions.
+      max_concurrency:
+        type: integer
+        description: Maximum concurrency.
+      created_at:
+        type: string
+        format: date-time
+        description: Queue creation timestamp.
+
+    CeleryTaskPublishedPayload:
+    type: object
+    required:
+      - tenant_id
+      - task_id
+      - task_name
+      - queue_name
+      - timestamp
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      task_id:
+        type: string
+        format: uuid
+        description: Celery task ID.
+      task_name:
+        type: string
+        description: Task name.
+      queue_name:
+        type: string
+        description: Target queue name.
+      workflow_id:
+        type: string
+        format: uuid
+        description: Parent workflow ID.
+      node_id:
+        type: string
+        format: uuid
+        description: Source node ID.
+      priority:
+        type: integer
+        description: Task priority.
+      time_limit:
+        type: integer
+        description: Hard time limit in seconds.
+      soft_time_limit:
+        type: integer
+        description: Soft time limit in seconds.
+      timestamp:
+        type: string
+        format: date-time
+        description: Publication timestamp.
+
+    CeleryTaskConsumedPayload:
+    type: object
+    required:
+      - tenant_id
+      - task_id
+      - worker_id
+      - queue_name
+      - timestamp
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      task_id:
+        type: string
+        format: uuid
+        description: Celery task ID.
+      worker_id:
+        type: string
+        format: uuid
+        description: Worker that consumed the task.
+      queue_name:
+        type: string
+        description: Queue the task was consumed from.
+      prefetch_count:
+        type: integer
+        description: Current prefetch count.
+      timestamp:
+        type: string
+        format: date-time
+        description: Consumption timestamp.
+
+    CeleryTaskCompletedPayload:
+    type: object
+    required:
+      - tenant_id
+      - task_id
+      - status
+      - timestamp
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      task_id:
+        type: string
+        format: uuid
+        description: Celery task ID.
+      task_name:
+        type: string
+        description: Task name.
+      queue_name:
+        type: string
+        description: Queue the task was on.
+      status:
+        type: string
+        enum: [succeeded, failed, retry, revoked]
+        description: Task status.
+      worker_id:
+        type: string
+        format: uuid
+        description: Worker that executed the task.
+      duration_ms:
+        type: integer
+        description: Execution duration in milliseconds.
+      retry_count:
+        type: integer
+        description: Number of retry attempts.
+      error_code:
+        type: string
+        description: Error code if failed.
+      error_message:
+        type: string
+        description: Error message if failed.
+      timestamp:
+        type: string
+        format: date-time
+        description: Completion timestamp.
+
+    CeleryWorkerHeartbeatPayload:
+    type: object
+    required:
+      - tenant_id
+      - worker_id
+      - queue
+      - timestamp
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      worker_id:
+        type: string
+        format: uuid
+        description: Worker ID.
+      queue:
+        type: string
+        description: Queue name.
+      concurrency:
+        type: integer
+        description: Worker concurrency.
+      active_tasks:
+        type: integer
+        description: Number of active tasks.
+      completed_tasks:
+        type: integer
+        description: Total completed tasks.
+      load_avg:
+        type: object
+        description: System load average.
+      timestamp:
+        type: string
+        format: date-time
+        description: Heartbeat timestamp.
+
+    # ─── Stack Health Event Schema ───
+    StackHealthPayload:
+    type: object
+    required:
+      - tenant_id
+      - timestamp
+      - stacks
+    properties:
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant ID.
+      timestamp:
+        type: string
+        format: date-time
+        description: Health check timestamp.
+      stacks:
+        type: object
+        properties:
+          langgraph:
+            $ref: '#/components/schemas/StackHealthModulePayload'
+          temporal:
+            $ref: '#/components/schemas/StackHealthModulePayload'
+          ray:
+            $ref: '#/components/schemas/StackHealthModulePayload'
+          celery:
+            $ref: '#/components/schemas/StackHealthModulePayload'
+
+    StackHealthModulePayload:
+    type: object
+    required:
+      - status
+    properties:
+      status:
+        type: string
+        enum: [healthy, degraded, unhealthy, unknown]
+        description: Module health status.
+      version:
+        type: string
+        description: Component version.
+      uptime_seconds:
+        type: integer
+        description: Uptime in seconds.
+      details:
+        type: object
+        description: Module-specific health details.
+
   messages:
     WorkflowCreated:
       payload:
@@ -531,6 +1796,133 @@ components:
       payload:
         $ref: '#/components/schemas/AgentUnavailablePayload'
       name: operan.events.orchestration.agent.unavailable
+    AgentOnline:
+      payload:
+        $ref: '#/components/schemas/AgentOnlinePayload'
+      name: operan.events.orchestration.agent.online
+    AgentOffline:
+      payload:
+        $ref: '#/components/schemas/AgentOfflinePayload'
+      name: operan.events.orchestration.agent.offline
+    EscalationCreated:
+      payload:
+        $ref: '#/components/schemas/EscalationCreatedPayload'
+      name: operan.events.orchestration.escalation.created
+    EscalationAcknowledged:
+      payload:
+        $ref: '#/components/schemas/EscalationAcknowledgedPayload'
+      name: operan.events.orchestration.escalation.acknowledged
+    EscalationResolved:
+      payload:
+        $ref: '#/components/schemas/EscalationResolvedPayload'
+      name: operan.events.orchestration.escalation.resolved
+    RetryRequested:
+      payload:
+        $ref: '#/components/schemas/RetryRequestedPayload'
+      name: operan.events.orchestration.retry.requested
+    RetryCompleted:
+      payload:
+        $ref: '#/components/schemas/RetryCompletedPayload'
+      name: operan.events.orchestration.retry.completed
+    WorkflowPriorityChanged:
+      payload:
+        $ref: '#/components/schemas/WorkflowPriorityChangedPayload'
+      name: operan.events.orchestration.priority.changed
+    WorkflowDelegation:
+      payload:
+        $ref: '#/components/schemas/WorkflowDelegationPayload'
+      name: operan.events.orchestration.delegation.created
+    DelegationCompleted:
+      payload:
+        $ref: '#/components/schemas/DelegationCompletedPayload'
+      name: operan.events.orchestration.delegation.completed
+    NodeStarted:
+      payload:
+        $ref: '#/components/schemas/NodeStartedPayload'
+      name: operan.events.orchestration.node.started
+    NodeCompleted:
+      payload:
+        $ref: '#/components/schemas/NodeCompletedPayload'
+      name: operan.events.orchestration.node.completed
+    NodeFailed:
+      payload:
+        $ref: '#/components/schemas/NodeFailedPayload'
+      name: operan.events.orchestration.node.failed
+
+    # ─── LangGraph Messages ───
+    LangGraphGraphRegistered:
+      payload:
+        $ref: '#/components/schemas/LangGraphGraphRegisteredPayload'
+      name: operan.events.orchestration.langgraph.graph.registered
+    LangGraphStateUpdated:
+      payload:
+        $ref: '#/components/schemas/LangGraphStateUpdatedPayload'
+      name: operan.events.orchestration.langgraph.state.updated
+    LangGraphGraphDeployed:
+      payload:
+        $ref: '#/components/schemas/LangGraphGraphDeployedPayload'
+      name: operan.events.orchestration.langgraph.graph.deployed
+
+    # ─── Temporal Messages ───
+    TemporalWorkflowRegistered:
+      payload:
+        $ref: '#/components/schemas/TemporalWorkflowRegisteredPayload'
+      name: operan.events.orchestration.temporal.workflow.registered
+    TemporalCheckpointCreated:
+      payload:
+        $ref: '#/components/schemas/TemporalCheckpointCreatedPayload'
+      name: operan.events.orchestration.temporal.checkpoint.created
+    TemporalWorkflowReplayed:
+      payload:
+        $ref: '#/components/schemas/TemporalWorkflowReplayedPayload'
+      name: operan.events.orchestration.temporal.workflow.replayed
+
+    # ─── Ray Messages ───
+    RayWorkerPooled:
+      payload:
+        $ref: '#/components/schemas/RayWorkerPooledPayload'
+      name: operan.events.orchestration.ray.worker.pooled
+    RayTaskSubmitted:
+      payload:
+        $ref: '#/components/schemas/RayTaskSubmittedPayload'
+      name: operan.events.orchestration.ray.task.submitted
+    RayTaskCompleted:
+      payload:
+        $ref: '#/components/schemas/RayTaskCompletedPayload'
+      name: operan.events.orchestration.ray.task.completed
+    RayWorkerStatus:
+      payload:
+        $ref: '#/components/schemas/RayWorkerStatusPayload'
+      name: operan.events.orchestration.ray.worker.status
+
+    # ─── Celery/Kafka Messages ───
+    CeleryQueueCreated:
+      payload:
+        $ref: '#/components/schemas/CeleryQueueCreatedPayload'
+      name: operan.events.orchestration.celery.queue.created
+    CeleryTaskPublished:
+      payload:
+        $ref: '#/components/schemas/CeleryTaskPublishedPayload'
+      name: operan.events.orchestration.celery.task.published
+    CeleryTaskConsumed:
+      payload:
+        $ref: '#/components/schemas/CeleryTaskConsumedPayload'
+      name: operan.events.orchestration.celery.task.consumed
+    CeleryTaskCompleted:
+      payload:
+        $ref: '#/components/schemas/CeleryTaskCompletedPayload'
+      name: operan.events.orchestration.celery.task.completed
+    CeleryWorkerHeartbeat:
+      payload:
+        $ref: '#/components/schemas/CeleryWorkerHeartbeatPayload'
+      name: operan.events.orchestration.celery.worker.heartbeat
+
+    # ─── Stack Health Message ───
+    StackHealth:
+      payload:
+        $ref: '#/components/schemas/StackHealthPayload'
+      name: operan.events.orchestration.stack.health
+
   securitySchemes:
     BearerAuth:
       type: http
