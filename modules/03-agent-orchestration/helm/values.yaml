@@ -1,0 +1,164 @@
+# Operan Agent Orchestration Engine — Helm Values
+# Module 03
+
+nameOverride: ""
+fullnameOverride: "agent-orchestration"
+
+image:
+  repository: registry.operan.internal/agent-orchestration
+  pullPolicy: IfNotPresent
+  tag: ""
+
+replicaCount: 3
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+  metricsPort: 9090
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+  hosts:
+    - host: api.operan.internal
+      paths:
+        - path: /api/v1/orchestration
+          pathType: Prefix
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 2Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Orchestration configuration
+orchestration:
+  # Default stack for workflow execution (langgraph/temporal/ray/celery)
+  defaultStack: langgraph
+  # Maximum concurrent workflows per tenant
+  maxConcurrentWorkflows: 100
+  # Workflow timeout (seconds)
+  workflowTimeoutSeconds: 3600
+  # Node execution timeout (seconds)
+  nodeTimeoutSeconds: 300
+  # Enable DAG validation on workflow creation
+  validateDAG: true
+  # Enable checkpointing
+  enableCheckpointing: true
+  # Checkpoint interval (seconds)
+  checkpointIntervalSeconds: 60
+
+# Agent scheduling configuration
+scheduling:
+  # Default scheduling interval (seconds)
+  defaultIntervalSeconds: 60
+  # Maximum retry attempts for failed agents
+  maxRetryAttempts: 3
+  # Agent health check interval (seconds)
+  healthCheckIntervalSeconds: 30
+
+# LangGraph configuration
+langgraph:
+  enabled: true
+  # LangGraph API endpoint
+  apiEndpoint: http://langgraph-operan:8080
+  # Max graph nodes
+  maxNodes: 1000
+  # Max graph edges
+  maxEdges: 5000
+
+# Temporal configuration
+temporal:
+  enabled: true
+  # Temporal server host:port
+  host: temporal-operan:7233
+  # Temporal namespace
+  namespace: operan-orchestration
+  # gRPC port
+  grpcPort: 7233
+  # Web UI port
+  webPort: 8088
+
+# Ray configuration
+ray:
+  enabled: true
+  # Ray head service
+  headService: ray-operan-head-svc.ray.svc.cluster.local
+  # Ray head port
+  headPort: 6379
+  # Default worker pool size
+  defaultWorkerPoolSize: 10
+  # Max worker pool size
+  maxWorkerPoolSize: 100
+
+# Celery/Kafka configuration
+celery:
+  enabled: true
+  # Kafka brokers
+  kafkaBrokers:
+    - kafka-operan-0.kafka-operan:9092
+    - kafka-operan-1.kafka-operan:9092
+    - kafka-operan-2.kafka-operan:9092
+  # Redis broker for Celery
+  redisBroker: redis-operan:6379
+  # Redis backend for Celery
+  redisBackend: redis-operan:6379
+  # Default concurrency per worker
+  defaultConcurrency: 10
+
+# Observability integration
+observability:
+  metricsEnabled: true
+  metricsPort: 9090
+  healthCheckIntervalSeconds: 30
+  telemetryEndpoint: http://observability-operan:8080/ingest
+
+# IAM integration
+identity:
+  authenticationMethod: jwt
+  tenantContextHeader: X-Tenant-ID
+  tokenValidationEndpoint: http://identity-access-mgmt:8080/.well-known/jwks.json
+
+# Event bus configuration
+eventBus:
+  # Event bus type: kafka/pulsar
+  type: kafka
+  brokers:
+    - kafka-operan:9092
+  # Default topic replication factor
+  replicationFactor: 3
+  # Retry configuration
+  retry:
+    maxAttempts: 3
+    backoffSeconds: 2
+
+# Network policies
+networkPolicy:
+  enabled: true
+  ingressNamespaces:
+    - tenant-control-plane
+    - department-template-engine
+    - knowledge-ingestion
+    - tool-execution
+    - human-supervision
+    - observability
+  egressNamespaces:
+    - identity-access-mgmt
+    - model-abstraction
+    - sovereign-deployment
+    - observability
+    - enterprise-connector

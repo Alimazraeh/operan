@@ -1,0 +1,14 @@
+apiVersion: v2
+name: agent-orchestration
+description: Operan Agent Orchestration Engine — DAG-based workflow execution, agent scheduling, state checkpointing, multi-stack orchestration
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - operan
+  - orchestration
+  - agent
+  - workflow
+maintainers:
+  - name: Operan Platform Team
+    email: platform@operan.internal

@@ -7,20 +7,84 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
+	"github.com/google/uuid"
+
+	"github.com/operan/modules/02-identity-access/internal/authentik"
 	"github.com/operan/modules/02-identity-access/internal/events"
 	"github.com/operan/modules/02-identity-access/internal/middleware"
 	"github.com/operan/modules/02-identity-access/internal/models"
-	"github.com/operan/modules/02-identity-access/internal/store"
 )
 
-func NewTestRoleHandler() *RoleHandler {
-	return &RoleHandler{
-		Roles:     store.NewRoleStore(),
-		Audit:     store.NewAuditStore(),
-		Publisher: events.NewPublisher(""),
+// mockRBAC implements authentik.RBACOperations with in-memory state for testing.
+type mockRBAC struct {
+	mu        sync.Mutex
+	roles     map[string]*authentik.Role // uuid -> role
+	nameIndex map[string]string          // name -> uuid
+}
+
+func newMockRBAC() *mockRBAC {
+	return &mockRBAC{
+		roles:     make(map[string]*authentik.Role),
+		nameIndex: make(map[string]string),
 	}
+}
+
+func (m *mockRBAC) Create(ctx context.Context, req authentik.CreateRoleRequest) (*authentik.Role, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	// Check for duplicate name
+	if _, exists := m.nameIndex[req.Name]; exists {
+		return nil, &authentik.APIError{StatusCode: 409}
+	}
+
+	id := uuid.New().String()
+	role := &authentik.Role{
+		UUID:        id,
+		Name:        req.Name,
+		Permissions: req.Permissions,
+	}
+	m.roles[id] = role
+	m.nameIndex[req.Name] = id
+	return role, nil
+}
+
+func (m *mockRBAC) List(ctx context.Context) ([]*authentik.Role, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	result := make([]*authentik.Role, 0, len(m.roles))
+	for _, r := range m.roles {
+		result = append(result, r)
+	}
+	return result, nil
+}
+
+func (m *mockRBAC) GetByID(ctx context.Context, uuid string) (*authentik.Role, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	r, exists := m.roles[uuid]
+	if !exists {
+		return nil, &authentik.APIError{StatusCode: 404}
+	}
+	return r, nil
+}
+
+func (m *mockRBAC) Delete(ctx context.Context, uuid string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	r, exists := m.roles[uuid]
+	if !exists {
+		return &authentik.APIError{StatusCode: 404}
+	}
+	delete(m.nameIndex, r.Name)
+	delete(m.roles, uuid)
+	return nil
 }
 
 func setPrincipalInContext(req *http.Request, principal *middleware.JWTToken) *http.Request {
@@ -33,7 +97,7 @@ func setPrincipalInContext(req *http.Request, principal *middleware.JWTToken) *h
 }
 
 func TestRoleHandlerCreateSuccess(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	payload := `{"name":"admin","description":"Administrator role","permissions":["read","write","delete"]}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/roles", strings.NewReader(payload))
@@ -70,7 +134,7 @@ func TestRoleHandlerCreateSuccess(t *testing.T) {
 }
 
 func TestRoleHandlerCreateMissingName(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	payload := `{"description":"No name role"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/roles", strings.NewReader(payload))
@@ -94,7 +158,7 @@ func TestRoleHandlerCreateMissingName(t *testing.T) {
 }
 
 func TestRoleHandlerCreateDuplicate(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	payload := `{"name":"unique-role","description":"First role","permissions":["read","write","delete"]}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/roles", strings.NewReader(payload))
@@ -131,7 +195,7 @@ func TestRoleHandlerCreateDuplicate(t *testing.T) {
 }
 
 func TestRoleHandlerList(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	// Create a few roles first
 	for i := 0; i < 3; i++ {
@@ -184,7 +248,7 @@ func TestRoleHandlerList(t *testing.T) {
 }
 
 func TestRoleHandlerListDefaultPageSize(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	principal := &middleware.JWTToken{
 		Subject:  "user-1",
@@ -214,7 +278,7 @@ func TestRoleHandlerListDefaultPageSize(t *testing.T) {
 }
 
 func TestRoleHandlerGetByID(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	// Create a role first
 	payload := `{"name":"get-role","description":"Get Role","permissions":["read","write","delete"]}`
@@ -242,6 +306,7 @@ func TestRoleHandlerGetByID(t *testing.T) {
 	// Get by ID
 	req = httptest.NewRequest(http.MethodGet, "/api/v1/iam/roles/"+created.ID, nil)
 	req.Header.Set("Authorization", "Bearer token")
+	req = setPrincipalInContext(req, principal)
 
 	w = httptest.NewRecorder()
 	h.GetByID(w, req)
@@ -260,7 +325,7 @@ func TestRoleHandlerGetByID(t *testing.T) {
 }
 
 func TestRoleHandlerGetByIDNotFound(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/roles/nonexistent", nil)
 	req.Header.Set("Authorization", "Bearer token")
@@ -274,7 +339,7 @@ func TestRoleHandlerGetByIDNotFound(t *testing.T) {
 }
 
 func TestRoleHandlerDelete(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	// Create a role first
 	payload := `{"name":"delete-role","description":"Delete Role","permissions":["read","write","delete"]}`
@@ -313,7 +378,7 @@ func TestRoleHandlerDelete(t *testing.T) {
 }
 
 func TestRoleHandlerDeleteNotFound(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/iam/roles/nonexistent", nil)
 	req.Header.Set("X-Tenant-ID", "tenant-1")
@@ -335,7 +400,7 @@ func TestRoleHandlerDeleteNotFound(t *testing.T) {
 }
 
 func TestRoleHandlerCreateInvalidJSON(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	payload := `{"name":"invalid-role"`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/roles", strings.NewReader(payload))
@@ -351,7 +416,7 @@ func TestRoleHandlerCreateInvalidJSON(t *testing.T) {
 }
 
 func TestRoleHandlerCreateWithPermissions(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	payload := `{"name":"perm-role","description":"Permissions role","permissions":["read","write","delete"]}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/roles", strings.NewReader(payload))
@@ -383,7 +448,7 @@ func TestRoleHandlerCreateWithPermissions(t *testing.T) {
 }
 
 func TestRoleHandlerCreateWithIsSystem(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	isSystem := true
 	payload := `{"name":"system-role","description":"System role","is_system":true,"permissions":["read","write","delete"]}`
@@ -436,7 +501,7 @@ func TestExtractRoleID(t *testing.T) {
 }
 
 func TestRoleHandlerListPagination(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	// Create 7 roles for tenant-1
 	for i := 0; i < 7; i++ {
@@ -543,7 +608,7 @@ func TestRoleHandlerListPagination(t *testing.T) {
 }
 
 func TestRoleHandlerListInvalidPageSize(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	// pageSize > 100 should be clamped to 50
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/roles?page=1&page_size=200", nil)
@@ -575,7 +640,7 @@ func TestRoleHandlerListInvalidPageSize(t *testing.T) {
 }
 
 func TestRoleHandlerListInvalidPage(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	// page < 1 should default to 1
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/roles?page=0&page_size=10", nil)
@@ -607,7 +672,7 @@ func TestRoleHandlerListInvalidPage(t *testing.T) {
 }
 
 func TestRoleHandlerDeleteMissingRoleID(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/iam/roles", nil)
 	req.Header.Set("X-Tenant-ID", "tenant-1")
@@ -629,7 +694,7 @@ func TestRoleHandlerDeleteMissingRoleID(t *testing.T) {
 }
 
 func TestRoleHandlerGetByIDMissingRoleID(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/roles", nil)
 	req.Header.Set("Authorization", "Bearer token")
@@ -643,7 +708,7 @@ func TestRoleHandlerGetByIDMissingRoleID(t *testing.T) {
 }
 
 func TestRoleHandlerListTenantIsolation(t *testing.T) {
-	h := NewTestRoleHandler()
+	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
 	// Create 2 roles for tenant-1
 	for i := 0; i < 2; i++ {

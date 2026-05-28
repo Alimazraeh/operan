@@ -1,0 +1,21 @@
+Module 03 Agent Startup Flow:
+┌─────────────────────────────────┐
+│ 1. Agent starts                 │
+│ 2. POST /api/v1/iam/agent-identities │
+│    → Register capabilities, memory_scope, tools │
+│ 3. Store returned AgentIdentity.ID locally │
+└─────────────────────────────────┘
+                           │
+┌─────────────────────────────────┐
+│ For each workflow execution:    │
+│ • GET /api/v1/iam/agent-identities/agent/{id} │
+│ • POST /api/v1/iam/rbac/evaluate │
+│ • POST /api/v1/iam/abac/evaluate │
+└─────────────────────────────────┘
+                           │
+┌─────────────────────────────────┐
+│ Event correlation:              │
+│ • Use X-Trace-ID as correlationId │
+│ • Follow Module 02 event envelope format │
+│ • Include tenant_id, timestamp, payload │
+└─────────────────────────────────┘

@@ -14,7 +14,7 @@ import (
 )
 
 func NewTestUserHandler() *UserHandler {
-	return NewUserHandler(store.NewUserStore(), store.NewAuditStore(), events.NewPublisher(""))
+	return NewUserHandler(nil, store.NewUserStore(), store.NewAuditStore(), events.NewPublisher(""))
 }
 
 func TestUserHandlerCreateSuccess(t *testing.T) {

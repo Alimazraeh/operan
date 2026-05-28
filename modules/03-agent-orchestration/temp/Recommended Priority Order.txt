@@ -1,0 +1,21 @@
+Phase 0: Foundation Fixes (Sprint 1-2)
+├─ Wire config.ParseConfig() instead of hardcoded port
+├─ Add JWTAuth middleware to chain (study Module 02's AuthValidator)
+├─ Fix error response format consistency
+├─ Fix pagination to platform standard (page/page_size)
+
+Phase 1: Core Contract Coverage (Sprint 2-4)
+├─ Implement missing OpenAPI operations (escalations, retries, nodes/results)
+├─ Wire event publishing to real broker (Kafka/AMQP)
+├─ Fix event topic naming to match AsyncAPI contract
+├─ Fix handler bugs (checkpoint node_id, state computation, replay logic)
+
+Phase 2: Execution Engine (Sprint 3-6)
+├─ Implement LangGraph OR Temporal integration first (pick one)
+├─ Build DAG execution engine that actually runs workflows
+├─ Add agent heartbeat/health-check mechanism
+
+Phase 3: Persistence & Production Readiness
+├─ Add PostgreSQL repository layer behind store interfaces
+├─ Achieve ≥80% test coverage
+├─ Complete Helm chart + Dockerfile + observability wiring

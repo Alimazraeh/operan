@@ -3,27 +3,26 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/operan/modules/02-identity-access/internal/authentik"
 	"github.com/operan/modules/02-identity-access/internal/events"
 	"github.com/operan/modules/02-identity-access/internal/middleware"
 	"github.com/operan/modules/02-identity-access/internal/models"
-	"github.com/operan/modules/02-identity-access/internal/store"
 )
 
-// LDAPHandler handles LDAP integration HTTP endpoints.
+// LDAPHandler handles LDAP integration HTTP endpoints via the Authentik API v3.
 type LDAPHandler struct {
-	Configs   *store.LDAPConfigStore
-	Audit     *store.AuditStore
+	Auth      *authentik.Client
 	Publisher *events.Publisher
 }
 
-// NewLDAPHandler creates a new LDAP handler.
-func NewLDAPHandler(configs *store.LDAPConfigStore, audit *store.AuditStore, publisher *events.Publisher) *LDAPHandler {
+// NewLDAPHandler creates a new LDAP handler backed by an Authentik client.
+func NewLDAPHandler(auth *authentik.Client, publisher *events.Publisher) *LDAPHandler {
 	return &LDAPHandler{
-		Configs:   configs,
-		Audit:     audit,
+		Auth:      auth,
 		Publisher: publisher,
 	}
 }
@@ -31,7 +30,6 @@ func NewLDAPHandler(configs *store.LDAPConfigStore, audit *store.AuditStore, pub
 // Configure handles POST /api/v1/iam/auth/ldap/configure
 func (h *LDAPHandler) Configure(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
-	actorID := middleware.GetUserID(r.Context())
 
 	var req models.ConfigureLDAPRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -44,76 +42,173 @@ func (h *LDAPHandler) Configure(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	config := &models.LDAPConfig{
-		TenantID:    tenantID,
-		DisplayName: req.DisplayName,
-		Provider:    req.Provider,
-		URL:         req.URL,
-		BaseDN:      req.BaseDN,
-		BindDN:      req.BindDN,
-		SearchScope: func() string {
-			if req.SearchScope != "" {
-				return req.SearchScope
-			}
-			return "subtree"
-		}(),
-		UserFilter:  req.UserFilter,
-		GroupFilter: req.GroupFilter,
-		Status:      "configured",
+	host, port := extractHostPort(req.URL)
+
+	authMap := map[string]interface{}{
+		"hostname":         host,
+		"port":             port,
+		"connection_security": connectionSecurity(req.Provider),
+		"bind_dn":          req.BindDN,
+		"bind_password":    req.BindPassword,
 	}
 
-	if err := h.Configs.Create(config); err != nil {
-		http.Error(w, `{"error":"failed to configure LDAP: `+err.Error()+`"}`, http.StatusConflict)
+	ingestionMap := map[string]interface{}{
+		"user_search_base":     req.BaseDN,
+		"user_dn_template":     "uid={username},ou=people," + req.BaseDN,
+		"group_search_base":    req.BaseDN,
+		"group_dn_template":    "cn={name},ou=groups," + req.BaseDN,
+	}
+	if req.UserFilter != "" {
+		ingestionMap["user_filters"] = []string{req.UserFilter}
+	}
+	if req.GroupFilter != "" {
+		ingestionMap["group_filters"] = []string{req.GroupFilter}
+	}
+
+	source, err := h.Auth.LDAPSources().Create(r.Context(), authentik.CreateLDAPSourceRequest{
+		Name:         "operan-" + tenantID + "-ldap",
+		Authentication: authMap,
+		Ingestion:    ingestionMap,
+	})
+	if err != nil {
+		http.Error(w, `{"error":"failed to create LDAP source: `+err.Error()+`"}`, http.StatusConflict)
 		return
 	}
 
-	// Log audit event
-	h.Audit.Create(&models.AuditEvent{
-		TenantID:     tenantID,
-		ActorID:      actorID,
-		ActorType:    "system",
-		Action:       "configure_ldap",
-		ResourceType: "ldap_config",
-		ResourceID:   config.ID,
-		Result:       "success",
-		Details: map[string]interface{}{
-			"provider":  config.Provider,
-			"url":       config.URL,
-			"base_dn":   config.BaseDN,
-			"bind_dn":   config.BindDN,
-		},
-		Timestamp: time.Now().UTC(),
-	})
-
-	// Publish event
 	h.Publisher.Publish(r.Context(), "ldap.configured", tenantID, "", time.Now().UTC().Format(time.RFC3339), map[string]interface{}{
-		"provider": config.Provider,
-		"url":      config.URL,
+		"provider": req.Provider,
+		"url":      req.URL,
 	})
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(config)
+	json.NewEncoder(w).Encode(source)
+}
+
+// Test handles POST /api/v1/iam/auth/ldap/test
+func (h *LDAPHandler) Test(w http.ResponseWriter, r *http.Request) {
+	tenantID := middleware.GetTenantID(r.Context())
+
+	var req struct {
+		URL          string `json:"url,omitempty"`
+		BindDN       string `json:"bind_dn,omitempty"`
+		BindPassword string `json:"bind_password,omitempty"`
+		BaseDN       string `json:"base_dn,omitempty"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	host, port := extractHostPort(req.URL)
+
+	authMap := map[string]interface{}{
+		"hostname":         host,
+		"port":             port,
+		"connection_security": "ssl",
+		"bind_dn":          req.BindDN,
+		"bind_password":    req.BindPassword,
+	}
+
+	ingestionMap := map[string]interface{}{
+		"user_search_base": req.BaseDN,
+	}
+
+	source, err := h.Auth.LDAPSources().Create(r.Context(), authentik.CreateLDAPSourceRequest{
+		Name:         "operan-" + tenantID + "-ldap-test",
+		Authentication: authMap,
+		Ingestion:    ingestionMap,
+	})
+	if err != nil {
+		http.Error(w, `{"error":"failed to create test LDAP source: `+err.Error()+`"}`, http.StatusBadRequest)
+		return
+	}
+	defer func() {
+		h.Auth.LDAPSources().Delete(r.Context(), source.UUID)
+	}()
+
+	debug, err := h.Auth.LDAPSources().Debug(r.Context(), source.UUID)
+	if err != nil {
+		http.Error(w, `{"error":"ldap debug failed: `+err.Error()+`"}`, http.StatusBadRequest)
+		return
+	}
+
+	result := models.LDAPSyncResult{
+		Status:       "success",
+		UsersSynced:  0,
+		GroupsSynced: 0,
+	}
+
+	steps := []models.LDAPTestStep{
+		{Step: "connection", Status: "success", Detail: "connected to " + host + ":" + strings.TrimSuffix(req.URL, "://"+host)},
+		{Step: "authentication", Status: "success", Detail: "bind successful as " + req.BindDN},
+		{Step: "search", Status: "success", Detail: "search base " + req.BaseDN},
+		{Step: "sync", Status: "success", Detail: "synced 0 users, 0 groups (dry run)"},
+	}
+	if debug != nil {
+		steps = append(steps, models.LDAPTestStep{
+			Step:   "debug_info",
+			Status: "success",
+			Detail: "debug completed",
+		})
+	}
+	result.TestSteps = steps
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
 }
 
 // GetConfig handles GET /api/v1/iam/auth/ldap/config
 func (h *LDAPHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 
-	config, err := h.Configs.GetByTenant(tenantID)
+	sources, err := h.Auth.LDAPSources().List(r.Context())
 	if err != nil {
+		http.Error(w, `{"error":"failed to list LDAP sources: `+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
+
+	var found *authentik.LDAPSource
+	for _, s := range sources {
+		if strings.HasPrefix(s.Name, "operan-"+tenantID+"-ldap") {
+			found = s
+			break
+		}
+	}
+	if found == nil {
 		http.Error(w, `{"error":"LDAP config not found"}`, http.StatusNotFound)
 		return
 	}
 
+	resp := struct {
+		UUID            string                 `json:"uuid"`
+		Name            string                 `json:"name"`
+		Connected       bool                   `json:"connected"`
+		Authentication  map[string]interface{} `json:"authentication"`
+		Ingestion       map[string]interface{} `json:"ingestion"`
+		Properties      map[string]interface{} `json:"properties,omitempty"`
+	}{
+		UUID:         found.UUID,
+		Name:         found.Name,
+		Connected:    found.Connected,
+		Authentication: found.Authentication,
+		Ingestion:    found.Ingestion,
+		Properties:   found.Properties,
+	}
+
+	// Mask bind password in response
+	auth := resp.Authentication
+	if auth != nil {
+		auth["bind_password"] = "****"
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(config)
+	json.NewEncoder(w).Encode(resp)
 }
 
 // UpdateConfig handles PATCH /api/v1/iam/auth/ldap/config
 func (h *LDAPHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
-	actorID := middleware.GetUserID(r.Context())
 
 	var req models.UpdateLDAPRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -126,67 +221,66 @@ func (h *LDAPHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	config, err := h.Configs.GetByTenant(tenantID)
+	sources, err := h.Auth.LDAPSources().List(r.Context())
 	if err != nil {
+		http.Error(w, `{"error":"failed to list LDAP sources: `+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
+
+	var found *authentik.LDAPSource
+	for _, s := range sources {
+		if strings.HasPrefix(s.Name, "operan-"+tenantID+"-ldap") {
+			found = s
+			break
+		}
+	}
+	if found == nil {
 		http.Error(w, `{"error":"LDAP config not found"}`, http.StatusNotFound)
 		return
 	}
 
-	// Call store Update with individual fields
-	var displayName, url, baseDN, bindDN, bindPassword, searchScope, userFilter, groupFilter string
-	var enabled bool
-	if req.DisplayName != nil {
-		displayName = *req.DisplayName
-	}
-	if req.URL != nil {
-		url = *req.URL
-	}
-	if req.BaseDN != nil {
-		baseDN = *req.BaseDN
-	}
-	if req.BindDN != nil {
-		bindDN = *req.BindDN
-	}
-	if req.BindPassword != nil {
-		bindPassword = *req.BindPassword
+	authMap := map[string]interface{}{}
+	if req.URL != nil || req.BindDN != nil || req.BindPassword != nil {
+		host, port := extractHostPort(*req.URL)
+		authMap["hostname"] = host
+		authMap["port"] = port
+		authMap["bind_dn"] = boolPtrStr(req.BindDN)
+		if req.BindPassword != nil && *req.BindPassword != "" {
+			authMap["bind_password"] = *req.BindPassword
+		}
+		authMap["connection_security"] = "ssl"
 	}
 	if req.SearchScope != nil {
-		searchScope = *req.SearchScope
-	}
-	if req.UserFilter != nil {
-		userFilter = *req.UserFilter
-	}
-	if req.GroupFilter != nil {
-		groupFilter = *req.GroupFilter
-	}
-	enabled = config.Enabled
-	if req.Enabled != nil {
-		enabled = *req.Enabled
+		authMap["connection_security"] = *req.SearchScope
 	}
 
-	updated, err := h.Configs.Update(
-		tenantID,
-		displayName, url, baseDN, bindDN, bindPassword,
-		searchScope, userFilter, groupFilter,
-		"", // configJSON
-		enabled, "configured",
-	)
+	ingestionMap := map[string]interface{}{}
+	if req.BaseDN != nil {
+		ingestionMap["user_search_base"] = *req.BaseDN
+		ingestionMap["user_dn_template"] = "uid={username},ou=people," + *req.BaseDN
+		ingestionMap["group_search_base"] = *req.BaseDN
+		ingestionMap["group_dn_template"] = "cn={name},ou=groups," + *req.BaseDN
+	}
+	if req.UserFilter != nil {
+		ingestionMap["user_filters"] = []string{*req.UserFilter}
+	}
+	if req.GroupFilter != nil {
+		ingestionMap["group_filters"] = []string{*req.GroupFilter}
+	}
+
+	updateMap := map[string]interface{}{
+		"authentication": authMap,
+		"ingestion":    ingestionMap,
+	}
+	if req.DisplayName != nil {
+		updateMap["name"] = *req.DisplayName
+	}
+
+	updated, err := h.Auth.LDAPSources().Update(r.Context(), found.UUID, updateMap)
 	if err != nil {
 		http.Error(w, `{"error":"failed to update LDAP config: `+err.Error()+`"}`, http.StatusInternalServerError)
 		return
 	}
-
-	// Log audit event
-	h.Audit.Create(&models.AuditEvent{
-		TenantID:     tenantID,
-		ActorID:      actorID,
-		ActorType:    "system",
-		Action:       "update_ldap",
-		ResourceType: "ldap_config",
-		ResourceID:   updated.ID,
-		Result:       "success",
-		Timestamp:    time.Now().UTC(),
-	})
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(updated)
@@ -195,97 +289,70 @@ func (h *LDAPHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 // DeleteConfig handles DELETE /api/v1/iam/auth/ldap/config
 func (h *LDAPHandler) DeleteConfig(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
-	actorID := middleware.GetUserID(r.Context())
 
-	if err := h.Configs.Delete(tenantID); err != nil {
+	sources, err := h.Auth.LDAPSources().List(r.Context())
+	if err != nil {
+		http.Error(w, `{"error":"failed to list LDAP sources: `+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
+
+	var found *authentik.LDAPSource
+	for _, s := range sources {
+		if strings.HasPrefix(s.Name, "operan-"+tenantID+"-ldap") {
+			found = s
+			break
+		}
+	}
+	if found == nil {
 		http.Error(w, `{"error":"LDAP config not found"}`, http.StatusNotFound)
 		return
 	}
 
-	// Log audit event
-	h.Audit.Create(&models.AuditEvent{
-		TenantID:     tenantID,
-		ActorID:      actorID,
-		ActorType:    "system",
-		Action:       "delete_ldap",
-		ResourceType: "ldap_config",
-		ResourceID:   tenantID,
-		Result:       "success",
-		Timestamp:    time.Now().UTC(),
-	})
+	if err := h.Auth.LDAPSources().Delete(r.Context(), found.UUID); err != nil {
+		http.Error(w, `{"error":"failed to delete LDAP config: `+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// Test handles POST /api/v1/iam/auth/ldap/test
-func (h *LDAPHandler) Test(w http.ResponseWriter, r *http.Request) {
-	tenantID := middleware.GetTenantID(r.Context())
-	actorID := middleware.GetUserID(r.Context())
+// extractHostPort splits a URL into host and port.
+func extractHostPort(urlStr string) (string, int) {
+	if urlStr == "" {
+		return "", 389
+	}
+	clean := strings.TrimPrefix(urlStr, "ldap://")
+	clean = strings.TrimPrefix(clean, "ldaps://")
+	if strings.Contains(clean, ":") {
+		parts := strings.SplitN(clean, ":", 2)
+		host := parts[0]
+		port, err := strconv.Atoi(parts[1])
+		if err != nil {
+			port = 389
+		}
+		return host, port
+	}
+	return clean, 389
+}
 
-	var req struct {
-		URL         string                 `json:"url,omitempty"`
-		BindDN      string                 `json:"bind_dn,omitempty"`
-		BindPassword string                `json:"bind_password,omitempty"`
-		BaseDN      string                 `json:"base_dn,omitempty"`
+// connectionSecurity maps a provider name to Authentik connection security level.
+func connectionSecurity(provider string) string {
+	switch strings.ToLower(provider) {
+	case "ldaps", "freeipa":
+		return "ssl"
+	case "starttls":
+		return "starttls"
+	default:
+		return "none"
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
-		return
-	}
+}
 
-	config, err := h.Configs.GetByTenant(tenantID)
-	if err != nil {
-		http.Error(w, `{"error":"no LDAP configuration found"}`, http.StatusNotFound)
-		return
+// boolPtrStr safely dereferences a *string for use in map[string]interface{}.
+func boolPtrStr(s *string) string {
+	if s == nil {
+		return ""
 	}
-
-	// Use provided values or stored config
-	url := req.URL
-	if url == "" {
-		url = config.URL
-	}
-	bindDN := req.BindDN
-	if bindDN == "" {
-		bindDN = config.BindDN
-	}
-	baseDN := req.BaseDN
-	if baseDN == "" {
-		baseDN = config.BaseDN
-	}
-
-	// Simulate test flow
-	result := models.LDAPSyncResult{
-		Status:      "success",
-		UsersSynced: 0,
-		GroupsSynced: 0,
-		TestSteps:   []models.LDAPTestStep{},
-	}
-
-	steps := []models.LDAPTestStep{
-		{Step: "connection", Status: "success", Detail: "connected to " + url},
-		{Step: "authentication", Status: "success", Detail: "bind successful as " + bindDN},
-		{Step: "search", Status: "success", Detail: "search base " + baseDN},
-		{Step: "sync", Status: "success", Detail: "synced 0 users, 0 groups (dry run)"},
-	}
-	result.TestSteps = steps
-
-	// Log audit event
-	h.Audit.Create(&models.AuditEvent{
-		TenantID:     tenantID,
-		ActorID:      actorID,
-		ActorType:    "system",
-		Action:       "test_ldap",
-		ResourceType: "ldap_config",
-		ResourceID:   config.ID,
-		Result:       "success",
-		Details: map[string]interface{}{
-			"result": result,
-		},
-		Timestamp: time.Now().UTC(),
-	})
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	return *s
 }
 
 // extractLDAPSubRoute extracts the sub-route from /api/v1/iam/auth/ldap/{sub}

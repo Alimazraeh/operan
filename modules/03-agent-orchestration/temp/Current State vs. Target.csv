@@ -1,0 +1,8 @@
+﻿Dimension,Current,Target,Gap
+OpenAPI coverage,~31% (17/54 ops),100%,🔴 Large
+AsyncAPI coverage,~22% (8/37 channels),100%,🔴 Large
+Execution stacks,0/4 implemented,4/4,🔴 Critical
+Persistence,In-memory only,PostgreSQL/Redis,🔴 Critical
+Auth middleware,Defined but unwired,Fully wired,🔴 Critical
+Test coverage,0%,≥80%,🔴 Critical
+Helm/Docker,Skeleton only,Production-ready,🟡 Medium

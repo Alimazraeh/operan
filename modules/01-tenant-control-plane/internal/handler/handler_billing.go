@@ -341,6 +341,31 @@ func SetDefaultPaymentMethod(h *middleware.Handler) http.HandlerFunc {
 	}
 }
 
+// GetBillingMethod handles GET /tenants/{id}/billing/payment-methods/{method_id}.
+func GetBillingMethod(h *middleware.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		_, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
+		methodID, ok := extractPathParam(r, "method_id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "method id is required")
+			return
+		}
+
+		pm, err := h.PaymentMethodStore.GetByID(methodID)
+		if err != nil {
+			h.WriteError(w, http.StatusNotFound, 404, "payment method not found", err.Error())
+			return
+		}
+
+		h.WriteJSON(w, http.StatusOK, paymentMethodResponse(pm))
+	}
+}
+
 // UpgradePlan handles POST /tenants/{id}/billing/upgrade-plan.
 func UpgradePlan(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

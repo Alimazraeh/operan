@@ -297,74 +297,172 @@ type PaymentMethodListResponse struct {
 	HasMore bool                     `json:"has_more"`
 }
 
+// SubscriptionListResponse wraps subscription data per OpenAPI contract.
+// Fields: items, total
+type SubscriptionListResponse struct {
+	Items []*SubscriptionResponse `json:"items"`
+	Total int                     `json:"total"`
+}
+
+// ─── Namespace/ListResponse types ────────────────────────────────────────────
+
+// NamespaceListResponse wraps paginated namespace data per OpenAPI contract.
+// Fields: items, page, page_size, total, has_more
+type NamespaceListResponse struct {
+	Items    []*NamespaceResponse `json:"items"`
+	Page     int                  `json:"page"`
+	PageSize int                  `json:"page_size"`
+	Total    int                  `json:"total"`
+	HasMore  bool                 `json:"has_more"`
+}
+
+// ─── DeploymentListResponse types ────────────────────────────────────────────
+
+// DeploymentListResponse wraps paginated deployment data per OpenAPI contract.
+// Fields: items, page, page_size, total, has_more
+type DeploymentListResponse struct {
+	Items    []*DeploymentResponse `json:"items"`
+	Page     int                   `json:"page"`
+	PageSize int                   `json:"page_size"`
+	Total    int                   `json:"total"`
+	HasMore  bool                  `json:"has_more"`
+}
+
+// ─── PolicyListResponse types ────────────────────────────────────────────────
+
+// PolicyListResponse wraps paginated policy data per OpenAPI contract.
+// Fields: items, page, page_size, total, has_more
+type PolicyListResponse struct {
+	Items    []*PolicyResponse `json:"items"`
+	Page     int               `json:"page"`
+	PageSize int               `json:"page_size"`
+	Total    int               `json:"total"`
+	HasMore  bool              `json:"has_more"`
+}
+
+// ─── EnvironmentListResponse types ───────────────────────────────────────────
+
+// EnvironmentListResponse wraps paginated environment data per OpenAPI contract.
+// Fields: items, page, page_size, total, has_more
+type EnvironmentListResponse struct {
+	Items    []*EnvironmentResponse `json:"items"`
+	Page     int                    `json:"page"`
+	PageSize int                    `json:"page_size"`
+	Total    int                    `json:"total"`
+	HasMore  bool                   `json:"has_more"`
+}
+
 // ─── Route Registration ──────────────────────────────────────────────────────
 
 // RegisterRoutes attaches all API endpoints to the given mux.
 func RegisterRoutes(h *middleware.Handler, mux *http.ServeMux) {
 	// Tenant CRUD
-	mux.HandleFunc("GET /tenants", ListTenants(h))
-	mux.HandleFunc("POST /tenants", CreateTenant(h))
-	mux.HandleFunc("GET /tenants/{id}", GetTenant(h))
-	mux.HandleFunc("PATCH /tenants/{id}", PatchTenant(h))
-	mux.HandleFunc("DELETE /tenants/{id}", DeleteTenant(h))
+	mux.HandleFunc("GET /v1/tenants", ListTenants(h))
+	mux.HandleFunc("POST /v1/tenants", CreateTenant(h))
+	mux.HandleFunc("GET /v1/tenants/{id}", GetTenant(h))
+	mux.HandleFunc("PATCH /v1/tenants/{id}", PatchTenant(h))
+	mux.HandleFunc("DELETE /v1/tenants/{id}", DeleteTenant(h))
 
 	// Tenant quota
-	mux.HandleFunc("GET /tenants/{id}/quota", GetTenantQuota(h))
-	mux.HandleFunc("PATCH /tenants/{id}/quota", PatchTenantQuota(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/quota", GetTenantQuota(h))
+	mux.HandleFunc("PATCH /v1/tenants/{id}/quota", PatchTenantQuota(h))
 
 	// Tenant status
-	mux.HandleFunc("GET /tenants/{id}/status", GetTenantStatus(h))
-	mux.HandleFunc("POST /tenants/{id}/status/transition", TransitionTenantStatus(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/status", GetTenantStatus(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/status/transition", TransitionTenantStatus(h))
 
 	// Agent management
-	mux.HandleFunc("GET /tenants/{id}/agents", ListAgents(h))
-	mux.HandleFunc("POST /tenants/{id}/agents", CreateAgent(h))
-	mux.HandleFunc("GET /tenants/{id}/agents/{agent_id}", GetAgent(h))
-	mux.HandleFunc("PATCH /tenants/{id}/agents/{agent_id}", PatchAgent(h))
-	mux.HandleFunc("DELETE /tenants/{id}/agents/{agent_id}", DeleteAgent(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/agents", ListAgents(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/agents", CreateAgent(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/agents/{agent_id}", GetAgent(h))
+	mux.HandleFunc("PATCH /v1/tenants/{id}/agents/{agent_id}", PatchAgent(h))
+	mux.HandleFunc("DELETE /v1/tenants/{id}/agents/{agent_id}", DeleteAgent(h))
 
 	// Resource management
-	mux.HandleFunc("GET /tenants/{id}/resources", ListResources(h))
-	mux.HandleFunc("POST /tenants/{id}/resources", CreateResource(h))
-	mux.HandleFunc("GET /tenants/{id}/resources/{resource_id}", GetResource(h))
-	mux.HandleFunc("PATCH /tenants/{id}/resources/{resource_id}", PatchResource(h))
-	mux.HandleFunc("DELETE /tenants/{id}/resources/{resource_id}", DeleteResource(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/resources", ListResources(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/resources", CreateResource(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/resources/{resource_id}", GetResource(h))
+	mux.HandleFunc("PATCH /v1/tenants/{id}/resources/{resource_id}", PatchResource(h))
+	mux.HandleFunc("DELETE /v1/tenants/{id}/resources/{resource_id}", DeleteResource(h))
 
 	// Billing: invoices
-	mux.HandleFunc("GET /tenants/{id}/billing/invoices", ListInvoices(h))
-	mux.HandleFunc("GET /tenants/{id}/billing/invoices/{invoice_id}", GetInvoice(h))
-	mux.HandleFunc("GET /tenants/{id}/billing/invoices/{invoice_id}/download", DownloadInvoice(h))
-	mux.HandleFunc("PATCH /tenants/{id}/billing/invoices/{invoice_id}", UpdateInvoice(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/billing/invoices", ListInvoices(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/billing/invoices/{invoice_id}", GetInvoice(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/billing/invoices/{invoice_id}/download", DownloadInvoice(h))
+	mux.HandleFunc("PATCH /v1/tenants/{id}/billing/invoices/{invoice_id}", UpdateInvoice(h))
 
 	// Billing: usage
-	mux.HandleFunc("GET /tenants/{id}/billing/usage", GetBillingUsage(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/billing/usage", GetBillingUsage(h))
 
 	// Billing: payment methods
-	mux.HandleFunc("GET /tenants/{id}/billing/payment-methods", ListPaymentMethods(h))
-	mux.HandleFunc("POST /tenants/{id}/billing/payment-methods", CreatePaymentMethod(h))
-	mux.HandleFunc("POST /tenants/{id}/billing/payment-methods/{pm_id}/set-default", SetDefaultPaymentMethod(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/billing/payment-methods", ListPaymentMethods(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/billing/payment-methods", CreatePaymentMethod(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/billing/payment-methods/{method_id}", GetBillingMethod(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/billing/payment-methods/{pm_id}/set-default", SetDefaultPaymentMethod(h))
 
 	// Billing: subscription
-	mux.HandleFunc("GET /tenants/{id}/subscriptions", GetSubscription(h))
-	mux.HandleFunc("PATCH /tenants/{id}/subscriptions", PatchSubscription(h))
-	mux.HandleFunc("POST /tenants/{id}/subscriptions/cancel", CancelSubscription(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/subscriptions", ListSubscriptions(h))
+	mux.HandleFunc("PATCH /v1/tenants/{id}/subscriptions", PatchSubscription(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/subscriptions/cancel", CancelSubscription(h))
 
 	// Subscription detail endpoints
-	mux.HandleFunc("GET /tenants/{id}/subscriptions/{subscription_id}", GetSubscriptionByID(h))
-	mux.HandleFunc("PATCH /tenants/{id}/subscriptions/{subscription_id}", UpdateSubscriptionByID(h))
-	mux.HandleFunc("POST /tenants/{id}/subscriptions/{subscription_id}/upgrade", UpgradeSubscription(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/subscriptions/{subscription_id}", GetSubscriptionByID(h))
+	mux.HandleFunc("PATCH /v1/tenants/{id}/subscriptions/{subscription_id}", UpdateSubscriptionByID(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/subscriptions/{subscription_id}/upgrade", UpgradeSubscription(h))
 
 	// Billing: upgrade plan
-	mux.HandleFunc("POST /tenants/{id}/billing/upgrade-plan", UpgradePlan(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/billing/upgrade-plan", UpgradePlan(h))
 
 	// Secrets
-	mux.HandleFunc("GET /tenants/{id}/secrets", ListSecrets(h))
-	mux.HandleFunc("POST /tenants/{id}/secrets", CreateSecret(h))
-	mux.HandleFunc("GET /tenants/{id}/secrets/{secret_id}", GetSecret(h))
-	mux.HandleFunc("PATCH /tenants/{id}/secrets/{secret_id}", UpdateSecret(h))
-	mux.HandleFunc("DELETE /tenants/{id}/secrets/{secret_id}", DeleteSecret(h))
-	mux.HandleFunc("POST /tenants/{id}/secrets/{secret_id}/rotate", RotateSecret(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/secrets", ListSecrets(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/secrets", CreateSecret(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/secrets/{secret_id}", GetSecret(h))
+	mux.HandleFunc("PATCH /v1/tenants/{id}/secrets/{secret_id}", UpdateSecret(h))
+	mux.HandleFunc("DELETE /v1/tenants/{id}/secrets/{secret_id}", DeleteSecret(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/secrets/{secret_id}/rotate", RotateSecret(h))
+
+	// Namespaces
+	mux.HandleFunc("GET /v1/tenants/{id}/namespaces", ListNamespaces(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/namespaces", CreateNamespace(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/namespaces/{ns_id}", GetNamespace(h))
+	mux.HandleFunc("PATCH /v1/tenants/{id}/namespaces/{ns_id}", PatchNamespace(h))
+	mux.HandleFunc("DELETE /v1/tenants/{id}/namespaces/{ns_id}", DeleteNamespace(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/namespaces/{ns_id}/quota", GetNamespaceQuota(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/namespaces/{ns_id}/quota/check", CheckNamespaceQuota(h))
+
+	// Deployments
+	mux.HandleFunc("GET /v1/tenants/{id}/deployments", ListDeployments(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/deployments", CreateDeployment(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/deployments/{deployment_id}", GetDeployment(h))
+	mux.HandleFunc("PATCH /v1/tenants/{id}/deployments/{deployment_id}", PatchDeployment(h))
+	mux.HandleFunc("DELETE /v1/tenants/{id}/deployments/{deployment_id}", DeleteDeployment(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/deployments/{deployment_id}/rollout", RolloutDeployment(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/deployments/{deployment_id}/scale", ScaleDeployment(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/deployments/{deployment_id}/status", GetDeploymentStatus(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/deployments/{deployment_id}/pause", PauseDeployment(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/deployments/{deployment_id}/resume", ResumeDeployment(h))
+
+	// Policies
+	mux.HandleFunc("GET /v1/tenants/{id}/policies", ListPolicies(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/policies", CreatePolicy(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/policies/{policy_id}", GetPolicy(h))
+	mux.HandleFunc("PATCH /v1/tenants/{id}/policies/{policy_id}", PatchPolicy(h))
+	mux.HandleFunc("DELETE /v1/tenants/{id}/policies/{policy_id}", DeletePolicy(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/policies/evaluate", EvaluatePolicies(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/policies/check-compliance", CheckPolicyCompliance(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/policies/stats", GetPolicyStats(h))
+
+	// Environments
+	mux.HandleFunc("GET /v1/tenants/{id}/environments", ListEnvironments(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/environments", CreateEnvironment(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/environments/{env_id}", GetEnvironment(h))
+	mux.HandleFunc("PATCH /v1/tenants/{id}/environments/{env_id}", PatchEnvironment(h))
+	mux.HandleFunc("DELETE /v1/tenants/{id}/environments/{env_id}", DeleteEnvironment(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/environments/{env_id}/activate", ActivateEnvironment(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/environments/{env_id}/deactivate", DeactivateEnvironment(h))
+	mux.HandleFunc("GET /v1/tenants/{id}/environments/{env_id}/isolation-config", GetEnvironmentIsolationConfig(h))
+	mux.HandleFunc("PUT /v1/tenants/{id}/environments/{env_id}/isolation-config", UpdateEnvironmentIsolationConfig(h))
 
 	// Health/status
-	mux.HandleFunc("GET /status", GetModuleStatus(h))
+	mux.HandleFunc("GET /v1/status", GetModuleStatus(h))
 }

@@ -74,6 +74,58 @@ func (s *AuditStore) Create(event *models.AuditEvent) error {
 	return nil
 }
 
+// CreateWithTenant appends an audit event and enforces tenantID from context,
+// preventing cross-tenant audit event injection. The tenantID parameter takes
+// precedence over any value set on the event.
+func (s *AuditStore) CreateWithTenant(event *models.AuditEvent, tenantID string) error {
+	if tenantID == "" {
+		return fmt.Errorf("tenant_id is required")
+	}
+	event.TenantID = tenantID
+
+	// Validate remaining fields
+	if event.Action == "" {
+		return fmt.Errorf("action is required")
+	}
+	if event.ActorID == "" {
+		return fmt.Errorf("actor_id is required")
+	}
+	if event.ActorType == "" {
+		return fmt.Errorf("actor_type is required")
+	}
+	if event.ResourceType == "" {
+		return fmt.Errorf("resource_type is required")
+	}
+	if event.ResourceID == "" {
+		return fmt.Errorf("resource_id is required")
+	}
+	if event.Result == "" {
+		return fmt.Errorf("result is required")
+	}
+
+	if event.ID == "" {
+		event.ID = uuid.New().String()
+	}
+	if event.Timestamp.IsZero() {
+		event.Timestamp = time.Now().UTC()
+	}
+
+	if event.Details != nil {
+		data, err := json.Marshal(event.Details)
+		if err != nil {
+			return fmt.Errorf("marshal details: %w", err)
+		}
+		event.DetailsJSON = string(data)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.events = append(s.events, event)
+
+	return nil
+}
+
 // List returns audit events for a tenant with filtering and pagination.
 func (s *AuditStore) List(tenantID, actorID, action string, from, to *time.Time, limit, offset int) ([]models.AuditEvent, int, error) {
 	s.mu.RLock()

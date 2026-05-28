@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
-	"strconv"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/operan/modules/02-identity-access/internal/authentik"
 	"github.com/operan/modules/02-identity-access/internal/events"
 	"github.com/operan/modules/02-identity-access/internal/middleware"
@@ -23,6 +25,7 @@ import (
 // ABACPolicy represents an attribute-based access control policy.
 type ABACPolicy struct {
 	ID          string                 `json:"id"`
+	TenantID    string                 `json:"tenant_id"`
 	Name        string                 `json:"name"`
 	Description string                 `json:"description"`
 	Resource    string                 `json:"resource"`
@@ -108,29 +111,128 @@ func (r *ABACPolicyCreateRequest) Validate() error {
 // ABACHandler handles ABAC policy evaluation and management HTTP endpoints.
 type ABACHandler struct {
 	*RBACHandler
-	Auth      *authentik.Client
-	Publisher *events.Publisher
+	Auth   *authentik.Client
+	Store  *ABACStore
+	Pub    *events.Publisher
 }
 
-// NewABACHandler creates a new ABAC handler.
-func NewABACHandler(auth *authentik.Client, publisher *events.Publisher) *ABACHandler {
+// NewABACHandler creates a new ABAC handler with a tenant-isolated store.
+func NewABACHandler(auth *authentik.Client, publisher *events.Publisher, store *ABACStore) *ABACHandler {
 	rbacHandler := &RBACHandler{Auth: auth}
 	return &ABACHandler{
 		RBACHandler: rbacHandler,
 		Auth:        auth,
-		Publisher:   publisher,
+		Store:       store,
+		Pub:         publisher,
 	}
 }
 
 // ---------------------------------------------------------------------------
-// Policy store (in-memory)
+// Policy store (tenant-isolated in-memory)
 // ---------------------------------------------------------------------------
 
-var (
-	abacPolicies   = make(map[string]ABACPolicy)
-	abacPoliciesMu sync.RWMutex
-	policyCounter  int
-)
+// ABACStore provides tenant-isolated in-memory storage for ABAC policies.
+type ABACStore struct {
+	mu       sync.RWMutex
+	policies map[string]map[string]ABACPolicy // tenantID -> policyID -> policy
+}
+
+// NewABACStore creates a new tenant-isolated ABAC store.
+func NewABACStore() *ABACStore {
+	return &ABACStore{
+		policies: make(map[string]map[string]ABACPolicy),
+	}
+}
+
+// Create adds a policy scoped to the given tenantID.
+func (s *ABACStore) Create(tenantID string, policy ABACPolicy) error {
+	if tenantID == "" {
+		return fmt.Errorf("tenant_id is required")
+	}
+	if policy.ID == "" {
+		return fmt.Errorf("policy ID is required")
+	}
+	policy.TenantID = tenantID
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, ok := s.policies[tenantID]; !ok {
+		s.policies[tenantID] = make(map[string]ABACPolicy)
+	}
+	s.policies[tenantID][policy.ID] = policy
+	return nil
+}
+
+// ListByTenant returns all policies for the given tenantID, sorted by name.
+func (s *ABACStore) ListByTenant(tenantID string) []ABACPolicy {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	tenantPolicies, ok := s.policies[tenantID]
+	if !ok || len(tenantPolicies) == 0 {
+		return []ABACPolicy{}
+	}
+
+	policies := make([]ABACPolicy, 0, len(tenantPolicies))
+	for _, p := range tenantPolicies {
+		policies = append(policies, p)
+	}
+	sortPoliciesByName(policies)
+	return policies
+}
+
+// GetByID returns a policy by ID for the given tenantID.
+func (s *ABACStore) GetByID(tenantID, policyID string) (ABACPolicy, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	tenantPolicies, ok := s.policies[tenantID]
+	if !ok {
+		return ABACPolicy{}, false
+	}
+	p, ok := tenantPolicies[policyID]
+	return p, ok
+}
+
+// DeleteByID removes a policy by ID for the given tenantID.
+func (s *ABACStore) DeleteByID(tenantID, policyID string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	tenantPolicies, ok := s.policies[tenantID]
+	if !ok {
+		return false
+	}
+	if _, ok := tenantPolicies[policyID]; !ok {
+		return false
+	}
+	delete(tenantPolicies, policyID)
+	if len(tenantPolicies) == 0 {
+		delete(s.policies, tenantID)
+	}
+	return true
+}
+
+// EvaluateByResource returns all policies for the given tenantID that match
+// the specified resource and action.
+func (s *ABACStore) EvaluateByResource(tenantID, resource, action string) []ABACPolicy {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	tenantPolicies, ok := s.policies[tenantID]
+	if !ok {
+		return nil
+	}
+
+	var matched []ABACPolicy
+	for _, p := range tenantPolicies {
+		if p.Resource == resource && p.Action == action {
+			matched = append(matched, p)
+		}
+	}
+	return matched
+}
 
 // ---------------------------------------------------------------------------
 // POST /api/v1/iam/abac/evaluate — Evaluate
@@ -161,6 +263,18 @@ func (h *ABACHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 	// Step 1: Standard RBAC check via Authentik.
 	authPermission := mapResourceActionToAuthenticPermission(req.Resource, req.Action)
 
+	// Check if Authentik is configured (UsersAPI not nil).
+	if h.Auth == nil || h.Auth.UsersAPI == nil {
+		result := ABACEvaluateResult{
+			Allowed:     false,
+			Reason:      "RBAC service not configured",
+			RBACGranted: false,
+			EvaluatedAt: time.Now().UTC().Format(time.RFC3339),
+		}
+		writeJSON(w, result, http.StatusOK)
+		return
+	}
+
 	// Look up the user in Authentik.
 	user, err := h.Auth.UsersAPI.GetByID(ctx, req.ActorID)
 	if err != nil {
@@ -177,7 +291,7 @@ func (h *ABACHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 		_ = timestamp
 
 		// Publish denial event
-		h.Publisher.PermissionRevoked(r.Context(), tenantID, req.ActorID, "user", authPermission, req.Resource, actorID, "denied — user not found in Authentik", correlationID, timestamp)
+		h.Pub.PermissionRevoked(r.Context(), tenantID, req.ActorID, "user", authPermission, req.Resource, actorID, "denied — user not found in Authentik", correlationID, timestamp)
 
 		writeJSON(w, result, http.StatusOK)
 		return
@@ -189,7 +303,7 @@ func (h *ABACHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 	})
 	if err == nil && hasPerm {
 		// Step 2a: RBAC granted — evaluate ABAC policies.
-		abacResult := h.evaluateABAC(ctx, &req, user)
+		abacResult := h.evaluateABAC(ctx, tenantID, &req, user)
 
 		abacAllowed := true
 		var deniedPolicies []string
@@ -211,12 +325,12 @@ func (h *ABACHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 			result.Reason = "RBAC grant + ABAC policies satisfied"
 
 			// Publish granted event
-			h.Publisher.PermissionGranted(r.Context(), tenantID, req.ActorID, req.Resource, authPermission, req.Resource, actorID, correlationID, timestamp)
+			h.Pub.PermissionGranted(r.Context(), tenantID, req.ActorID, req.Resource, authPermission, req.Resource, actorID, correlationID, timestamp)
 		} else {
 			result.Reason = "RBAC grant but ABAC policies denied: " + strings.Join(deniedPolicies, ", ")
 
 			// Publish denial event
-			h.Publisher.PermissionRevoked(r.Context(), tenantID, req.ActorID, req.Resource, authPermission, req.Resource, actorID, result.Reason, correlationID, timestamp)
+			h.Pub.PermissionRevoked(r.Context(), tenantID, req.ActorID, req.Resource, authPermission, req.Resource, actorID, result.Reason, correlationID, timestamp)
 		}
 
 		writeJSON(w, result, http.StatusOK)
@@ -228,7 +342,7 @@ func (h *ABACHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 
 	if allowed {
 		// RBAC granted via groups — evaluate ABAC policies.
-		abacResult := h.evaluateABAC(ctx, &req, user)
+		abacResult := h.evaluateABAC(ctx, tenantID, &req, user)
 
 		abacAllowed := true
 		var deniedPolicies []string
@@ -249,11 +363,11 @@ func (h *ABACHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 		if abacAllowed {
 			result.Reason = reason + " + ABAC policies satisfied"
 
-			h.Publisher.PermissionGranted(r.Context(), tenantID, req.ActorID, req.Resource, authPermission, req.Resource, actorID, correlationID, timestamp)
+			h.Pub.PermissionGranted(r.Context(), tenantID, req.ActorID, req.Resource, authPermission, req.Resource, actorID, correlationID, timestamp)
 		} else {
 			result.Reason = reason + " but ABAC policies denied: " + strings.Join(deniedPolicies, ", ")
 
-			h.Publisher.PermissionRevoked(r.Context(), tenantID, req.ActorID, req.Resource, authPermission, req.Resource, actorID, result.Reason, correlationID, timestamp)
+			h.Pub.PermissionRevoked(r.Context(), tenantID, req.ActorID, req.Resource, authPermission, req.Resource, actorID, result.Reason, correlationID, timestamp)
 		}
 
 		writeJSON(w, result, http.StatusOK)
@@ -269,13 +383,13 @@ func (h *ABACHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Log denial event
-	h.Publisher.PermissionRevoked(r.Context(), tenantID, req.ActorID, req.Resource, authPermission, req.Resource, actorID, reason, correlationID, timestamp)
+	h.Pub.PermissionRevoked(r.Context(), tenantID, req.ActorID, req.Resource, authPermission, req.Resource, actorID, reason, correlationID, timestamp)
 
 	writeJSON(w, result, http.StatusOK)
 }
 
-// evaluateABAC evaluates all ABAC policies for a request.
-func (h *ABACHandler) evaluateABAC(ctx context.Context, req *ABACEvaluateRequest, user *authentik.User) []ABACPolicyResult {
+// evaluateABAC evaluates all ABAC policies for a request, scoped to the tenant.
+func (h *ABACHandler) evaluateABAC(ctx context.Context, tenantID string, req *ABACEvaluateRequest, user *authentik.User) []ABACPolicyResult {
 	var results []ABACPolicyResult
 	attributes := req.Attributes
 	if attributes == nil {
@@ -285,16 +399,10 @@ func (h *ABACHandler) evaluateABAC(ctx context.Context, req *ABACEvaluateRequest
 	// Add actor_id from the request into attributes for policy evaluation.
 	attributes["actor_id"] = req.ActorID
 
-	// Get all policies that match the resource/action.
-	abacPoliciesMu.RLock()
-	defer abacPoliciesMu.RUnlock()
+	// Get tenant-scoped policies that match the resource/action.
+	policies := h.Store.EvaluateByResource(tenantID, req.Resource, req.Action)
 
-	for _, policy := range abacPolicies {
-		// Only evaluate policies that match the requested resource and action.
-		if policy.Resource != req.Resource || policy.Action != req.Action {
-			continue
-		}
-
+	for _, policy := range policies {
 		result := ABACPolicyResult{Name: policy.Name}
 
 		switch policy.Rule {
@@ -323,7 +431,7 @@ func (h *ABACHandler) evaluateABAC(ctx context.Context, req *ABACEvaluateRequest
 			}
 
 		case "department":
-			result.Passed = evaluateDepartmentPolicy(attributes, policy.Conditions)
+			result.Passed = evaluateDepartmentPolicy(ctx, attributes, policy.Conditions)
 			if result.Passed {
 				result.Reason = "department constraint satisfied"
 			} else {
@@ -360,6 +468,8 @@ func (h *ABACHandler) evaluateABAC(ctx context.Context, req *ABACEvaluateRequest
 
 // CreatePolicy handles POST /api/v1/iam/abac/policies.
 func (h *ABACHandler) CreatePolicy(w http.ResponseWriter, r *http.Request) {
+	tenantID := middleware.GetTenantID(r.Context())
+
 	var req ABACPolicyCreateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
@@ -371,11 +481,10 @@ func (h *ABACHandler) CreatePolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	abacPoliciesMu.Lock()
-	policyCounter++
-	policyID := strconv.Itoa(policyCounter)
+	policyID := uuid.New().String()
 	policy := ABACPolicy{
 		ID:          policyID,
+		TenantID:    tenantID,
 		Name:        req.Name,
 		Description: req.Description,
 		Resource:    req.Resource,
@@ -385,8 +494,11 @@ func (h *ABACHandler) CreatePolicy(w http.ResponseWriter, r *http.Request) {
 		Effect:      req.Effect,
 		CreatedAt:   time.Now().UTC().Format(time.RFC3339),
 	}
-	abacPolicies[req.Name] = policy
-	abacPoliciesMu.Unlock()
+
+	if err := h.Store.Create(tenantID, policy); err != nil {
+		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusBadRequest)
+		return
+	}
 
 	writeJSON(w, policy, http.StatusCreated)
 }
@@ -397,17 +509,8 @@ func (h *ABACHandler) CreatePolicy(w http.ResponseWriter, r *http.Request) {
 
 // ListPolicies handles GET /api/v1/iam/abac/policies.
 func (h *ABACHandler) ListPolicies(w http.ResponseWriter, r *http.Request) {
-	abacPoliciesMu.RLock()
-	defer abacPoliciesMu.RUnlock()
-
-	policies := make([]ABACPolicy, 0, len(abacPolicies))
-	for _, p := range abacPolicies {
-		policies = append(policies, p)
-	}
-
-	// Sort by name for deterministic output.
-	sortPoliciesByName(policies)
-
+	tenantID := middleware.GetTenantID(r.Context())
+	policies := h.Store.ListByTenant(tenantID)
 	writeJSON(w, policies, http.StatusOK)
 }
 
@@ -417,16 +520,14 @@ func (h *ABACHandler) ListPolicies(w http.ResponseWriter, r *http.Request) {
 
 // GetPolicy handles GET /api/v1/iam/abac/policies/{policy_id}.
 func (h *ABACHandler) GetPolicy(w http.ResponseWriter, r *http.Request) {
+	tenantID := middleware.GetTenantID(r.Context())
 	policyID := extractPolicyID(r.URL.Path)
 	if policyID == "" {
 		http.Error(w, `{"error":"policy_id is required"}`, http.StatusBadRequest)
 		return
 	}
 
-	abacPoliciesMu.RLock()
-	defer abacPoliciesMu.RUnlock()
-
-	policy, ok := abacPolicies[policyID]
+	policy, ok := h.Store.GetByID(tenantID, policyID)
 	if !ok {
 		http.Error(w, `{"error":"policy not found"}`, http.StatusNotFound)
 		return
@@ -441,22 +542,18 @@ func (h *ABACHandler) GetPolicy(w http.ResponseWriter, r *http.Request) {
 
 // DeletePolicy handles DELETE /api/v1/iam/abac/policies/{policy_id}.
 func (h *ABACHandler) DeletePolicy(w http.ResponseWriter, r *http.Request) {
+	tenantID := middleware.GetTenantID(r.Context())
 	policyID := extractPolicyID(r.URL.Path)
 	if policyID == "" {
 		http.Error(w, `{"error":"policy_id is required"}`, http.StatusBadRequest)
 		return
 	}
 
-	abacPoliciesMu.Lock()
-	defer abacPoliciesMu.Unlock()
-
-	_, ok := abacPolicies[policyID]
-	if !ok {
+	if !h.Store.DeleteByID(tenantID, policyID) {
 		http.Error(w, `{"error":"policy not found"}`, http.StatusNotFound)
 		return
 	}
 
-	delete(abacPolicies, policyID)
 	writeJSON(w, map[string]string{"status": "deleted"}, http.StatusOK)
 }
 
@@ -478,11 +575,67 @@ func evaluateTimePolicy(attrs map[string]interface{}, conditions map[string]inte
 	return float64(hour) >= start && float64(hour) <= end
 }
 
-// evaluateIPPolicy checks IP-based conditions.
+// evaluateIPPolicy checks IP-based conditions using CIDR matching.
+//
+// Conditions schema:
+//
+//	"allowed_cidrs":  []string{"10.0.0.0/8", "192.168.1.0/24"}  // if set, IP must match one
+//	"denied_cidrs":   []string{"10.0.1.0/24"}                     // optional, evaluated first (deny wins)
+//
+// Attributes:
+//
+//	"client_ip": "10.0.2.5"  // the request client IP
 func evaluateIPPolicy(attrs map[string]interface{}, conditions map[string]interface{}) bool {
-	// For now, always pass — IP filtering requires CIDR parsing
-	// which would need net package; placeholder for future implementation
-	return true
+	clientIPStr, _ := attrs["client_ip"].(string)
+	if clientIPStr == "" {
+		// No client IP provided — allow by default
+		return true
+	}
+
+	clientIP := net.ParseIP(clientIPStr)
+	if clientIP == nil {
+		// Invalid IP — reject
+		return false
+	}
+
+	// 1. Evaluate deny list first (deny always wins)
+	if deniedCIDRs, ok := conditions["denied_cidrs"].([]interface{}); ok {
+		for _, c := range deniedCIDRs {
+			cidrStr, _ := c.(string)
+			if cidrStr == "" {
+				continue
+			}
+			_, ipNet, err := net.ParseCIDR(cidrStr)
+			if err != nil {
+				continue // skip malformed CIDRs
+			}
+			if ipNet.Contains(clientIP) {
+				return false // IP is denied
+			}
+		}
+	}
+
+	// 2. Evaluate allow list
+	if allowedCIDRs, ok := conditions["allowed_cidrs"].([]interface{}); ok {
+		for _, c := range allowedCIDRs {
+			cidrStr, _ := c.(string)
+			if cidrStr == "" {
+				continue
+			}
+			_, ipNet, err := net.ParseCIDR(cidrStr)
+			if err != nil {
+				continue // skip malformed CIDRs
+			}
+			if ipNet.Contains(clientIP) {
+				return true // IP is allowed
+			}
+		}
+		// Allowed list present but IP not in it — deny
+		return false
+	}
+
+	// 3. No allow list — deny by default (only deny list was present)
+	return false
 }
 
 // evaluateOwnershipPolicy checks ownership conditions.
@@ -496,7 +649,7 @@ func evaluateOwnershipPolicy(attrs map[string]interface{}, conditions map[string
 }
 
 // evaluateDepartmentPolicy checks department matching.
-func evaluateDepartmentPolicy(attrs map[string]interface{}, conditions map[string]interface{}) bool {
+func evaluateDepartmentPolicy(ctx context.Context, attrs map[string]interface{}, conditions map[string]interface{}) bool {
 	dept, _ := attrs["resource_department"].(string)
 	actorDept, _ := attrs["actor_department"].(string)
 	if dept == "" || actorDept == "" {
@@ -505,7 +658,7 @@ func evaluateDepartmentPolicy(attrs map[string]interface{}, conditions map[strin
 
 	// Admin roles bypass department constraints
 	if admins, ok := conditions["admin_roles"].([]interface{}); ok {
-		actorRoles := middleware.GetJWTToken(context.Background())
+		actorRoles := middleware.GetJWTToken(ctx)
 		if actorRoles != nil {
 			for _, role := range actorRoles.Roles {
 				for _, adminRole := range admins {
@@ -538,8 +691,9 @@ func evaluateCustomPolicy(ctx context.Context, attrs map[string]interface{}, con
 // Handles: /api/v1/iam/abac/policies/{id}
 func extractPolicyID(path string) string {
 	path = strings.TrimPrefix(path, "/api/v1/iam/abac/policies/")
+	path = strings.TrimPrefix(path, "/api/v1/iam/abac/policies")
 	path = strings.TrimSuffix(path, "/")
-	if path == "" {
+	if path == "" || path == "/api/v1/iam/abac/policies" {
 		return ""
 	}
 	return path
@@ -547,11 +701,7 @@ func extractPolicyID(path string) string {
 
 // sortPoliciesByName sorts policies by name for deterministic output.
 func sortPoliciesByName(policies []ABACPolicy) {
-	for i := 0; i < len(policies); i++ {
-		for j := i + 1; j < len(policies); j++ {
-			if policies[i].Name > policies[j].Name {
-				policies[i], policies[j] = policies[j], policies[i]
-			}
-		}
-	}
+	sort.Slice(policies, func(i, j int) bool {
+		return policies[i].Name < policies[j].Name
+	})
 }

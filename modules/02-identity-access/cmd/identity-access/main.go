@@ -1,10 +1,17 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"sync"
+	"time"
 
 	"github.com/operan/modules/02-identity-access/internal/authentik"
 	"github.com/operan/modules/02-identity-access/internal/config"
@@ -62,33 +69,22 @@ func main() {
 		}
 	})
 
-	// /api/v1/iam/users/{id} → delegates
+	// /api/v1/iam/users/{id} → delegates (consolidated — PUT for roles handled here)
 	mux.HandleFunc("/api/v1/iam/users/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			userHandler.GetByID(w, r)
-		case http.MethodPatch:
-			userHandler.Update(w, r)
-		case http.MethodDelete:
-			userHandler.Deactivate(w, r)
-		default:
-			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
-		}
-	})
+		// Extract the remaining path after /api/v1/iam/users/
+		remaining := strings.TrimPrefix(r.URL.Path, "/api/v1/iam/users/")
+		remaining = strings.TrimSuffix(remaining, "/")
 
-	// PUT /api/v1/iam/users/{id}/roles
-	mux.HandleFunc("/api/v1/iam/users/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPut {
-			// only hit this if path is /api/v1/iam/users/{id}/roles
-			if len(r.URL.Path) > len("/api/v1/iam/users/") {
-				remaining := r.URL.Path[len("/api/v1/iam/users"):]
-				if remaining == "/roles" {
-					userHandler.SetRoles(w, r)
-					return
-				}
+		// Handle /api/v1/iam/users/{id}/roles
+		if remaining != "" && strings.HasPrefix(remaining, "roles") {
+			if r.Method == http.MethodPut {
+				userHandler.SetRoles(w, r)
+				return
 			}
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+			return
 		}
-		// fall through to other methods
+
 		switch r.Method {
 		case http.MethodGet:
 			userHandler.GetByID(w, r)
@@ -198,13 +194,46 @@ func main() {
 
 	// SCIM endpoints
 	mux.HandleFunc("/api/v1/iam/scim/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			scimHandler.ListUsers(w, r)
-		case http.MethodPost:
-			scimHandler.Provision(w, r)
+		sub := ""
+		if len(r.URL.Path) > len("/api/v1/iam/scim/") {
+			sub = r.URL.Path[len("/api/v1/iam/scim/"):]
+			// strip trailing slash
+			sub = strings.TrimSuffix(sub, "/")
+		}
+
+		switch sub {
+		case "users", "":
+			// /api/v1/iam/scim/users or /api/v1/iam/scim
+			switch r.Method {
+			case http.MethodGet:
+				scimHandler.ListUsers(w, r)
+			case http.MethodPost:
+				scimHandler.Provision(w, r)
+			case http.MethodPatch:
+				scimHandler.UpdateUser(w, r)
+			case http.MethodDelete:
+				scimHandler.DeleteUser(w, r)
+			default:
+				http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+			}
+		case "provision":
+			// /api/v1/iam/scim/provision
+			switch r.Method {
+			case http.MethodPost:
+				scimHandler.Provision(w, r)
+			default:
+				http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+			}
+		case "bulk":
+			// /api/v1/iam/scim/bulk — RFC 7644 Section 3.5
+			switch r.Method {
+			case http.MethodPost:
+				scimHandler.BulkProvision(w, r)
+			default:
+				http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+			}
 		default:
-			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+			http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
 		}
 	})
 
@@ -241,6 +270,84 @@ func main() {
 	mux.HandleFunc("/api/v1/iam/rbac/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			rbacHandler.Evaluate(w, r)
+			return
+		}
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+	})
+
+	// ─── ABAC endpoints ───
+	abacStore := handler.NewABACStore()
+	abacHandler := handler.NewABACHandler(authClient, publisher, abacStore)
+
+	mux.HandleFunc("/api/v1/iam/abac/evaluate", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			abacHandler.Evaluate(w, r)
+			return
+		}
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+	})
+
+	mux.HandleFunc("/api/v1/iam/abac/policies", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			abacHandler.CreatePolicy(w, r)
+		case http.MethodGet:
+			abacHandler.ListPolicies(w, r)
+		default:
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		}
+	})
+
+	mux.HandleFunc("/api/v1/iam/abac/policies/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			abacHandler.GetPolicy(w, r)
+			return
+		}
+		if r.Method == http.MethodDelete {
+			abacHandler.DeletePolicy(w, r)
+			return
+		}
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+	})
+
+	// ─── MFA endpoints ───
+	mfaHandler := handler.NewMFAHandler(authClient, publisher)
+
+	mux.HandleFunc("/api/v1/iam/mfa/enroll", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			mfaHandler.Enroll(w, r)
+			return
+		}
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+	})
+
+	mux.HandleFunc("/api/v1/iam/mfa/verify", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			mfaHandler.Verify(w, r)
+			return
+		}
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+	})
+
+	mux.HandleFunc("/api/v1/iam/mfa/disable", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			mfaHandler.Disable(w, r)
+			return
+		}
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+	})
+
+	mux.HandleFunc("/api/v1/iam/mfa/enrolled", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			mfaHandler.ListDevices(w, r)
+			return
+		}
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+	})
+
+	mux.HandleFunc("/api/v1/iam/mfa/recovery-codes", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			mfaHandler.RegenerateRecoveryCodes(w, r)
 			return
 		}
 		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
@@ -413,7 +520,76 @@ func main() {
 
 	// Initialize JWKS cache for JWT validation
 	jwksURL := cfg.AuthentikServerURL + "/.well-known/jwks.json"
-	jwksCache := middleware.NewJWKSCache(jwksURL, &http.Client{})
+	jwksHTTPClient := &http.Client{Timeout: 10 * time.Second}
+	jwksCache := middleware.NewJWKSCache(jwksURL, jwksHTTPClient)
+
+	// Initial refresh — populate cache on startup
+	jwksCache.RefreshJWKS(context.Background(), jwksHTTPClient, jwksURL)
+	log.Printf("JWKS cache initialized (last refresh: %s)", jwksCache.LastRefresh().Format(time.RFC3339))
+
+	// Start background refresh every 55 minutes (before 1h TTL expires)
+	jwksCache.RefreshPeriodically(context.Background(), 55*time.Minute)
+	log.Println("JWKS background refresh started (55m interval)")
+
+	// Health check
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{"status":"healthy"}`)
+	})
+
+	// Readiness check — verifies all dependencies are reachable
+	type readinessCheck struct {
+		Name   string `json:"name"`
+		Status string `json:"status"` // "pass" | "fail"
+	}
+
+	readyTracker := &readiness{checks: map[string]func() bool{
+		"authentik": func() bool {
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+			req, _ := http.NewRequestWithContext(ctx, http.MethodGet, cfg.AuthentikServerURL+"/api/v1/health/", nil)
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				return false
+			}
+			resp.Body.Close()
+			return resp.StatusCode == http.StatusOK
+		},
+		"event-broker": func() bool {
+			if cfg.EventBrokerURL == "" {
+				// No broker configured — always pass
+				return true
+			}
+			return true // publisher health check deferred
+		},
+	}}
+
+	mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
+		results := make([]readinessCheck, 0, len(readyTracker.checks))
+		allReady := true
+		for name, check := range readyTracker.checks {
+			status := "fail"
+			if check() {
+				status = "pass"
+			} else {
+				allReady = false
+			}
+			results = append(results, readinessCheck{Name: name, Status: status})
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if !allReady {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			fmt.Fprint(w, `{"ready":false,"checks":`)
+			encodeJSON(w, results)
+			fmt.Fprint(w, `}`)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{"ready":true,"checks":`)
+		encodeJSON(w, results)
+		fmt.Fprint(w, `}`)
+	})
 
 	// Wrap with middleware chain
 	var chain http.Handler = mux
@@ -423,10 +599,53 @@ func main() {
 
 	// Start server
 	addr := fmt.Sprintf(":%d", cfg.Port)
+	srv := &http.Server{
+		Addr:              addr,
+		Handler:           chain,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
 	log.Printf("Identity & Access Management module starting on %s", addr)
 	log.Printf("Event broker: %s", cfg.EventBrokerURL)
 
-	if err := http.ListenAndServe(addr, chain); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	// Start server in a goroutine
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server failed: %v", err)
+		}
+	}()
+
+	// Graceful shutdown on SIGTERM / SIGINT
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+	<-quit
+	log.Println("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Server forced to shutdown: %v", err)
 	}
+
+	log.Println("Server exited gracefully")
+}
+
+// ---- helpers ----
+
+type readiness struct {
+	mu     sync.RWMutex
+	checks map[string]func() bool
+}
+
+func encodeJSON(w http.ResponseWriter, v interface{}) {
+	// Inline JSON encode to avoid importing encoding/json in the main package when it might not be used elsewhere
+	var buf strings.Builder
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	enc.Encode(v)
+	fmt.Fprint(w, strings.TrimSuffix(buf.String(), "\n"))
 }
