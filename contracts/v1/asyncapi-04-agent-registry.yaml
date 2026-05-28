@@ -310,6 +310,79 @@ components:
       format: date-time
       description: RFC 3339 section 5.6 compliant date-time string.
 
+    AgentStatus:
+      type: string
+      description: "Agent lifecycle status. Harmonized: active, inactive, deprecated, archived."
+      enum: [active, inactive, deprecated, archived]
+
+    VersionStatus:
+      type: string
+      description: "Agent version lifecycle status. Harmonized: active, beta, deprecated, archived."
+      enum: [active, beta, deprecated, archived]
+
+    DependencyTypeEnum:
+      type: string
+      description: "Dependency relationship type. Harmonized: soft, optional."
+      enum: [soft, optional]
+
+    CapabilityTier:
+      type: string
+      description: Autonomy tier per PRD Section 4.3.
+      enum: [recommend, analyze, coordinate, draft, execute]
+
+    Objective:
+      type: object
+      description: Agent objective as defined in PRD Section 8.
+      required: [description, metric, tier]
+      properties:
+        description:
+          type: string
+          description: Human-readable description of the objective.
+        metric:
+          type: string
+          description: Key performance indicator or measurable success criterion.
+        weight:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Relative importance weight (0.0 to 1.0).
+        tier:
+          $ref: '#/components/schemas/CapabilityTier'
+
+    MemoryAccess:
+      type: object
+      description: Memory access configuration. Unified structured type.
+      properties:
+        scope:
+          type: string
+          enum: [read, write, read_write]
+        isolated_stores:
+          type: array
+          items: { type: string }
+        allowed_types:
+          type: array
+          items: { type: string, enum: [episodic, semantic, procedural, graph, institutional] }
+        isolation_level:
+          type: string
+          enum: [logical, data, cryptographic, execution]
+
+    ExecutionBudget:
+      type: object
+      description: Execution budget constraints per PRD Section 8.
+      properties:
+        daily_token_limit:
+          type: integer
+          minimum: 0
+        max_run_seconds:
+          type: integer
+          minimum: 1
+        monthly_execution_cap:
+          type: integer
+          minimum: 0
+        monthly_budget_usd:
+          type: number
+          minimum: 0
+
     AgentRegisteredPayload:
       type: object
       required:
@@ -317,6 +390,7 @@ components:
         - tenant_id
         - name
         - role
+        - status
         - capabilities
         - tools
         - memory_access
@@ -330,12 +404,21 @@ components:
           $ref: '#/components/schemas/Uuid'
         tenant_id:
           $ref: '#/components/schemas/Uuid'
+        department_id:
+          $ref: '#/components/schemas/Uuid'
+          nullable: true
+          description: UUID of the parent department (Module 05).
         name:
           type: string
           description: Human-readable name of the agent.
         role:
           type: string
           description: Functional role of the agent within the platform.
+        objectives:
+          type: array
+          description: Agent objectives per PRD Section 8.
+          items:
+            $ref: '#/components/schemas/Objective'
         capabilities:
           type: array
           items:
@@ -347,8 +430,25 @@ components:
             type: string
           description: List of tools the agent can invoke.
         memory_access:
-          type: string
-          description: Level or type of memory access granted to this agent.
+          type: object
+          description: Configuration for the agent's memory access permissions.
+          properties:
+            scope:
+              type: string
+              enum: [read, write, read_write]
+              description: Access level for the agent's memory stores.
+            isolated_stores:
+              type: array
+              items: { type: string }
+              description: Memory stores isolated from other agents.
+            allowed_types:
+              type: array
+              items: { type: string, enum: [episodic, semantic, procedural, graph, institutional] }
+              description: Types of memory the agent may access.
+            isolation_level:
+              type: string
+              enum: [logical, data, cryptographic, execution]
+              description: Isolation level per PRD Section 9 (Multi-Tenant Isolation Model).
         escalation_rules:
           type: array
           items:
@@ -359,9 +459,18 @@ components:
           items:
             type: string
           description: Governance policies applicable to this agent.
+        supported_languages:
+          type: array
+          items:
+            type: string
+          description: Languages the agent supports (Module 19).
+        execution_budget:
+          $ref: '#/components/schemas/ExecutionBudget'
         version:
           type: string
           description: Version of the agent at time of registration.
+        status:
+          $ref: '#/components/schemas/AgentStatus'
         registered_by:
           $ref: '#/components/schemas/Uuid'
         registered_at:
@@ -405,6 +514,7 @@ components:
         - created_by
         - created_at
         - change_summary
+        - status
       properties:
         agent_id:
           $ref: '#/components/schemas/Uuid'
@@ -416,13 +526,18 @@ components:
           type: string
           pattern: '^\\d+\\.\\d+\\.\\d+$'
           description: Previous semver version string.
+        change_summary:
+          type: string
+          description: Human-readable summary of changes in this version.
+        diff_from_previous:
+          type: string
+          description: Detailed diff of changes from the previous version.
+        status:
+          $ref: '#/components/schemas/VersionStatus'
         created_by:
           $ref: '#/components/schemas/Uuid'
         created_at:
           $ref: '#/components/schemas/DateTime'
-        change_summary:
-          type: string
-          description: Human-readable summary of changes in this version.
 
     AgentPromotedPayload:
       type: object
@@ -460,8 +575,7 @@ components:
         - deprecated_by
         - deprecated_at
         - reason
-        - replacement_agent_id
-        - sunset_date
+        - status
       properties:
         agent_id:
           $ref: '#/components/schemas/Uuid'
@@ -481,6 +595,8 @@ components:
           type: string
           format: date-time
           description: Date when the agent will be fully retired.
+        status:
+          $ref: '#/components/schemas/AgentStatus'
 
     AgentArchivedPayload:
       type: object
@@ -504,22 +620,21 @@ components:
       type: object
       required:
         - agent_id
-        - dependency_agent_id
+        - dependency_id
         - dependency_type
         - added_by
         - added_at
       properties:
         agent_id:
           $ref: '#/components/schemas/Uuid'
-        dependency_agent_id:
+        dependency_id:
           $ref: '#/components/schemas/Uuid'
+          description: UUID of the agent being depended upon.
         dependency_type:
+          $ref: '#/components/schemas/DependencyTypeEnum'
+        version_constraint:
           type: string
-          enum:
-            - required
-            - optional
-            - runtime
-          description: Type of dependency relationship.
+          description: Version constraint for the dependency.
         added_by:
           $ref: '#/components/schemas/Uuid'
         added_at:
@@ -529,15 +644,16 @@ components:
       type: object
       required:
         - agent_id
-        - removed_dependency_id
+        - dependency_id
         - removed_by
         - removed_at
         - reason
       properties:
         agent_id:
           $ref: '#/components/schemas/Uuid'
-        removed_dependency_id:
+        dependency_id:
           $ref: '#/components/schemas/Uuid'
+          description: UUID of the dependency being removed.
         removed_by:
           $ref: '#/components/schemas/Uuid'
         removed_at:
