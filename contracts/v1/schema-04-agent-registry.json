@@ -2,9 +2,155 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "definitions": {
+    "AgentStatus": {
+      "type": "string",
+      "description": "Lifecycle status of the agent. Harmonized across OpenAPI, JSON Schema, and AsyncAPI: active, inactive, deprecated, archived.",
+      "enum": [
+        "active",
+        "inactive",
+        "deprecated",
+        "archived"
+      ]
+    },
+
+    "VersionStatus": {
+      "type": "string",
+      "description": "Lifecycle status of an agent version. Harmonized: active, beta, deprecated, archived.",
+      "enum": [
+        "active",
+        "beta",
+        "deprecated",
+        "archived"
+      ]
+    },
+
+    "DependencyType": {
+      "type": "string",
+      "description": "Nature of the dependency. Harmonized: soft, optional.",
+      "enum": [
+        "soft",
+        "optional"
+      ]
+    },
+
+    "CapabilityTier": {
+      "type": "string",
+      "description": "Agent capability autonomy tier per PRD Section 4.3 (Human-Governed Autonomy).",
+      "enum": [
+        "recommend",
+        "analyze",
+        "coordinate",
+        "draft",
+        "execute"
+      ]
+    },
+
+    "Objective": {
+      "type": "object",
+      "description": "A specific objective for an agent, as defined in PRD Section 8 (Agent Object Model).",
+      "required": [
+        "description",
+        "metric",
+        "tier"
+      ],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the objective."
+        },
+        "metric": {
+          "type": "string",
+          "description": "Key performance indicator or measurable success criterion."
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Relative importance weight (0.0 to 1.0). Defaults to 0.5."
+        },
+        "tier": {
+          "$ref": "#/definitions/CapabilityTier"
+        }
+      }
+    },
+
+    "ExecutionBudget": {
+      "type": "object",
+      "description": "Execution budget constraints for the agent, as defined in PRD Section 8 (Agent Object Model).",
+      "properties": {
+        "daily_token_limit": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum tokens per day."
+        },
+        "max_run_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum duration for a single execution run in seconds."
+        },
+        "monthly_execution_cap": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum number of executions per month."
+        },
+        "monthly_budget_usd": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Hard budget ceiling in USD per month."
+        }
+      }
+    },
+
+    "MemoryAccess": {
+      "type": "object",
+      "description": "Configuration for the agent's memory access permissions. Unified structured type.",
+      "properties": {
+        "scope": {
+          "type": "string",
+          "enum": [
+            "read",
+            "write",
+            "read_write"
+          ],
+          "description": "Access level for the agent's memory stores."
+        },
+        "isolated_stores": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Memory stores isolated from other agents."
+        },
+        "allowed_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "episodic",
+              "semantic",
+              "procedural",
+              "graph",
+              "institutional"
+            ]
+          },
+          "description": "Types of memory the agent may access."
+        },
+        "isolation_level": {
+          "type": "string",
+          "enum": [
+            "logical",
+            "data",
+            "cryptographic",
+            "execution"
+          ],
+          "description": "Isolation level per PRD Section 9."
+        }
+      }
+    },
+
     "Agent": {
       "type": "object",
-      "description": "A registered AI agent within the Operan platform, identified by a unique UUID and associated with a tenant.",
+      "description": "A registered AI agent within the Operan platform. Includes PRD Section 8 fields: objectives, execution_budget.",
       "required": [
         "id",
         "name",
@@ -31,23 +177,34 @@
           "format": "uuid",
           "description": "UUID of the tenant that owns this agent."
         },
-        "status": {
+        "department_id": {
           "type": "string",
-          "enum": [
-            "draft",
-            "registered",
-            "active",
-            "deprecated",
-            "archived"
-          ],
-          "description": "Lifecycle status of the agent."
+          "format": "uuid",
+          "nullable": true,
+          "description": "UUID of the department this agent belongs to (Module 05). Optional."
+        },
+        "status": {
+          "$ref": "#/definitions/AgentStatus"
+        },
+        "current_version_id": {
+          "type": "string",
+          "format": "uuid",
+          "nullable": true,
+          "description": "UUID of the current active version."
+        },
+        "objectives": {
+          "type": "array",
+          "description": "Agent objectives as defined in PRD Section 8 (Agent Object Model).",
+          "items": {
+            "$ref": "#/definitions/Objective"
+          }
         },
         "capabilities": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "description": "List of capabilities the agent provides."
+          "description": "List of capability identifiers the agent provides."
         },
         "tools": {
           "type": "array",
@@ -58,7 +215,49 @@
         },
         "memory_access": {
           "type": "object",
-          "description": "Configuration for the agent's memory access permissions."
+          "description": "Configuration for the agent's memory access permissions. Unified structured type.",
+          "properties": {
+            "scope": {
+              "type": "string",
+              "enum": [
+                "read",
+                "write",
+                "read_write"
+              ],
+              "description": "Access level for the agent's memory stores."
+            },
+            "isolated_stores": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Memory stores isolated from other agents."
+            },
+            "allowed_types": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "episodic",
+                  "semantic",
+                  "procedural",
+                  "graph",
+                  "institutional"
+                ]
+              },
+              "description": "Types of memory the agent may access."
+            },
+            "isolation_level": {
+              "type": "string",
+              "enum": [
+                "logical",
+                "data",
+                "cryptographic",
+                "execution"
+              ],
+              "description": "Isolation level per PRD Section 9."
+            }
+          }
         },
         "escalation_rules": {
           "type": "array",
@@ -74,14 +273,23 @@
           },
           "description": "Governance policies that apply to this agent."
         },
+        "supported_languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Languages the agent supports (Module 19 - Arabic Language Intelligence)."
+        },
         "version": {
           "type": "string",
           "pattern": "^\\d+\\.\\d+\\.\\d+$",
           "description": "Semantic version of the agent's current configuration."
         },
         "cost_profile": {
-          "$ref": "#/definitions/CostProfile",
-          "description": "Cost-related configuration for the agent."
+          "$ref": "#/definitions/CostProfile"
+        },
+        "execution_budget": {
+          "$ref": "#/definitions/ExecutionBudget"
         },
         "dependencies": {
           "type": "array",
@@ -89,6 +297,10 @@
             "type": "string"
           },
           "description": "List of agent UUIDs this agent depends on."
+        },
+        "access_control": {
+          "type": "object",
+          "description": "Access control configuration for this agent."
         },
         "created_at": {
           "type": "string",
@@ -107,6 +319,7 @@
         }
       }
     },
+
     "CreateAgentRequest": {
       "type": "object",
       "description": "Request payload for creating a new agent.",
@@ -129,6 +342,19 @@
           "format": "uuid",
           "description": "UUID of the tenant that will own the agent."
         },
+        "department_id": {
+          "type": "string",
+          "format": "uuid",
+          "nullable": true,
+          "description": "UUID of the parent department (Module 05). Optional."
+        },
+        "objectives": {
+          "type": "array",
+          "description": "Agent objectives as defined in PRD Section 8.",
+          "items": {
+            "$ref": "#/definitions/Objective"
+          }
+        },
         "capabilities": {
           "type": "array",
           "items": {
@@ -144,8 +370,7 @@
           "description": "List of tool identifiers the agent can invoke."
         },
         "memory_access": {
-          "type": "object",
-          "description": "Configuration for the agent's memory access permissions."
+          "$ref": "#/definitions/MemoryAccess"
         },
         "escalation_rules": {
           "type": "array",
@@ -161,19 +386,29 @@
           },
           "description": "Governance policies that apply to this agent."
         },
+        "supported_languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Languages the agent supports (Module 19)."
+        },
         "description": {
           "type": "string",
           "description": "Additional description of the agent's purpose."
         },
         "cost_profile": {
-          "$ref": "#/definitions/CostProfile",
-          "description": "Cost-related configuration for the agent."
+          "$ref": "#/definitions/CostProfile"
+        },
+        "execution_budget": {
+          "$ref": "#/definitions/ExecutionBudget"
         }
       }
     },
+
     "UpdateAgentRequest": {
       "type": "object",
-      "description": "Request payload for updating an existing agent. All fields are optional; only provided fields will be modified.",
+      "description": "Request payload for updating an existing agent. All fields optional.",
       "properties": {
         "name": {
           "type": "string",
@@ -183,6 +418,17 @@
           "type": "string",
           "description": "The functional role the agent fills."
         },
+        "department_id": {
+          "type": "string",
+          "format": "uuid",
+          "nullable": true
+        },
+        "objectives": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Objective"
+          }
+        },
         "capabilities": {
           "type": "array",
           "items": {
@@ -198,8 +444,7 @@
           "description": "List of tool identifiers the agent can invoke."
         },
         "memory_access": {
-          "type": "object",
-          "description": "Configuration for the agent's memory access permissions."
+          "$ref": "#/definitions/MemoryAccess"
         },
         "escalation_rules": {
           "type": "array",
@@ -215,27 +460,58 @@
           },
           "description": "Governance policies that apply to this agent."
         },
+        "supported_languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Languages the agent supports (Module 19)."
+        },
         "status": {
-          "type": "string",
-          "enum": [
-            "draft",
-            "registered",
-            "active",
-            "deprecated",
-            "archived"
-          ],
-          "description": "New lifecycle status for the agent."
+          "$ref": "#/definitions/AgentStatus"
         },
         "description": {
           "type": "string",
           "description": "Additional description of the agent's purpose."
         },
         "cost_profile": {
-          "$ref": "#/definitions/CostProfile",
-          "description": "Cost-related configuration for the agent."
+          "$ref": "#/definitions/CostProfile"
+        },
+        "execution_budget": {
+          "$ref": "#/definitions/ExecutionBudget"
         }
       }
     },
+
+    "CapabilityEntry": {
+      "type": "object",
+      "description": "A capability offered by an agent, including proficiency score and autonomy tier.",
+      "required": [
+        "capability",
+        "score"
+      ],
+      "properties": {
+        "capability": {
+          "type": "string",
+          "description": "Name of the capability."
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Capability proficiency score (0.0 to 1.0)."
+        },
+        "last_evaluated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of last capability evaluation."
+        },
+        "tier": {
+          "$ref": "#/definitions/CapabilityTier"
+        }
+      }
+    },
+
     "CapabilityIndex": {
       "type": "object",
       "description": "Describes a specific capability offered by an agent, including its version, tooling, and performance characteristics.",
@@ -279,24 +555,29 @@
         }
       }
     },
+
     "CostProfile": {
       "type": "object",
-      "description": "Defines the cost and budget parameters for an agent or capability.",
+      "description": "Cost and budget parameters for an agent. Expanded to 6 fields matching PRD Module 17.",
       "properties": {
         "cost_per_execution": {
           "type": "number",
-          "description": "Fixed cost incurred each time the agent is executed."
+          "minimum": 0,
+          "description": "Fixed cost per execution."
         },
         "cost_per_token": {
           "type": "number",
-          "description": "Variable cost per token consumed."
+          "minimum": 0,
+          "description": "Variable cost per token."
         },
         "estimated_monthly_cost": {
           "type": "number",
+          "minimum": 0,
           "description": "Estimated monthly cost based on projected usage."
         },
         "budget_limit": {
           "type": "integer",
+          "minimum": 0,
           "description": "Maximum budget limit for the agent."
         },
         "throttle_threshold": {
@@ -311,6 +592,7 @@
         }
       }
     },
+
     "AgentDependency": {
       "type": "object",
       "description": "Describes a dependency relationship between two agents.",
@@ -331,13 +613,7 @@
           "description": "UUID of the agent being depended upon."
         },
         "type": {
-          "type": "string",
-          "enum": [
-            "required",
-            "optional",
-            "runtime"
-          ],
-          "description": "Nature of the dependency: required, optional, or resolved at runtime."
+          "$ref": "#/definitions/DependencyType"
         },
         "description": {
           "type": "string",
@@ -358,9 +634,10 @@
         }
       }
     },
+
     "AgentVersion": {
       "type": "object",
-      "description": "Represents a versioned snapshot of an agent's configuration.",
+      "description": "Versioned snapshot of an agent's configuration. Includes change_summary and diff_from_previous.",
       "required": [
         "id",
         "agent_id",
@@ -382,10 +659,18 @@
           "pattern": "^\\d+\\.\\d+\\.\\d+$",
           "description": "Semantic version of this agent configuration."
         },
+        "status": {
+          "$ref": "#/definitions/VersionStatus"
+        },
         "created_at": {
           "type": "string",
           "format": "date-time",
           "description": "Timestamp when this version was created."
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when this version was last updated."
         },
         "created_by": {
           "type": "string",
@@ -396,22 +681,154 @@
           "type": "string",
           "description": "Summary of changes in this version."
         },
-        "status": {
-          "type": "string",
-          "enum": [
-            "build",
-            "staging",
-            "production",
-            "archived"
-          ],
-          "description": "Lifecycle status of this agent version."
-        },
         "diff_from_previous": {
           "type": "string",
           "description": "Detailed diff or description of changes from the previous version."
+        },
+        "model_config": {
+          "type": "object",
+          "description": "Model configuration for this version."
+        },
+        "prompt_template_ref": {
+          "type": "string",
+          "description": "Reference to the prompt template used."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of this version."
+        },
+        "promoted_to": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "description": "Map of environment names to promotion timestamps."
         }
       }
     },
+
+    "CreateVersionRequest": {
+      "type": "object",
+      "required": [
+        "agent_id",
+        "version"
+      ],
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "change_summary": {
+          "type": "string",
+          "description": "Summary of changes in this version."
+        },
+        "diff_from_previous": {
+          "type": "string",
+          "description": "Detailed diff from previous version."
+        },
+        "description": {
+          "type": "string"
+        },
+        "model_config": {
+          "type": "object"
+        },
+        "prompt_template_ref": {
+          "type": "string"
+        }
+      }
+    },
+
+    "UpdateVersionRequest": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/VersionStatus"
+        },
+        "description": {
+          "type": "string"
+        },
+        "change_summary": {
+          "type": "string"
+        }
+      }
+    },
+
+    "AgentSearchRequest": {
+      "type": "object",
+      "required": [
+        "tenant_id"
+      ],
+      "description": "Search request for finding agents by criteria.",
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "min_capability_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "department_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Filter by department (Module 05)."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "inactive",
+            "deprecated",
+            "archived"
+          ]
+        },
+        "supported_languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Filter by supported languages (Module 19)."
+        }
+      }
+    },
+
+    "AgentSearchResponse": {
+      "type": "object",
+      "required": [
+        "results",
+        "total"
+      ],
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Agent"
+          }
+        },
+        "total": {
+          "type": "integer"
+        }
+      }
+    },
+
     "ErrorResponse": {
       "type": "object",
       "description": "Standard error response format for API requests.",
