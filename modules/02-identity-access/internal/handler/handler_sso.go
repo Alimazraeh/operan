@@ -1030,6 +1030,269 @@ func (h *SCIMHandler) applyRemove(ctx context.Context, user *authentik.User, pat
 	return h.Auth.UsersAPI.Update(ctx, user.UUID, updateReq)
 }
 
+// ---- SCIM Bulk Operations (RFC 7644 Section 3.5) ----
+
+// SCIMBulkOperation represents a single operation within a bulk request.
+type SCIMBulkOperation struct {
+	Method   string                 `json:"method"`
+	Path     string                 `json:"path"`
+	BulkID   string                 `json:"bulkId,omitempty"`
+	Data     map[string]interface{} `json:"data,omitempty"`
+}
+
+// SCIMBulkResponse is the result of a single bulk operation.
+type SCIMBulkResponse struct {
+	Method   string `json:"method,omitempty"`
+	Path     string `json:"path,omitempty"`
+	BulkID   string `json:"bulkId,omitempty"`
+	Location string `json:"location,omitempty"`
+	Status   string `json:"status"`
+	ScimType string `json:"scimType,omitempty"`
+	Detail   string `json:"detail,omitempty"`
+}
+
+// SCIMBulkRequest is the bulk operation request body.
+type SCIMBulkRequest struct {
+	Operations  []SCIMBulkOperation `json:"Operations"`
+	Resources   []SCIMUser          `json:"Resources,omitempty"` // deprecated but sometimes used
+	FailOnError bool                `json:"failOnError"`
+}
+
+// SCIMBulkResult is the bulk operation response body.
+type SCIMBulkResult struct {
+	Operations []SCIMBulkResponse `json:"Operations"`
+}
+
+// BulkProvision handles POST /api/v1/iam/scim/bulk — RFC 7644 Section 3.5.
+func (h *SCIMHandler) BulkProvision(w http.ResponseWriter, r *http.Request) {
+	var bulkReq SCIMBulkRequest
+	if err := json.NewDecoder(r.Body).Decode(&bulkReq); err != nil {
+		writeSCIMError(w, http.StatusBadRequest, "invalidSchema", "Malformed bulk request body")
+		return
+	}
+
+	results := make([]SCIMBulkResponse, 0, len(bulkReq.Operations))
+	hadError := false
+
+	for _, op := range bulkReq.Operations {
+		var resp SCIMBulkResponse
+		resp.Method = op.Method
+		resp.Path = op.Path
+		resp.BulkID = op.BulkID
+
+		switch strings.ToUpper(op.Method) {
+		case http.MethodPost:
+			resp = h.handleBulkCreate(op)
+		case http.MethodPatch:
+			resp = h.handleBulkPatch(op)
+		case "REPLACE":
+			resp = h.handleBulkPatch(op)
+		case http.MethodDelete:
+			resp = h.handleBulkDelete(op)
+		default:
+			resp = SCIMBulkResponse{
+				Method:   op.Method,
+				Path:     op.Path,
+				BulkID:   op.BulkID,
+				Status:   strconv.Itoa(http.StatusBadRequest),
+				ScimType: "invalidFilter",
+				Detail:   fmt.Sprintf("Unsupported method: %s", op.Method),
+			}
+		}
+
+		if resp.Status != "200" && resp.Status != "201" {
+			hadError = true
+			if bulkReq.FailOnError {
+				results = append(results, resp)
+				break
+			}
+		}
+		results = append(results, resp)
+	}
+
+	bulkResp := SCIMBulkResult{Operations: results}
+	w.Header().Set("Content-Type", "application/scim+json")
+	if hadError {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
+	json.NewEncoder(w).Encode(bulkResp)
+}
+
+func (h *SCIMHandler) handleBulkCreate(op SCIMBulkOperation) SCIMBulkResponse {
+	data := op.Data
+	if data == nil {
+		return SCIMBulkResponse{
+			Method: op.Method, Path: op.Path, BulkID: op.BulkID,
+			Status: "400", ScimType: "invalidSyntax", Detail: "Create operation requires 'data' field",
+		}
+	}
+
+	// Extract required fields
+	email, _ := data["userName"].(string)
+	if email == "" {
+		if e, ok := data["emails"].([]interface{}); ok && len(e) > 0 {
+			if em, ok := e[0].(map[string]interface{}); ok {
+				email, _ = em["value"].(string)
+			}
+		}
+	}
+	if email == "" {
+		return SCIMBulkResponse{
+			Method: op.Method, Path: op.Path, BulkID: op.BulkID,
+			Status: "400", ScimType: "invalidSyntax", Detail: "userName or emails[0].value required",
+		}
+	}
+
+	// Build attributes map
+	attributes := make(map[string]interface{})
+	if extID, _ := data["externalId"].(string); extID != "" {
+		attributes["external_id"] = extID
+	}
+
+	nameData, _ := data["name"].(map[string]interface{})
+	firstName, _ := nameData["givenName"].(string)
+	lastName, _ := nameData["familyName"].(string)
+	displayName, _ := data["displayName"].(string)
+	if displayName == "" {
+		displayName = firstName + " " + lastName
+	}
+
+	isActive := true
+	if act, ok := data["active"].(bool); ok {
+		isActive = act
+	}
+
+	ctx := context.Background()
+	createReq := authentik.CreateUserRequest{
+		Username:   email,
+		Email:      email,
+		Name:       displayName,
+		IsActive:   isActive,
+		Attributes: attributes,
+	}
+
+	created, err := h.Auth.UsersAPI.Create(ctx, createReq)
+	if err != nil {
+		return SCIMBulkResponse{
+			Method: op.Method, Path: op.Path, BulkID: op.BulkID,
+			Status: "500", ScimType: "serverError", Detail: fmt.Sprintf("User creation failed: %v", err),
+		}
+	}
+
+	return SCIMBulkResponse{
+		Method:   op.Method,
+		Path:     op.Path,
+		BulkID:   op.BulkID,
+		Status:   "201",
+		Location: fmt.Sprintf("/api/v1/iam/scim/users/%s", created.UUID),
+	}
+}
+
+func (h *SCIMHandler) handleBulkPatch(op SCIMBulkOperation) SCIMBulkResponse {
+	// Path format: /api/v1/iam/scim/users/{id}
+	userID := extractScimUserFromPath(op.Path)
+	if userID == "" {
+		return SCIMBulkResponse{
+			Method: op.Method, Path: op.Path, BulkID: op.BulkID,
+			Status: "400", ScimType: "invalidPath", Detail: "Path must include user ID",
+		}
+	}
+
+	data := op.Data
+	if data == nil || len(data) == 0 {
+		return SCIMBulkResponse{
+			Method: op.Method, Path: op.Path, BulkID: op.BulkID,
+			Status: "400", ScimType: "invalidSyntax", Detail: "Patch operation requires 'data' field",
+		}
+	}
+
+	ctx := context.Background()
+	user, err := h.resolveScimUser(ctx, userID)
+	if err != nil {
+		return SCIMBulkResponse{
+			Method: op.Method, Path: op.Path, BulkID: op.BulkID,
+			Status: "404", ScimType: "noTarget", Detail: "User not found",
+		}
+	}
+
+	patchReq := &SCIMPatchRequest{
+		Op:    "replace",
+		Value: data,
+	}
+
+	_, err = h.applyPatchOps(ctx, user, patchReq)
+	if err != nil {
+		return SCIMBulkResponse{
+			Method: op.Method, Path: op.Path, BulkID: op.BulkID,
+			Status: "500", ScimType: "serverError", Detail: fmt.Sprintf("Patch failed: %v", err),
+		}
+	}
+
+	return SCIMBulkResponse{
+		Method: op.Method, Path: op.Path, BulkID: op.BulkID, Status: "200",
+	}
+}
+
+func (h *SCIMHandler) handleBulkDelete(op SCIMBulkOperation) SCIMBulkResponse {
+	userID := extractScimUserFromPath(op.Path)
+	if userID == "" {
+		return SCIMBulkResponse{
+			Method: op.Method, Path: op.Path, BulkID: op.BulkID,
+			Status: "400", ScimType: "invalidPath", Detail: "Path must include user ID",
+		}
+	}
+
+	ctx := context.Background()
+	user, err := h.resolveScimUser(ctx, userID)
+	if err != nil {
+		return SCIMBulkResponse{
+			Method: op.Method, Path: op.Path, BulkID: op.BulkID,
+			Status: "404", ScimType: "noTarget", Detail: "User not found",
+		}
+	}
+
+	tenantID := middleware.GetTenantID(ctx)
+	actorID := middleware.GetUserID(ctx)
+
+	if err := h.Auth.UsersAPI.Delete(ctx, user.UUID); err != nil {
+		return SCIMBulkResponse{
+			Method: op.Method, Path: op.Path, BulkID: op.BulkID,
+			Status: "500", ScimType: "serverError", Detail: fmt.Sprintf("Deactivation failed: %v", err),
+		}
+	}
+
+	h.Publisher.UserSuspended(ctx, user.UUID, tenantID, "deprovisioned via SCIM bulk", actorID, "", "", time.Now().UTC().Format(time.RFC3339))
+
+	return SCIMBulkResponse{
+		Method: op.Method, Path: op.Path, BulkID: op.BulkID, Status: "200",
+	}
+}
+
+func writeSCIMError(w http.ResponseWriter, status int, scimType, detail string) {
+	w.Header().Set("Content-Type", "application/scim+json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"schemas":  []string{"urn:ietf:params:scim:api:messages:2.0:Error"},
+		"scimType": scimType,
+		"detail":   detail,
+		"status":   strconv.Itoa(status),
+	})
+}
+
+// extractScimUserFromPath extracts the user ID from a SCIM bulk path like
+// /api/v1/iam/scim/users/{id} or just {id}.
+func extractScimUserFromPath(path string) string {
+	path = strings.TrimPrefix(path, "/api/v1/iam/scim/users/")
+	path = strings.TrimPrefix(path, "/api/v1/iam/scim/")
+	path = strings.TrimSuffix(path, "/")
+	if path == "users" {
+		return ""
+	}
+	return path
+}
+
 // ---- helpers ----
 
 // configString safely extracts a string value from the configuration map.

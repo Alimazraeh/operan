@@ -555,3 +555,16 @@ type ListDelegationsResponse struct {
 	Limit        int               `json:"limit"`
 	Offset       int               `json:"offset"`
 }
+
+// SessionInfo tracks active session metadata for replay and audit.
+type SessionInfo struct {
+	ID             string    `json:"id"`
+	UserID         string    `json:"user_id"`
+	TenantID       string    `json:"tenant_id"`
+	IP             string    `json:"ip"`
+	UserAgent      string    `json:"user_agent"`
+	StartedAt      time.Time `json:"started_at"`
+	LastActivity   time.Time `json:"last_activity"`
+	IsActive       bool      `json:"is_active"`
+	RequestCount   int       `json:"request_count"`
+}

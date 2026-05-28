@@ -406,6 +406,86 @@ func GetSubscription(h *middleware.Handler) http.HandlerFunc {
 	}
 }
 
+// ListSubscriptions handles GET /tenants/{id}/subscriptions (paginated list).
+func ListSubscriptions(h *middleware.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
+		_, err := h.TenantStore.GetByID(tenantID)
+		if err != nil {
+			h.WriteError(w, http.StatusNotFound, 404, "tenant not found", err.Error())
+			return
+		}
+
+		// Extract pagination params (default to page=1, page_size=20)
+		page := 1
+		pageSize := 20
+		if p := r.URL.Query().Get("page"); p != "" {
+			if n, err := parsePositiveInt(p); err == nil && n > 0 {
+				page = n
+			}
+		}
+		if ps := r.URL.Query().Get("page_size"); ps != "" {
+			if n, err := parsePositiveInt(ps); err == nil && n > 0 {
+				pageSize = n
+			}
+		}
+
+		// SubscriptionStore.List() returns all subscriptions, we filter by tenant
+		allSubs := h.SubscriptionStore.List()
+
+		// Filter by tenant
+		var tenantSubs []*SubscriptionResponse
+		for _, sub := range allSubs {
+			if sub.TenantID == tenantID {
+				tenantSubs = append(tenantSubs, &SubscriptionResponse{
+					ID:                 sub.ID,
+					TenantID:           sub.TenantID,
+					Plan:               string(sub.Plan),
+					PlanName:           sub.PlanName,
+					Status:             string(sub.Status),
+					BillingCycle:       string(sub.BillingCycle),
+					SeatCount:          sub.SeatCount,
+					UnitPrice:          sub.UnitPrice,
+					TotalAmount:        sub.TotalAmount,
+					Currency:           sub.Currency,
+					CurrentPeriodStart: sub.CurrentPeriodStart,
+					CurrentPeriodEnd:   sub.CurrentPeriodEnd,
+					NextBillingDate:    sub.NextBillingDate,
+					CancelAtPeriodEnd:  sub.CancelAtPeriodEnd,
+					CancelledAt:        sub.CancelledAt,
+					CreatedAt:          sub.CreatedAt,
+					UpdatedAt:          sub.UpdatedAt,
+				})
+			}
+		}
+
+		total := len(tenantSubs)
+
+		// Apply pagination
+		start := (page - 1) * pageSize
+		if start > total {
+			start = total
+		}
+		end := start + pageSize
+		if end > total {
+			end = total
+		}
+		pagedItems := tenantSubs[start:end]
+
+		resp := SubscriptionListResponse{
+			Items: pagedItems,
+			Total: total,
+		}
+
+		h.WriteJSON(w, http.StatusOK, resp)
+	}
+}
+
 // PatchSubscription handles PATCH /tenants/{id}/subscriptions.
 func PatchSubscription(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

@@ -1,0 +1,10 @@
+﻿Gap,Impact,Priority
+JWT auth middleware not wired,Any unauthenticated client can call all endpoints,🔴 P0
+Config package unused,Hardcoded port/env vars prevent environment flexibility,🔴 P0
+In-memory storage only,Data lost on restart; not production-ready,🔴 P0
+36 of 54 OpenAPI ops missing,"Escalations, retries, multi-stack execution, agent workers absent",🔴 P0
+Event publisher is LOG-ONLY stub,Event-driven architecture broken; cross-module integration fails,🔴 P0
+No DAG execution engine,Workflows persisted but never actually executed,🔴 P0
+Zero test coverage,Fails Definition of Done gate (requires ≥80%),🔴 P0
+Handler bugs,CreateCheckpoint", "GetWorkflowState", "ReplayWorkflow have logic errors,🟡 P1
+Event topic naming mismatch,AsyncAPI contract uses {stack} placeholder; code uses flat format,🟡 P1

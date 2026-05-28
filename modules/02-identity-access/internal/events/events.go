@@ -63,6 +63,16 @@ func (p *Publisher) UserCreated(ctx context.Context, userID, tenantID, email, ro
 	})
 }
 
+// UserUpdated publishes the user.updated event.
+func (p *Publisher) UserUpdated(ctx context.Context, userID, tenantID, email, updatedBy, correlationID, timestamp string) error {
+	return p.Publish(ctx, "user.updated", tenantID, correlationID, timestamp, map[string]interface{}{
+		"user_id":    userID,
+		"tenant_id":  tenantID,
+		"email":      email,
+		"updated_by": updatedBy,
+	})
+}
+
 // UserSuspended publishes the user.suspended event.
 func (p *Publisher) UserSuspended(ctx context.Context, userID, tenantID, reason, suspendedBy, effectiveAt, correlationID, timestamp string) error {
 	return p.Publish(ctx, "user.suspended", tenantID, correlationID, timestamp, map[string]interface{}{
@@ -123,13 +133,37 @@ func (p *Publisher) SessionCreated(ctx context.Context, sessionID, userID, tenan
 }
 
 // SessionExpired publishes the session.expired event.
-func (p *Publisher) SessionExpired(ctx context.Context, sessionID, userID, tenantID, reason, correlationID, timestamp string) error {
-	return p.Publish(ctx, "session.expired", tenantID, correlationID, timestamp, map[string]interface{}{
+func (p *Publisher) SessionExpired(ctx context.Context, sessionID, userID, tenantID, reason, ipAddress, userAgent, correlationID, timestamp string) error {
+	payload := map[string]interface{}{
 		"session_id": sessionID,
 		"user_id":    userID,
 		"tenant_id":  tenantID,
 		"reason":     reason,
-	})
+	}
+	if ipAddress != "" {
+		payload["ip_address"] = ipAddress
+	}
+	if userAgent != "" {
+		payload["user_agent"] = userAgent
+	}
+	return p.Publish(ctx, "session.expired", tenantID, correlationID, timestamp, payload)
+}
+
+// SessionEnded publishes the session.ended event (explicit logout).
+func (p *Publisher) SessionEnded(ctx context.Context, sessionID, userID, tenantID, reason, ipAddress, userAgent, correlationID, timestamp string) error {
+	payload := map[string]interface{}{
+		"session_id": sessionID,
+		"user_id":    userID,
+		"tenant_id":  tenantID,
+		"reason":     reason,
+	}
+	if ipAddress != "" {
+		payload["ip_address"] = ipAddress
+	}
+	if userAgent != "" {
+		payload["user_agent"] = userAgent
+	}
+	return p.Publish(ctx, "session.ended", tenantID, correlationID, timestamp, payload)
 }
 
 // MfaEnrolled publishes the mfa.enrolled event.
@@ -153,3 +187,45 @@ func (p *Publisher) SsoLogin(ctx context.Context, userID, tenantID, ssoProvider,
 		"auth_result":      authResult,
 	})
 }
+
+// SessionActive publishes when a new active session is created.
+func (p *Publisher) SessionActive(ctx context.Context, sessionID, userID, tenantID, ip, userAgent, correlationID, timestamp string) error {
+	return p.Publish(ctx, "session.active", tenantID, correlationID, timestamp, map[string]interface{}{
+		"session_id":  sessionID,
+		"user_id":     userID,
+		"tenant_id":   tenantID,
+		"ip":          ip,
+		"user_agent":  userAgent,
+	})
+}
+
+// SessionReplayCaptured publishes when a session replay capture occurs.
+func (p *Publisher) SessionReplayCaptured(ctx context.Context, sessionID, userID, tenantID, url, method string, statusCode int, correlationID, timestamp string) error {
+	return p.Publish(ctx, "session.replay_captured", tenantID, correlationID, timestamp, map[string]interface{}{
+		"session_id":   sessionID,
+		"user_id":      userID,
+		"tenant_id":    tenantID,
+		"url":          url,
+		"method":       method,
+		"status_code":  statusCode,
+	})
+}
+
+// SessionReplayRetrieved publishes when a session replay is retrieved.
+func (p *Publisher) SessionReplayRetrieved(ctx context.Context, sessionID, retrievedBy, tenantID, correlationID, timestamp string) error {
+	return p.Publish(ctx, "session.replay_retrieved", tenantID, correlationID, timestamp, map[string]interface{}{
+		"session_id":   sessionID,
+		"retrieved_by": retrievedBy,
+		"tenant_id":    tenantID,
+	})
+}
+
+// SessionReplayDeleted publishes when a session replay is deleted.
+func (p *Publisher) SessionReplayDeleted(ctx context.Context, sessionID, deletedBy, tenantID, correlationID, timestamp string) error {
+	return p.Publish(ctx, "session.replay_deleted", tenantID, correlationID, timestamp, map[string]interface{}{
+		"session_id": sessionID,
+		"deleted_by": deletedBy,
+		"tenant_id":  tenantID,
+	})
+}
+
