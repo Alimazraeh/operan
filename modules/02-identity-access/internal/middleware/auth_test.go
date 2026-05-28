@@ -14,7 +14,7 @@ func TestAuthValidatorValidBearerToken(t *testing.T) {
 		t.Fatalf("GenerateToken() error = %v", err)
 	}
 
-	handler := AuthValidator("secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthValidator(nil, "https://authentik.operan.internal", "secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -30,7 +30,7 @@ func TestAuthValidatorValidBearerToken(t *testing.T) {
 }
 
 func TestAuthValidatorMissingAuthorizationHeader(t *testing.T) {
-	handler := AuthValidator("secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthValidator(nil, "https://authentik.operan.internal", "secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -45,7 +45,7 @@ func TestAuthValidatorMissingAuthorizationHeader(t *testing.T) {
 }
 
 func TestAuthValidatorInvalidToken(t *testing.T) {
-	handler := AuthValidator("secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthValidator(nil, "https://authentik.operan.internal", "secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -61,7 +61,7 @@ func TestAuthValidatorInvalidToken(t *testing.T) {
 }
 
 func TestAuthValidatorMalformedBearer(t *testing.T) {
-	handler := AuthValidator("secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthValidator(nil, "https://authentik.operan.internal", "secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -77,7 +77,7 @@ func TestAuthValidatorMalformedBearer(t *testing.T) {
 }
 
 func TestAuthValidatorEmptyBearerValue(t *testing.T) {
-	handler := AuthValidator("secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthValidator(nil, "https://authentik.operan.internal", "secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -98,7 +98,7 @@ func TestAuthValidatorExtractsPrincipal(t *testing.T) {
 		t.Fatalf("GenerateToken() error = %v", err)
 	}
 
-	handler := AuthValidator("secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthValidator(nil, "https://authentik.operan.internal", "secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		jwtToken := GetJWTToken(r.Context())
 		if jwtToken == nil {
 			t.Fatal("GetJWTToken() returned nil")
@@ -138,7 +138,7 @@ func TestAuthValidatorExtractsUserID(t *testing.T) {
 		t.Fatalf("GenerateToken() error = %v", err)
 	}
 
-	handler := AuthValidator("secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthValidator(nil, "https://authentik.operan.internal", "secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID := GetUserID(r.Context())
 		if userID != "user-456" {
 			t.Errorf("GetUserID() = %v, want user-456", userID)
@@ -163,7 +163,7 @@ func TestAuthValidatorServicePrincipal(t *testing.T) {
 		t.Fatalf("GenerateToken() error = %v", err)
 	}
 
-	handler := AuthValidator("secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthValidator(nil, "https://authentik.operan.internal", "secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		jwtToken := GetJWTToken(r.Context())
 		if jwtToken == nil {
 			t.Fatal("GetJWTToken() returned nil")
@@ -191,7 +191,7 @@ func TestAuthValidatorAgentPrincipal(t *testing.T) {
 		t.Fatalf("GenerateToken() error = %v", err)
 	}
 
-	handler := AuthValidator("secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthValidator(nil, "https://authentik.operan.internal", "secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		jwtToken := GetJWTToken(r.Context())
 		if jwtToken == nil {
 			t.Fatal("GetJWTToken() returned nil")
@@ -232,7 +232,7 @@ func TestAuthValidatorUntrustedIssuer(t *testing.T) {
 		t.Fatalf("GenerateToken() error = %v", err)
 	}
 
-	handler := AuthValidator("wrong-secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthValidator(nil, "wrong-secret", "wrong-secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -248,7 +248,7 @@ func TestAuthValidatorUntrustedIssuer(t *testing.T) {
 }
 
 func TestAuthValidatorHealthEndpoint(t *testing.T) {
-	handler := AuthValidator("secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthValidator(nil, "https://authentik.operan.internal", "secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -379,7 +379,7 @@ func TestGetUserID(t *testing.T) {
 		t.Fatalf("GenerateToken() error = %v", err)
 	}
 
-	handler := AuthValidator("secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthValidator(nil, "https://authentik.operan.internal", "secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		got := GetUserID(r.Context())
 		if got != "user-789" {
 			t.Errorf("GetUserID() = %v, want user-789", got)
@@ -404,7 +404,7 @@ func TestGetUserType(t *testing.T) {
 		t.Fatalf("GenerateToken() error = %v", err)
 	}
 
-	handler := AuthValidator("secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthValidator(nil, "https://authentik.operan.internal", "secret", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		got := GetUserType(r.Context())
 		if got != "service" {
 			t.Errorf("GetUserType() = %v, want service", got)

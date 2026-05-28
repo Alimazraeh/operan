@@ -21,8 +21,8 @@ const (
 
 // JWTToken represents a validated IAM JWT token.
 type JWTToken struct {
-	Subject   string `json:"sub"`            // user ID, service ID, or agent ID
-	UserType  string `json:"user_type"`      // "user", "service", "agent"
+	Subject   string `json:"sub"`             // user ID, service ID, or agent ID
+	UserType  string `json:"user_type"`       // "user", "service", "agent"
 	TenantID  string `json:"tenant_id"`
 	Email     string `json:"email,omitempty"`
 	Roles     []string `json:"roles,omitempty"`
@@ -44,16 +44,17 @@ func TenantInjector(next http.Handler) http.Handler {
 }
 
 // AuthValidator validates the Authorization header and extracts user ID.
-func AuthValidator(tokenSecret string, next http.Handler) http.Handler {
+// It validates JWT tokens issued by Authentik using the JWKS cache for RSA key lookup,
+// with a shared secret fallback for HMAC-signed internal tokens.
+func AuthValidator(jwksCache *JWKSCache, authentikIssuerURL, tokenSecret string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-
-		// Skip auth for health check
-		if r.URL.Path == "/health" {
+		// Skip auth for health check and token introspection
+		if r.URL.Path == "/health" || r.URL.Path == "/internal/auth/proxy" {
 			next.ServeHTTP(w, r)
 			return
 		}
 
+		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
@@ -77,19 +78,54 @@ func AuthValidator(tokenSecret string, next http.Handler) http.Handler {
 			return
 		}
 
-		// Parse and validate JWT
+		// Try Authentik JWT first
 		tokenResult, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
-			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+			// Try to find the key by kid from the token header
+			if kid, ok := t.Header["kid"].(string); ok {
+				if jwksCache != nil {
+					keyEntry, ok := jwksCache.GetSigningKey(kid)
+					if ok {
+						return keyEntry.Key, nil
+					}
+				}
 			}
-			return []byte(tokenSecret), nil
+
+			if _, ok := t.Method.(*jwt.SigningMethodRSA); ok {
+				if tokenSecret != "" {
+					return []byte(tokenSecret), nil
+				}
+				return nil, fmt.Errorf("no JWKS key found for token")
+			}
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); ok {
+				if tokenSecret != "" {
+					return []byte(tokenSecret), nil
+				}
+				return nil, fmt.Errorf("missing token secret")
+			}
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		})
 
 		if err != nil || !tokenResult.Valid {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprint(w, `{"error":"invalid token"}`)
-			return
+			// Fall back to internal token secret (for admin operations)
+			if tokenSecret != "" {
+				tokenResult, err = jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+					if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+						return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+					}
+					return []byte(tokenSecret), nil
+				})
+				if err != nil || !tokenResult.Valid {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusUnauthorized)
+					fmt.Fprint(w, `{"error":"invalid token"}`)
+					return
+				}
+			} else {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusUnauthorized)
+				fmt.Fprint(w, `{"error":"invalid token"}`)
+				return
+			}
 		}
 
 		claims, ok := tokenResult.Claims.(jwt.MapClaims)
@@ -109,15 +145,13 @@ func AuthValidator(tokenSecret string, next http.Handler) http.Handler {
 			return
 		}
 
+		// Validate issuer (Authentik or internal)
 		issuer, _ := claims["iss"].(string)
-		if issuer == "" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprint(w, `{"error":"token missing issuer"}`)
-			return
+		expectedIssuer := "operan-iam"
+		if authentikIssuerURL != "" {
+			expectedIssuer = authentikIssuerURL
 		}
-
-		if issuer != "operan-iam" {
+		if issuer != expectedIssuer && issuer != "operan-iam" {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			fmt.Fprint(w, `{"error":"untrusted issuer"}`)
@@ -143,7 +177,7 @@ func AuthValidator(tokenSecret string, next http.Handler) http.Handler {
 			ctx = context.WithValue(ctx, TenantIDKey, tenantID)
 		}
 
-		// Store token for downstream use (optional - not persisted)
+		// Store token for downstream use
 		ctx = context.WithValue(ctx, "jwt_token", &JWTToken{
 			Subject:   sub,
 			UserType:  userType,
@@ -179,8 +213,6 @@ func generateTraceID() string {
 
 // generateID creates a simple random ID.
 func generateID() string {
-	// Use a simple counter-based approach for now
-	// In production, use a proper UUID or ULID generator
 	return "00000000-0000-0000-0000-000000000001"
 }
 
