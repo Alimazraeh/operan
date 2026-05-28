@@ -9,19 +9,25 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/operan/modules/03-agent-orchestration/internal/execution"
+	"github.com/operan/modules/03-agent-orchestration/internal/events"
 	"github.com/operan/modules/03-agent-orchestration/internal/middleware"
+	"github.com/operan/modules/03-agent-orchestration/internal/repository"
 	"github.com/operan/modules/03-agent-orchestration/internal/store"
 )
 
 // WorkflowHandler handles workflow-related HTTP endpoints.
 type WorkflowHandler struct {
-	WorkflowStore *store.WorkflowStore
-	ScheduleStore *store.ScheduleStore
-	AgentStore    *store.AgentStore
+	WorkflowStore repository.WorkflowStoreIface
+	ScheduleStore repository.ScheduleStoreIface
+	AgentStore    repository.AgentStoreIface
+	DAGEngine     *execution.Engine
+	Events        *events.Publisher
 }
 
 // NewWorkflowHandler creates a new workflow handler.
-func NewWorkflowHandler(wf *store.WorkflowStore, sc *store.ScheduleStore, ag *store.AgentStore) *WorkflowHandler {
+func NewWorkflowHandler(wf repository.WorkflowStoreIface, sc repository.ScheduleStoreIface, ag repository.AgentStoreIface) *WorkflowHandler {
 	return &WorkflowHandler{
 		WorkflowStore: wf,
 		ScheduleStore: sc,
@@ -97,6 +103,19 @@ func (h *WorkflowHandler) CreateWorkflow(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Publish workflow created event
+	if h.Events != nil {
+		h.Events.PublishWorkflowCreated(events.StackLangGraph, events.WorkflowCreatedPayload{
+			WorkflowID:   wf.ID,
+			TenantID:     wf.TenantID,
+			DepartmentID: wf.DepartmentID,
+			Name:         wf.Name,
+			Version:      wf.Version,
+			CreatedBy:    wf.CreatedBy,
+			CreatedAt:    wf.CreatedAt,
+		})
+	}
+
 	h.WriteJSON(w, http.StatusCreated, wf)
 }
 
@@ -106,12 +125,11 @@ func (h *WorkflowHandler) CreateWorkflow(w http.ResponseWriter, r *http.Request)
 func (h *WorkflowHandler) ListWorkflows(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.TenantIDFromContext(r.Context())
 
-	page, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	page++ // convert from 0-based offset to 1-based page
-	pageSize, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	if page < 1 {
 		page = 1
 	}
+	pageSize, _ := strconv.Atoi(r.URL.Query().Get("page_size"))
 	if pageSize < 1 {
 		pageSize = 50
 	}
@@ -177,6 +195,16 @@ func (h *WorkflowHandler) CancelWorkflow(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Publish workflow cancelled event
+	if h.Events != nil {
+		h.Events.PublishWorkflowCancelled(events.StackLangGraph, events.WorkflowCancelledPayload{
+			WorkflowID:         id,
+			CancelledBy:        middleware.UserIDFromContext(r.Context()),
+			CancelledAt:        time.Now().UTC(),
+			CancellationReason: "cancelled by user",
+		})
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -195,6 +223,15 @@ func (h *WorkflowHandler) PauseWorkflow(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Publish workflow paused event
+	if h.Events != nil {
+		h.Events.PublishWorkflowPaused(events.StackLangGraph, events.WorkflowPausedPayload{
+			WorkflowID: id,
+			Reason:     "paused by user",
+			PausedAt:   time.Now().UTC(),
+		})
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -211,6 +248,14 @@ func (h *WorkflowHandler) ResumeWorkflow(w http.ResponseWriter, r *http.Request)
 	if err := h.WorkflowStore.UpdateStatus(id, store.WorkflowStatusRunning); err != nil {
 		h.WriteError(w, http.StatusBadRequest, 400, err.Error())
 		return
+	}
+
+	// Publish workflow resumed event
+	if h.Events != nil {
+		h.Events.PublishWorkflowResumed(events.StackLangGraph, events.WorkflowResumedPayload{
+			WorkflowID: id,
+			ResumedAt:  time.Now().UTC(),
+		})
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -232,12 +277,51 @@ func (h *WorkflowHandler) GetWorkflowState(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// Build node states from actual checkpoints and execution history
+	checkpoints := h.WorkflowStore.GetCheckpoints(id)
+	events := h.WorkflowStore.GetExecutionHistory(id)
+
+	// Map nodeID -> checkpoint (latest)
+	nodeCheckpoint := make(map[string]*store.Checkpoint)
+	for i := range checkpoints {
+		cp := &checkpoints[i]
+		nodeCheckpoint[cp.NodeID] = cp
+	}
+
+	// Map nodeID -> latest event status
+	nodeEventStatus := make(map[string]string)
+	for _, evt := range events {
+		if nodeID, ok := evt.Details["node_id"].(string); ok {
+			nodeEventStatus[nodeID] = evt.EventType
+		}
+	}
+
 	nodes := make([]store.NodeState, len(wf.Graph.Nodes))
 	for i, n := range wf.Graph.Nodes {
-		nodes[i] = store.NodeState{
-			NodeID: n.ID,
-			Status: store.NodeStatusPending,
+		status := store.NodeStatusPending
+		if cp, ok := nodeCheckpoint[n.ID]; ok && cp != nil {
+			// If checkpoint exists, node has been executed
+			status = store.NodeStatusCompleted
 		}
+		if evtStatus, ok := nodeEventStatus[n.ID]; ok {
+			switch evtStatus {
+			case "failed":
+				status = store.NodeStatusFailed
+			case "skipped":
+				status = store.NodeStatusSkipped
+			case "running":
+				status = store.NodeStatusRunning
+			}
+		}
+
+		ns := store.NodeState{
+			NodeID: n.ID,
+			Status: status,
+		}
+		if cp, ok := nodeCheckpoint[n.ID]; ok && cp != nil && cp.StateSnapshot != nil {
+			ns.Output = cp.StateSnapshot
+		}
+		nodes[i] = ns
 	}
 
 	state := store.WorkflowState{
@@ -262,11 +346,45 @@ func (h *WorkflowHandler) CreateCheckpoint(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// Verify workflow exists
+	wf, err := h.WorkflowStore.GetByID(id)
+	if err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, err.Error())
+		return
+	}
+	_ = wf
+
+	var req struct {
+		NodeID     string                 `json:"node_id,omitempty"`
+		StateSnapshot map[string]interface{} `json:"state_snapshot,omitempty"`
+	}
+	json.NewDecoder(r.Body).Decode(&req)
+
+	nodeID := req.NodeID
+	if nodeID == "" {
+		// If no node_id, create a global checkpoint
+		nodeID = "_global"
+	}
+
 	cp := store.Checkpoint{
-		NodeID:    id,
-		Timestamp: time.Now().UTC(),
+		ID:            generateID(),
+		WorkflowID:    id,
+		NodeID:        nodeID,
+		Timestamp:     time.Now().UTC(),
+		StateSnapshot: req.StateSnapshot,
+		Checksum:      "sha256:" + generateID(),
 	}
 	h.WorkflowStore.AddCheckpoint(cp)
+
+	// Publish checkpoint created event
+	if h.Events != nil {
+		h.Events.PublishWorkflowCheckpointed(events.StackLangGraph, events.WorkflowCheckpointedPayload{
+			WorkflowID:  id,
+			NodeID:      nodeID,
+			CheckpointID: cp.ID,
+			Timestamp:   cp.Timestamp,
+		})
+	}
 
 	h.WriteJSON(w, http.StatusCreated, cp)
 }
@@ -281,6 +399,12 @@ func (h *WorkflowHandler) ReplayWorkflow(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	wf, err := h.WorkflowStore.GetByID(id)
+	if err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, err.Error())
+		return
+	}
+
 	var req struct {
 		CheckpointID string                 `json:"checkpoint_id,omitempty"`
 		NodeID       string                 `json:"node_id,omitempty"`
@@ -288,27 +412,58 @@ func (h *WorkflowHandler) ReplayWorkflow(w http.ResponseWriter, r *http.Request)
 	}
 	json.NewDecoder(r.Body).Decode(&req)
 
-	wf, err := h.WorkflowStore.GetByID(id)
-	if err != nil {
-		h.WriteError(w, http.StatusNotFound, 404, err.Error())
-		return
+	// Replay means creating a new workflow instance from the original graph
+	// with the same definition, optionally resetting variables
+	newWf := &store.Workflow{
+		TenantID:       wf.TenantID,
+		DepartmentID:   wf.DepartmentID,
+		Name:           wf.Name + " (replay)",
+		Version:        wf.Version,
+		Status:         store.WorkflowStatusPending,
+		Graph:          *wf.Graph.DeepCopy(),
+		Priority:       wf.Priority,
+		Description:    wf.Description,
+		CreatedBy:      wf.CreatedBy,
 	}
 
 	if req.Variables != nil {
-		for k, v := range req.Variables {
-			wf.Variables[k] = v
+		newWf.Variables = req.Variables
+	} else {
+		newWf.Variables = make(map[string]interface{})
+		for k, v := range wf.Variables {
+			newWf.Variables[k] = v
 		}
-		h.WorkflowStore.SetVariables(id, wf.TenantID, wf.Variables)
+	}
+
+	newWf, err = h.WorkflowStore.Create(newWf)
+	if err != nil {
+		h.WriteError(w, http.StatusConflict, 409, err.Error())
+		return
 	}
 
 	evt := store.ExecutionEvent{
 		EventType: "replay",
 		Timestamp: time.Now().UTC(),
-		Details:   map[string]interface{}{"checkpoint_id": req.CheckpointID},
+		Details: map[string]interface{}{
+			"original_workflow_id": id,
+			"new_workflow_id":      newWf.ID,
+			"checkpoint_id":        req.CheckpointID,
+		},
 	}
 	h.WorkflowStore.AddEvent(id, evt)
 
-	w.WriteHeader(http.StatusCreated)
+	// Publish workflow replayed event
+	if h.Events != nil {
+		h.Events.PublishWorkflowReplayed(events.StackLangGraph, events.WorkflowReplayedPayload{
+			WorkflowID:       newWf.ID,
+			ReplayID:         uuid.New().String(),
+			FromCheckpointID: req.CheckpointID,
+			ReplayedBy:       middleware.UserIDFromContext(r.Context()),
+			StartedAt:        time.Now().UTC(),
+		})
+	}
+
+	h.WriteJSON(w, http.StatusCreated, newWf)
 }
 
 // ─── getWorkflowVariables ────────────────────────────────────────────────────
@@ -360,6 +515,39 @@ func (h *WorkflowHandler) UpdateWorkflowVariables(w http.ResponseWriter, r *http
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// ─── executeWorkflow ─────────────────────────────────────────────────────────
+
+// ExecuteWorkflow handles POST /workflows/{id}/execute
+func (h *WorkflowHandler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
+	id := extractIDFromPath(r.URL.Path, "/workflows/")
+	if id == "" {
+		h.WriteError(w, http.StatusBadRequest, 400, "workflow id is required")
+		return
+	}
+
+	// Verify workflow exists
+	if _, err := h.WorkflowStore.GetByID(id); err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "workflow not found")
+		return
+	}
+
+	// Start execution on DAG engine (if available)
+	if h.DAGEngine != nil {
+		if err := h.DAGEngine.StartWorkflow(id); err != nil {
+			h.WriteError(w, http.StatusInternalServerError, 500, "failed to start execution: "+err.Error())
+			return
+		}
+	} else {
+		// Fallback: update status to running without DAG engine
+		if err := h.WorkflowStore.UpdateStatus(id, store.WorkflowStatusRunning); err != nil {
+			h.WriteError(w, http.StatusInternalServerError, 500, "failed to start execution: "+err.Error())
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // ─── helpers ─────────────────────────────────────────────────────────────────

@@ -143,6 +143,7 @@ type NodeState struct {
 // Checkpoint represents a workflow state checkpoint.
 type Checkpoint struct {
 	ID              string                 `json:"id"`
+	WorkflowID      string                 `json:"workflow_id,omitempty"`
 	NodeID          string                 `json:"node_id"`
 	Timestamp       time.Time              `json:"timestamp"`
 	StateSnapshot   map[string]interface{} `json:"state_snapshot,omitempty"`
@@ -393,7 +394,11 @@ func (s *WorkflowStore) AddCheckpoint(cp Checkpoint) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.checkpoints[cp.NodeID] = append(s.checkpoints[cp.NodeID], cp)
+	wfID := cp.WorkflowID
+	if wfID == "" {
+		wfID = cp.NodeID
+	}
+	s.checkpoints[wfID] = append(s.checkpoints[wfID], cp)
 }
 
 // GetCheckpoints returns all checkpoints for a workflow.
@@ -829,6 +834,34 @@ func (s *AgentStore) ListByWorkflow(workflowID string) ([]*AgentAssignment, erro
 		result = append(result, &cpy)
 	}
 	return result, nil
+}
+
+// ListAgentAvailability returns all registered agent availability entries.
+func (s *AgentStore) ListAgentAvailability() []*AgentAvailability {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	result := make([]*AgentAvailability, 0, len(s.agentAvailability))
+	for _, avail := range s.agentAvailability {
+		cpy := *avail
+		result = append(result, &cpy)
+	}
+	return result
+}
+
+// ListByTenant returns all agent availability entries.
+// Note: AgentAvailability doesn't have a TenantID field, so this returns all records.
+func (s *AgentStore) ListByTenant(tenantID string) []*AgentAvailability {
+	_ = tenantID // unused - AgentAvailability has no tenant field
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	result := make([]*AgentAvailability, 0, len(s.agentAvailability))
+	for _, avail := range s.agentAvailability {
+		cpy := *avail
+		result = append(result, &cpy)
+	}
+	return result
 }
 
 // timeNow returns the current UTC time. Overridable for testing.

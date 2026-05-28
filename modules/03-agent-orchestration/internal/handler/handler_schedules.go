@@ -2,22 +2,26 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/operan/modules/03-agent-orchestration/internal/events"
 	"github.com/operan/modules/03-agent-orchestration/internal/middleware"
+	"github.com/operan/modules/03-agent-orchestration/internal/repository"
 	"github.com/operan/modules/03-agent-orchestration/internal/store"
 )
 
 // ScheduleHandler handles schedule-related HTTP endpoints.
 type ScheduleHandler struct {
-	ScheduleStore *store.ScheduleStore
-	WorkflowStore *store.WorkflowStore
-	AgentStore    *store.AgentStore
+	ScheduleStore repository.ScheduleStoreIface
+	WorkflowStore repository.WorkflowStoreIface
+	AgentStore    repository.AgentStoreIface
+	Events        *events.Publisher
 }
 
 // NewScheduleHandler creates a new schedule handler.
-func NewScheduleHandler(sc *store.ScheduleStore, wf *store.WorkflowStore, ag *store.AgentStore) *ScheduleHandler {
+func NewScheduleHandler(sc repository.ScheduleStoreIface, wf repository.WorkflowStoreIface, ag repository.AgentStoreIface) *ScheduleHandler {
 	return &ScheduleHandler{
 		ScheduleStore: sc,
 		WorkflowStore: wf,
@@ -175,6 +179,16 @@ func (h *ScheduleHandler) TriggerSchedule(w http.ResponseWriter, r *http.Request
 	}
 	h.WorkflowStore.AddEvent(sc.WorkflowTemplateID, evt)
 
+	// Publish schedule triggered event
+	if h.Events != nil {
+		h.Events.PublishScheduleTriggered(events.StackLangGraph, events.ScheduleTriggeredPayload{
+			ScheduleID:     id,
+			WorkflowID:     sc.WorkflowTemplateID,
+			TriggeredBy:    middleware.UserIDFromContext(r.Context()),
+			CronExpression: sc.Cron,
+		})
+	}
+
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -187,4 +201,81 @@ func extractScheduleIDFromPath(path string) string {
 		idx++
 	}
 	return s[:idx]
+}
+
+// ─── listSchedules ───────────────────────────────────────────────────────────
+
+// ListSchedules handles GET /schedules with pagination.
+func (h *ScheduleHandler) ListSchedules(w http.ResponseWriter, r *http.Request) {
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Parse pagination params (1-based page/page_size, fallback to offset/limit)
+	page := 1
+	pageSize := 20
+	if p := r.URL.Query().Get("page"); p != "" {
+		if _, err := fmt.Sscanf(p, "%d", &page); err != nil {
+			page = 1
+		}
+	}
+	if ps := r.URL.Query().Get("page_size"); ps != "" {
+		if _, err := fmt.Sscanf(ps, "%d", &pageSize); err != nil {
+			pageSize = 20
+		}
+	}
+
+	enabled := r.URL.Query().Get("enabled")
+	var enabledFilter *bool
+	if enabled != "" {
+		b := enabled == "true"
+		enabledFilter = &b
+	}
+
+	schedules, total, hasMore := h.ScheduleStore.List(tenantID, page, pageSize, enabledFilter)
+	h.WriteJSON(w, http.StatusOK, middleware.PaginatedResponse[store.Schedule]{
+		Data:    schedules,
+		Total:   total,
+		HasMore: hasMore,
+	})
+}
+
+// ─── pauseSchedule ───────────────────────────────────────────────────────────
+
+// PauseSchedule handles POST /schedules/{id}/pause
+func (h *ScheduleHandler) PauseSchedule(w http.ResponseWriter, r *http.Request) {
+	id := extractScheduleIDFromPath(r.URL.Path)
+	if id == "" {
+		h.WriteError(w, http.StatusBadRequest, 400, "schedule id is required")
+		return
+	}
+
+	sc, err := h.ScheduleStore.Patch(id, nil, nil, nil, nil, ptrBool(false))
+	if err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, err.Error())
+		return
+	}
+
+	h.WriteJSON(w, http.StatusOK, sc)
+}
+
+// ─── resumeSchedule ──────────────────────────────────────────────────────────
+
+// ResumeSchedule handles POST /schedules/{id}/resume
+func (h *ScheduleHandler) ResumeSchedule(w http.ResponseWriter, r *http.Request) {
+	id := extractScheduleIDFromPath(r.URL.Path)
+	if id == "" {
+		h.WriteError(w, http.StatusBadRequest, 400, "schedule id is required")
+		return
+	}
+
+	sc, err := h.ScheduleStore.Patch(id, nil, nil, nil, nil, ptrBool(true))
+	if err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, err.Error())
+		return
+	}
+
+	h.WriteJSON(w, http.StatusOK, sc)
+}
+
+func ptrBool(b bool) *bool {
+	return &b
 }

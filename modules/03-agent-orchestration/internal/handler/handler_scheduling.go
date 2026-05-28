@@ -6,17 +6,18 @@ import (
 	"time"
 
 	"github.com/operan/modules/03-agent-orchestration/internal/middleware"
+	"github.com/operan/modules/03-agent-orchestration/internal/repository"
 	"github.com/operan/modules/03-agent-orchestration/internal/store"
 )
 
 // SchedulingHandler handles agent scheduling-related HTTP endpoints.
 type SchedulingHandler struct {
-	AgentStore    *store.AgentStore
-	WorkflowStore *store.WorkflowStore
+	AgentStore    repository.AgentStoreIface
+	WorkflowStore repository.WorkflowStoreIface
 }
 
 // NewSchedulingHandler creates a new scheduling handler.
-func NewSchedulingHandler(ag *store.AgentStore, wf *store.WorkflowStore) *SchedulingHandler {
+func NewSchedulingHandler(ag repository.AgentStoreIface, wf repository.WorkflowStoreIface) *SchedulingHandler {
 	return &SchedulingHandler{
 		AgentStore:    ag,
 		WorkflowStore: wf,
@@ -110,4 +111,44 @@ func (h *SchedulingHandler) GetAgentAvailability(w http.ResponseWriter, r *http.
 
 func ptrTime(t time.Time) *time.Time {
 	return &t
+}
+
+// ─── listAgents ───────────────────────────────────────────────────────────────
+
+// ListAgents handles GET /agents with optional filters.
+func (h *SchedulingHandler) ListAgents(w http.ResponseWriter, r *http.Request) {
+	// Parse query params
+	statusFilter := r.URL.Query().Get("status")
+	_ = r.URL.Query().Get("capability") // capability filter requires agent registry lookup
+
+	// Collect unique agents from assignments
+	agentsMap := make(map[string]*store.AgentAvailability)
+	for _, avail := range h.AgentStore.ListAgentAvailability() {
+		agentsMap[avail.AgentID] = avail
+	}
+
+	// If no agents in availability store, return empty list
+	if len(agentsMap) == 0 {
+		h.WriteJSON(w, http.StatusOK, map[string]interface{}{
+			"agents":   []interface{}{},
+			"total":    0,
+			"has_more": false,
+		})
+		return
+	}
+
+	agents := make([]*store.AgentAvailability, 0, len(agentsMap))
+	for _, avail := range agentsMap {
+		// Apply filters
+		if statusFilter != "" && string(avail.Status) != statusFilter {
+			continue
+		}
+		agents = append(agents, avail)
+	}
+
+	h.WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"agents":   agents,
+		"total":    len(agents),
+		"has_more": false,
+	})
 }
