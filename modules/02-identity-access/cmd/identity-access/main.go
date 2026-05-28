@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/operan/modules/02-identity-access/internal/config"
 	"github.com/operan/modules/02-identity-access/internal/events"
@@ -22,6 +23,9 @@ func main() {
 	agentIDs := store.NewAgentIdentityStore()
 	ssoConfigs := store.NewSSOConfigStore()
 	audit := store.NewAuditStore()
+	ldapConfigs := store.NewLDAPConfigStore()
+	adConfigs := store.NewADConfigStore()
+	delegationRoles := store.NewDelegationRoleStore()
 
 	// Initialize event publisher
 	publisher := events.NewPublisher(cfg.EventBrokerURL)
@@ -35,6 +39,9 @@ func main() {
 	scimHandler := handler.NewSCIMHandler(users, audit, publisher)
 	auditHandler := handler.NewAuditHandler(audit)
 	rbacHandler := handler.NewRBACHandler(users, roles, serviceIDs, agentIDs, audit)
+	ldapHandler := handler.NewLDAPHandler(ldapConfigs, audit, publisher)
+	adHandler := handler.NewADHandler(adConfigs, audit, publisher)
+	delegationHandler := handler.NewDelegationHandler(delegationRoles, audit, publisher)
 
 	// Setup routes — base path: /api/v1/iam
 	mux := http.NewServeMux()
@@ -240,6 +247,171 @@ func main() {
 			return
 		}
 		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+	})
+
+	// ─── LDAP endpoints ───
+	mux.HandleFunc("/api/v1/iam/auth/ldap/", func(w http.ResponseWriter, r *http.Request) {
+		sub := ""
+		if len(r.URL.Path) > len("/api/v1/iam/auth/ldap/") {
+			sub = r.URL.Path[len("/api/v1/iam/auth/ldap/"):]
+			// strip trailing slash
+			sub = sub[:len(sub)-1]
+		}
+
+		switch r.Method {
+		case http.MethodPost:
+			switch sub {
+			case "configure":
+				ldapHandler.Configure(w, r)
+				return
+			case "test":
+				ldapHandler.Test(w, r)
+				return
+			}
+		case http.MethodGet:
+			if sub == "config" {
+				ldapHandler.GetConfig(w, r)
+				return
+			}
+		case http.MethodPatch:
+			if sub == "config" {
+				ldapHandler.UpdateConfig(w, r)
+				return
+			}
+		case http.MethodDelete:
+			if sub == "config" {
+				ldapHandler.DeleteConfig(w, r)
+				return
+			}
+		}
+		http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
+	})
+
+	// ─── Active Directory endpoints ───
+	mux.HandleFunc("/api/v1/iam/auth/ad/", func(w http.ResponseWriter, r *http.Request) {
+		sub := ""
+		if len(r.URL.Path) > len("/api/v1/iam/auth/ad/") {
+			sub = r.URL.Path[len("/api/v1/iam/auth/ad/"):]
+			// strip trailing slash
+			sub = sub[:len(sub)-1]
+		}
+
+		switch r.Method {
+		case http.MethodPost:
+			switch sub {
+			case "configure":
+				adHandler.Configure(w, r)
+				return
+			case "test":
+				adHandler.Test(w, r)
+				return
+			}
+		case http.MethodGet:
+			switch sub {
+			case "config":
+				adHandler.GetConfig(w, r)
+				return
+			}
+		case http.MethodPatch:
+			if sub == "config" {
+				adHandler.UpdateConfig(w, r)
+				return
+			}
+		case http.MethodDelete:
+			if sub == "config" {
+				adHandler.DeleteConfig(w, r)
+				return
+			}
+		}
+		http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
+	})
+
+	// ─── Delegated Admin Role endpoints ───
+	mux.HandleFunc("/api/v1/iam/admin/delegation", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			delegationHandler.Create(w, r)
+		default:
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		}
+	})
+
+	mux.HandleFunc("/api/v1/iam/admin/delegations", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			delegationHandler.Create(w, r)
+		case http.MethodGet:
+			delegationHandler.List(w, r)
+		default:
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		}
+	})
+
+	mux.HandleFunc("/api/v1/iam/admin/delegations/", func(w http.ResponseWriter, r *http.Request) {
+		remaining := ""
+		if len(r.URL.Path) > len("/api/v1/iam/admin/delegations/") {
+			remaining = r.URL.Path[len("/api/v1/iam/admin/delegations/"):]
+			// strip trailing slash
+			if len(remaining) > 0 {
+				remaining = remaining[:len(remaining)-1]
+			}
+		}
+
+		// Split path to extract role_id
+		parts := []string{}
+		if remaining != "" {
+			parts = strings.Split(remaining, "/")
+		}
+
+		if len(parts) == 0 {
+			http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
+			return
+		}
+
+		roleID := parts[0]
+		if roleID == "" {
+			http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
+			return
+		}
+
+		if len(parts) == 1 {
+			// /api/v1/iam/admin/delegations/{role_id}
+			switch r.Method {
+			case http.MethodGet:
+				delegationHandler.GetByID(w, r)
+				return
+			case http.MethodPatch:
+				delegationHandler.Update(w, r)
+				return
+			case http.MethodDelete:
+				delegationHandler.Delete(w, r)
+				return
+			}
+		}
+
+		// /api/v1/iam/admin/delegations/{role_id}/...
+		if len(parts) >= 2 {
+			action := parts[1]
+			switch action {
+			case "grant":
+				if r.Method == http.MethodPost {
+					delegationHandler.Grant(w, r)
+					return
+				}
+			case "revoke":
+				if r.Method == http.MethodPost {
+					delegationHandler.Revoke(w, r)
+					return
+				}
+			case "delegations":
+				if r.Method == http.MethodGet {
+					delegationHandler.ListDelegations(w, r)
+					return
+				}
+			}
+		}
+
+		http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
 	})
 
 	// Wrap with middleware chain

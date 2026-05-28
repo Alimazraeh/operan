@@ -270,3 +270,288 @@ type ValidationError struct {
 func (e *ValidationError) Error() string {
 	return e.Message
 }
+
+// ---- LDAP Integration ----
+
+// LDAPConfig represents an LDAP directory configuration for a tenant.
+type LDAPConfig struct {
+	ID            string                 `json:"id" db:"id"`
+	TenantID      string                 `json:"tenant_id" db:"tenant_id"`
+	DisplayName   string                 `json:"display_name" db:"display_name"`
+	Provider      string                 `json:"provider" db:"provider"` // openldap, freeipa, etc.
+	URL           string                 `json:"url" db:"url"`
+	BaseDN        string                 `json:"base_dn" db:"base_dn"`
+	BindDN        string                 `json:"bind_dn" db:"bind_dn"`
+	BindPassword  string                 `json:"-" db:"bind_password"` // never return in responses
+	SearchScope   string                 `json:"search_scope" db:"search_scope"`
+	UserFilter    string                 `json:"user_filter" db:"user_filter"`
+	GroupFilter   string                 `json:"group_filter" db:"group_filter"`
+	Enabled       bool                   `json:"enabled" db:"enabled"`
+	Status        string                 `json:"status" db:"status"`
+	ConfigJSON    string                 `json:"-" db:"config_json"`
+	CreatedAt     time.Time              `json:"created_at" db:"created_at"`
+	UpdatedAt     time.Time              `json:"updated_at" db:"updated_at"`
+}
+
+// ConfigureLDAPRequest represents the request body for configuring LDAP.
+type ConfigureLDAPRequest struct {
+	DisplayName  string                 `json:"display_name"`
+	Provider     string                 `json:"provider"`
+	URL          string                 `json:"url"`
+	BaseDN       string                 `json:"base_dn"`
+	BindDN       string                 `json:"bind_dn"`
+	BindPassword string                 `json:"bind_password,omitempty"`
+	SearchScope  string                 `json:"search_scope,omitempty"`
+	UserFilter   string                 `json:"user_filter,omitempty"`
+	GroupFilter  string                 `json:"group_filter,omitempty"`
+	Config       map[string]interface{} `json:"config,omitempty"`
+}
+
+// Validate checks that the LDAP configuration request is valid.
+func (r *ConfigureLDAPRequest) Validate() error {
+	if r.DisplayName == "" {
+		return &ValidationError{"display_name is required"}
+	}
+	if r.Provider == "" {
+		return &ValidationError{"provider is required"}
+	}
+	if r.URL == "" {
+		return &ValidationError{"url is required"}
+	}
+	if r.BaseDN == "" {
+		return &ValidationError{"base_dn is required"}
+	}
+	if r.BindDN == "" {
+		return &ValidationError{"bind_dn is required"}
+	}
+	return nil
+}
+
+// UpdateLDAPRequest represents the request body for updating an LDAP configuration.
+type UpdateLDAPRequest struct {
+	DisplayName  *string                `json:"display_name,omitempty"`
+	URL          *string                `json:"url,omitempty"`
+	BaseDN       *string                `json:"base_dn,omitempty"`
+	BindDN       *string                `json:"bind_dn,omitempty"`
+	BindPassword *string                `json:"bind_password,omitempty"`
+	SearchScope  *string                `json:"search_scope,omitempty"`
+	UserFilter   *string                `json:"user_filter,omitempty"`
+	GroupFilter  *string                `json:"group_filter,omitempty"`
+	Config       map[string]interface{} `json:"config,omitempty"`
+	Enabled      *bool                  `json:"enabled,omitempty"`
+}
+
+// Validate checks that at least one field is provided.
+func (r *UpdateLDAPRequest) Validate() error {
+	if r.DisplayName == nil && r.URL == nil && r.BaseDN == nil && r.BindDN == nil &&
+		r.BindPassword == nil && r.SearchScope == nil && r.UserFilter == nil &&
+		r.GroupFilter == nil && r.Config == nil && r.Enabled == nil {
+		return &ValidationError{"at least one field to update is required"}
+	}
+	return nil
+}
+
+// LDAPSyncResult represents the result of an LDAP directory sync test.
+type LDAPSyncResult struct {
+	Status    string   `json:"status"`
+	UsersSynced int    `json:"users_synced"`
+	GroupsSynced  int    `json:"groups_synced"`
+	Errors    []string `json:"errors,omitempty"`
+	TestSteps []LDAPTestStep `json:"test_steps"`
+}
+
+// LDAPTestStep represents a single step in an LDAP connectivity test.
+type LDAPTestStep struct {
+	Step   string `json:"step"`
+	Status string `json:"status"`
+	Detail string `json:"detail,omitempty"`
+}
+
+// ---- Active Directory Integration ----
+
+// ADConfig represents an Active Directory configuration for a tenant.
+type ADConfig struct {
+	ID               string                 `json:"id" db:"id"`
+	TenantID         string                 `json:"tenant_id" db:"tenant_id"`
+	DisplayName      string                 `json:"display_name" db:"display_name"`
+	DomainName       string                 `json:"domain_name" db:"domain_name"`
+	DomainController string                 `json:"domain_controller" db:"domain_controller"`
+	BindDN           string                 `json:"bind_dn" db:"bind_dn"`
+	BindPassword     string                 `json:"-" db:"bind_password"`
+	OrganizationUnit string                 `json:"organization_unit" db:"organization_unit"`
+	Enabled          bool                   `json:"enabled" db:"enabled"`
+	Status           string                 `json:"status" db:"status"`
+	ConfigJSON       string                 `json:"-" db:"config_json"`
+	CreatedAt        time.Time              `json:"created_at" db:"created_at"`
+	UpdatedAt        time.Time              `json:"updated_at" db:"updated_at"`
+}
+
+// ConfigureADRequest represents the request body for configuring Active Directory.
+type ConfigureADRequest struct {
+	DisplayName      string                 `json:"display_name"`
+	DomainName       string                 `json:"domain_name"`
+	DomainController string                 `json:"domain_controller"`
+	BindDN           string                 `json:"bind_dn"`
+	BindPassword     string                 `json:"bind_password,omitempty"`
+	OrganizationUnit string                 `json:"organization_unit,omitempty"`
+	Config           map[string]interface{} `json:"config,omitempty"`
+}
+
+// Validate checks that the AD configuration request is valid.
+func (r *ConfigureADRequest) Validate() error {
+	if r.DisplayName == "" {
+		return &ValidationError{"display_name is required"}
+	}
+	if r.DomainName == "" {
+		return &ValidationError{"domain_name is required"}
+	}
+	if r.DomainController == "" {
+		return &ValidationError{"domain_controller is required"}
+	}
+	if r.BindDN == "" {
+		return &ValidationError{"bind_dn is required"}
+	}
+	return nil
+}
+
+// UpdateADRequest represents the request body for updating an AD configuration.
+type UpdateADRequest struct {
+	DisplayName      *string                `json:"display_name,omitempty"`
+	DomainName       *string                `json:"domain_name,omitempty"`
+	DomainController *string                `json:"domain_controller,omitempty"`
+	BindDN           *string                `json:"bind_dn,omitempty"`
+	BindPassword     *string                `json:"bind_password,omitempty"`
+	OrganizationUnit *string                `json:"organization_unit,omitempty"`
+	Config           map[string]interface{} `json:"config,omitempty"`
+	Enabled          *bool                  `json:"enabled,omitempty"`
+}
+
+// Validate checks that at least one field is provided.
+func (r *UpdateADRequest) Validate() error {
+	if r.DisplayName == nil && r.DomainName == nil && r.DomainController == nil &&
+		r.BindDN == nil && r.BindPassword == nil && r.OrganizationUnit == nil &&
+		r.Config == nil && r.Enabled == nil {
+		return &ValidationError{"at least one field to update is required"}
+	}
+	return nil
+}
+
+// ADSyncResult represents the result of an AD directory sync test.
+type ADSyncResult struct {
+	Status       string        `json:"status"`
+	UsersSynced  int           `json:"users_synced"`
+	GroupsSynced int           `json:"groups_synced"`
+	Errors       []string      `json:"errors,omitempty"`
+	TestSteps    []ADTestStep  `json:"test_steps"`
+}
+
+// ADTestStep represents a single step in an AD connectivity test.
+type ADTestStep struct {
+	Step   string `json:"step"`
+	Status string `json:"status"`
+	Detail string `json:"detail,omitempty"`
+}
+
+// ---- Delegated Admin Roles ----
+
+// DelegationRole represents a tenant-specific admin role that can be delegated.
+type DelegationRole struct {
+	ID             string    `json:"id" db:"id"`
+	TenantID       string    `json:"tenant_id" db:"tenant_id"`
+	Name           string    `json:"name" db:"name"`
+	Description    string    `json:"description" db:"description"`
+	ParentRoleID   string    `json:"parent_role_id" db:"parent_role_id"`
+	Scope          string    `json:"scope" db:"scope"` // "tenant", "department", "team"
+	Permissions    []string  `json:"permissions" db:"-"`
+	PermissionsJSON string   `json:"-" db:"permissions_json"`
+	MaxDelegationDepth int       `json:"max_delegation_depth" db:"max_delegation_depth"`
+	DelegatedToIDs []string  `json:"delegated_to_ids" db:"-"` // IDs of users this role is delegated to
+	DelegatedToJSON string    `json:"-" db:"delegated_to_json"`
+	IsSystem       bool      `json:"is_system" db:"is_system"`
+	CreatedAt      time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
+}
+
+// CreateDelegationRoleRequest represents the request body for creating a delegation role.
+type CreateDelegationRoleRequest struct {
+	Name                string   `json:"name"`
+	Description         string   `json:"description,omitempty"`
+	Scope               string   `json:"scope"`
+	Permissions         []string `json:"permissions"`
+	MaxDelegationDepth  *int     `json:"max_delegation_depth,omitempty"`
+}
+
+// Validate checks that the delegation role request is valid.
+func (r *CreateDelegationRoleRequest) Validate() error {
+	if r.Name == "" {
+		return &ValidationError{"role name is required"}
+	}
+	if r.Scope == "" {
+		return &ValidationError{"scope is required"}
+	}
+	if r.Permissions == nil || len(r.Permissions) == 0 {
+		return &ValidationError{"at least one permission is required"}
+	}
+	if r.MaxDelegationDepth != nil && *r.MaxDelegationDepth < 0 {
+		return &ValidationError{"max_delegation_depth must be >= 0"}
+	}
+	return nil
+}
+
+// UpdateDelegationRoleRequest represents the request body for updating a delegation role.
+type UpdateDelegationRoleRequest struct {
+	Name               *string  `json:"name,omitempty"`
+	Description        *string  `json:"description,omitempty"`
+	Scope              *string  `json:"scope,omitempty"`
+	Permissions        []string `json:"permissions,omitempty"`
+	MaxDelegationDepth *int     `json:"max_delegation_depth,omitempty"`
+}
+
+// Validate checks that at least one field is provided.
+func (r *UpdateDelegationRoleRequest) Validate() error {
+	if r.Name == nil && r.Description == nil && r.Scope == nil &&
+		r.Permissions == nil && r.MaxDelegationDepth == nil {
+		return &ValidationError{"at least one field to update is required"}
+	}
+	return nil
+}
+
+// DelegateRoleRequest represents the request body for delegating a role to a user.
+type DelegateRoleRequest struct {
+	UserID string `json:"user_id"`
+	Scope  string `json:"scope"` // optional: restrict delegation scope
+}
+
+// Validate checks that the delegation request is valid.
+func (r *DelegateRoleRequest) Validate() error {
+	if r.UserID == "" {
+		return &ValidationError{"user_id is required"}
+	}
+	return nil
+}
+
+// DelegationGrant represents a granted delegation of an admin role to a user.
+type DelegationGrant struct {
+	ID            string    `json:"id" db:"id"`
+	TenantID      string    `json:"tenant_id" db:"tenant_id"`
+	DelegationRoleID string `json:"delegation_role_id" db:"delegation_role_id"`
+	UserID        string    `json:"user_id" db:"user_id"`
+	Scope         string    `json:"scope" db:"scope"` // "tenant", "department", "team"
+	GrantedBy     string    `json:"granted_by" db:"granted_by"`
+	GrantedAt     time.Time `json:"granted_at" db:"granted_at"`
+	ExpiresAt     *time.Time `json:"expires_at,omitempty" db:"expires_at"`
+	IsActive    bool      `json:"is_active" db:"is_active"`
+}
+
+// RevokeDelegationRequest represents the request body for revoking a delegation.
+type RevokeDelegationRequest struct {
+	RevokeAll bool `json:"revoke_all,omitempty"` // if true, revoke all delegations of this role for the user
+}
+
+// ListDelegationsResponse represents the response for listing delegation grants.
+type ListDelegationsResponse struct {
+	Delegations  []DelegationGrant `json:"delegations"`
+	Total        int               `json:"total"`
+	Limit        int               `json:"limit"`
+	Offset       int               `json:"offset"`
+}

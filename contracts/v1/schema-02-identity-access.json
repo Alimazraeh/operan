@@ -40,8 +40,8 @@
           "type": "string",
           "enum": [
             "active",
-            "inactive",
             "suspended",
+            "deactivated",
             "pending"
           ],
           "description": "Current status of the user account."

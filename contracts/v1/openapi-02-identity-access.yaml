@@ -11,12 +11,7 @@ servers:
 
 security:
   - BearerAuth: []
-  - X-Tenant-ID:
-      schema:
-        type: string
-  - X-Request-ID:
-      schema:
-        type: string
+    TenantHeader: []
 
 paths:
   /users:
@@ -286,7 +281,7 @@ paths:
                   entries:
                     type: array
                     items:
-                      $ref: '#/components/schemas/AuditEntry'
+                      $ref: '#/components/schemas/AuditEvent'
                   total:
                     type: integer
 
@@ -326,13 +321,364 @@ paths:
               schema:
                 $ref: '#/components/schemas/PermissionCheckResult'
 
+  # ─── LDAP Integration ───
+
+  /auth/ldap/configure:
+    post:
+      summary: Configure LDAP directory
+      operationId: configureLDAP
+      tags: [ldap]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigureLDAPRequest'
+      responses:
+        '201':
+          description: LDAP configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LDAPConfig'
+        '400':
+          description: Invalid request
+
+  /auth/ldap/config:
+    get:
+      summary: Get LDAP configuration
+      operationId: getLDAPConfig
+      tags: [ldap]
+      responses:
+        '200':
+          description: LDAP configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LDAPConfig'
+        '404':
+          description: LDAP config not found
+
+    patch:
+      summary: Update LDAP configuration
+      operationId: updateLDAPConfig
+      tags: [ldap]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLDAPRequest'
+      responses:
+        '200':
+          description: LDAP configuration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LDAPConfig'
+
+    delete:
+      summary: Delete LDAP configuration
+      operationId: deleteLDAPConfig
+      tags: [ldap]
+      responses:
+        '204':
+          description: LDAP configuration deleted
+
+  /auth/ldap/test:
+    post:
+      summary: Test LDAP connection
+      operationId: testLDAP
+      tags: [ldap]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestLDAPRequest'
+      responses:
+        '200':
+          description: LDAP connection test result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LDAPSyncResult'
+
+  # ─── Active Directory Integration ───
+
+  /auth/ad/configure:
+    post:
+      summary: Configure Active Directory
+      operationId: configureAD
+      tags: [active-directory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigureADRequest'
+      responses:
+        '201':
+          description: AD configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ADConfig'
+        '400':
+          description: Invalid request
+
+  /auth/ad/config:
+    get:
+      summary: Get AD configuration
+      operationId: getADConfig
+      tags: [active-directory]
+      responses:
+        '200':
+          description: AD configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ADConfig'
+        '404':
+          description: AD config not found
+
+    patch:
+      summary: Update AD configuration
+      operationId: updateADConfig
+      tags: [active-directory]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateADRequest'
+      responses:
+        '200':
+          description: AD configuration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ADConfig'
+
+    delete:
+      summary: Delete AD configuration
+      operationId: deleteADConfig
+      tags: [active-directory]
+      responses:
+        '204':
+          description: AD configuration deleted
+
+  /auth/ad/test:
+    post:
+      summary: Test AD connection
+      operationId: testAD
+      tags: [active-directory]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestADRequest'
+      responses:
+        '200':
+          description: AD connection test result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ADSyncResult'
+
+  # ─── Delegated Admin Roles ───
+
+  /admin/delegations:
+    post:
+      summary: Create a delegated admin role
+      operationId: createDelegationRole
+      tags: [delegated-admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDelegationRoleRequest'
+      responses:
+        '201':
+          description: Delegation role created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegationRole'
+        '400':
+          description: Invalid request
+
+    get:
+      summary: List delegation roles
+      operationId: listDelegationRoles
+      tags: [delegated-admin]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+      responses:
+        '200':
+          description: List of delegation roles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDelegationRolesResponse'
+
+  /admin/delegations/{role_id}:
+    get:
+      summary: Get delegation role by ID
+      operationId: getDelegationRole
+      tags: [delegated-admin]
+      parameters:
+        - name: role_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Delegation role details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegationRole'
+        '404':
+          description: Delegation role not found
+
+    patch:
+      summary: Update delegation role
+      operationId: updateDelegationRole
+      tags: [delegated-admin]
+      parameters:
+        - name: role_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDelegationRoleRequest'
+      responses:
+        '200':
+          description: Delegation role updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegationRole'
+        '400':
+          description: Invalid request
+
+    delete:
+      summary: Delete delegation role
+      operationId: deleteDelegationRole
+      tags: [delegated-admin]
+      parameters:
+        - name: role_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Delegation role deleted
+
+  /admin/delegations/{role_id}/grant:
+    post:
+      summary: Grant delegation role to a user
+      operationId: grantDelegation
+      tags: [delegated-admin]
+      parameters:
+        - name: role_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DelegateRoleRequest'
+      responses:
+        '201':
+          description: Delegation granted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegationGrant'
+
+  /admin/delegations/{role_id}/revoke:
+    post:
+      summary: Revoke delegation from a user
+      operationId: revokeDelegation
+      tags: [delegated-admin]
+      parameters:
+        - name: role_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: user_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeDelegationRequest'
+      responses:
+        '200':
+          description: Delegation revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /admin/delegations/{role_id}/delegations:
+    get:
+      summary: List delegation grants for a role
+      operationId: listDelegations
+      tags: [delegated-admin]
+      parameters:
+        - name: role_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of delegation grants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDelegationsResponse'
+
 components:
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-    X-Tenant-ID:
+    TenantHeader:
       name: X-Tenant-ID
       in: header
       required: true
@@ -382,7 +728,7 @@ components:
           type: boolean
         status:
           type: string
-          enum: [active, suspended, deactivated]
+          enum: [active, suspended, deactivated, pending]
 
     User:
       type: object
@@ -414,7 +760,7 @@ components:
           nullable: true
         status:
           type: string
-          enum: [active, suspended, deactivated]
+          enum: [active, suspended, deactivated, pending]
         created_at:
           type: string
           format: date-time
@@ -535,26 +881,28 @@ components:
     SSOConfig:
       type: object
       required:
+        - id
+        - tenant_id
         - provider
         - type
         - configuration
         - status
-        - tenant_id
       properties:
         id:
           type: string
           format: uuid
           description: Unique identifier for the SSO configuration.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the tenant this SSO configuration applies to.
         provider:
           type: string
           enum:
             - azure_ad
-            - google_workspace
             - okta
-            - keycloak
-            - custom
-            - ory
             - authentik
+            - google_workspace
           description: The SSO identity provider.
         type:
           type: string
@@ -590,10 +938,6 @@ components:
           type: string
           enum: [active, inactive]
           description: Whether this SSO configuration is currently enabled.
-        tenant_id:
-          type: string
-          format: uuid
-          description: Unique identifier for the tenant this SSO configuration applies to.
         created_at:
           type: string
           format: date-time
@@ -602,15 +946,18 @@ components:
           type: string
           format: date-time
           description: Timestamp when the SSO configuration was last updated.
+      additionalProperties: false
 
-    AuditEntry:
+    AuditEvent:
       type: object
       required:
         - id
         - timestamp
         - actor_id
+        - actor_type
         - action
-        - resource
+        - resource_type
+        - resource_id
         - result
       properties:
         id:
@@ -621,24 +968,34 @@ components:
           format: date-time
         actor_id:
           type: string
+          format: uuid
+          description: ID of the user, service identity, or agent that performed the action.
         actor_type:
           type: string
           enum: [user, service_identity, agent_identity]
         action:
           type: string
-        resource:
-          type: string
+          description: The action that was performed (e.g., user.create, policy.update).
         resource_type:
           type: string
+          description: The type of resource the action was performed on.
+        resource_id:
+          type: string
+          description: ID of the resource the action was performed on.
         result:
           type: string
           enum: [success, failure, denied]
+          description: Outcome of the action.
         details:
           type: object
+          description: Additional contextual information about the audit event.
         ip_address:
           type: string
+          description: IP address from which the action was performed.
         user_agent:
           type: string
+          description: User-Agent header string from the client.
+      additionalProperties: false
 
     PermissionCheckRequest:
       type: object
@@ -673,3 +1030,581 @@ components:
         evaluated_at:
           type: string
           format: date-time
+
+    # ─── LDAP Schemas ───
+
+    LDAPConfig:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - status
+        - enabled
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the LDAP configuration.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant this configuration belongs to.
+        display_name:
+          type: string
+          description: Human-readable name for this LDAP configuration.
+        url:
+          type: string
+          format: uri
+          description: LDAP server URL (e.g., ldap://server:389 or ldaps://server:636).
+        base_dn:
+          type: string
+          description: Base DN for searches (e.g., dc=example,dc=com).
+        bind_dn:
+          type: string
+          description: Distinguished Name used for binding to the LDAP server.
+        bind_password:
+          type: string
+          writeOnly: true
+          description: Password for the bind DN (write-only).
+        search_scope:
+          type: string
+          enum: [base, oneLevel, subtree]
+          description: Scope of LDAP searches.
+        user_filter:
+          type: string
+          description: Filter to match user objects (e.g., (objectClass=person)).
+        group_filter:
+          type: string
+          description: Filter to match group objects (e.g., (objectClass=groupOfNames)).
+        config:
+          type: object
+          description: Additional LDAP configuration settings.
+          properties:
+            tls_enabled:
+              type: boolean
+            start_tls:
+              type: boolean
+            port:
+              type: integer
+            timeout_seconds:
+              type: integer
+        enabled:
+          type: boolean
+          description: Whether this LDAP configuration is active.
+        status:
+          type: string
+          enum: [active, inactive, error]
+          description: Current status of the LDAP configuration.
+        last_sync_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of the last successful LDAP sync.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+
+    ConfigureLDAPRequest:
+      type: object
+      required:
+        - tenant_id
+        - display_name
+        - url
+        - base_dn
+        - bind_dn
+        - bind_password
+        - enabled
+      properties:
+        display_name:
+          type: string
+        url:
+          type: string
+          format: uri
+        base_dn:
+          type: string
+        bind_dn:
+          type: string
+        bind_password:
+          type: string
+        search_scope:
+          type: string
+          enum: [base, oneLevel, subtree]
+          default: subtree
+        user_filter:
+          type: string
+        group_filter:
+          type: string
+        config:
+          type: object
+          properties:
+            tls_enabled:
+              type: boolean
+            start_tls:
+              type: boolean
+            port:
+              type: integer
+            timeout_seconds:
+              type: integer
+        enabled:
+          type: boolean
+
+    UpdateLDAPRequest:
+      type: object
+      properties:
+        display_name:
+          type: string
+        url:
+          type: string
+          format: uri
+        base_dn:
+          type: string
+        bind_dn:
+          type: string
+        bind_password:
+          type: string
+        search_scope:
+          type: string
+          enum: [base, oneLevel, subtree]
+        user_filter:
+          type: string
+        group_filter:
+          type: string
+        config:
+          type: object
+          properties:
+            tls_enabled:
+              type: boolean
+            start_tls:
+              type: boolean
+            port:
+              type: integer
+            timeout_seconds:
+              type: integer
+        enabled:
+          type: boolean
+
+    TestLDAPRequest:
+      type: object
+      required:
+        - url
+        - base_dn
+        - bind_dn
+        - bind_password
+      properties:
+        url:
+          type: string
+          format: uri
+        base_dn:
+          type: string
+        bind_dn:
+          type: string
+        bind_password:
+          type: string
+
+    LDAPSyncResult:
+      type: object
+      required:
+        - success
+        - message
+        - users_synced
+        - groups_synced
+      properties:
+        success:
+          type: boolean
+          description: Whether the connection test was successful.
+        message:
+          type: string
+          description: Result message or error details.
+        users_synced:
+          type: integer
+          description: Number of users found during test.
+        groups_synced:
+          type: integer
+          description: Number of groups found during test.
+        details:
+          type: object
+          nullable: true
+          description: Additional details from the test.
+
+    # ─── Active Directory Schemas ───
+
+    ADConfig:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - status
+        - enabled
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the AD configuration.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant this configuration belongs to.
+        display_name:
+          type: string
+          description: Human-readable name for this AD configuration.
+        domain_name:
+          type: string
+          description: AD domain name (e.g., example.corp).
+        domain_controller:
+          type: string
+          format: uri
+          description: AD domain controller URL.
+        bind_dn:
+          type: string
+          description: Distinguished Name used for binding to AD.
+        bind_password:
+          type: string
+          writeOnly: true
+          description: Password for the bind DN (write-only).
+        organizational_unit:
+          type: string
+          description: Optional OU filter for user searches.
+        config:
+          type: object
+          description: Additional AD configuration settings.
+          properties:
+            use_ssl:
+              type: boolean
+            port:
+              type: integer
+            timeout_seconds:
+              type: integer
+            referral_chasing:
+              type: boolean
+        enabled:
+          type: boolean
+          description: Whether this AD configuration is active.
+        status:
+          type: string
+          enum: [active, inactive, error]
+          description: Current status of the AD configuration.
+        last_sync_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of the last successful AD sync.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+
+    ConfigureADRequest:
+      type: object
+      required:
+        - tenant_id
+        - display_name
+        - domain_name
+        - domain_controller
+        - bind_dn
+        - bind_password
+        - enabled
+      properties:
+        display_name:
+          type: string
+        domain_name:
+          type: string
+        domain_controller:
+          type: string
+          format: uri
+        bind_dn:
+          type: string
+        bind_password:
+          type: string
+        organizational_unit:
+          type: string
+        config:
+          type: object
+          properties:
+            use_ssl:
+              type: boolean
+            port:
+              type: integer
+            timeout_seconds:
+              type: integer
+            referral_chasing:
+              type: boolean
+        enabled:
+          type: boolean
+
+    UpdateADRequest:
+      type: object
+      properties:
+        display_name:
+          type: string
+        domain_name:
+          type: string
+        domain_controller:
+          type: string
+          format: uri
+        bind_dn:
+          type: string
+        bind_password:
+          type: string
+        organizational_unit:
+          type: string
+        config:
+          type: object
+          properties:
+            use_ssl:
+              type: boolean
+            port:
+              type: integer
+            timeout_seconds:
+              type: integer
+            referral_chasing:
+              type: boolean
+        enabled:
+          type: boolean
+
+    TestADRequest:
+      type: object
+      required:
+        - domain_name
+        - domain_controller
+        - bind_dn
+        - bind_password
+      properties:
+        domain_name:
+          type: string
+        domain_controller:
+          type: string
+          format: uri
+        bind_dn:
+          type: string
+        bind_password:
+          type: string
+
+    ADSyncResult:
+      type: object
+      required:
+        - success
+        - message
+        - users_found
+      properties:
+        success:
+          type: boolean
+          description: Whether the AD connection test was successful.
+        message:
+          type: string
+          description: Result message or error details.
+        users_found:
+          type: integer
+          description: Number of users found in AD during test.
+        details:
+          type: object
+          nullable: true
+          description: Additional details from the test.
+
+    # ─── Delegated Admin Roles Schemas ───
+
+    DelegationRole:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - name
+        - permissions
+        - scope
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the delegation role.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant this delegation role belongs to.
+        name:
+          type: string
+          description: Name of the delegation role.
+        description:
+          type: string
+          description: Description of the delegation role's purpose.
+        permissions:
+          type: array
+          items:
+            type: string
+          description: List of permissions granted by this role.
+        scope:
+          type: string
+          description: The scope of the delegation role (e.g., department, project).
+        max_depth:
+          type: integer
+          description: Maximum nesting depth for sub-delegation.
+        status:
+          type: string
+          enum: [active, inactive]
+          description: Current status of the delegation role.
+        created_by:
+          type: string
+          format: uuid
+          description: ID of the user who created this delegation.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateDelegationRoleRequest:
+      type: object
+      required:
+        - tenant_id
+        - name
+        - permissions
+        - scope
+      properties:
+        name:
+          type: string
+          description: Name of the delegation role.
+        description:
+          type: string
+          description: Description of the delegation role.
+        permissions:
+          type: array
+          items:
+            type: string
+          description: List of permissions to grant.
+        scope:
+          type: string
+          description: The scope this delegation applies to.
+        max_depth:
+          type: integer
+          description: Maximum nesting depth for sub-delegation.
+
+    UpdateDelegationRoleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        scope:
+          type: string
+        max_depth:
+          type: integer
+
+    ListDelegationRolesResponse:
+      type: object
+      required:
+        - delegations
+        - total
+        - page
+        - page_size
+      properties:
+        delegations:
+          type: array
+          items:
+            $ref: '#/components/schemas/DelegationRole'
+        total:
+          type: integer
+          description: Total number of delegation roles.
+        page:
+          type: integer
+          description: Current page number.
+        page_size:
+          type: integer
+          description: Number of items per page.
+
+    DelegateRoleRequest:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: ID of the user to grant the delegation to.
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Optional expiration for the delegation.
+        note:
+          type: string
+          description: Note about why this delegation was granted.
+
+    RevokeDelegationRequest:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: ID of the user to revoke delegation from.
+        reason:
+          type: string
+          description: Reason for revoking the delegation.
+
+    DelegationGrant:
+      type: object
+      required:
+        - id
+        - role_id
+        - user_id
+        - granted_by
+        - granted_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the delegation grant.
+        role_id:
+          type: string
+          format: uuid
+          description: ID of the delegation role.
+        user_id:
+          type: string
+          format: uuid
+          description: ID of the user who received the delegation.
+        granted_by:
+          type: string
+          format: uuid
+          description: ID of the user who granted the delegation.
+        granted_at:
+          type: string
+          format: date-time
+          description: Timestamp when the delegation was granted.
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Optional expiration for the delegation.
+        note:
+          type: string
+          description: Note about why this delegation was granted.
+        status:
+          type: string
+          enum: [active, revoked, expired]
+          description: Current status of the delegation grant.
+
+    ListDelegationsResponse:
+      type: object
+      required:
+        - grants
+        - total
+      properties:
+        grants:
+          type: array
+          items:
+            $ref: '#/components/schemas/DelegationGrant'
+        total:
+          type: integer
+          description: Total number of delegation grants.
