@@ -401,6 +401,46 @@ edges:
     required: false
     description: Configure data source integrations
 
+  - caller: department_template_engine
+    callee: tenant_control_plane
+    protocol: REST
+    direction: validate
+    sla_ms: 200
+    required: true
+    description: Validate tenant quota before template instantiation
+
+  - caller: department_template_engine
+    callee: identity_access_mgmt
+    protocol: REST
+    direction: evaluate
+    sla_ms: 100
+    required: true
+    description: RBAC/ABAC evaluation before state changes
+
+  - caller: department_template_engine
+    callee: observability
+    protocol: REST
+    direction: configure
+    sla_ms: 200
+    required: false
+    description: Generate dashboard/alert configs from KPI specs
+
+  - caller: department_template_engine
+    callee: model_abstraction
+    protocol: REST
+    direction: route
+    sla_ms: 100
+    required: false
+    description: Model selection hints per workflow node
+
+  - caller: department_template_engine
+    callee: agent_marketplace
+    protocol: REST
+    direction: publish
+    sla_ms: 500
+    required: false
+    description: Publish templates to marketplace
+
   # Module 06 — Knowledge Ingestion
   - caller: knowledge_ingestion
     callee: memory_fabric

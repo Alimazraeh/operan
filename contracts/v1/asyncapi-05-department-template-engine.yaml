@@ -24,9 +24,9 @@ servers:
 
 channels:
   # ─── template.created ───
-  module05/template/created:
+  operan.templates.template.created:
     description: Published when a new department template is created.
-    address: module05/template/created
+    address: operan.templates.template.created
     publish:
       summary: A template was created.
       operationId: onTemplateCreated
@@ -34,9 +34,9 @@ channels:
         $ref: '#/components/messages/TemplateCreated'
 
   # ─── template.updated ───
-  module05/template/updated:
+  operan.templates.template.updated:
     description: Published when an existing department template is updated.
-    address: module05/template/updated
+    address: operan.templates.template.updated
     publish:
       summary: A template was updated.
       operationId: onTemplateUpdated
@@ -44,9 +44,9 @@ channels:
         $ref: '#/components/messages/TemplateUpdated'
 
   # ─── template.deployed ───
-  module05/template/deployed:
+  operan.templates.template.deployed:
     description: Published when a template deployment reaches operational status.
-    address: module05/template/deployed
+    address: operan.templates.template.deployed
     publish:
       summary: A template deployment completed successfully.
       operationId: onTemplateDeployed
@@ -54,9 +54,9 @@ channels:
         $ref: '#/components/messages/TemplateDeployed'
 
   # ─── template.deployment_failed ───
-  module05/template/deployment_failed:
+  operan.templates.template.deployment_failed:
     description: Published when a template deployment fails at any stage.
-    address: module05/template/deployment_failed
+    address: operan.templates.template.deployment_failed
     publish:
       summary: A template deployment failed.
       operationId: onTemplateDeploymentFailed
@@ -64,14 +64,44 @@ channels:
         $ref: '#/components/messages/TemplateDeploymentFailed'
 
   # ─── template.undeployed ───
-  module05/template/undeployed:
+  operan.templates.template.undeployed:
     description: Published when a template deployment is undeployed / rolled back.
-    address: module05/template/undeployed
+    address: operan.templates.template.undeployed
     publish:
       summary: A template deployment was undeployed.
       operationId: onTemplateUndeployed
       message:
         $ref: '#/components/messages/TemplateUndeployed'
+
+  # ─── template.deleted ───
+  operan.templates.template.deleted:
+    description: Published when a template is deleted.
+    address: operan.templates.template.deleted
+    publish:
+      summary: A template was deleted.
+      operationId: onTemplateDeleted
+      message:
+        $ref: '#/components/messages/TemplateDeleted'
+
+  # ─── template.versioned ───
+  operan.templates.template.versioned:
+    description: Published when a new version of a template is created.
+    address: operan.templates.template.versioned
+    publish:
+      summary: A new template version was created.
+      operationId: onTemplateVersioned
+      message:
+        $ref: '#/components/messages/TemplateVersioned'
+
+  # ─── template.cloned ───
+  operan.templates.template.cloned:
+    description: Published when a template is cloned.
+    address: operan.templates.template.cloned
+    publish:
+      summary: A template was cloned.
+      operationId: onTemplateCloned
+      message:
+        $ref: '#/components/messages/TemplateCloned'
 
 components:
   messages:
@@ -122,6 +152,36 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/TemplateUndeployedPayload'
+      traits:
+        - $ref: '#/components/traits/commonHeaders'
+
+    # ─── TemplateDeleted ───
+    TemplateDeleted:
+      name: TemplateDeleted
+      summary: Event payload for template deletion.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TemplateDeletedPayload'
+      traits:
+        - $ref: '#/components/traits/commonHeaders'
+
+    # ─── TemplateVersioned ───
+    TemplateVersioned:
+      name: TemplateVersioned
+      summary: Event payload for template version creation.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TemplateVersionedPayload'
+      traits:
+        - $ref: '#/components/traits/commonHeaders'
+
+    # ─── TemplateCloned ───
+    TemplateCloned:
+      name: TemplateCloned
+      summary: Event payload for template cloning.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TemplateClonedPayload'
       traits:
         - $ref: '#/components/traits/commonHeaders'
 
@@ -319,6 +379,93 @@ components:
         metadata:
           type: object
           additionalProperties: true
+
+    # ─── TemplateDeletedPayload ───
+    TemplateDeletedPayload:
+      type: object
+      required: [event, template_id, deleted_at]
+      properties:
+        event:
+          type: string
+          const: template.deleted
+        template_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+          enum: [hr, finance, procurement, engineering, translation, legal, compliance, research, custom]
+        deleted_at:
+          type: string
+          format: date-time
+        deleted_by:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+
+    # ─── TemplateVersionedPayload ───
+    TemplateVersionedPayload:
+      type: object
+      required: [event, template_id, version, created_at]
+      properties:
+        event:
+          type: string
+          const: template.versioned
+        template_id:
+          type: string
+          format: uuid
+        version:
+          type: string
+          description: New semantic version
+        previous_version:
+          type: string
+          description: Previous semantic version
+        name:
+          type: string
+        category:
+          type: string
+          enum: [hr, finance, procurement, engineering, translation, legal, compliance, research, custom]
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+
+    # ─── TemplateClonedPayload ───
+    TemplateClonedPayload:
+      type: object
+      required: [event, source_template_id, cloned_template_id, created_at]
+      properties:
+        event:
+          type: string
+          const: template.cloned
+        source_template_id:
+          type: string
+          format: uuid
+        cloned_template_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+          enum: [hr, finance, procurement, engineering, translation, legal, compliance, research, custom]
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
 
   traits:
     commonHeaders:
