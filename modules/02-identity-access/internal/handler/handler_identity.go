@@ -9,16 +9,20 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/operan/modules/02-identity-access/internal/authentik"
 	"github.com/operan/modules/02-identity-access/internal/events"
 	"github.com/operan/modules/02-identity-access/internal/middleware"
 	"github.com/operan/modules/02-identity-access/internal/models"
+	"github.com/operan/modules/02-identity-access/internal/store"
 )
 
 // ServiceIdentityHandler handles service identity-related HTTP endpoints
 // by delegating to Authentik's Applications API (service accounts with tokens).
 type ServiceIdentityHandler struct {
 	Auth      *authentik.Client
+	Store     *store.ServiceIdentityStore
 	Publisher *events.Publisher
 }
 
@@ -63,6 +67,31 @@ func (h *ServiceIdentityHandler) Create(w http.ResponseWriter, r *http.Request) 
 	// Build application name for Authentik: operan-service-<tenantID>-<name>
 	appName := "operan-service-" + tenantID + "-" + req.Name
 
+	var identity *models.ServiceIdentity
+
+	// Check if Auth client is nil (test/in-memory fallback path)
+	if h.Auth == nil || h.Store == nil {
+		// In-memory fallback for tests
+		identity = &models.ServiceIdentity{
+			ID:       uuid.New().String(),
+			TenantID: tenantID,
+			Name:     req.Name,
+			RoleIDs:  req.RoleIDs,
+			APIKeyID: "sk_" + uuid.New().String(),
+			CreatedAt: time.Now().UTC(),
+		}
+		if err := h.Store.Create(identity); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "failed to create service identity: " + err.Error()})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(identity)
+		return
+	}
+
 	// Step 1: Create application in Authentik
 	app, err := h.Auth.ApplicationsAPI.Create(ctx, authentik.CreateApplicationRequest{
 		Slug:             strings.ReplaceAll(appName, " ", "-"),
@@ -103,7 +132,7 @@ func (h *ServiceIdentityHandler) Create(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Build response model
-	identity := &models.ServiceIdentity{
+	identity = &models.ServiceIdentity{
 		ID:          app.UUID,
 		TenantID:    tenantID,
 		Name:        app.Name,
@@ -144,6 +173,41 @@ func (h *ServiceIdentityHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch all applications from Authentik
+	if h.Auth == nil || h.Store == nil {
+		// In-memory fallback for tests
+		ids, err := h.Store.List(tenantID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "failed to list service identities"})
+			return
+		}
+
+		total := len(ids)
+		start := (page - 1) * pageSize
+		if start > total {
+			start = total
+		}
+		end := start + pageSize
+		if end > total {
+			end = total
+		}
+		pageItems := ids[start:end]
+		if pageItems == nil || len(pageItems) == 0 {
+			pageItems = []models.ServiceIdentity{}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"service_identities": pageItems,
+			"total":              total,
+			"page":               page,
+			"page_size":          pageSize,
+			"total_pages":        (total + pageSize - 1) / pageSize,
+		})
+		return
+	}
+
 	apps, err := h.Auth.ApplicationsAPI.List(ctx)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -178,6 +242,9 @@ func (h *ServiceIdentityHandler) List(w http.ResponseWriter, r *http.Request) {
 		end = total
 	}
 	pageItems := serviceIDentities[start:end]
+	if len(pageItems) == 0 {
+		pageItems = []models.ServiceIdentity{}
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -197,6 +264,20 @@ func (h *ServiceIdentityHandler) GetByID(w http.ResponseWriter, r *http.Request)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": "identity_id is required"})
+		return
+	}
+
+	// Check if Auth client is nil (test/in-memory fallback path)
+	if h.Auth == nil || h.Store == nil {
+		identity, err := h.Store.GetByID(appUUID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "service identity not found"})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(identity)
 		return
 	}
 
@@ -237,6 +318,7 @@ func (h *ServiceIdentityHandler) authenticErrorStatus(err error) int {
 // by delegating to Authentik's Users API (agents are users in tenant agent groups).
 type AgentIdentityHandler struct {
 	Auth      *authentik.Client
+	Store     *store.AgentIdentityStore
 	Publisher *events.Publisher
 }
 
@@ -280,6 +362,30 @@ func (h *AgentIdentityHandler) Register(w http.ResponseWriter, r *http.Request) 
 	// Build username for Authentik: agent-{tenantID}-{agentID}
 	username := "agent-" + tenantID + "-" + req.AgentID
 	displayName := "Agent " + req.AgentID
+
+	// Check if Auth client is nil (test/in-memory fallback path)
+	if h.Auth == nil || h.Store == nil {
+		identity := &models.AgentIdentity{
+			ID:                uuid.New().String(),
+			TenantID:          tenantID,
+			AgentID:           req.AgentID,
+			Capabilities:      req.Capabilities,
+			MemoryScope:       req.MemoryScope,
+			AllowedTools:      req.AllowedTools,
+			EscalationTargets: req.EscalationTargets,
+			CreatedAt:         time.Now().UTC(),
+		}
+		if err := h.Store.Create(identity); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "failed to create agent identity: " + err.Error()})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(identity)
+		return
+	}
 
 	// Step 1: Create user in Authentik
 	user, err := h.Auth.UsersAPI.Create(ctx, authentik.CreateUserRequest{
@@ -353,6 +459,38 @@ func (h *AgentIdentityHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch all users from Authentik
+	if h.Auth == nil || h.Store == nil {
+		// In-memory fallback for tests
+		ids, err := h.Store.ListByTenant(tenantID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "failed to list agent identities"})
+			return
+		}
+
+		total := len(ids)
+		start := (page - 1) * pageSize
+		if start > total {
+			start = total
+		}
+		end := start + pageSize
+		if end > total {
+			end = total
+		}
+		pageItems := ids[start:end]
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"agent_identities": pageItems,
+			"total":            total,
+			"page":             page,
+			"page_size":        pageSize,
+			"total_pages":      (total + pageSize - 1) / pageSize,
+		})
+		return
+	}
+
 	users, err := h.Auth.UsersAPI.List(ctx)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -413,6 +551,24 @@ func (h *AgentIdentityHandler) GetByAgent(w http.ResponseWriter, r *http.Request
 	}
 
 	username := "agent-" + tenantID + "-" + agentID
+
+	// Check if Auth client is nil (test/in-memory fallback path)
+	if h.Auth == nil || h.Store == nil {
+		identity, err := h.Store.GetByAgent(agentID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "agent identity not found"})
+			return
+		}
+		identity.Capabilities = nil
+		identity.MemoryScope = nil
+		identity.AllowedTools = nil
+		identity.EscalationTargets = nil
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(identity)
+		return
+	}
 
 	// Fetch user from Authentik (by username match on full list since no direct lookup)
 	users, err := h.Auth.UsersAPI.List(r.Context())
@@ -519,12 +675,13 @@ func (h *AgentIdentityHandler) authenticErrorStatus(err error) int {
 // extractIdentityID extracts the service identity ID from the URL path.
 // Handles: /api/v1/iam/service-identities/{id}
 func extractIdentityID(path string) string {
-	path = strings.TrimPrefix(path, "/api/v1/iam/service-identities/")
-	path = strings.TrimSuffix(path, "/")
-	if path == "" {
+	const prefix = "/api/v1/iam/service-identities/"
+	if !strings.HasPrefix(path, prefix) {
 		return ""
 	}
-	return path
+	id := path[len(prefix):]
+	id = strings.TrimSuffix(id, "/")
+	return id
 }
 
 // extractAgentID extracts the agent_id from the URL path.

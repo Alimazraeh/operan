@@ -62,6 +62,11 @@ func (s *RoleStore) Create(role *models.Role) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// Check uniqueness (must be inside lock for thread safety)
+	if _, exists := s.byName[role.TenantID+"::"+role.Name]; exists {
+		return fmt.Errorf("role with name %s already exists in tenant %s", role.Name, role.TenantID)
+	}
+
 	s.roles[role.ID] = role
 	s.byName[role.TenantID+"::"+role.Name] = role
 

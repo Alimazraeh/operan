@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "operan-identity-access.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "operan-identity-access.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "operan-identity-access.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "operan-identity-access.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8002
+              protocol: TCP
+          env:
+            - name: IAM_PORT
+              value: "{{ .Values.service.port }}"
+            - name: AUTHENTIK_SERVER_URL
+              value: {{ required "authentik.serverURL is required" .Values.authentik.serverURL | quote }}
+            - name: AUTHENTIK_ADMIN_API_TOKEN
+              value: {{ required "authentik.adminAPIToken is required" .Values.authentik.adminAPIToken | quote }}
+            - name: IAM_TOKEN_SECRET
+              value: {{ required "tokenSecret is required" .Values.tokenSecret | quote }}
+            - name: IAM_TOKEN_EXPIRY_MIN
+              value: "{{ .Values.tokenExpiry }}"
+            - name: IAM_EVENT_BROKER_URL
+              value: {{ .Values.eventBrokerURL | quote }}
+            - name: IAM_OTEL_ENABLED
+              value: "{{ .Values.otelEnabled }}"
+            - name: IAM_OTEL_COLLECTOR_URL
+              value: {{ .Values.otelCollectorURL | quote }}
+            - name: AUTHENTIK_TOKEN_TTL_MIN
+              value: "{{ .Values.authentik.tokenTTL }}"
+            - name: AUTHENTIK_PROVISIONING_METHOD
+              value: {{ .Values.authentik.provisioningMethod | quote }}
+            - name: AUTHENTIK_INGRESS_DOMAIN
+              value: {{ .Values.authentik.ingressDomain | quote }}
+            {{- range .Values.extraEnv }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

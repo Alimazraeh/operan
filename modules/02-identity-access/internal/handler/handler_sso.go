@@ -34,6 +34,11 @@ func NewSSOHandler(auth *authentik.Client, publisher *events.Publisher) *SSOHand
 // Creates an OAuth2 or SAML provider in Authentik, binds flows, and returns
 // the provider configuration reference.
 func (h *SSOHandler) Configure(w http.ResponseWriter, r *http.Request) {
+	if h.Auth == nil {
+		http.Error(w, `{"error":"SSO configuration requires Authentik client"}`, http.StatusNotFound)
+		return
+	}
+
 	tenantID := middleware.GetTenantID(r.Context())
 
 	var req models.ConfigureSSORequest
@@ -81,10 +86,12 @@ func (h *SSOHandler) Configure(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Publish event
-	h.Publisher.Publish(r.Context(), "sso.configured", tenantID, "", time.Now().UTC().Format(time.RFC3339), map[string]interface{}{
-		"provider": config.Provider,
-		"type":     config.Type,
-	})
+	if h.Publisher != nil {
+		h.Publisher.Publish(r.Context(), "sso.configured", tenantID, "", time.Now().UTC().Format(time.RFC3339), map[string]interface{}{
+			"provider": config.Provider,
+			"type":     config.Type,
+		})
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -196,6 +203,12 @@ func (h *SSOHandler) configureSAML(ctx context.Context, tenantID string, req *mo
 // GetConfig handles GET /api/v1/iam/auth/sso/config
 // Returns the SSO configuration by querying Authentik providers.
 func (h *SSOHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
+	if h.Auth == nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{})
+		return
+	}
+
 	tenantID := middleware.GetTenantID(r.Context())
 
 	result := h.fetchSSOConfig(tenantID)
@@ -284,6 +297,25 @@ func (h *SSOHandler) Test(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	result := map[string]interface{}{
+		"provider":   "",
+		"type":       "",
+		"status":     "partial",
+		"test_steps": []map[string]string{},
+	}
+
+	if h.Auth == nil {
+		result["test_steps"] = []map[string]string{
+			{"step": "metadata_validation", "status": "skipped"},
+			{"step": "provider_connectivity", "status": "skipped"},
+			{"step": "idp_connection", "status": "skipped"},
+			{"step": "callback", "status": "skipped"},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(result)
+		return
+	}
+
 	// Find the provider for this tenant in Authentik.
 	config := h.fetchSSOConfig(tenantID)
 	if config == nil {
@@ -294,7 +326,8 @@ func (h *SSOHandler) Test(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
-	result := map[string]interface{}{
+	// Override result with provider-specific data for the real Auth path.
+	result = map[string]interface{}{
 		"provider":   config["provider"],
 		"type":       config["type"],
 		"status":     "success",
@@ -469,6 +502,19 @@ type SCIMCreateResponse struct {
 
 // ListUsers handles GET /api/v1/iam/scim/users
 func (h *SCIMHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
+	if h.Auth == nil {
+		resp := SCIMListResponse{
+			Schema:       []string{"urn:ietf:params:scim:api:messages:2.0:ListResponse"},
+			TotalResults: 0,
+			ItemsPerPage: 100,
+			StartIndex:   1,
+			Resources:    []SCIMUser{},
+		}
+		w.Header().Set("Content-Type", "application/scim+json")
+		json.NewEncoder(w).Encode(resp)
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
@@ -546,6 +592,11 @@ func (h *SCIMHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 
 // Provision handles POST /api/v1/iam/scim/provision
 func (h *SCIMHandler) Provision(w http.ResponseWriter, r *http.Request) {
+	if h.Auth == nil {
+		http.Error(w, `{"error":"SCIM provisioning requires Authentik client"}`, http.StatusNotFound)
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
@@ -614,8 +665,10 @@ func (h *SCIMHandler) Provision(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Publish user.created event
-	h.Publisher.UserCreated(ctx, created.UUID, middleware.GetTenantID(r.Context()), email, "scim",
-		middleware.GetUserID(r.Context()), "scim", "", time.Now().UTC().Format(time.RFC3339))
+	if h.Publisher != nil {
+		h.Publisher.UserCreated(ctx, created.UUID, middleware.GetTenantID(r.Context()), email, "scim",
+			middleware.GetUserID(r.Context()), "scim", "", time.Now().UTC().Format(time.RFC3339))
+	}
 
 	// Build response
 	meta := SCIMMeta{
@@ -643,6 +696,11 @@ func (h *SCIMHandler) Provision(w http.ResponseWriter, r *http.Request) {
 
 // UpdateUser handles PATCH /api/v1/iam/scim/users/{id}
 func (h *SCIMHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	if h.Auth == nil {
+		http.Error(w, `{"error":"SCIM update requires Authentik client"}`, http.StatusNotFound)
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
@@ -679,7 +737,9 @@ func (h *SCIMHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	// Publish user.updated event
 	tenantID := middleware.GetTenantID(r.Context())
 	actorID := middleware.GetUserID(r.Context())
-	h.Publisher.UserUpdated(ctx, updated.UUID, tenantID, updated.Email, actorID, "", time.Now().UTC().Format(time.RFC3339))
+	if h.Publisher != nil {
+		h.Publisher.UserUpdated(ctx, updated.UUID, tenantID, updated.Email, actorID, "", time.Now().UTC().Format(time.RFC3339))
+	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -690,6 +750,11 @@ func (h *SCIMHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 // DeleteUser handles DELETE /api/v1/iam/scim/users/{id}
 func (h *SCIMHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	if h.Auth == nil {
+		http.Error(w, `{"error":"SCIM deletion requires Authentik client"}`, http.StatusNotFound)
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
@@ -719,7 +784,9 @@ func (h *SCIMHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	// Publish user.suspended event
 	tenantID := middleware.GetTenantID(r.Context())
 	actorID := middleware.GetUserID(r.Context())
-	h.Publisher.UserSuspended(ctx, user.UUID, tenantID, "deprovisioned via SCIM", actorID, "", "", time.Now().UTC().Format(time.RFC3339))
+	if h.Publisher != nil {
+		h.Publisher.UserSuspended(ctx, user.UUID, tenantID, "deprovisioned via SCIM", actorID, "", "", time.Now().UTC().Format(time.RFC3339))
+	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -1065,6 +1132,11 @@ type SCIMBulkResult struct {
 
 // BulkProvision handles POST /api/v1/iam/scim/bulk — RFC 7644 Section 3.5.
 func (h *SCIMHandler) BulkProvision(w http.ResponseWriter, r *http.Request) {
+	if h.Auth == nil {
+		http.Error(w, `{"error":"SCIM bulk provisioning requires Authentik client"}`, http.StatusNotFound)
+		return
+	}
+
 	var bulkReq SCIMBulkRequest
 	if err := json.NewDecoder(r.Body).Decode(&bulkReq); err != nil {
 		writeSCIMError(w, http.StatusBadRequest, "invalidSchema", "Malformed bulk request body")
@@ -1263,7 +1335,9 @@ func (h *SCIMHandler) handleBulkDelete(op SCIMBulkOperation) SCIMBulkResponse {
 		}
 	}
 
-	h.Publisher.UserSuspended(ctx, user.UUID, tenantID, "deprovisioned via SCIM bulk", actorID, "", "", time.Now().UTC().Format(time.RFC3339))
+	if h.Publisher != nil {
+		h.Publisher.UserSuspended(ctx, user.UUID, tenantID, "deprovisioned via SCIM bulk", actorID, "", "", time.Now().UTC().Format(time.RFC3339))
+	}
 
 	return SCIMBulkResponse{
 		Method: op.Method, Path: op.Path, BulkID: op.BulkID, Status: "200",

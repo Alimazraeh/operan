@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/operan/modules/02-identity-access/internal/authentik"
-	"github.com/operan/modules/02-identity-access/internal/events"
 	"github.com/operan/modules/02-identity-access/internal/middleware"
 	"github.com/operan/modules/02-identity-access/internal/models"
 )
@@ -39,20 +38,34 @@ type delegationGrantResponse struct {
 	AuthentikUserUUID  string    `json:"authentik_user_uuid"`
 }
 
+// delegationAuthClient is the interface that DelegationHandler uses to
+// interact with Authentik. It captures only the methods needed for
+// delegation operations, allowing mock implementations in tests.
+type delegationAuthClient interface {
+	Groups() authentik.GroupsAPIOps
+	Users() authentik.UsersAPIOps
+}
+
+// publisher is the interface that DelegationHandler uses to publish events.
+// It captures only the Publish method, allowing mock implementations in tests.
+type publisher interface {
+	Publish(ctx context.Context, eventType, correlationID, tenantID, timestamp string, payload map[string]interface{}) error
+}
+
 // DelegationHandler handles delegated admin roles HTTP endpoints.
 // All persistent state is now managed by Authentik groups; the handler
 // maintains an in-memory index mapping role names → Authentik group UUIDs.
 type DelegationHandler struct {
-	Auth *authentik.Client
+	Auth delegationAuthClient
 
-	Publisher *events.Publisher
+	Publisher publisher
 
 	// groupIndex maps "tenant::roleName" → Authentik group UUID.
 	groupIndex map[string]string
 }
 
 // NewDelegationHandler creates a new delegation handler backed by Authentik.
-func NewDelegationHandler(auth *authentik.Client, publisher *events.Publisher) *DelegationHandler {
+func NewDelegationHandler(auth delegationAuthClient, publisher publisher) *DelegationHandler {
 	return &DelegationHandler{
 		Auth:       auth,
 		Publisher:  publisher,
@@ -185,6 +198,7 @@ func (h *DelegationHandler) findUserUUID(ctx context.Context, identifier string)
 
 func (h *DelegationHandler) Create(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
+	fmt.Printf("DEBUG Create: tenantID=%q\n", tenantID)
 
 	var req models.CreateDelegationRoleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -791,5 +805,11 @@ func extractDelegationRoleID(path string) string {
 	if !strings.HasPrefix(path, prefix) {
 		return ""
 	}
-	return path[len(prefix):]
+	suffix := path[len(prefix):]
+	if suffix == "" {
+		return ""
+	}
+	// Only the first path segment is the role_id; everything after is
+	// an action segment (grant / revoke / delegations).
+	return strings.SplitN(suffix, "/", 2)[0]
 }

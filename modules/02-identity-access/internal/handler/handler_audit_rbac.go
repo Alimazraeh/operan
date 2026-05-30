@@ -543,6 +543,11 @@ func (h *SessionReplayHandler) GetSessionRequests(w http.ResponseWriter, r *http
 		return
 	}
 
+	if h.Capture == nil {
+		http.Error(w, `{"error":"session replay capture not configured"}`, http.StatusInternalServerError)
+		return
+	}
+
 	captureSession := h.Capture.GetSession(sessionID)
 	if captureSession == nil {
 		http.Error(w, `{"error":"session not found"}`, http.StatusNotFound)

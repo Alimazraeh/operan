@@ -87,15 +87,6 @@ func (m *mockRBAC) Delete(ctx context.Context, uuid string) error {
 	return nil
 }
 
-func setPrincipalInContext(req *http.Request, principal *middleware.JWTToken) *http.Request {
-	ctx := req.Context()
-	ctx = context.WithValue(ctx, "jwt_token", principal)
-	ctx = context.WithValue(ctx, middleware.UserIDKey, principal.Subject)
-	ctx = context.WithValue(ctx, middleware.UserTypeKey, principal.UserType)
-	ctx = context.WithValue(ctx, middleware.TenantIDKey, principal.TenantID)
-	return req.WithContext(ctx)
-}
-
 func TestRoleHandlerCreateSuccess(t *testing.T) {
 	h := NewTestRoleHandler(newMockRBAC(), events.NewPublisher(""))
 
