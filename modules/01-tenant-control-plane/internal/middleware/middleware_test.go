@@ -6,11 +6,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
-	// JWTValidator tests use the placeholder implementation.
-	// When jwt/v5 is available, replace with:
-	//   "github.com/golang-jwt/jwt/v5"
-	// _ "github.com/golang-jwt/jwt/v5"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // ─── RequestID tests ─────────────────────────────────────────────────────────
@@ -448,27 +446,215 @@ func TestLoggingResponseWriter_DefaultStatusCode(t *testing.T) {
 	}
 }
 
-// ─── JWTValidator tests (placeholder implementation) ─────────────────────────
-// The JWTValidator uses a placeholder implementation until the golang-jwt/v5
-// dependency is available. These tests validate the placeholder behavior.
+// ─── JWT test helpers ────────────────────────────────────────────────────────
 
-func TestJWTValidator_MissingAuthHeader(t *testing.T) {
-	// Placeholder: when no Authorization header, falls through to TenantContext
-	h := JWTValidator("secret", "issuer")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+const (
+	testJWTSecret  = "test-secret-key-for-jwt-validation-256bit"
+	testJWTIssuer  = "operan-tenant-control"
+	testTenantID   = "tenant-test-123"
+	testUserID     = "user-test-456"
+)
+
+func generateTestJWT(t *testing.T, claims map[string]interface{}) string {
+	t.Helper()
+	key := []byte(testJWTSecret)
+
+	now := time.Now().UTC()
+	if claims == nil {
+		claims = make(map[string]interface{})
+	}
+	if _, ok := claims["exp"]; !ok {
+		claims["exp"] = now.Add(time.Hour).Unix()
+	}
+	if _, ok := claims["iat"]; !ok {
+		claims["iat"] = now.Unix()
+	}
+	if _, ok := claims["iss"]; !ok {
+		claims["iss"] = testJWTIssuer
+	}
+	if _, ok := claims["tenant_id"]; !ok {
+		claims["tenant_id"] = testTenantID
+	}
+	if _, ok := claims["user_id"]; !ok {
+		claims["user_id"] = testUserID
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims(claims))
+	signed, err := token.SignedString(key)
+	if err != nil {
+		t.Fatalf("failed to sign JWT: %v", err)
+	}
+	return signed
+}
+
+func generateExpiredJWT(t *testing.T) string {
+	t.Helper()
+	key := []byte(testJWTSecret)
+	now := time.Now().UTC()
+
+	claims := jwt.MapClaims{
+		"exp":     now.Add(-time.Hour).Unix(), // expired 1 hour ago
+		"iat":     now.Add(-2 * time.Hour).Unix(),
+		"iss":     testJWTIssuer,
+		"tenant_id": testTenantID,
+		"user_id":   testUserID,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString(key)
+	if err != nil {
+		t.Fatalf("failed to sign expired JWT: %v", err)
+	}
+	return signed
+}
+
+func generateTokenWithWrongIssuer(t *testing.T) string {
+	t.Helper()
+	key := []byte(testJWTSecret)
+	now := time.Now().UTC()
+
+	claims := jwt.MapClaims{
+		"exp":     now.Add(time.Hour).Unix(),
+		"iat":     now.Unix(),
+		"iss":     "wrong-issuer",
+		"tenant_id": testTenantID,
+		"user_id":   testUserID,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString(key)
+	if err != nil {
+		t.Fatalf("failed to sign JWT with wrong issuer: %v", err)
+	}
+	return signed
+}
+
+func generateTokenWithWrongSecret(t *testing.T) string {
+	t.Helper()
+	wrongKey := []byte("wrong-secret-key-12345678901234567890123456")
+	now := time.Now().UTC()
+
+	claims := jwt.MapClaims{
+		"exp":     now.Add(time.Hour).Unix(),
+		"iat":     now.Unix(),
+		"iss":     testJWTIssuer,
+		"tenant_id": testTenantID,
+		"user_id":   testUserID,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString(wrongKey)
+	if err != nil {
+		t.Fatalf("failed to sign JWT with wrong key: %v", err)
+	}
+	return signed
+}
+
+// ─── JWTValidator tests ──────────────────────────────────────────────────────
+
+func TestJWTValidator_ValidToken(t *testing.T) {
+	token := generateTestJWT(t, nil)
+	var capturedTenantID, capturedUserID string
+
+	h := JWTValidator(testJWTSecret, testJWTIssuer)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedTenantID = GetTenantID(r.Context())
+		uid := r.Context().Value(ctxKeyUserID)
+		if uid != nil {
+			capturedUserID = uid.(string)
+		}
 		w.WriteHeader(http.StatusOK)
 	}))
 
 	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
-		t.Errorf("expected 200 OK (fallthrough), got %d", w.Code)
+		t.Errorf("expected 200 OK, got %d", w.Code)
+	}
+	if capturedTenantID != testTenantID {
+		t.Errorf("expected tenant_id %q, got %q", testTenantID, capturedTenantID)
+	}
+	if capturedUserID != testUserID {
+		t.Errorf("expected user_id %q, got %q", testUserID, capturedUserID)
+	}
+}
+
+func TestJWTValidator_InvalidSignature(t *testing.T) {
+	token := generateTokenWithWrongSecret(t)
+
+	h := JWTValidator(testJWTSecret, testJWTIssuer)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401 Unauthorized, got %d", w.Code)
+	}
+}
+
+func TestJWTValidator_ExpiredToken(t *testing.T) {
+	token := generateExpiredJWT(t)
+
+	h := JWTValidator(testJWTSecret, testJWTIssuer)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401 Unauthorized for expired token, got %d", w.Code)
+	}
+}
+
+func TestJWTValidator_WrongIssuer(t *testing.T) {
+	token := generateTokenWithWrongIssuer(t)
+
+	h := JWTValidator(testJWTSecret, testJWTIssuer)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401 Unauthorized for wrong issuer, got %d", w.Code)
+	}
+}
+
+func TestJWTValidator_MissingAuthHeader(t *testing.T) {
+	// When no Authorization header, should fall through to TenantContext
+	var capturedTenantID string
+	h := JWTValidator(testJWTSecret, testJWTIssuer)(TenantContext(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedTenantID = GetTenantID(r.Context())
+		w.WriteHeader(http.StatusOK)
+	})))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("X-Tenant-ID", "tenant-header-fallback")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200 OK (fallback to header auth), got %d", w.Code)
+	}
+	if capturedTenantID != "tenant-header-fallback" {
+		t.Errorf("expected tenant_id from header, got %q", capturedTenantID)
 	}
 }
 
 func TestJWTValidator_InvalidAuthScheme(t *testing.T) {
-	h := JWTValidator("secret", "issuer")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	h := JWTValidator(testJWTSecret, testJWTIssuer)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -478,43 +664,95 @@ func TestJWTValidator_InvalidAuthScheme(t *testing.T) {
 	h.ServeHTTP(w, req)
 
 	if w.Code != http.StatusUnauthorized {
-		t.Errorf("expected 401 for invalid scheme, got %d", w.Code)
+		t.Errorf("expected 401 for invalid auth scheme, got %d", w.Code)
 	}
 }
 
-func TestJWTValidator_BearerTokenPresent(t *testing.T) {
-	// Placeholder: when Bearer token present but not validated, falls through
-	h := JWTValidator("secret", "issuer")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func TestJWTValidator_InvalidTokenFormat(t *testing.T) {
+	h := JWTValidator(testJWTSecret, testJWTIssuer)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
 	req := httptest.NewRequest("GET", "/test", nil)
-	req.Header.Set("Authorization", "Bearer some-token-here")
+	req.Header.Set("Authorization", "Bearer not.a.valid.jwt.token")
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("expected 200 OK (placeholder fallthrough), got %d", w.Code)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401 for invalid token format, got %d", w.Code)
 	}
 }
 
-func TestJWTValidator_TenantContextPrecedence(t *testing.T) {
-	// JWTValidator falls through to TenantContext for header-based auth
-	h := JWTValidator("secret", "issuer")(TenantContext(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tenantID := GetTenantID(r.Context())
-		if tenantID != "tenant-from-header" {
-			t.Errorf("expected tenant_id from header, got %q", tenantID)
+func TestJWTValidator_PartialClaims(t *testing.T) {
+	// Token missing user_id should still pass (user_id is optional)
+	// We build this token manually to avoid the helper adding defaults
+	key := []byte(testJWTSecret)
+	now := time.Now().UTC()
+
+	claims := jwt.MapClaims{
+		"exp":     now.Add(time.Hour).Unix(),
+		"iat":     now.Unix(),
+		"iss":     testJWTIssuer,
+		"tenant_id": testTenantID,
+		// user_id intentionally omitted
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString(key)
+	if err != nil {
+		t.Fatalf("failed to sign JWT: %v", err)
+	}
+
+	var capturedTenantID, capturedUserID string
+	h := JWTValidator(testJWTSecret, testJWTIssuer)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedTenantID = GetTenantID(r.Context())
+		v := r.Context().Value(ctxKeyUserID)
+		if v != nil {
+			capturedUserID = v.(string)
 		}
-	})))
+		w.WriteHeader(http.StatusOK)
+	}))
 
 	req := httptest.NewRequest("GET", "/test", nil)
-	req.Header.Set("Authorization", "Bearer some-token")
-	req.Header.Set("X-Tenant-ID", "tenant-from-header")
+	req.Header.Set("Authorization", "Bearer "+signed)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
-		t.Errorf("expected 200 OK, got %d", w.Code)
+		t.Errorf("expected 200 OK for partial claims, got %d", w.Code)
+	}
+	if capturedTenantID != testTenantID {
+		t.Errorf("expected tenant_id %q, got %q", testTenantID, capturedTenantID)
+	}
+	// user_id should be empty since it wasn't in the token
+	if capturedUserID != "" {
+		t.Errorf("expected empty user_id, got %q", capturedUserID)
+	}
+}
+
+func TestJWTValidator_UniqueTokens(t *testing.T) {
+	// Verify that tokens generated at different times are different
+	token1 := generateTestJWT(t, map[string]interface{}{
+		"exp":       time.Now().Add(time.Hour).Unix(),
+		"iat":       time.Now().Add(-1 * time.Second).Unix(),
+		"iss":       testJWTIssuer,
+		"tenant_id": testTenantID,
+		"user_id":   testUserID,
+	})
+
+	// Small delay to ensure different timestamps
+	time.Sleep(10 * time.Millisecond)
+
+	token2 := generateTestJWT(t, map[string]interface{}{
+		"exp":       time.Now().Add(time.Hour).Unix(),
+		"iat":       time.Now().Unix(),
+		"iss":       testJWTIssuer,
+		"tenant_id": testTenantID,
+		"user_id":   testUserID,
+	})
+
+	if token1 == token2 {
+		t.Error("expected different JWT tokens for different signing times")
 	}
 }
 
