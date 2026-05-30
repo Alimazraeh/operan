@@ -1,0 +1,104 @@
+{
+  "module_id": "05",
+  "module_name": "Department Template Engine",
+  "version": "0.1.0",
+  "app_version": "1.0.0",
+  "description": "Manages department templates including creation, versioning, deployment, and lifecycle operations for multi-agent department configurations.",
+  "repository": "https://github.com/operan/operan/tree/main/modules/05-department-template-engine",
+  "contracts": {
+    "openapi": "contracts/v1/openapi-05-department-template-engine.yaml",
+    "asyncapi": "contracts/v1/asyncapi-05-department-template-engine.yaml",
+    "json_schema": "contracts/v1/schema-05-department-template-engine.json"
+  },
+  "health_endpoint": "/health",
+  "port": 8005,
+  "image": {
+    "repository": "operan/module05-department-template-engine",
+    "tag": "latest",
+    "pull_policy": "IfNotPresent"
+  },
+  "helm_chart": "chart",
+  "dependencies": [
+    "01-tenant-control-plane",
+    "03-agent-orchestration",
+    "04-agent-registry",
+    "07-memory-fabric",
+    "10-policy-governance",
+    "11-observability"
+  ],
+  "events": [
+    {
+      "name": "template.created",
+      "topic": "operan.templates.template.created",
+      "description": "Emitted when a new department template is created"
+    },
+    {
+      "name": "template.updated",
+      "topic": "operan.templates.template.updated",
+      "description": "Emitted when a department template is updated"
+    },
+    {
+      "name": "template.deleted",
+      "topic": "operan.templates.template.deleted",
+      "description": "Emitted when a department template is deleted"
+    },
+    {
+      "name": "template.versioned",
+      "topic": "operan.templates.template.versioned",
+      "description": "Emitted when a new version of a template is created"
+    },
+    {
+      "name": "template.deployed",
+      "topic": "operan.templates.template.deployed",
+      "description": "Emitted when a template is deployed to an environment"
+    },
+    {
+      "name": "template.deployment_failed",
+      "topic": "operan.templates.template.deployment_failed",
+      "description": "Emitted when a template deployment fails"
+    },
+    {
+      "name": "template.undeployed",
+      "topic": "operan.templates.template.undeployed",
+      "description": "Emitted when a template deployment is removed"
+    },
+    {
+      "name": "template.cloned",
+      "topic": "operan.templates.template.cloned",
+      "description": "Emitted when a template is cloned"
+    }
+  ],
+  "env_vars": {
+    "MODULE05_PORT": {
+      "description": "Port to listen on",
+      "default": "8005",
+      "required": false
+    },
+    "MODULE05_JWT_SECRET": {
+      "description": "Shared secret for HMAC-S256 JWT validation",
+      "required": true
+    },
+    "MODULE05_DB_URL": {
+      "description": "PostgreSQL connection URL",
+      "required": false
+    },
+    "MODULE05_REDIS_URL": {
+      "description": "Redis connection URL for caching",
+      "required": false
+    },
+    "MODULE05_EVENT_BROKER_URL": {
+      "description": "Event broker connection URL",
+      "required": false
+    },
+    "MODULE05_MAX_PAGE_SIZE": {
+      "description": "Maximum page size for list operations",
+      "default": "100",
+      "required": false
+    }
+  },
+  "security": {
+    "auth": "JWT Bearer Token (HMAC-S256)",
+    "tenant_isolation": true,
+    "requires_x_tenant_id": true
+  }
+}
