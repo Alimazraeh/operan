@@ -8,17 +8,101 @@ import (
 	"time"
 )
 
+// SessionReplayCaptureConfig holds configurable limits for session replay capture.
+type SessionReplayCaptureConfig struct {
+	MaxSessions   int           // Max number of sessions to keep (0 = unlimited, default: 10000)
+	MaxRequests   int           // Max requests per session (0 = unlimited, default: 5000)
+	CleanupInterval time.Duration // How often background cleanup runs (0 = disabled, default: 5m)
+	MaxSessionAge time.Duration // Sessions older than this are evicted during cleanup (0 = disabled, default: 24h)
+}
+
 // SessionReplayCapture stores captured HTTP request/response details
 // for replaying user sessions.
 type SessionReplayCapture struct {
 	sessions map[string]*ReplaySession
+	order    []string // Tracks insertion order for LRU eviction
 	mu       sync.RWMutex
+	config   SessionReplayCaptureConfig
+	done     chan struct{} // Signals cleanup goroutine to stop
 }
 
-// NewSessionReplayCapture creates a new capture store with a default max size.
+// NewSessionReplayCapture creates a new capture store with sensible defaults.
 func NewSessionReplayCapture() *SessionReplayCapture {
-	return &SessionReplayCapture{
+	return NewSessionReplayCaptureWithConfig(SessionReplayCaptureConfig{})
+}
+
+// NewSessionReplayCaptureWithConfig creates a new capture store with custom limits.
+func NewSessionReplayCaptureWithConfig(cfg SessionReplayCaptureConfig) *SessionReplayCapture {
+	// Apply defaults
+	if cfg.MaxSessions == 0 {
+		cfg.MaxSessions = 10000
+	}
+	if cfg.MaxRequests == 0 {
+		cfg.MaxRequests = 5000
+	}
+	if cfg.CleanupInterval == 0 {
+		cfg.CleanupInterval = 5 * time.Minute
+	}
+	if cfg.MaxSessionAge == 0 {
+		cfg.MaxSessionAge = 24 * time.Hour
+	}
+
+	c := &SessionReplayCapture{
 		sessions: make(map[string]*ReplaySession),
+		order:    make([]string, 0),
+		config:   cfg,
+		done:     make(chan struct{}),
+	}
+
+	// Start background cleanup if interval is positive
+	if cfg.CleanupInterval > 0 {
+		go c.cleanupLoop(cfg.CleanupInterval)
+	}
+
+	return c
+}
+
+// cleanupLoop runs periodic cleanup of old and evicted sessions.
+func (c *SessionReplayCapture) cleanupLoop(interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			c.CleanupOldSessions(c.config.MaxSessionAge)
+		case <-c.done:
+			return
+		}
+	}
+}
+
+// Stop shuts down the background cleanup goroutine.
+func (c *SessionReplayCapture) Stop() {
+	select {
+	case <-c.done:
+		// Already closed
+	default:
+		close(c.done)
+	}
+}
+
+// evictOldest removes the oldest session from the capture store to make room.
+func (c *SessionReplayCapture) evictOldest() {
+	if len(c.order) == 0 {
+		return
+	}
+	oldestID := c.order[0]
+	c.order = c.order[1:]
+	delete(c.sessions, oldestID)
+}
+
+// evictOldRequests removes oldest requests from a session when it exceeds maxRequests.
+func (c *SessionReplayCapture) evictOldRequests(session *ReplaySession, maxRequests int) {
+	if len(session.Requests) > maxRequests {
+		// Remove oldest requests
+		removed := len(session.Requests) - maxRequests
+		session.Requests = session.Requests[removed:]
 	}
 }
 
@@ -84,31 +168,46 @@ func (c *SessionReplayCapture) CaptureResponse(req *ReplayRequest, w http.Respon
 }
 
 // SaveSession stores a captured request into the session map.
-// If the session does not exist, it creates a new one with the request details.
+// Enforces MaxRequests per session and MaxSessions total, evicting oldest on overflow.
 func (c *SessionReplayCapture) SaveSession(req *ReplayRequest, sessionID string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	session, exists := c.sessions[sessionID]
 	if !exists {
+		// Enforce max sessions — evict oldest if at capacity
+		if len(c.sessions) >= c.config.MaxSessions {
+			c.evictOldest()
+		}
 		session = &ReplaySession{
 			SessionID: sessionID,
 			Requests:  make([]ReplayRequest, 0),
 			StartedAt: req.Timestamp,
 		}
 		c.sessions[sessionID] = session
+		c.order = append(c.order, sessionID)
 	}
 
 	session.Requests = append(session.Requests, *req)
+
+	// Enforce max requests per session
+	if c.config.MaxRequests > 0 {
+		c.evictOldRequests(session, c.config.MaxRequests)
+	}
 }
 
 // SetSessionUser sets the user context on an existing or new session.
+// Creates a new session if one doesn't exist (subject to limits).
 func (c *SessionReplayCapture) SetSessionUser(sessionID, userID, tenantID string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	session, exists := c.sessions[sessionID]
 	if !exists {
+		// Enforce max sessions — evict oldest if at capacity
+		if len(c.sessions) >= c.config.MaxSessions {
+			c.evictOldest()
+		}
 		c.sessions[sessionID] = &ReplaySession{
 			SessionID: sessionID,
 			UserID:    userID,
@@ -116,6 +215,7 @@ func (c *SessionReplayCapture) SetSessionUser(sessionID, userID, tenantID string
 			Requests:  make([]ReplayRequest, 0),
 			StartedAt: time.Now().UTC(),
 		}
+		c.order = append(c.order, sessionID)
 		return
 	}
 
@@ -165,6 +265,13 @@ func (c *SessionReplayCapture) DeleteSession(sessionID string) {
 	defer c.mu.Unlock()
 
 	delete(c.sessions, sessionID)
+	// Maintain order slice
+	for i, id := range c.order {
+		if id == sessionID {
+			c.order = append(c.order[:i], c.order[i+1:]...)
+			break
+		}
+	}
 }
 
 // CleanupOldSessions removes sessions that have not received activity
@@ -186,6 +293,16 @@ func (c *SessionReplayCapture) CleanupOldSessions(maxAge time.Duration) int {
 			delete(c.sessions, id)
 			removed++
 		}
+	}
+	// Rebuild order slice to remove evicted entries
+	if removed > 0 {
+		newOrder := make([]string, 0, len(c.order)-removed)
+		for _, id := range c.order {
+			if _, exists := c.sessions[id]; exists {
+				newOrder = append(newOrder, id)
+			}
+		}
+		c.order = newOrder
 	}
 	return removed
 }
