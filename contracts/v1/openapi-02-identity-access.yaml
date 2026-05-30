@@ -749,10 +749,12 @@ components:
         tenant_id:
           type: string
           format: uuid
-        roles:
+        role_ids:
           type: array
           items:
             type: string
+            format: uuid
+          description: UUIDs of roles assigned to this user.
         mfa_enabled:
           type: boolean
         ldap_dn:
@@ -771,12 +773,14 @@ components:
     SetRolesRequest:
       type: object
       required:
-        - roles
+        - role_ids
       properties:
-        roles:
+        role_ids:
           type: array
           items:
             type: string
+            format: uuid
+          description: UUIDs of roles to assign.
 
     CreateRoleRequest:
       type: object
@@ -801,17 +805,19 @@ components:
       required:
         - name
         - tenant_id
-        - roles
+        - role_ids
       properties:
         name:
           type: string
         tenant_id:
           type: string
           format: uuid
-        roles:
+        role_ids:
           type: array
           items:
             type: string
+            format: uuid
+          description: UUIDs of roles to assign.
         metadata:
           type: object
           nullable: true
@@ -832,10 +838,12 @@ components:
         tenant_id:
           type: string
           format: uuid
-        roles:
+        role_ids:
           type: array
           items:
             type: string
+            format: uuid
+          description: UUIDs of roles assigned to this service identity.
         api_key_id:
           type: string
         created_at:
@@ -900,9 +908,11 @@ components:
           type: string
           enum:
             - azure_ad
-            - okta
-            - authentik
             - google_workspace
+            - okta
+            - keycloak
+            - custom
+            - authentik
           description: The SSO identity provider.
         type:
           type: string
@@ -952,6 +962,7 @@ components:
       type: object
       required:
         - id
+        - tenant_id
         - timestamp
         - actor_id
         - actor_type
@@ -963,16 +974,23 @@ components:
         id:
           type: string
           format: uuid
+          description: Unique identifier for the audit event.
+        tenant_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the tenant this audit event belongs to.
         timestamp:
           type: string
           format: date-time
+          description: When the event occurred.
         actor_id:
           type: string
           format: uuid
           description: ID of the user, service identity, or agent that performed the action.
         actor_type:
           type: string
-          enum: [user, service_identity, agent_identity]
+          enum: [user, service, agent]
+          description: The type of principal that performed the action.
         action:
           type: string
           description: The action that was performed (e.g., user.create, policy.update).
@@ -985,7 +1003,7 @@ components:
         result:
           type: string
           enum: [success, failure, denied]
-          description: Outcome of the action.
+          description: Outcome of the action. "denied" indicates an explicit policy rejection.
         details:
           type: object
           description: Additional contextual information about the audit event.
@@ -995,6 +1013,13 @@ components:
         user_agent:
           type: string
           description: User-Agent header string from the client.
+        metadata:
+          type: object
+          description: Free-form metadata for additional event context.
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+          description: Severity level of the audit event.
       additionalProperties: false
 
     PermissionCheckRequest:

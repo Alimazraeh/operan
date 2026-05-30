@@ -20,7 +20,7 @@ func NewTestUserHandler() *UserHandler {
 func TestUserHandlerCreateSuccess(t *testing.T) {
 	h := NewTestUserHandler()
 
-	payload := `{"email":"test@example.com","display_name":"Test User","roles":["viewer"]}`
+	payload := `{"email":"test@example.com","display_name":"Test User","role_ids":["viewer"]}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-ID", "tenant-1")
@@ -56,7 +56,7 @@ func TestUserHandlerCreateSuccess(t *testing.T) {
 func TestUserHandlerCreateMissingEmail(t *testing.T) {
 	h := NewTestUserHandler()
 
-	payload := `{"display_name":"Test User","roles":["viewer"]}`
+	payload := `{"display_name":"Test User","role_ids":["viewer"]}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-ID", "tenant-1")
@@ -80,7 +80,7 @@ func TestUserHandlerCreateMissingEmail(t *testing.T) {
 func TestUserHandlerCreateMissingDisplayName(t *testing.T) {
 	h := NewTestUserHandler()
 
-	payload := `{"email":"test@example.com","roles":["viewer"]}`
+	payload := `{"email":"test@example.com","role_ids":["viewer"]}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-ID", "tenant-1")
@@ -361,7 +361,7 @@ func TestUserHandlerSetRoles(t *testing.T) {
 	// First, create a user
 	h.CreateUserForTest("user-123", "test@example.com", "Test User")
 
-	payload := `{"roles":["admin","editor"]}`
+	payload := `{"role_ids":["admin","editor"]}`
 	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/user-123/roles", strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-ID", "tenant-1")
@@ -394,7 +394,7 @@ func TestUserHandlerSetRoles(t *testing.T) {
 func TestUserHandlerSetRolesInvalidBody(t *testing.T) {
 	h := NewTestUserHandler()
 
-	payload := `{"roles":"not-an-array"}`
+	payload := `{"role_ids":"not-an-array"}`
 	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/user-123/roles", strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-ID", "tenant-1")
@@ -494,7 +494,7 @@ func TestUserHandlerUpdateNoop(t *testing.T) {
 func TestUserHandlerCreateSetsCreatedAt(t *testing.T) {
 	h := NewTestUserHandler()
 
-	payload := `{"email":"test@example.com","display_name":"Test User","roles":["viewer"]}`
+	payload := `{"email":"test@example.com","display_name":"Test User","role_ids":["viewer"]}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-ID", "tenant-1")
@@ -527,7 +527,7 @@ func TestUserHandlerCreateSetsCreatedAt(t *testing.T) {
 func TestUserHandlerCreateSetsAuthMethod(t *testing.T) {
 	h := NewTestUserHandler()
 
-	payload := `{"email":"test@example.com","display_name":"Test User","roles":["viewer"]}`
+	payload := `{"email":"test@example.com","display_name":"Test User","role_ids":["viewer"]}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-ID", "tenant-1")
@@ -700,7 +700,7 @@ func TestUserHandlerSetRolesEmptyArray(t *testing.T) {
 	// First, create a user
 	h.CreateUserForTest("user-123", "test@example.com", "Test User")
 
-	payload := `{"roles":[]}`
+	payload := `{"role_ids":[]}`
 	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/user-123/roles", strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-ID", "tenant-1")
@@ -762,7 +762,7 @@ func TestUserHandlerUpdateStatus(t *testing.T) {
 func TestUserHandlerCreateMFAUser(t *testing.T) {
 	h := NewTestUserHandler()
 
-	payload := `{"email":"mfa@example.com","display_name":"MFA User","roles":["viewer"],"mfa_enabled":true}`
+	payload := `{"email":"mfa@example.com","display_name":"MFA User","role_ids":["viewer"],"mfa_enabled":true}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-ID", "tenant-1")
@@ -802,7 +802,7 @@ func (h *UserHandler) CreateUserForTest(id, email, displayName string) {
 		Email:                email,
 		DisplayName:          displayName,
 		Status:               "active",
-		Roles:                []string{"viewer"},
+		RoleIDs:              []string{"viewer"},
 		TenantID:             "tenant-test",
 		MFAEnabled:           false,
 		AuthenticationMethod: "password",

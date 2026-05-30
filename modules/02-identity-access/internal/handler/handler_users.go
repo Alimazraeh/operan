@@ -54,7 +54,7 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"display_name is required"}`, http.StatusBadRequest)
 		return
 	}
-	if len(req.Roles) == 0 {
+	if len(req.RoleIDs) == 0 {
 		http.Error(w, `{"error":"at least one role is required"}`, http.StatusBadRequest)
 		return
 	}
@@ -87,7 +87,7 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Set roles via group membership
-		for _, role := range req.Roles {
+		for _, role := range req.RoleIDs {
 			if err := addToGroup(r.Context(), h.Auth, created.UUID, role); err != nil {
 				_ = err
 			}
@@ -102,7 +102,7 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 			Email:                req.Email,
 			DisplayName:          req.DisplayName,
 			Status:               "pending",
-			Roles:                req.Roles,
+			RoleIDs:              req.RoleIDs,
 			MFAEnabled:           mfaEnabled,
 			AuthenticationMethod: authMethod,
 			CreatedAt:            time.Now().UTC(),
@@ -121,7 +121,7 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Result:       "success",
 		Details: map[string]interface{}{
 			"email":       user.Email,
-			"roles":       user.Roles,
+			"role_ids":    user.RoleIDs,
 			"auth_method": authMethod,
 		},
 		Timestamp: time.Now().UTC(),
@@ -366,7 +366,7 @@ func (h *UserHandler) SetRoles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req models.SetRolesRequest
+	var req models.SetRoleIDsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
 		return
@@ -400,7 +400,7 @@ func (h *UserHandler) SetRoles(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Add user to requested role groups
-		for _, role := range req.Roles {
+		for _, role := range req.RoleIDs {
 			if groupUUID, exists := groupMap[role]; exists {
 				if err := h.Auth.GroupsAPI.AddUser(r.Context(), groupUUID, userID); err != nil {
 					_ = err
@@ -414,9 +414,9 @@ func (h *UserHandler) SetRoles(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, `{"error":"user not found"}`, http.StatusNotFound)
 			return
 		}
-		roles := make([]string, len(req.Roles))
-		copy(roles, req.Roles)
-		h.Users.SetRoles(userID, roles)
+		roleIDs := make([]string, len(req.RoleIDs))
+		copy(roleIDs, req.RoleIDs)
+		h.Users.SetRoles(userID, roleIDs)
 	}
 
 	// Log audit event
@@ -428,7 +428,7 @@ func (h *UserHandler) SetRoles(w http.ResponseWriter, r *http.Request) {
 		ResourceID:   userID,
 		Result:       "success",
 		Details: map[string]interface{}{
-			"roles": req.Roles,
+			"role_ids": req.RoleIDs,
 		},
 		Timestamp: time.Now().UTC(),
 	}, tenantID)
@@ -437,7 +437,7 @@ func (h *UserHandler) SetRoles(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"user_id": userID,
-		"roles":   req.Roles,
+		"role_ids": req.RoleIDs,
 	})
 }
 
@@ -497,7 +497,7 @@ func (h *UserHandler) mapAuthentikUser(created *authentik.User, tenantID string)
 		Email:                created.Email,
 		DisplayName:          created.Name,
 		Status:               "active",
-		Roles:                []string{},
+		RoleIDs:              []string{},
 		MFAEnabled:           false,
 		AuthenticationMethod: "password",
 	}
