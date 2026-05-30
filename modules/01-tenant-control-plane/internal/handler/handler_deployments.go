@@ -140,13 +140,19 @@ func CreateDeployment(h *middleware.Handler) http.HandlerFunc {
 // GetDeployment handles GET /v1/tenants/{id}/deployments/{deploy_id}.
 func GetDeployment(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		deployID, ok := extractPathParam(r, "deploy_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "deployment id is required")
 			return
 		}
 
-		d, err := h.DeploymentStore.GetByID(deployID)
+		d, err := h.DeploymentStore.GetByIDAndTenant(deployID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "deployment not found", err.Error())
 			return
@@ -319,13 +325,19 @@ func deploymentToResponse(d *store.Deployment) *DeploymentResponse {
 // RolloutDeployment handles POST /v1/tenants/{id}/deployments/{deployment_id}/rollout.
 func RolloutDeployment(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		deploymentID, ok := extractPathParam(r, "deployment_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "deployment_id is required")
 			return
 		}
 
-		deployment, err := h.DeploymentStore.GetByID(deploymentID)
+		deployment, err := h.DeploymentStore.GetByIDAndTenant(deploymentID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "deployment not found", err.Error())
 			return
@@ -344,13 +356,19 @@ func RolloutDeployment(h *middleware.Handler) http.HandlerFunc {
 // ScaleDeployment handles POST /v1/tenants/{id}/deployments/{deployment_id}/scale.
 func ScaleDeployment(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		deploymentID, ok := extractPathParam(r, "deployment_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "deployment_id is required")
 			return
 		}
 
-		deployment, err := h.DeploymentStore.GetByID(deploymentID)
+		deployment, err := h.DeploymentStore.GetByIDAndTenant(deploymentID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "deployment not found", err.Error())
 			return
@@ -372,13 +390,19 @@ func ScaleDeployment(h *middleware.Handler) http.HandlerFunc {
 // GetDeploymentStatus handles GET /v1/tenants/{id}/deployments/{deployment_id}/status.
 func GetDeploymentStatus(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		deploymentID, ok := extractPathParam(r, "deployment_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "deployment_id is required")
 			return
 		}
 
-		deployment, err := h.DeploymentStore.GetByID(deploymentID)
+		deployment, err := h.DeploymentStore.GetByIDAndTenant(deploymentID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "deployment not found", err.Error())
 			return
@@ -391,13 +415,19 @@ func GetDeploymentStatus(h *middleware.Handler) http.HandlerFunc {
 // PauseDeployment handles POST /v1/tenants/{id}/deployments/{deployment_id}/pause.
 func PauseDeployment(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		deploymentID, ok := extractPathParam(r, "deployment_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "deployment_id is required")
 			return
 		}
 
-		deployment, err := h.DeploymentStore.GetByID(deploymentID)
+		deployment, err := h.DeploymentStore.GetByIDAndTenant(deploymentID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "deployment not found", err.Error())
 			return
@@ -416,13 +446,19 @@ func PauseDeployment(h *middleware.Handler) http.HandlerFunc {
 // ResumeDeployment handles POST /v1/tenants/{id}/deployments/{deployment_id}/resume.
 func ResumeDeployment(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		deploymentID, ok := extractPathParam(r, "deployment_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "deployment_id is required")
 			return
 		}
 
-		deployment, err := h.DeploymentStore.GetByID(deploymentID)
+		deployment, err := h.DeploymentStore.GetByIDAndTenant(deploymentID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "deployment not found", err.Error())
 			return

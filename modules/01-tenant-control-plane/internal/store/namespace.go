@@ -112,7 +112,7 @@ func (s *NamespaceStore) Create(ns *Namespace) (*Namespace, error) {
 	return ns, nil
 }
 
-// GetByID retrieves a namespace by ID.
+// GetByID retrieves a namespace by ID (no tenant check — for admin use only).
 func (s *NamespaceStore) GetByID(id string) (*Namespace, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -120,6 +120,22 @@ func (s *NamespaceStore) GetByID(id string) (*Namespace, error) {
 	ns, ok := s.namespaces[id]
 	if !ok {
 		return nil, fmt.Errorf("namespace %s not found", id)
+	}
+	cpy := *ns
+	return &cpy, nil
+}
+
+// GetByIDAndTenant retrieves a namespace by ID and verifies the TenantID matches.
+func (s *NamespaceStore) GetByIDAndTenant(id, tenantID string) (*Namespace, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	ns, ok := s.namespaces[id]
+	if !ok {
+		return nil, fmt.Errorf("namespace %s not found", id)
+	}
+	if ns.TenantID != tenantID {
+		return nil, fmt.Errorf("permission denied: namespace %s does not belong to tenant %s", id, tenantID)
 	}
 	cpy := *ns
 	return &cpy, nil

@@ -34,7 +34,6 @@ func CreateTenant(h *middleware.Handler) http.HandlerFunc {
 			Region         store.Region           `json:"region" validate:"required"`
 			IsolationLevel store.IsolationLevel   `json:"isolation_level" validate:"required"`
 			ContactEmail   string                 `json:"contact_email,omitempty"`
-			AdminEmail     string                 `json:"admin_email,omitempty"`
 			Quota          *store.QuotaConfig     `json:"quota,omitempty"`
 			CustomMetadata map[string]interface{} `json:"custom_metadata,omitempty"`
 		}
@@ -89,7 +88,6 @@ func CreateTenant(h *middleware.Handler) http.HandlerFunc {
 			Status:         store.TenantStatusProvisioning,
 			Quota:          quota,
 			ContactEmail:   req.ContactEmail,
-			AdminEmail:     req.AdminEmail,
 			CustomMetadata: req.CustomMetadata,
 		}
 
@@ -196,7 +194,6 @@ func PatchTenant(h *middleware.Handler) http.HandlerFunc {
 			Region:         req.Region,
 			IsolationLevel: req.IsolationLevel,
 			ContactEmail:   req.ContactEmail,
-			AdminEmail:     req.AdminEmail,
 			CustomMetadata: req.CustomMetadata,
 			Quota:          req.Quota,
 		})
@@ -253,7 +250,6 @@ func tenantResponse(t *store.Tenant) *TenantResponse {
 		Status:          string(t.Status),
 		Quota:           quotaResponse(t.Quota),
 		ContactEmail:    t.ContactEmail,
-		AdminEmail:      t.AdminEmail,
 		CustomMetadata:  t.CustomMetadata,
 		CreatedAt:       t.CreatedAt,
 		UpdatedAt:       t.UpdatedAt,

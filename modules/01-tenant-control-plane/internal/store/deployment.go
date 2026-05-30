@@ -113,7 +113,7 @@ func (s *DeploymentStore) Create(d *Deployment) (*Deployment, error) {
 	return d, nil
 }
 
-// GetByID retrieves a deployment by ID.
+// GetByID retrieves a deployment by ID (no tenant check — for admin use only).
 func (s *DeploymentStore) GetByID(id string) (*Deployment, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -121,6 +121,22 @@ func (s *DeploymentStore) GetByID(id string) (*Deployment, error) {
 	d, ok := s.deployments[id]
 	if !ok {
 		return nil, fmt.Errorf("deployment %s not found", id)
+	}
+	cpy := *d
+	return &cpy, nil
+}
+
+// GetByIDAndTenant retrieves a deployment by ID and verifies the TenantID matches.
+func (s *DeploymentStore) GetByIDAndTenant(id, tenantID string) (*Deployment, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	d, ok := s.deployments[id]
+	if !ok {
+		return nil, fmt.Errorf("deployment %s not found", id)
+	}
+	if d.TenantID != tenantID {
+		return nil, fmt.Errorf("permission denied: deployment %s does not belong to tenant %s", id, tenantID)
 	}
 	cpy := *d
 	return &cpy, nil

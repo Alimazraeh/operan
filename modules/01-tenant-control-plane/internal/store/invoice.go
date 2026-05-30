@@ -108,7 +108,7 @@ func (s *BillingStore) CreateInvoice(inv *Invoice) (*Invoice, error) {
 	return inv, nil
 }
 
-// GetByID retrieves an invoice by ID.
+// GetByID retrieves an invoice by ID (no tenant check — for admin use only).
 func (s *BillingStore) GetByID(id string) (*Invoice, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -116,6 +116,22 @@ func (s *BillingStore) GetByID(id string) (*Invoice, error) {
 	inv, ok := s.invoices[id]
 	if !ok {
 		return nil, fmt.Errorf("invoice %s not found", id)
+	}
+	cpy := *inv
+	return &cpy, nil
+}
+
+// GetByIDAndTenant retrieves an invoice by ID and verifies the TenantID matches.
+func (s *BillingStore) GetByIDAndTenant(id, tenantID string) (*Invoice, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	inv, ok := s.invoices[id]
+	if !ok {
+		return nil, fmt.Errorf("invoice %s not found", id)
+	}
+	if inv.TenantID != tenantID {
+		return nil, fmt.Errorf("permission denied: invoice %s does not belong to tenant %s", id, tenantID)
 	}
 	cpy := *inv
 	return &cpy, nil

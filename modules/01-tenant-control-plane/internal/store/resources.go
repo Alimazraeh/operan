@@ -106,7 +106,7 @@ func (s *ResourceStore) Create(res *Resource) (*Resource, error) {
 	return res, nil
 }
 
-// GetByID retrieves a resource by ID.
+// GetByID retrieves a resource by ID (no tenant check — for admin use only).
 func (s *ResourceStore) GetByID(id string) (*Resource, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -114,6 +114,22 @@ func (s *ResourceStore) GetByID(id string) (*Resource, error) {
 	res, ok := s.resources[id]
 	if !ok {
 		return nil, fmt.Errorf("resource %s not found", id)
+	}
+	cpy := *res
+	return &cpy, nil
+}
+
+// GetByIDAndTenant retrieves a resource by ID and verifies the TenantID matches.
+func (s *ResourceStore) GetByIDAndTenant(id, tenantID string) (*Resource, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	res, ok := s.resources[id]
+	if !ok {
+		return nil, fmt.Errorf("resource %s not found", id)
+	}
+	if res.TenantID != tenantID {
+		return nil, fmt.Errorf("permission denied: resource %s does not belong to tenant %s", id, tenantID)
 	}
 	cpy := *res
 	return &cpy, nil
@@ -336,7 +352,7 @@ func (s *AgentStore) Create(agent *Agent) (*Agent, error) {
 	return agent, nil
 }
 
-// GetByID retrieves an agent by ID.
+// GetByID retrieves an agent by ID (no tenant check — for admin use only).
 func (s *AgentStore) GetByID(id string) (*Agent, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -344,6 +360,22 @@ func (s *AgentStore) GetByID(id string) (*Agent, error) {
 	agent, ok := s.agents[id]
 	if !ok {
 		return nil, fmt.Errorf("agent %s not found", id)
+	}
+	cpy := *agent
+	return &cpy, nil
+}
+
+// GetByIDAndTenant retrieves an agent by ID and verifies the TenantID matches.
+func (s *AgentStore) GetByIDAndTenant(id, tenantID string) (*Agent, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	agent, ok := s.agents[id]
+	if !ok {
+		return nil, fmt.Errorf("agent %s not found", id)
+	}
+	if agent.TenantID != tenantID {
+		return nil, fmt.Errorf("permission denied: agent %s does not belong to tenant %s", id, tenantID)
 	}
 	cpy := *agent
 	return &cpy, nil

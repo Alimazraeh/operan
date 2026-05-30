@@ -116,7 +116,6 @@ func PatchTenantQuota(h *middleware.Handler) http.HandlerFunc {
 		updated, err := h.TenantStore.Patch(id, store.TenantPatchRequest{
 			Quota:            &tenant.Quota,
 			ContactEmail:     tenant.ContactEmail,
-			AdminEmail:       tenant.AdminEmail,
 			CustomMetadata:   tenant.CustomMetadata,
 			Name:             tenant.Name,
 			DisplayName:      tenant.DisplayName,
@@ -183,7 +182,7 @@ func GetBillingUsage(h *middleware.Handler) http.HandlerFunc {
 // DownloadInvoice handles GET /tenants/{id}/billing/invoices/{invoice_id}/download.
 func DownloadInvoice(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, ok := extractPathParam(r, "id")
+		tenantID, ok := extractPathParam(r, "id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
 			return
@@ -195,7 +194,7 @@ func DownloadInvoice(h *middleware.Handler) http.HandlerFunc {
 			return
 		}
 
-		_, err := h.BillingStore.GetByID(invoiceID)
+		_, err := h.BillingStore.GetByIDAndTenant(invoiceID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "invoice not found", err.Error())
 			return
@@ -312,7 +311,7 @@ func CreatePaymentMethod(h *middleware.Handler) http.HandlerFunc {
 // SetDefaultPaymentMethod handles POST /tenants/{id}/billing/payment-methods/{pm_id}/set-default.
 func SetDefaultPaymentMethod(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, ok := extractPathParam(r, "id")
+		tenantID, ok := extractPathParam(r, "id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
 			return
@@ -324,7 +323,7 @@ func SetDefaultPaymentMethod(h *middleware.Handler) http.HandlerFunc {
 			return
 		}
 
-		pm, err := h.PaymentMethodStore.GetByID(pmID)
+		pm, err := h.PaymentMethodStore.GetByIDAndTenant(pmID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "payment method not found", err.Error())
 			return
@@ -344,7 +343,7 @@ func SetDefaultPaymentMethod(h *middleware.Handler) http.HandlerFunc {
 // GetBillingMethod handles GET /tenants/{id}/billing/payment-methods/{method_id}.
 func GetBillingMethod(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, ok := extractPathParam(r, "id")
+		tenantID, ok := extractPathParam(r, "id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
 			return
@@ -356,7 +355,7 @@ func GetBillingMethod(h *middleware.Handler) http.HandlerFunc {
 			return
 		}
 
-		pm, err := h.PaymentMethodStore.GetByID(methodID)
+		pm, err := h.PaymentMethodStore.GetByIDAndTenant(methodID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "payment method not found", err.Error())
 			return

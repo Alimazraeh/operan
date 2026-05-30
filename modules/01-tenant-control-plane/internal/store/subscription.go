@@ -154,7 +154,7 @@ func (s *SubscriptionStore) Create(sub *Subscription) (*Subscription, error) {
 	return sub, nil
 }
 
-// GetByID retrieves a subscription by ID.
+// GetByID retrieves a subscription by ID (no tenant check — for admin use only).
 func (s *SubscriptionStore) GetByID(id string) (*Subscription, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -162,6 +162,22 @@ func (s *SubscriptionStore) GetByID(id string) (*Subscription, error) {
 	sub, ok := s.subscriptions[id]
 	if !ok {
 		return nil, fmt.Errorf("subscription %s not found", id)
+	}
+	cpy := *sub
+	return &cpy, nil
+}
+
+// GetByIDAndTenant retrieves a subscription by ID and verifies the TenantID matches.
+func (s *SubscriptionStore) GetByIDAndTenant(id, tenantID string) (*Subscription, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	sub, ok := s.subscriptions[id]
+	if !ok {
+		return nil, fmt.Errorf("subscription %s not found", id)
+	}
+	if sub.TenantID != tenantID {
+		return nil, fmt.Errorf("permission denied: subscription %s does not belong to tenant %s", id, tenantID)
 	}
 	cpy := *sub
 	return &cpy, nil

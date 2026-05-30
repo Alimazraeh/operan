@@ -144,7 +144,7 @@ func (s *EnvironmentStore) Create(e *Environment) (*Environment, error) {
 	return e, nil
 }
 
-// GetByID retrieves an environment by ID.
+// GetByID retrieves an environment by ID (no tenant check — for admin use only).
 func (s *EnvironmentStore) GetByID(id string) (*Environment, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -152,6 +152,22 @@ func (s *EnvironmentStore) GetByID(id string) (*Environment, error) {
 	e, ok := s.environments[id]
 	if !ok {
 		return nil, fmt.Errorf("environment %s not found", id)
+	}
+	cpy := *e
+	return &cpy, nil
+}
+
+// GetByIDAndTenant retrieves an environment by ID and verifies the TenantID matches.
+func (s *EnvironmentStore) GetByIDAndTenant(id, tenantID string) (*Environment, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	e, ok := s.environments[id]
+	if !ok {
+		return nil, fmt.Errorf("environment %s not found", id)
+	}
+	if e.TenantID != tenantID {
+		return nil, fmt.Errorf("permission denied: environment %s does not belong to tenant %s", id, tenantID)
 	}
 	cpy := *e
 	return &cpy, nil

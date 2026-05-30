@@ -12,6 +12,8 @@ const (
 	DefaultEventBusHost  = "events.operan.internal"
 	DefaultEventBusPort  = "9092"
 	DefaultEventBusProto = "kafka"
+	DefaultJWTSecret     = "default-jwt-secret-change-in-production-min-32-chars!"
+	DefaultIssuer        = "operan-tenant-control-plane"
 )
 
 // Config holds the runtime configuration for tenant-control-plane.
@@ -24,6 +26,8 @@ type Config struct {
 	EventBusPort  string
 	EventBusProto string
 	LogLevel      string
+	JWTSecret     string
+	Issuer        string
 }
 
 // ParseConfig reads configuration from environment variables with defaults.
@@ -44,6 +48,8 @@ func ParseConfig() Config {
 				return "info"
 			}
 		}(),
+		JWTSecret: getEnvOrDefault("JWT_SECRET", DefaultJWTSecret),
+		Issuer:    getEnvOrDefault("JWT_ISSUER", DefaultIssuer),
 	}
 }
 

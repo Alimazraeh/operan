@@ -1,7 +1,12 @@
 package store
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
+	"io"
 	"slices"
 	"sync"
 	"time"
@@ -76,12 +81,16 @@ func (s *SecretStore) Create(tenantID, key, value, description string, tags []st
 	}
 
 	id := uuid.New().String()
+	encVal, err := encryptValue(tenantID, value)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt secret: %w", err)
+	}
 	sec := &Secret{
 		ID:             id,
 		TenantID:       tenantID,
 		Key:            key,
 		Value:          value,
-		EncryptedValue: encryptValue(value),
+		EncryptedValue: encVal,
 		Description:    description,
 		Tags:           tags,
 		Version:        ver,
@@ -95,7 +104,7 @@ func (s *SecretStore) Create(tenantID, key, value, description string, tags []st
 	return sec, nil
 }
 
-// GetByID retrieves a secret by ID (returns value).
+// GetByID retrieves a secret by ID (returns value; no tenant check — for admin use only).
 func (s *SecretStore) GetByID(id string) (*Secret, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -103,6 +112,22 @@ func (s *SecretStore) GetByID(id string) (*Secret, error) {
 	sec, ok := s.secrets[id]
 	if !ok {
 		return nil, fmt.Errorf("secret %s not found", id)
+	}
+	cpy := *sec
+	return &cpy, nil
+}
+
+// GetByIDAndTenant retrieves a secret by ID and verifies the TenantID matches.
+func (s *SecretStore) GetByIDAndTenant(id, tenantID string) (*Secret, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	sec, ok := s.secrets[id]
+	if !ok {
+		return nil, fmt.Errorf("secret %s not found", id)
+	}
+	if sec.TenantID != tenantID {
+		return nil, fmt.Errorf("permission denied: secret %s does not belong to tenant %s", id, tenantID)
 	}
 	cpy := *sec
 	return &cpy, nil
@@ -196,11 +221,16 @@ func (s *SecretStore) Rotate(id, newValue string) (*Secret, error) {
 	oldKey := sec.Key
 	oldID := sec.ID
 
+	encVal, err := encryptValue(sec.TenantID, newValue)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt secret: %w", err)
+	}
+
 	newSec := &Secret{
 		ID:             oldID,
 		Key:            oldKey,
 		Value:          newValue,
-		EncryptedValue: encryptValue(newValue),
+		EncryptedValue: encVal,
 		Description:    sec.Description,
 		Tags:           sec.Tags,
 		Version:        sec.Version + 1,
@@ -240,8 +270,28 @@ func (m *SecretMetadata) KeyCompare(otherKey string) int {
 	return 0
 }
 
-// Simple XOR-based encryption placeholder (NOT production-grade).
-// Production should use a KMS (e.g., AWS KMS, HashiCorp Vault).
-func encryptValue(plaintext string) string {
-	return fmt.Sprintf("ENC:%x", []byte(plaintext))
+// encryptValue encrypts plaintext using AES-256-GCM.
+// The key is hashed to exactly 32 bytes (AES-256 key size) using SHA-256.
+func encryptValue(key, plaintext string) (string, error) {
+	hasher := sha256.New()
+	hasher.Write([]byte(key))
+	aesKey := hasher.Sum(nil) // 32 bytes = AES-256
+
+	block, err := aes.NewCipher(aesKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to create cipher: %w", err)
+	}
+
+	aead, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", fmt.Errorf("failed to create GCM: %w", err)
+	}
+
+	nonce := make([]byte, aead.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", fmt.Errorf("failed to generate nonce: %w", err)
+	}
+
+	ciphertext := aead.Seal(nonce, nonce, []byte(plaintext), nil)
+	return fmt.Sprintf("AES256:%x", ciphertext), nil
 }

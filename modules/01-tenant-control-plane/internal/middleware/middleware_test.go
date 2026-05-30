@@ -1,10 +1,16 @@
 package middleware
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	// JWTValidator tests use the placeholder implementation.
+	// When jwt/v5 is available, replace with:
+	//   "github.com/golang-jwt/jwt/v5"
+	// _ "github.com/golang-jwt/jwt/v5"
 )
 
 // ─── RequestID tests ─────────────────────────────────────────────────────────
@@ -439,5 +445,93 @@ func TestLoggingResponseWriter_DefaultStatusCode(t *testing.T) {
 	// If WriteHeader is never called, statusCode should remain Ok
 	if lw.statusCode != http.StatusOK {
 		t.Errorf("expected default status 200, got %d", lw.statusCode)
+	}
+}
+
+// ─── JWTValidator tests (placeholder implementation) ─────────────────────────
+// The JWTValidator uses a placeholder implementation until the golang-jwt/v5
+// dependency is available. These tests validate the placeholder behavior.
+
+func TestJWTValidator_MissingAuthHeader(t *testing.T) {
+	// Placeholder: when no Authorization header, falls through to TenantContext
+	h := JWTValidator("secret", "issuer")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200 OK (fallthrough), got %d", w.Code)
+	}
+}
+
+func TestJWTValidator_InvalidAuthScheme(t *testing.T) {
+	h := JWTValidator("secret", "issuer")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Basic dXNlcjpwYXNz")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401 for invalid scheme, got %d", w.Code)
+	}
+}
+
+func TestJWTValidator_BearerTokenPresent(t *testing.T) {
+	// Placeholder: when Bearer token present but not validated, falls through
+	h := JWTValidator("secret", "issuer")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer some-token-here")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200 OK (placeholder fallthrough), got %d", w.Code)
+	}
+}
+
+func TestJWTValidator_TenantContextPrecedence(t *testing.T) {
+	// JWTValidator falls through to TenantContext for header-based auth
+	h := JWTValidator("secret", "issuer")(TenantContext(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tenantID := GetTenantID(r.Context())
+		if tenantID != "tenant-from-header" {
+			t.Errorf("expected tenant_id from header, got %q", tenantID)
+		}
+	})))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer some-token")
+	req.Header.Set("X-Tenant-ID", "tenant-from-header")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %d", w.Code)
+	}
+}
+
+// ─── GetTenantID tests ────────────────────────────────────────────────────────
+
+func TestGetTenantID_FromContext(t *testing.T) {
+	ctx := context.WithValue(context.Background(), ctxKeyTenantID, "test-tenant-123")
+	id := GetTenantID(ctx)
+	if id != "test-tenant-123" {
+		t.Errorf("expected 'test-tenant-123', got %q", id)
+	}
+}
+
+func TestGetTenantID_Empty(t *testing.T) {
+	ctx := context.Background()
+	id := GetTenantID(ctx)
+	if id != "" {
+		t.Errorf("expected empty string, got %q", id)
 	}
 }

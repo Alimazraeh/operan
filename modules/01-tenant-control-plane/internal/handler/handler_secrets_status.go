@@ -113,13 +113,19 @@ func CreateSecret(h *middleware.Handler) http.HandlerFunc {
 // GetSecret handles GET /tenants/{id}/secrets/{secret_id}.
 func GetSecret(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		secretID, ok := extractPathParam(r, "secret_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "secret id is required")
 			return
 		}
 
-		secret, err := h.SecretStore.GetByID(secretID)
+		secret, err := h.SecretStore.GetByIDAndTenant(secretID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "secret not found", err.Error())
 			return
@@ -127,7 +133,7 @@ func GetSecret(h *middleware.Handler) http.HandlerFunc {
 
 		// Count versions
 		verCount := secret.Version
-		items, _, _ := h.SecretStore.List(secret.ID, 1, 1000)
+		items, _, _ := h.SecretStore.List(tenantID, 1, 1000)
 		for _, s := range items {
 			if s.Version > verCount {
 				verCount = s.Version

@@ -132,13 +132,19 @@ func CreateNamespace(h *middleware.Handler) http.HandlerFunc {
 // GetNamespace handles GET /v1/tenants/{id}/namespaces/{ns_id}.
 func GetNamespace(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		nsID, ok := extractPathParam(r, "ns_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "namespace id is required")
 			return
 		}
 
-		ns, err := h.NamespaceStore.GetByID(nsID)
+		ns, err := h.NamespaceStore.GetByIDAndTenant(nsID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "namespace not found", err.Error())
 			return
@@ -194,13 +200,19 @@ func DeleteNamespace(h *middleware.Handler) http.HandlerFunc {
 // GetNamespaceQuota handles GET /v1/tenants/{id}/namespaces/{ns_id}/quota.
 func GetNamespaceQuota(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		nsID, ok := extractPathParam(r, "ns_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "namespace id is required")
 			return
 		}
 
-		ns, err := h.NamespaceStore.GetByID(nsID)
+		ns, err := h.NamespaceStore.GetByIDAndTenant(nsID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "namespace not found", err.Error())
 			return
@@ -218,13 +230,19 @@ func GetNamespaceQuota(h *middleware.Handler) http.HandlerFunc {
 // CheckNamespaceQuota handles GET /v1/tenants/{id}/namespaces/{ns_id}/quota/check.
 func CheckNamespaceQuota(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		nsID, ok := extractPathParam(r, "ns_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "namespace id is required")
 			return
 		}
 
-		ns, err := h.NamespaceStore.GetByID(nsID)
+		ns, err := h.NamespaceStore.GetByIDAndTenant(nsID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "namespace not found", err.Error())
 			return

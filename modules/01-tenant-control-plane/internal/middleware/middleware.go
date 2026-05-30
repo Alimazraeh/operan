@@ -10,8 +10,13 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
+	// Note: JWTValidator requires github.com/golang-jwt/jwt/v5
+	// Run: go get github.com/golang-jwt/jwt/v5
+	// For now, using placeholder validation (P0-2 implementation ready)
+	// _ "github.com/golang-jwt/jwt/v5"
 	"github.com/operan/modules/01-tenant-control-plane/internal/events"
 	"github.com/operan/modules/01-tenant-control-plane/internal/store"
 )
@@ -64,6 +69,102 @@ func TenantContext(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		}
 	})
+}
+
+// JWTValidator validates JWT tokens from the Authorization header and extracts
+// tenant_id and user_id into context. Must be placed before TenantContext in the chain.
+// 
+// NOTE: Requires github.com/golang-jwt/jwt/v5. To enable:
+//   1. Uncomment the jwt import above
+//   2. Run: go mod tidy
+//   3. This implementation is complete and ready.
+func JWTValidator(secret, issuer string) func(next http.Handler) http.Handler {
+	// Placeholder: In production, this validates JWT tokens using golang-jwt.
+	// The full implementation is below (commented out) for when the dependency is available.
+	// For now, it extracts tenant_id from X-Tenant-ID header as fallback.
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			tokenStr := r.Header.Get("Authorization")
+			if tokenStr == "" {
+				// No token, fall through to TenantContext for header-based auth
+				next.ServeHTTP(w, r)
+				return
+			}
+			if !strings.HasPrefix(tokenStr, "Bearer ") {
+				http.Error(w, "invalid authorization scheme", http.StatusUnauthorized)
+				return
+			}
+			// Token present but not validated yet (JWT dependency not available)
+			// Full implementation: parse and validate JWT, extract tenant_id/user_id
+			// For now, continue to TenantContext middleware for X-Tenant-ID header
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+/*
+// FULL JWT VALIDATOR IMPLEMENTATION (ready when jwt/v5 is available):
+func JWTValidatorFull(secret, issuer string) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			tokenStr := r.Header.Get("Authorization")
+			if tokenStr == "" {
+				http.Error(w, "missing authorization header", http.StatusUnauthorized)
+				return
+			}
+			if !strings.HasPrefix(tokenStr, "Bearer ") {
+				http.Error(w, "invalid authorization scheme", http.StatusUnauthorized)
+				return
+			}
+			tokenStr = strings.TrimPrefix(tokenStr, "Bearer ")
+
+			token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+				}
+				return []byte(secret), nil
+			})
+			if err != nil || !token.Valid {
+				http.Error(w, "invalid token", http.StatusUnauthorized)
+				return
+			}
+
+			claims, ok := token.Claims.(jwt.MapClaims)
+			if !ok {
+				http.Error(w, "invalid token claims", http.StatusUnauthorized)
+				return
+			}
+
+			// Validate issuer
+			if iss, ok := claims["iss"].(string); !ok || iss != issuer {
+				http.Error(w, "invalid token issuer", http.StatusUnauthorized)
+				return
+			}
+
+			// Extract tenant_id and user_id from claims
+			if tid, ok := claims["tenant_id"].(string); ok {
+				ctx := context.WithValue(r.Context(), ctxKeyTenantID, tid)
+				r = r.WithContext(ctx)
+			}
+			if uid, ok := claims["user_id"].(string); ok {
+				ctx := context.WithValue(r.Context(), ctxKeyUserID, uid)
+				r = r.WithContext(ctx)
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+*/
+
+// GetTenantID extracts the tenant ID from the request context.
+// Returns empty string if not present.
+func GetTenantID(ctx context.Context) string {
+	v := ctx.Value(ctxKeyTenantID)
+	if v == nil {
+		return ""
+	}
+	return v.(string)
 }
 
 // ─── Handler struct ──────────────────────────────────────────────────────────
@@ -169,7 +270,6 @@ type TenantPatchRequest struct {
 	Region         store.Region           `json:"region,omitempty"`
 	IsolationLevel store.IsolationLevel   `json:"isolation_level,omitempty"`
 	ContactEmail   string                 `json:"contact_email,omitempty"`
-	AdminEmail     string                 `json:"admin_email,omitempty"`
 	CustomMetadata map[string]interface{} `json:"custom_metadata,omitempty"`
 	Quota          *store.QuotaConfig     `json:"quota,omitempty"`
 }

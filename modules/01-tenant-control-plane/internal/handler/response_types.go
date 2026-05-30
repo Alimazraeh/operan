@@ -22,7 +22,6 @@ type TenantResponse struct {
 	Status           string                 `json:"status"`
 	Quota            QuotaResponse          `json:"quota"`
 	ContactEmail     string                 `json:"contact_email,omitempty"`
-	AdminEmail       string                 `json:"admin_email,omitempty"`
 	CustomMetadata   map[string]interface{} `json:"custom_metadata,omitempty"`
 	CreatedAt        time.Time              `json:"created_at"`
 	UpdatedAt        time.Time              `json:"updated_at"`
@@ -441,6 +440,7 @@ func RegisterRoutes(h *middleware.Handler, mux *http.ServeMux) {
 	mux.HandleFunc("GET /v1/tenants/{id}/deployments/{deployment_id}/status", GetDeploymentStatus(h))
 	mux.HandleFunc("POST /v1/tenants/{id}/deployments/{deployment_id}/pause", PauseDeployment(h))
 	mux.HandleFunc("POST /v1/tenants/{id}/deployments/{deployment_id}/resume", ResumeDeployment(h))
+	mux.HandleFunc("POST /v1/tenants/{id}/deployments/{deployment_id}/rollback", RollbackDeployment(h))
 
 	// Policies
 	mux.HandleFunc("GET /v1/tenants/{id}/policies", ListPolicies(h))
