@@ -7,12 +7,15 @@ import (
 	"github.com/google/uuid"
 )
 
+const testTenantID = "tenant-1"
+
 // ─── TemplateStore Tests ─────────────────────────────────────────────────────
 
 func TestTemplateStore_Create_GetByID(t *testing.T) {
 	store := NewTemplateStore()
 
 	tmpl := &Template{
+		TenantID: testTenantID,
 		Name:     "Test Template",
 		Category: "engineering",
 	}
@@ -47,6 +50,7 @@ func TestTemplateStore_List(t *testing.T) {
 			cat = "sales"
 		}
 		tmpl := &Template{
+			TenantID: testTenantID,
 			Name:     name,
 			Category: cat,
 		}
@@ -56,10 +60,7 @@ func TestTemplateStore_List(t *testing.T) {
 	}
 
 	// List all
-	list, total, hasMore := store.List("tenant-a", 1, 100, nil)
-	if err := errNil(); err != nil {
-		t.Fatalf("List failed: %v", err)
-	}
+	list, total, hasMore := store.List(testTenantID, 1, 100, nil)
 	if len(list) != 5 {
 		t.Errorf("expected 5 templates, got %d", len(list))
 	}
@@ -71,10 +72,7 @@ func TestTemplateStore_List(t *testing.T) {
 	}
 
 	// Pagination
-	list, total, hasMore = store.List("tenant-a", 1, 2, nil)
-	if err := errNil(); err != nil {
-		t.Fatalf("List failed: %v", err)
-	}
+	list, total, hasMore = store.List(testTenantID, 1, 2, nil)
 	if len(list) != 2 {
 		t.Errorf("expected 2 templates on page 1, got %d", len(list))
 	}
@@ -82,18 +80,12 @@ func TestTemplateStore_List(t *testing.T) {
 		t.Error("expected hasMore true")
 	}
 
-	list, _, hasMore = store.List("tenant-a", 2, 2, nil)
-	if err := errNil(); err != nil {
-		t.Fatalf("List failed: %v", err)
-	}
+	list, _, hasMore = store.List(testTenantID, 2, 2, nil)
 	if len(list) != 2 {
 		t.Errorf("expected 2 templates on page 2, got %d", len(list))
 	}
 
-	list, _, hasMore = store.List("tenant-a", 3, 2, nil)
-	if err := errNil(); err != nil {
-		t.Fatalf("List failed: %v", err)
-	}
+	list, _, hasMore = store.List(testTenantID, 3, 2, nil)
 	if len(list) != 1 {
 		t.Errorf("expected 1 template on page 3, got %d", len(list))
 	}
@@ -108,6 +100,7 @@ func TestTemplateStore_List_CategoryFilter(t *testing.T) {
 	// Create mixed templates
 	for _, cat := range []string{"engineering", "sales", "engineering"} {
 		tmpl := &Template{
+			TenantID: testTenantID,
 			Name:     "Template for " + cat,
 			Category: cat,
 		}
@@ -117,10 +110,7 @@ func TestTemplateStore_List_CategoryFilter(t *testing.T) {
 	}
 
 	engFilter := "engineering"
-	list, total, hasMore := store.List("tenant-a", 1, 100, &engFilter)
-	if err := errNil(); err != nil {
-		t.Fatalf("List failed: %v", err)
-	}
+	list, total, hasMore := store.List(testTenantID, 1, 100, &engFilter)
 	if len(list) != 2 {
 		t.Errorf("expected 2 engineering templates, got %d", len(list))
 	}
@@ -136,6 +126,7 @@ func TestTemplateStore_Update(t *testing.T) {
 	store := NewTemplateStore()
 
 	tmpl, err := store.Create(&Template{
+		TenantID: testTenantID,
 		Name:     "Original",
 		Category: "engineering",
 	})
@@ -164,6 +155,7 @@ func TestTemplateStore_Delete(t *testing.T) {
 	store := NewTemplateStore()
 
 	tmpl, err := store.Create(&Template{
+		TenantID: testTenantID,
 		Name:     "ToDelete",
 		Category: "engineering",
 	})
@@ -171,7 +163,7 @@ func TestTemplateStore_Delete(t *testing.T) {
 		t.Fatalf("Create failed: %v", err)
 	}
 
-	if err := store.Delete(tmpl.ID); err != nil {
+	if err := store.Delete(tmpl.ID, testTenantID); err != nil {
 		t.Fatalf("Delete failed: %v", err)
 	}
 
@@ -199,7 +191,7 @@ func TestTemplateStore_GetByID_NotFound(t *testing.T) {
 func TestTemplateStore_Delete_NotFound(t *testing.T) {
 	store := NewTemplateStore()
 
-	err := store.Delete("nonexistent-id")
+	err := store.Delete("nonexistent-id", testTenantID)
 	if err == nil {
 		t.Fatal("expected error for nonexistent template, got nil")
 	}
@@ -214,6 +206,7 @@ func TestCustomTemplateStore_Create_Get(t *testing.T) {
 	store := NewCustomTemplateStore()
 
 	ct, err := store.Create(&CustomTemplate{
+		TenantID: testTenantID,
 		Name:     "Custom Template",
 		Category: "sales",
 		Content:  map[string]interface{}{"field": "value"},
@@ -236,6 +229,7 @@ func TestCustomTemplateStore_Delete(t *testing.T) {
 	store := NewCustomTemplateStore()
 
 	ct, err := store.Create(&CustomTemplate{
+		TenantID: testTenantID,
 		Name:     "ToDelete",
 		Category: "sales",
 		Content:  map[string]interface{}{"delete": true},
@@ -244,7 +238,7 @@ func TestCustomTemplateStore_Delete(t *testing.T) {
 		t.Fatalf("Create failed: %v", err)
 	}
 
-	if err := store.Delete(ct.ID); err != nil {
+	if err := store.Delete(ct.ID, testTenantID); err != nil {
 		t.Fatalf("Delete failed: %v", err)
 	}
 
@@ -258,6 +252,7 @@ func TestCustomTemplateStore_Update(t *testing.T) {
 	store := NewCustomTemplateStore()
 
 	ct, err := store.Create(&CustomTemplate{
+		TenantID: testTenantID,
 		Name:     "Original",
 		Category: "sales",
 		Content:  map[string]interface{}{"before": true},
@@ -285,6 +280,7 @@ func TestCustomTemplateStore_List(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		ct := &CustomTemplate{
+			TenantID: testTenantID,
 			Name:     "Custom " + string(rune('A'+i)),
 			Category: "sales",
 			Content:  map[string]interface{}{"index": i},
@@ -294,10 +290,7 @@ func TestCustomTemplateStore_List(t *testing.T) {
 		}
 	}
 
-	list, total, hasMore := store.List("tenant-a", 1, 100, nil)
-	if err := errNil(); err != nil {
-		t.Fatalf("List failed: %v", err)
-	}
+	list, total, hasMore := store.List(testTenantID, 1, 100, nil)
 	if len(list) != 3 {
 		t.Errorf("expected 3 custom templates, got %d", len(list))
 	}
@@ -330,7 +323,8 @@ func TestDeploymentStore_Create_ListByTemplate(t *testing.T) {
 	tmplID2 := uuid.New().String()
 
 	dep1, err := store.Create(&TemplateDeployment{
-		TemplateID:  tmplID1,
+		TenantID:  testTenantID,
+		TemplateID: tmplID1,
 		Environment: "production",
 	})
 	if err != nil {
@@ -338,7 +332,8 @@ func TestDeploymentStore_Create_ListByTemplate(t *testing.T) {
 	}
 
 	dep2, err := store.Create(&TemplateDeployment{
-		TemplateID:  tmplID2,
+		TenantID:  testTenantID,
+		TemplateID: tmplID2,
 		Environment: "staging",
 	})
 	if err != nil {
@@ -348,7 +343,8 @@ func TestDeploymentStore_Create_ListByTemplate(t *testing.T) {
 
 	// Second deployment for same template
 	_, err = store.Create(&TemplateDeployment{
-		TemplateID:  tmplID1,
+		TenantID:  testTenantID,
+		TemplateID: tmplID1,
 		Environment: "development",
 	})
 	if err != nil {
@@ -356,10 +352,7 @@ func TestDeploymentStore_Create_ListByTemplate(t *testing.T) {
 	}
 
 	// List deployments for tmplID1
-	list, total, hasMore := store.ListByTemplate(tmplID1, 1, 100)
-	if err := errNil(); err != nil {
-		t.Fatalf("ListByTemplate failed: %v", err)
-	}
+	list, total, hasMore := store.ListByTemplate(tmplID1, testTenantID, 1, 100)
 	if len(list) != 2 {
 		t.Errorf("expected 2 deployments for template %s, got %d", tmplID1, len(list))
 	}
@@ -383,10 +376,7 @@ func TestDeploymentStore_Create_ListByTemplate(t *testing.T) {
 	}
 
 	// List deployments for tmplID2
-	list, total, _ = store.ListByTemplate(tmplID2, 1, 100)
-	if err := errNil(); err != nil {
-		t.Fatalf("ListByTemplate failed: %v", err)
-	}
+	list, total, _ = store.ListByTemplate(tmplID2, testTenantID, 1, 100)
 	if len(list) != 1 {
 		t.Errorf("expected 1 deployment for template %s, got %d", tmplID2, len(list))
 	}
@@ -399,7 +389,8 @@ func TestDeploymentStore_UpdateStatus(t *testing.T) {
 	store := NewDeploymentStore()
 
 	dep, err := store.Create(&TemplateDeployment{
-		TemplateID:  uuid.New().String(),
+		TenantID:  testTenantID,
+		TemplateID: uuid.New().String(),
 		Environment: "production",
 	})
 	if err != nil {
@@ -444,10 +435,7 @@ func TestDeploymentStore_Get_NotFound(t *testing.T) {
 func TestDeploymentStore_ListByTemplate_Empty(t *testing.T) {
 	store := NewDeploymentStore()
 
-	list, total, hasMore := store.ListByTemplate("nonexistent-template", 1, 100)
-	if err := errNil(); err != nil {
-		t.Fatalf("ListByTemplate failed: %v", err)
-	}
+	list, total, hasMore := store.ListByTemplate("nonexistent-template", testTenantID, 1, 100)
 	if len(list) != 0 {
 		t.Errorf("expected 0 deployments, got %d", len(list))
 	}
@@ -467,6 +455,7 @@ func TestVersionStore_Create_ListByTemplate(t *testing.T) {
 	tmplID := uuid.New().String()
 
 	v1, err := store.Create(&TemplateVersion{
+		TenantID: testTenantID,
 		TemplateID: tmplID,
 		Version:    "1.0.0",
 	})
@@ -475,6 +464,7 @@ func TestVersionStore_Create_ListByTemplate(t *testing.T) {
 	}
 
 	v2, err := store.Create(&TemplateVersion{
+		TenantID: testTenantID,
 		TemplateID: tmplID,
 		Version:    "2.0.0",
 	})
@@ -482,7 +472,7 @@ func TestVersionStore_Create_ListByTemplate(t *testing.T) {
 		t.Fatalf("Create failed: %v", err)
 	}
 
-	list := store.ListByTemplate(tmplID)
+	list := store.ListByTemplate(tmplID, testTenantID)
 	if len(list) != 2 {
 		t.Errorf("expected 2 versions, got %d", len(list))
 	}
@@ -502,6 +492,7 @@ func TestVersionStore_GetByVersion(t *testing.T) {
 	tmplID := uuid.New().String()
 
 	_, err := store.Create(&TemplateVersion{
+		TenantID: testTenantID,
 		TemplateID: tmplID,
 		Version:    "1.0.0",
 	})
@@ -525,6 +516,7 @@ func TestVersionStore_GetByVersion_NotFound(t *testing.T) {
 	tmplID := uuid.New().String()
 
 	_, err := store.Create(&TemplateVersion{
+		TenantID: testTenantID,
 		TemplateID: tmplID,
 		Version:    "1.0.0",
 	})
@@ -550,7 +542,7 @@ func TestVersionStore_CreateFromTemplate(t *testing.T) {
 		"category": "engineering",
 	}
 
-	v, err := store.CreateFromTemplate(tmplID, "1.0.0", templateData)
+	v, err := store.CreateFromTemplate(tmplID, "1.0.0", testTenantID, templateData)
 	if err != nil {
 		t.Fatalf("CreateFromTemplate failed: %v", err)
 	}
@@ -572,9 +564,9 @@ func TestVersionStore_CreateFromTemplate(t *testing.T) {
 func TestVersionStore_ListByTemplate_Empty(t *testing.T) {
 	store := NewVersionStore()
 
-	list := store.ListByTemplate("nonexistent-template")
-	if list != nil {
-		t.Errorf("expected nil list for nonexistent template, got %v", list)
+	list := store.ListByTemplate("nonexistent-template", testTenantID)
+	if list != nil && len(list) != 0 {
+		t.Errorf("expected empty list for nonexistent template, got %v", list)
 	}
 }
 
@@ -589,7 +581,3 @@ func TestVersionStore_GetByID_NotFound(t *testing.T) {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
-
-// ─── Helper ──────────────────────────────────────────────────────────────────
-
-func errNil() error { return nil }

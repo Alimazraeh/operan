@@ -106,9 +106,11 @@ func (h *TemplateHandlers) handleDeploy(w http.ResponseWriter, r *http.Request, 
 	}
 
 	templateID := extractTemplateIDFromNestedPath(r.URL.Path)
+	tenantID := middleware.TenantIDFromContext(r.Context())
 
 	now := time.Now()
 	deployment := &store.TemplateDeployment{
+		TenantID:      tenantID,
 		TemplateID:    templateID,
 		Version:       req.Version,
 		Status:        "select",
@@ -164,6 +166,7 @@ func (h *TemplateHandlers) handleClone(w http.ResponseWriter, r *http.Request, r
 	}
 
 	clone := &store.Template{
+		TenantID:            middleware.TenantIDFromContext(r.Context()),
 		Name:                req.Name,
 		Description:         tmpl.Description,
 		Category:            req.Category,
@@ -204,6 +207,7 @@ func (h *TemplateHandlers) handleClone(w http.ResponseWriter, r *http.Request, r
 
 func (h *TemplateHandlers) handleListDeployments(w http.ResponseWriter, r *http.Request, reqID string) {
 	templateID := extractTemplateIDFromNestedPath(r.URL.Path)
+	tenantID := middleware.TenantIDFromContext(r.Context())
 
 	page := 1
 	pageSize := 20
@@ -213,7 +217,7 @@ func (h *TemplateHandlers) handleListDeployments(w http.ResponseWriter, r *http.
 		}
 	}
 
-	deployments, total, hasMore := h.DeploymentStore.ListByTemplate(templateID, page, pageSize)
+	deployments, total, hasMore := h.DeploymentStore.ListByTemplate(templateID, tenantID, page, pageSize)
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"data": toDeploymentListResponse(deployments),
@@ -321,8 +325,9 @@ func (h *TemplateHandlers) handleUpdateDeployment(w http.ResponseWriter, r *http
 
 func (h *TemplateHandlers) handleListVersions(w http.ResponseWriter, r *http.Request, reqID string) {
 	templateID := extractTemplateIDFromNestedPath(r.URL.Path)
+	tenantID := middleware.TenantIDFromContext(r.Context())
 
-	versions := h.VersionStore.ListByTemplate(templateID)
+	versions := h.VersionStore.ListByTemplate(templateID, tenantID)
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"data": map[string]interface{}{
