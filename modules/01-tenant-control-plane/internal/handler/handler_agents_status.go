@@ -218,13 +218,19 @@ func CreateAgent(h *middleware.Handler) http.HandlerFunc {
 // GetAgent handles GET /tenants/{id}/agents/{agent_id}.
 func GetAgent(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		agentID, ok := extractPathParam(r, "agent_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "agent id is required")
 			return
 		}
 
-		agent, err := h.AgentStore.GetByID(agentID)
+		agent, err := h.AgentStore.GetByIDAndTenant(agentID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "agent not found", err.Error())
 			return

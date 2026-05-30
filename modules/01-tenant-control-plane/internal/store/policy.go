@@ -130,7 +130,7 @@ func (s *PolicyStore) Create(p *Policy) (*Policy, error) {
 	return p, nil
 }
 
-// GetByID retrieves a policy by ID.
+// GetByID retrieves a policy by ID (no tenant check — for admin use only).
 func (s *PolicyStore) GetByID(id string) (*Policy, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -138,6 +138,22 @@ func (s *PolicyStore) GetByID(id string) (*Policy, error) {
 	p, ok := s.policies[id]
 	if !ok {
 		return nil, fmt.Errorf("policy %s not found", id)
+	}
+	cpy := *p
+	return &cpy, nil
+}
+
+// GetByIDAndTenant retrieves a policy by ID and verifies the TenantID matches.
+func (s *PolicyStore) GetByIDAndTenant(id, tenantID string) (*Policy, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	p, ok := s.policies[id]
+	if !ok {
+		return nil, fmt.Errorf("policy %s not found", id)
+	}
+	if p.TenantID != tenantID {
+		return nil, fmt.Errorf("permission denied: policy %s does not belong to tenant %s", id, tenantID)
 	}
 	cpy := *p
 	return &cpy, nil

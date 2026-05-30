@@ -81,7 +81,7 @@ func (s *PaymentMethodStore) Create(pm *PaymentMethod) (*PaymentMethod, error) {
 	return pm, nil
 }
 
-// GetByID retrieves a payment method by ID.
+// GetByID retrieves a payment method by ID (no tenant check — for admin use only).
 func (s *PaymentMethodStore) GetByID(id string) (*PaymentMethod, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -89,6 +89,22 @@ func (s *PaymentMethodStore) GetByID(id string) (*PaymentMethod, error) {
 	pm, ok := s.methods[id]
 	if !ok {
 		return nil, fmt.Errorf("payment method %s not found", id)
+	}
+	cpy := *pm
+	return &cpy, nil
+}
+
+// GetByIDAndTenant retrieves a payment method by ID and verifies the TenantID matches.
+func (s *PaymentMethodStore) GetByIDAndTenant(id, tenantID string) (*PaymentMethod, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	pm, ok := s.methods[id]
+	if !ok {
+		return nil, fmt.Errorf("payment method %s not found", id)
+	}
+	if pm.TenantID != tenantID {
+		return nil, fmt.Errorf("permission denied: payment method %s does not belong to tenant %s", id, tenantID)
 	}
 	cpy := *pm
 	return &cpy, nil

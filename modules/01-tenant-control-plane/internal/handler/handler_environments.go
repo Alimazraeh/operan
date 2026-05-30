@@ -231,13 +231,19 @@ func CreateEnvironment(h *middleware.Handler) http.HandlerFunc {
 // GetEnvironment handles GET /v1/tenants/{id}/environments/{env_id}.
 func GetEnvironment(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		envID, ok := extractPathParam(r, "env_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "env_id is required")
 			return
 		}
 
-		e, err := h.EnvironmentStore.GetByID(envID)
+		e, err := h.EnvironmentStore.GetByIDAndTenant(envID, tenantID)
 		if err != nil {
 				h.WriteError(w, http.StatusNotFound, 404, "environment not found", err.Error())
 			return
@@ -362,13 +368,19 @@ func DeactivateEnvironment(h *middleware.Handler) http.HandlerFunc {
 // GetEnvironmentIsolationConfig handles GET /v1/tenants/{id}/environments/{env_id}/isolation-config.
 func GetEnvironmentIsolationConfig(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		envID, ok := extractPathParam(r, "env_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "env_id is required")
 			return
 		}
 
-		e, err := h.EnvironmentStore.GetByID(envID)
+		e, err := h.EnvironmentStore.GetByIDAndTenant(envID, tenantID)
 		if err != nil {
 				h.WriteError(w, http.StatusNotFound, 404, "environment not found", err.Error())
 			return

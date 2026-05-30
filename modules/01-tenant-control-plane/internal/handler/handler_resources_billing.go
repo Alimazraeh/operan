@@ -136,13 +136,19 @@ func CreateResource(h *middleware.Handler) http.HandlerFunc {
 // GetResource handles GET /tenants/{id}/resources/{resource_id}.
 func GetResource(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		resourceID, ok := extractPathParam(r, "resource_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "resource id is required")
 			return
 		}
 
-		resource, err := h.ResourceStore.GetByID(resourceID)
+		resource, err := h.ResourceStore.GetByIDAndTenant(resourceID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "resource not found", err.Error())
 			return
@@ -293,13 +299,19 @@ func ListInvoices(h *middleware.Handler) http.HandlerFunc {
 // GetInvoice handles GET /tenants/{id}/billing/invoices/{invoice_id}.
 func GetInvoice(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		invoiceID, ok := extractPathParam(r, "invoice_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "invoice id is required")
 			return
 		}
 
-		invoice, err := h.BillingStore.GetByID(invoiceID)
+		invoice, err := h.BillingStore.GetByIDAndTenant(invoiceID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "invoice not found", err.Error())
 			return
@@ -619,21 +631,9 @@ func GetSubscriptionByID(h *middleware.Handler) http.HandlerFunc {
 			return
 		}
 
-		_, err := h.TenantStore.GetByID(tenantID)
-		if err != nil {
-			h.WriteError(w, http.StatusNotFound, 404, "tenant not found", err.Error())
-			return
-		}
-
-		sub, err := h.SubscriptionStore.GetByID(subID)
+		sub, err := h.SubscriptionStore.GetByIDAndTenant(subID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "subscription not found", err.Error())
-			return
-		}
-
-		// Verify the subscription belongs to this tenant
-		if sub.TenantID != tenantID {
-			h.WriteError(w, http.StatusNotFound, 404, "subscription not found", "subscription does not belong to tenant")
 			return
 		}
 
@@ -697,22 +697,9 @@ func UpdateSubscriptionByID(h *middleware.Handler) http.HandlerFunc {
 			return
 		}
 
-		// Verify tenant exists
-		_, err = h.TenantStore.GetByID(tenantID)
-		if err != nil {
-			h.WriteError(w, http.StatusNotFound, 404, "tenant not found", err.Error())
-			return
-		}
-
-		sub, err := h.SubscriptionStore.GetByID(subID)
+		_, err = h.SubscriptionStore.GetByIDAndTenant(subID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "subscription not found", err.Error())
-			return
-		}
-
-		// Verify the subscription belongs to this tenant
-		if sub.TenantID != tenantID {
-			h.WriteError(w, http.StatusNotFound, 404, "subscription not found", "subscription does not belong to tenant")
 			return
 		}
 
@@ -792,22 +779,9 @@ func UpgradeSubscription(h *middleware.Handler) http.HandlerFunc {
 			return
 		}
 
-		// Verify tenant exists
-		_, err = h.TenantStore.GetByID(tenantID)
-		if err != nil {
-			h.WriteError(w, http.StatusNotFound, 404, "tenant not found", err.Error())
-			return
-		}
-
-		sub, err := h.SubscriptionStore.GetByID(subID)
+		sub, err := h.SubscriptionStore.GetByIDAndTenant(subID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "subscription not found", err.Error())
-			return
-		}
-
-		// Verify the subscription belongs to this tenant
-		if sub.TenantID != tenantID {
-			h.WriteError(w, http.StatusNotFound, 404, "subscription not found", "subscription does not belong to tenant")
 			return
 		}
 

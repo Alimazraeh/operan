@@ -75,7 +75,6 @@ type Tenant struct {
 	Status          TenantStatus  `json:"status"`
 	Quota           QuotaConfig   `json:"quota"`
 	ContactEmail    string        `json:"contact_email,omitempty"`
-	AdminEmail      string        `json:"admin_email,omitempty"`
 	CustomMetadata  map[string]interface{} `json:"custom_metadata,omitempty"`
 	CreatedAt       time.Time     `json:"created_at"`
 	UpdatedAt       time.Time     `json:"updated_at"`
@@ -90,7 +89,6 @@ type TenantPatchRequest struct {
 	Region          Region              `json:"region,omitempty"`
 	IsolationLevel  IsolationLevel      `json:"isolation_level,omitempty"`
 	ContactEmail    string              `json:"contact_email,omitempty" validate:"omitempty,email"`
-	AdminEmail      string              `json:"admin_email,omitempty" validate:"omitempty,email"`
 	CustomMetadata  map[string]interface{} `json:"custom_metadata,omitempty"`
 	Quota           *QuotaConfig        `json:"quota,omitempty"`
 }
@@ -177,8 +175,22 @@ func (s *TenantStore) Create(t *Tenant) (*Tenant, error) {
 	return t, nil
 }
 
-// GetByID retrieves a tenant by its ID.
+// GetByID retrieves a tenant by its ID (admin lookup, no tenant check).
 func (s *TenantStore) GetByID(id string) (*Tenant, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	t, ok := s.tenants[id]
+	if !ok {
+		return nil, fmt.Errorf("tenant %s not found", id)
+	}
+	cpy := *t
+	return &cpy, nil
+}
+
+// GetByIDAndTenant retrieves a tenant by its ID.
+// Tenants are root-level entities, so tenantID is accepted but not validated.
+func (s *TenantStore) GetByIDAndTenant(id, tenantID string) (*Tenant, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -224,9 +236,6 @@ func (s *TenantStore) Patch(id string, req TenantPatchRequest) (*Tenant, error) 
 	}
 	if req.ContactEmail != "" {
 		t.ContactEmail = req.ContactEmail
-	}
-	if req.AdminEmail != "" {
-		t.AdminEmail = req.AdminEmail
 	}
 	if req.CustomMetadata != nil {
 		t.CustomMetadata = req.CustomMetadata

@@ -174,13 +174,19 @@ func CreatePolicy(h *middleware.Handler) http.HandlerFunc {
 // GetPolicy handles GET /v1/tenants/{id}/policies/{policy_id}.
 func GetPolicy(h *middleware.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tenantID, ok := extractPathParam(r, "id")
+		if !ok {
+			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "tenant id is required")
+			return
+		}
+
 		policyID, ok := extractPathParam(r, "policy_id")
 		if !ok {
 			h.WriteError(w, http.StatusBadRequest, 400, "invalid request", "policy_id is required")
 			return
 		}
 
-		p, err := h.PolicyStore.GetByID(policyID)
+		p, err := h.PolicyStore.GetByIDAndTenant(policyID, tenantID)
 		if err != nil {
 			h.WriteError(w, http.StatusNotFound, 404, "policy not found", err.Error())
 			return

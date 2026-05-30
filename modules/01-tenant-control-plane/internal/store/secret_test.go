@@ -1,6 +1,10 @@
 package store
 
 import (
+	"crypto/aes"
+	"encoding/hex"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 )
@@ -237,4 +241,32 @@ func TestSecretStore_Delete(t *testing.T) {
 			t.Fatal("expected error, got nil")
 		}
 	})
+}
+
+func TestEncryptDecrypt_RoundTrip(t *testing.T) {
+	key := "01234567890123456789012345678901" // exactly 32 bytes for AES-256
+	plaintext := "my-secret-value"
+
+	encrypted, err := encryptValue(key, plaintext)
+	if err != nil {
+		t.Fatalf("encryptValue failed: %v", err)
+	}
+
+	if !strings.HasPrefix(encrypted, "AES256:") {
+		t.Errorf("expected AES256: prefix, got %q", encrypted)
+	}
+
+	if encrypted == "AES256:"+fmt.Sprintf("%x", []byte(plaintext)) {
+		t.Error("encrypted value should not equal plaintext")
+	}
+
+	// Verify the encrypted value is longer than plaintext (nonce + ciphertext + GCM tag)
+	ciphertextHex := encrypted[len("AES256:"):]
+	decryptedBytes, err := hex.DecodeString(ciphertextHex)
+	if err != nil {
+		t.Fatalf("failed to decode ciphertext hex: %v", err)
+	}
+	if len(decryptedBytes) <= aes.BlockSize {
+		t.Error("ciphertext too short; should include nonce + data + GCM tag")
+	}
 }
