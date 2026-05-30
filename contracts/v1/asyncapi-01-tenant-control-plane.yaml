@@ -129,10 +129,9 @@ components:
     PlanType:
       type: string
       enum:
-        - free
-        - team
+        - saas
         - enterprise
-        - custom
+        - sovereign
       description: Subscription plan tier assigned to the tenant.
       example: "enterprise"
 
