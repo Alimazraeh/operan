@@ -12,7 +12,7 @@ func TestServiceIdentityStoreCreate(t *testing.T) {
 	identity := &models.ServiceIdentity{
 		TenantID: "tenant-1",
 		Name:     "my-service",
-		Roles:    []string{"admin"},
+		RoleIDs:    []string{"admin"},
 	}
 
 	if err := s.Create(identity); err != nil {
@@ -24,8 +24,8 @@ func TestServiceIdentityStoreCreate(t *testing.T) {
 	if identity.APIKeyID == "" {
 		t.Error("Create() should auto-generate API key ID")
 	}
-	if len(identity.Roles) != 1 {
-		t.Errorf("Create() roles = %v, want [admin]", identity.Roles)
+	if len(identity.RoleIDs) != 1 {
+		t.Errorf("Create() roles = %v, want [admin]", identity.RoleIDs)
 	}
 }
 
@@ -35,7 +35,7 @@ func TestServiceIdentityStoreCreateDuplicate(t *testing.T) {
 	identity1 := &models.ServiceIdentity{
 		TenantID: "tenant-1",
 		Name:     "my-service",
-		Roles:    []string{"admin"},
+		RoleIDs:    []string{"admin"},
 	}
 	if err := s.Create(identity1); err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -44,7 +44,7 @@ func TestServiceIdentityStoreCreateDuplicate(t *testing.T) {
 	identity2 := &models.ServiceIdentity{
 		TenantID: "tenant-1",
 		Name:     "my-service",
-		Roles:    []string{"viewer"},
+		RoleIDs:    []string{"viewer"},
 	}
 	err := s.Create(identity2)
 	if err == nil {
@@ -74,7 +74,7 @@ func TestServiceIdentityStoreGetByID(t *testing.T) {
 	identity := &models.ServiceIdentity{
 		TenantID: "tenant-1",
 		Name:     "get-service",
-		Roles:    []string{"admin", "editor"},
+		RoleIDs:    []string{"admin", "editor"},
 	}
 
 	if err := s.Create(identity); err != nil {
@@ -88,8 +88,8 @@ func TestServiceIdentityStoreGetByID(t *testing.T) {
 	if got.Name != "get-service" {
 		t.Errorf("GetByID() name = %v, want get-service", got.Name)
 	}
-	if len(got.Roles) != 2 {
-		t.Errorf("GetByID() roles = %v, want [admin editor]", got.Roles)
+	if len(got.RoleIDs) != 2 {
+		t.Errorf("GetByID() roles = %v, want [admin editor]", got.RoleIDs)
 	}
 }
 
@@ -107,7 +107,7 @@ func TestServiceIdentityStoreGetByName(t *testing.T) {
 	identity := &models.ServiceIdentity{
 		TenantID: "tenant-1",
 		Name:     "named-service",
-		Roles:    []string{"viewer"},
+		RoleIDs:    []string{"viewer"},
 	}
 
 	if err := s.Create(identity); err != nil {
@@ -139,7 +139,7 @@ func TestServiceIdentityStoreList(t *testing.T) {
 		identity := &models.ServiceIdentity{
 			TenantID: "tenant-1",
 			Name:     "service-" + string(rune('0'+i)),
-			Roles:    []string{"admin"},
+			RoleIDs:    []string{"admin"},
 		}
 		if err := s.Create(identity); err != nil {
 			t.Fatalf("Create(%d) error = %v", i, err)
@@ -151,7 +151,7 @@ func TestServiceIdentityStoreList(t *testing.T) {
 		identity := &models.ServiceIdentity{
 			TenantID: "tenant-2",
 			Name:     "tenant2-service-" + string(rune('a'+i)),
-			Roles:    []string{"viewer"},
+			RoleIDs:    []string{"viewer"},
 		}
 		if err := s.Create(identity); err != nil {
 			t.Fatalf("Create tenant-2(%d) error = %v", i, err)
@@ -195,7 +195,7 @@ func TestServiceIdentityStoreUpdateLastUsed(t *testing.T) {
 	identity := &models.ServiceIdentity{
 		TenantID: "tenant-1",
 		Name:     "last-used-service",
-		Roles:    []string{"admin"},
+		RoleIDs:    []string{"admin"},
 	}
 
 	if err := s.Create(identity); err != nil {
@@ -229,7 +229,7 @@ func TestServiceIdentityStoreRevokeAPIKey(t *testing.T) {
 	identity := &models.ServiceIdentity{
 		TenantID: "tenant-1",
 		Name:     "revoke-service",
-		Roles:    []string{"admin"},
+		RoleIDs:    []string{"admin"},
 	}
 
 	if err := s.Create(identity); err != nil {
@@ -268,7 +268,7 @@ func TestServiceIdentityStoreCreateStoresRolesJSON(t *testing.T) {
 	identity := &models.ServiceIdentity{
 		TenantID: "tenant-1",
 		Name:     "json-roles-service",
-		Roles:    []string{"admin", "editor", "viewer"},
+		RoleIDs:    []string{"admin", "editor", "viewer"},
 	}
 
 	if err := s.Create(identity); err != nil {

@@ -52,8 +52,8 @@ func (s *ServiceIdentityStore) Create(identity *models.ServiceIdentity) error {
 	}
 
 	// Store roles as JSON
-	if len(identity.Roles) > 0 {
-		data, err := json.Marshal(identity.Roles)
+	if len(identity.RoleIDs) > 0 {
+		data, err := json.Marshal(identity.RoleIDs)
 		if err != nil {
 			return fmt.Errorf("marshal roles: %w", err)
 		}
@@ -91,7 +91,7 @@ func (s *ServiceIdentityStore) GetByID(id string) (*models.ServiceIdentity, erro
 	}
 
 	result := *identity
-	result.Roles = unmarshalString(identity.RolesJSON)
+	result.RoleIDs = unmarshalString(identity.RolesJSON)
 	return &result, nil
 }
 
@@ -106,7 +106,7 @@ func (s *ServiceIdentityStore) GetByName(tenantID, name string) (*models.Service
 	}
 
 	result := *identity
-	result.Roles = unmarshalString(identity.RolesJSON)
+	result.RoleIDs = unmarshalString(identity.RolesJSON)
 	return &result, nil
 }
 
@@ -119,7 +119,7 @@ func (s *ServiceIdentityStore) List(tenantID string) ([]models.ServiceIdentity, 
 	for _, identity := range s.idByID {
 		if identity.TenantID == tenantID {
 			r := *identity
-			r.Roles = unmarshalString(identity.RolesJSON)
+			r.RoleIDs = unmarshalString(identity.RolesJSON)
 			result = append(result, r)
 		}
 	}

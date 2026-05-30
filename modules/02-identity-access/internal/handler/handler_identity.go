@@ -107,7 +107,7 @@ func (h *ServiceIdentityHandler) Create(w http.ResponseWriter, r *http.Request) 
 		ID:          app.UUID,
 		TenantID:    tenantID,
 		Name:        app.Name,
-		Roles:       req.Roles,
+		RoleIDs:     req.RoleIDs,
 		APIKeyID:    token.UUID,
 		Metadata:    func() string { if req.Metadata != nil { return *req.Metadata }; return ""}(),
 		CreatedAt:   time.Now().UTC(),
@@ -210,10 +210,10 @@ func (h *ServiceIdentityHandler) GetByID(w http.ResponseWriter, r *http.Request)
 
 	// Build response model
 	identity := &models.ServiceIdentity{
-		ID:       app.UUID,
-		Name:     app.Name,
-		Roles:    nil,
-		Metadata: "",
+		ID:        app.UUID,
+		Name:      app.Name,
+		RoleIDs:   nil,
+		Metadata:  "",
 	}
 
 	w.Header().Set("Content-Type", "application/json")

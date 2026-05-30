@@ -412,7 +412,8 @@
             "google_workspace",
             "okta",
             "keycloak",
-            "custom"
+            "custom",
+            "authentik"
           ],
           "description": "The SSO identity provider."
         },
@@ -433,14 +434,29 @@
               "format": "uri",
               "description": "URL to the identity provider's metadata document."
             },
+            "issuer_url": {
+              "type": "string",
+              "description": "OIDC issuer URL for the identity provider."
+            },
             "client_id": {
               "type": "string",
               "description": "Client identifier for the application."
+            },
+            "client_secret": {
+              "type": "string",
+              "description": "Client secret for the application (write-only)."
             },
             "redirect_uri": {
               "type": "string",
               "format": "uri",
               "description": "Callback URL for the SSO flow."
+            },
+            "scopes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "OAuth/OIDC scopes to request."
             }
           }
         },
@@ -464,32 +480,45 @@
         }
       }
     },
-    "AuditLog": {
+    "AuditEvent": {
       "type": "object",
       "description": "Records an auditable event within the Operan platform for compliance and security monitoring.",
       "required": [
         "id",
         "tenant_id",
+        "timestamp",
         "actor_id",
+        "actor_type",
         "action",
-        "result",
-        "timestamp"
+        "resource_type",
+        "resource_id",
+        "result"
       ],
       "properties": {
         "id": {
           "type": "string",
           "format": "uuid",
-          "description": "Unique identifier for the audit log entry."
+          "description": "Unique identifier for the audit event."
         },
         "tenant_id": {
           "type": "string",
           "format": "uuid",
-          "description": "Unique identifier for the tenant this audit log entry belongs to."
+          "description": "Unique identifier for the tenant this audit event belongs to."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the auditable event occurred."
         },
         "actor_id": {
           "type": "string",
           "format": "uuid",
-          "description": "Unique identifier of the entity (user or identity) that performed the action."
+          "description": "ID of the user, service identity, or agent that performed the action."
+        },
+        "actor_type": {
+          "type": "string",
+          "enum": ["user", "service", "agent"],
+          "description": "The type of principal that performed the action."
         },
         "action": {
           "type": "string",
@@ -505,11 +534,12 @@
         },
         "result": {
           "type": "string",
-          "enum": [
-            "success",
-            "failure"
-          ],
-          "description": "Outcome of the action."
+          "enum": ["success", "failure", "denied"],
+          "description": "Outcome of the action. 'denied' indicates an explicit policy rejection."
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional contextual information about the audit event."
         },
         "ip_address": {
           "type": "string",
@@ -521,21 +551,11 @@
         },
         "metadata": {
           "type": "object",
-          "description": "Additional contextual information about the audit event."
-        },
-        "timestamp": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp when the auditable event occurred."
+          "description": "Free-form metadata for additional event context."
         },
         "severity": {
           "type": "string",
-          "enum": [
-            "low",
-            "medium",
-            "high",
-            "critical"
-          ],
+          "enum": ["low", "medium", "high", "critical"],
           "description": "Severity level of the audit event."
         }
       }
@@ -579,12 +599,13 @@
           },
           "description": "List of email addresses associated with the user."
         },
-        "roles": {
+        "role_ids": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "format": "uuid"
           },
-          "description": "List of role identifiers assigned to the user."
+          "description": "UUIDs of roles assigned to the user."
         },
         "active": {
           "type": "boolean",

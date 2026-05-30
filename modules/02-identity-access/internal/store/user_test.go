@@ -14,7 +14,7 @@ func TestUserStoreCreate(t *testing.T) {
 		Email:       "test@example.com",
 		DisplayName: "Test User",
 		Status:      "active",
-		Roles:       []string{"role-1"},
+		RoleIDs:       []string{"role-1"},
 	}
 
 	if err := s.Create(user); err != nil {
@@ -78,7 +78,7 @@ func TestUserStoreGetByID(t *testing.T) {
 		TenantID:    "tenant-1",
 		Email:       "get@example.com",
 		DisplayName: "Get User",
-		Roles:       []string{"admin", "viewer"},
+		RoleIDs:       []string{"admin", "viewer"},
 	}
 	if err := s.Create(user); err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -91,8 +91,8 @@ func TestUserStoreGetByID(t *testing.T) {
 	if got.Email != "get@example.com" {
 		t.Errorf("GetByID() email = %v, want get@example.com", got.Email)
 	}
-	if len(got.Roles) != 2 {
-		t.Errorf("GetByID() roles = %v, want [admin viewer]", got.Roles)
+	if len(got.RoleIDs) != 2 {
+		t.Errorf("GetByID() roles = %v, want [admin viewer]", got.RoleIDs)
 	}
 }
 
@@ -259,8 +259,8 @@ func TestUserStoreSetRoles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetByID() error = %v", err)
 	}
-	if len(got.Roles) != 3 {
-		t.Errorf("GetByID() roles count = %v, want 3", len(got.Roles))
+	if len(got.RoleIDs) != 3 {
+		t.Errorf("GetByID() roles count = %v, want 3", len(got.RoleIDs))
 	}
 }
 
@@ -341,8 +341,8 @@ func TestUserStoreUpdateSetRoles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetByID() error = %v", err)
 	}
-	if len(got.Roles) != 2 {
-		t.Errorf("GetByID() roles count = %v, want 2", len(got.Roles))
+	if len(got.RoleIDs) != 2 {
+		t.Errorf("GetByID() roles count = %v, want 2", len(got.RoleIDs))
 	}
 }
 

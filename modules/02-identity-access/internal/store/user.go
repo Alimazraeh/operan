@@ -59,12 +59,12 @@ func (s *UserStore) Create(user *models.User) error {
 	}
 
 	// Store roles as JSON
-	if len(user.Roles) > 0 {
-		data, err := json.Marshal(user.Roles)
+	if len(user.RoleIDs) > 0 {
+		data, err := json.Marshal(user.RoleIDs)
 		if err != nil {
 			return fmt.Errorf("marshal roles: %w", err)
 		}
-		user.MFARolesJSON = string(data)
+		user.RolesJSON = string(data)
 	}
 
 	s.users[user.ID] = user
@@ -83,7 +83,7 @@ func (s *UserStore) GetByID(id string) (*models.User, error) {
 
 	// Return a copy
 	copy := *user
-	copy.Roles = unmarshalRoles(user.MFARolesJSON)
+	copy.RoleIDs = unmarshalRoleIDs(user.RolesJSON)
 	return &copy, nil
 }
 
@@ -95,7 +95,7 @@ func (s *UserStore) GetByTenantAndEmail(tenantID, email string) (*models.User, e
 	for _, user := range s.users {
 		if user.TenantID == tenantID && user.Email == email {
 			copy := *user
-			copy.Roles = unmarshalRoles(user.MFARolesJSON)
+			copy.RoleIDs = unmarshalRoleIDs(user.RolesJSON)
 			return &copy, nil
 		}
 	}
@@ -140,7 +140,7 @@ func (s *UserStore) List(tenantID string, page, pageSize int) ([]models.User, in
 	result := make([]models.User, 0, end-start)
 	for _, user := range allUsers[start:end] {
 		copy := *user
-		copy.Roles = unmarshalRoles(user.MFARolesJSON)
+		copy.RoleIDs = unmarshalRoleIDs(user.RolesJSON)
 		result = append(result, copy)
 	}
 
@@ -160,14 +160,14 @@ func (s *UserStore) Update(id string, updates *models.UpdateUserRequest) (*model
 	if updates.DisplayName != nil {
 		user.DisplayName = *updates.DisplayName
 	}
-	if updates.Roles != nil {
-		user.Roles = updates.Roles
-		if len(user.Roles) > 0 {
-			data, err := json.Marshal(user.Roles)
+	if updates.RoleIDs != nil {
+		user.RoleIDs = updates.RoleIDs
+		if len(user.RoleIDs) > 0 {
+			data, err := json.Marshal(user.RoleIDs)
 			if err != nil {
 				return nil, fmt.Errorf("marshal roles: %w", err)
 			}
-			user.MFARolesJSON = string(data)
+			user.RolesJSON = string(data)
 		}
 	}
 	if updates.MFAEnabled != nil {
@@ -183,7 +183,7 @@ func (s *UserStore) Update(id string, updates *models.UpdateUserRequest) (*model
 	user.UpdatedAt = time.Now().UTC()
 
 	result := *user
-	result.Roles = unmarshalRoles(user.MFARolesJSON)
+	result.RoleIDs = unmarshalRoleIDs(user.RolesJSON)
 	return &result, nil
 }
 
@@ -212,22 +212,22 @@ func (s *UserStore) SetRoles(id string, roles []string) error {
 		return ErrUserNotFound
 	}
 
-	user.Roles = roles
+	user.RoleIDs = roles
 	if len(roles) > 0 {
 		data, err := json.Marshal(roles)
 		if err != nil {
 			return fmt.Errorf("marshal roles: %w", err)
 		}
-		user.MFARolesJSON = string(data)
+		user.RolesJSON = string(data)
 	} else {
-		user.MFARolesJSON = "[]"
+		user.RolesJSON = "[]"
 	}
 
 	return nil
 }
 
-// unmarshalRoles converts the JSON roles field to a string slice.
-func unmarshalRoles(jsonStr string) []string {
+// unmarshalRoleIDs converts the JSON roles field to a string slice.
+func unmarshalRoleIDs(jsonStr string) []string {
 	if jsonStr == "" || jsonStr == "[]" {
 		return []string{}
 	}

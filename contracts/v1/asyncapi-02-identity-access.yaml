@@ -165,7 +165,14 @@ components:
 
     SsoProvider:
       type: string
-      description: The SSO identity provider name (e.g., Okta, AzureAD, OneLogin).
+      enum:
+        - azure_ad
+        - google_workspace
+        - okta
+        - keycloak
+        - custom
+        - authentik
+      description: The SSO identity provider name.
 
     SsoAssertionType:
       type: string

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"net/http"
 	"strings"
@@ -45,7 +46,8 @@ func TenantInjector(next http.Handler) http.Handler {
 
 // AuthValidator validates the Authorization header and extracts user ID.
 // It validates JWT tokens issued by Authentik using the JWKS cache for RSA key lookup,
-// with a shared secret fallback for HMAC-signed internal tokens.
+// and HMAC-signed internal tokens using tokenSecret. These are two separate paths —
+// no fallback from one to the other.
 func AuthValidator(jwksCache *JWKSCache, authentikIssuerURL, tokenSecret string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Skip auth for health check and token introspection
@@ -78,58 +80,54 @@ func AuthValidator(jwksCache *JWKSCache, authentikIssuerURL, tokenSecret string,
 			return
 		}
 
-		// Try Authentik JWT first
-		tokenResult, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
-			// Try to find the key by kid from the token header
-			if kid, ok := t.Header["kid"].(string); ok {
-				if jwksCache != nil {
-					keyEntry, ok := jwksCache.GetSigningKey(kid)
-					if ok {
-						return keyEntry.Key, nil
-					}
-				}
-			}
-
-			if _, ok := t.Method.(*jwt.SigningMethodRSA); ok {
-				if tokenSecret != "" {
-					return []byte(tokenSecret), nil
-				}
-				return nil, fmt.Errorf("no JWKS key found for token")
-			}
-			if _, ok := t.Method.(*jwt.SigningMethodHMAC); ok {
-				if tokenSecret != "" {
-					return []byte(tokenSecret), nil
-				}
-				return nil, fmt.Errorf("missing token secret")
-			}
-			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-		})
-
-		if err != nil || !tokenResult.Valid {
-			// Fall back to internal token secret (for admin operations)
-			if tokenSecret != "" {
-				tokenResult, err = jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
-					if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-						return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-					}
-					return []byte(tokenSecret), nil
-				})
-				if err != nil || !tokenResult.Valid {
+		// Attempt JWKS/RS256 validation first (Authentik-issued tokens)
+		var tokenResult *jwt.Token
+		var claims jwt.MapClaims
+		var ok bool
+		if jwksCache != nil {
+			var err error
+			tokenResult, err = validateWithJWKS(token, jwksCache)
+			if err == nil && tokenResult != nil && tokenResult.Valid {
+				claims, ok = tokenResult.Claims.(jwt.MapClaims)
+				if !ok {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusUnauthorized)
-					fmt.Fprint(w, `{"error":"invalid token"}`)
+					fmt.Fprint(w, `{"error":"invalid token claims"}`)
 					return
 				}
-			} else {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusUnauthorized)
-				fmt.Fprint(w, `{"error":"invalid token"}`)
-				return
+				goto processClaims
 			}
 		}
 
-		claims, ok := tokenResult.Claims.(jwt.MapClaims)
-		if !ok {
+		// Second attempt: HMAC-signed internal tokens (service/agent tokens)
+		if tokenSecret != "" {
+			var err error
+			tokenResult, err = jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+				}
+				return []byte(tokenSecret), nil
+			})
+			if err == nil && tokenResult != nil && tokenResult.Valid {
+				claims, ok = tokenResult.Claims.(jwt.MapClaims)
+				if !ok {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusUnauthorized)
+					fmt.Fprint(w, `{"error":"invalid token claims"}`)
+					return
+				}
+				goto processClaims
+			}
+		}
+
+		// Both attempts failed
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, `{"error":"invalid token"}`)
+		return
+
+	processClaims:
+		if _, ok := tokenResult.Claims.(jwt.MapClaims); !ok {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			fmt.Fprint(w, `{"error":"invalid token claims"}`)
@@ -191,7 +189,31 @@ func AuthValidator(jwksCache *JWKSCache, authentikIssuerURL, tokenSecret string,
 	})
 }
 
-// TraceInjector generates or extracts a trace ID for request tracing.
+// validateWithJWKS attempts to parse and validate a JWT using the JWKS cache
+// for RSA key lookup. Returns the parsed token if valid.
+func validateWithJWKS(tokenStr string, cache *JWKSCache) (*jwt.Token, error) {
+	return jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
+		// Try to find the key by kid from the token header
+		if kid, ok := t.Header["kid"].(string); ok {
+			if cache != nil {
+				keyEntry, ok := cache.GetSigningKey(kid)
+				if ok {
+					return keyEntry.Key, nil
+				}
+			}
+		}
+
+		// If it's an RSA token but no JWKS key matched, reject it.
+		// Do NOT fall back to a shared secret for RSA tokens — that is cryptographically invalid.
+		if _, ok := t.Method.(*jwt.SigningMethodRSA); ok {
+			return nil, fmt.Errorf("no JWKS key found for token (kid=%v, alg=%v)", t.Header["kid"], t.Header["alg"])
+		}
+		// Non-RSA, non-HMAC — reject
+		return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+	})
+}
+
+// generateTraceID creates a simple trace ID.
 func TraceInjector(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		traceID := r.Header.Get("X-Trace-ID")
@@ -211,9 +233,11 @@ func generateTraceID() string {
 	return "trace-" + generateID()
 }
 
-// generateID creates a simple random ID.
+// generateID creates a cryptographically random ID.
 func generateID() string {
-	return "00000000-0000-0000-0000-000000000001"
+	b := make([]byte, 16)
+	rand.Read(b)
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
 }
 
 // GetTenantID extracts the tenant ID from the context.

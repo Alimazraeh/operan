@@ -4,26 +4,26 @@ import "time"
 
 // User represents a human user within the Operan platform.
 type User struct {
-	ID                  string     `json:"id" db:"id"`
-	TenantID            string     `json:"tenant_id" db:"tenant_id"`
-	Email               string     `json:"email" db:"email"`
-	DisplayName         string     `json:"display_name" db:"display_name"`
-	Status              string     `json:"status" db:"status"`
-	Roles               []string   `json:"roles" db:"-"`
-	MFARolesJSON        string     `json:"-" db:"roles_json"`
-	MFAEnabled          bool       `json:"mfa_enabled" db:"mfa_enabled"`
-	LDAPDN              *string    `json:"ldap_dn,omitempty" db:"ldap_dn"`
-	AuthenticationMethod string    `json:"authentication_method" db:"-"` // derived, not stored
-	CreatedAt           time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt           time.Time  `json:"updated_at" db:"updated_at"`
-	LastLoginAt         *time.Time `json:"last_login_at,omitempty" db:"last_login_at"`
+	ID                   string     `json:"id" db:"id"`
+	TenantID             string     `json:"tenant_id" db:"tenant_id"`
+	Email                string     `json:"email" db:"email"`
+	DisplayName          string     `json:"display_name" db:"display_name"`
+	Status               string     `json:"status" db:"status"`
+	RoleIDs              []string   `json:"role_ids" db:"-"`
+	RolesJSON            string     `json:"-" db:"roles_json"`
+	MFAEnabled           bool       `json:"mfa_enabled" db:"mfa_enabled"`
+	LDAPDN               *string    `json:"ldap_dn,omitempty" db:"ldap_dn"`
+	AuthenticationMethod string     `json:"authentication_method" db:"-"` // derived, not stored
+	CreatedAt            time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt            time.Time  `json:"updated_at" db:"updated_at"`
+	LastLoginAt          *time.Time `json:"last_login_at,omitempty" db:"last_login_at"`
 }
 
 // CreateUserRequest represents the request body for creating a user.
 type CreateUserRequest struct {
 	Email        string   `json:"email"`
 	DisplayName  string   `json:"display_name"`
-	Roles        []string `json:"roles,omitempty"`
+	RoleIDs      []string `json:"role_ids,omitempty"`
 	MFAEnabled   *bool    `json:"mfa_enabled,omitempty"`
 	LDAPDN       *string  `json:"ldap_dn,omitempty"`
 }
@@ -31,14 +31,14 @@ type CreateUserRequest struct {
 // UpdateUserRequest represents the request body for updating a user.
 type UpdateUserRequest struct {
 	DisplayName *string `json:"display_name,omitempty"`
-	Roles       []string `json:"roles,omitempty"`
+	RoleIDs     []string `json:"role_ids,omitempty"`
 	MFAEnabled  *bool   `json:"mfa_enabled,omitempty"`
 	Status      *string `json:"status,omitempty"`
 }
 
 // Validate checks that the update request has at least one field.
 func (r *UpdateUserRequest) Validate() error {
-	if r.DisplayName == nil && len(r.Roles) == 0 && r.MFAEnabled == nil && r.Status == nil {
+	if r.DisplayName == nil && len(r.RoleIDs) == 0 && r.MFAEnabled == nil && r.Status == nil {
 		return &ValidationError{"no fields to update"}
 	}
 	return nil
@@ -83,14 +83,14 @@ func (r *CreateRoleRequest) Validate() error {
 
 // ServiceIdentity represents a non-human identity for services.
 type ServiceIdentity struct {
-	ID          string    `json:"id" db:"id"`
-	TenantID    string    `json:"tenant_id" db:"tenant_id"`
-	Name        string    `json:"name" db:"name"`
-	Roles       []string  `json:"roles" db:"-"`
-	RolesJSON   string    `json:"-" db:"roles_json"`
-	APIKeyID    string    `json:"api_key_id" db:"api_key_id"`
-	Metadata    string    `json:"-" db:"metadata_json"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	ID          string     `json:"id" db:"id"`
+	TenantID    string     `json:"tenant_id" db:"tenant_id"`
+	Name        string     `json:"name" db:"name"`
+	RoleIDs     []string   `json:"role_ids" db:"-"`
+	RolesJSON   string     `json:"-" db:"roles_json"`
+	APIKeyID    string     `json:"api_key_id" db:"api_key_id"`
+	Metadata    string     `json:"-" db:"metadata_json"`
+	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
 	ExpiresAt   *time.Time `json:"expires_at,omitempty" db:"expires_at"`
 	LastUsedAt  *time.Time `json:"last_used_at,omitempty" db:"last_used_at"`
 }
@@ -99,7 +99,7 @@ type ServiceIdentity struct {
 type CreateServiceIdentityRequest struct {
 	Name     string   `json:"name"`
 	TenantID string   `json:"tenant_id"`
-	Roles    []string `json:"roles"`
+	RoleIDs  []string `json:"role_ids"`
 	Metadata *string  `json:"metadata,omitempty"`
 }
 
@@ -111,7 +111,7 @@ func (r *CreateServiceIdentityRequest) Validate() error {
 	if r.TenantID == "" {
 		return &ValidationError{"tenant_id is required"}
 	}
-	if len(r.Roles) == 0 {
+	if len(r.RoleIDs) == 0 {
 		return &ValidationError{"at least one role is required"}
 	}
 	return nil
@@ -205,6 +205,9 @@ type AuditEvent struct {
 	DetailsJSON  string                 `json:"-" db:"details_json"`
 	IPAddress    string                 `json:"ip_address,omitempty" db:"ip_address"`
 	UserAgent    string                 `json:"user_agent,omitempty" db:"user_agent"`
+	Metadata     map[string]interface{} `json:"metadata,omitempty" db:"-"`
+	MetadataJSON string                 `json:"-" db:"metadata_json"`
+	Severity     string                 `json:"severity,omitempty" db:"severity"`
 	Timestamp    time.Time              `json:"timestamp" db:"timestamp"`
 }
 
@@ -219,14 +222,14 @@ type GetAuditTrailsRequest struct {
 	Offset   int
 }
 
-// SetRolesRequest represents the request body for setting user roles.
-type SetRolesRequest struct {
-	Roles []string `json:"roles"`
+// SetRoleIDsRequest represents the request body for setting user role IDs.
+type SetRoleIDsRequest struct {
+	RoleIDs []string `json:"role_ids"`
 }
 
-// Validate checks that the set roles request is valid.
-func (r *SetRolesRequest) Validate() error {
-	if len(r.Roles) == 0 {
+// Validate checks that the set role IDs request is valid.
+func (r *SetRoleIDsRequest) Validate() error {
+	if len(r.RoleIDs) == 0 {
 		return &ValidationError{"at least one role is required"}
 	}
 	return nil
