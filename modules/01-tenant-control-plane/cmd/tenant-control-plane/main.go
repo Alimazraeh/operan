@@ -40,7 +40,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:         cfg.ListenAddr,
-		Handler:      middleware.TenantContext(middleware.TraceID(middleware.RequestID(mux))),
+		Handler:      middleware.JWTValidator(cfg.JWTSecret, cfg.Issuer)(middleware.TenantContext(middleware.TraceID(middleware.RequestID(mux)))),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
