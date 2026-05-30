@@ -138,9 +138,9 @@ func TestTemplateStore_Update(t *testing.T) {
 		"name": "Updated",
 	}
 
-	updated, err := store.Update(tmpl.ID, updates)
+	updated, err := store.UpdateByTenant(tmpl.ID, testTenantID, updates)
 	if err != nil {
-		t.Fatalf("Update failed: %v", err)
+		t.Fatalf("UpdateByTenant failed: %v", err)
 	}
 
 	if updated.Name != "Updated" {
@@ -265,9 +265,9 @@ func TestCustomTemplateStore_Update(t *testing.T) {
 		"name": "Updated",
 	}
 
-	updated, err := store.Update(ct.ID, updates)
+	updated, err := store.UpdateByTenant(ct.ID, testTenantID, updates)
 	if err != nil {
-		t.Fatalf("Update failed: %v", err)
+		t.Fatalf("UpdateByTenant failed: %v", err)
 	}
 
 	if updated.Name != "Updated" {

@@ -200,7 +200,8 @@ func (h *TemplateHandlers) UpdateTemplate(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	tmpl, err := h.TemplateStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+	tmpl, err := h.TemplateStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "about:blank", "Not Found",
 			"Template not found", r.URL.Path, reqID)
@@ -217,7 +218,7 @@ func (h *TemplateHandlers) UpdateTemplate(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	updated, err := h.TemplateStore.Update(id, patch)
+	updated, err := h.TemplateStore.UpdateByTenant(id, tenantID, patch)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "about:blank", "Internal Server Error",
 			"Failed to update template", r.URL.Path, reqID)
@@ -253,14 +254,15 @@ func (h *TemplateHandlers) DeleteTemplate(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	tmpl, err := h.TemplateStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+	tmpl, err := h.TemplateStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "about:blank", "Not Found",
 			"Template not found", r.URL.Path, reqID)
 		return
 	}
 
-	if err := h.TemplateStore.Delete(id, middleware.TenantIDFromContext(r.Context())); err != nil {
+	if err := h.TemplateStore.Delete(id, tenantID); err != nil {
 		writeError(w, http.StatusInternalServerError, "about:blank", "Internal Server Error",
 			"Failed to delete template", r.URL.Path, reqID)
 		return
@@ -273,7 +275,7 @@ func (h *TemplateHandlers) DeleteTemplate(w http.ResponseWriter, r *http.Request
 		Category:   tmpl.Category,
 		DeletedAt:  time.Now(),
 		DeletedBy:  middleware.UserIDFromContext(r.Context()),
-		TenantID:   middleware.TenantIDFromContext(r.Context()),
+		TenantID:   tenantID,
 	})
 
 	w.WriteHeader(http.StatusNoContent)

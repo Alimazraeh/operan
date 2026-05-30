@@ -1529,3 +1529,181 @@ func TestHandleUpdateDeployment_UpdateStatusFailure(t *testing.T) {
 		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 }
+
+// ─── Tenant Isolation Tests for Update/Clone Handlers ──────────────────────────
+
+func TestUpdateTemplate_CrossTenantRejection(t *testing.T) {
+	h := newTestHandlers(t)
+
+	// Create template for tenant-1
+	createBody := map[string]interface{}{"name": "Tenant-1 Template", "category": "engineering"}
+	req, _ := testRequest("POST", "/templates", createBody)
+	req = req.WithContext(withTenantAndUser(req.Context(), "tenant-1", "user-1"))
+	rec := httptest.NewRecorder()
+	h.CreateTemplate(rec, req)
+
+	var created map[string]interface{}
+	json.Unmarshal(rec.Body.Bytes(), &created)
+	tmplID := created["id"].(string)
+
+	// Try to update from tenant-2
+	patchBody := map[string]interface{}{"name": "Hacked"}
+	req, _ = testRequest("PATCH", "/templates/"+tmplID, patchBody)
+	req = req.WithContext(withTenantAndUser(req.Context(), "tenant-2", "user-2"))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	h.UpdateTemplate(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for cross-tenant update, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestUpdateCustomTemplate_CrossTenantRejection(t *testing.T) {
+	h := newTestHandlers(t)
+
+	// Create custom template for tenant-1
+	createBody := map[string]interface{}{"name": "Tenant-1 CT", "category": "sales", "template_type": "custom"}
+	req, _ := testRequest("POST", "/custom-templates", createBody)
+	req = req.WithContext(withTenantAndUser(req.Context(), "tenant-1", "user-1"))
+	rec := httptest.NewRecorder()
+	h.CreateCustomTemplate(rec, req)
+
+	var created map[string]interface{}
+	json.Unmarshal(rec.Body.Bytes(), &created)
+	ctID := created["id"].(string)
+
+	// Try to update from tenant-2 (correct path: /templates/custom/{id})
+	patchBody := map[string]interface{}{"name": "Hacked CT"}
+	req, _ = testRequest("PATCH", "/templates/custom/"+ctID, patchBody)
+	req = req.WithContext(withTenantAndUser(req.Context(), "tenant-2", "user-2"))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	h.UpdateCustomTemplate(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for cross-tenant custom template update, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestHandleClone_CrossTenantRejection(t *testing.T) {
+	h := newTestHandlers(t)
+
+	// Create template for tenant-1
+	createBody := map[string]interface{}{"name": "Tenant-1 Source", "category": "engineering"}
+	req, _ := testRequest("POST", "/templates", createBody)
+	req = req.WithContext(withTenantAndUser(req.Context(), "tenant-1", "user-1"))
+	rec := httptest.NewRecorder()
+	h.CreateTemplate(rec, req)
+
+	var created map[string]interface{}
+	json.Unmarshal(rec.Body.Bytes(), &created)
+	sourceTmplID := created["id"].(string)
+
+	// Try to clone from tenant-2
+	cloneBody := map[string]interface{}{"name": "Cloned by Tenant-2", "category": "sales"}
+	req, _ = testRequest("POST", "/templates/"+sourceTmplID+"/clone", cloneBody)
+	req = req.WithContext(withTenantAndUser(req.Context(), "tenant-2", "user-2"))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	h.HandleTemplateNested(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for cross-tenant clone, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestDeleteTemplate_CrossTenantRejection(t *testing.T) {
+	h := newTestHandlers(t)
+
+	// Create template for tenant-1
+	createBody := map[string]interface{}{"name": "Tenant-1 Template", "category": "engineering"}
+	req, _ := testRequest("POST", "/templates", createBody)
+	req = req.WithContext(withTenantAndUser(req.Context(), "tenant-1", "user-1"))
+	rec := httptest.NewRecorder()
+	h.CreateTemplate(rec, req)
+
+	var created map[string]interface{}
+	json.Unmarshal(rec.Body.Bytes(), &created)
+	tmplID := created["id"].(string)
+
+	// Try to delete from tenant-2
+	req, _ = testRequest("DELETE", "/templates/"+tmplID, nil)
+	req = req.WithContext(withTenantAndUser(req.Context(), "tenant-2", "user-2"))
+	rec = httptest.NewRecorder()
+	h.DeleteTemplate(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for cross-tenant delete, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestHandleUpdateDeployment_FallbackCrossTenantRejection(t *testing.T) {
+	h := newTestHandlers(t)
+
+	// Create template for tenant-1
+	createBody := map[string]interface{}{"name": "Tenant-1 Template", "category": "engineering"}
+	req, _ := testRequest("POST", "/templates", createBody)
+	req = req.WithContext(withTenantAndUser(req.Context(), "tenant-1", "user-1"))
+	rec := httptest.NewRecorder()
+	h.CreateTemplate(rec, req)
+
+	var created map[string]interface{}
+	json.Unmarshal(rec.Body.Bytes(), &created)
+	tmplID := created["id"].(string)
+
+	// Deploy from tenant-1
+	deployBody := map[string]interface{}{"environment": "production"}
+	req, _ = testRequest("POST", "/templates/"+tmplID+"/deploy", deployBody)
+	req = req.WithContext(withTenantAndUser(req.Context(), "tenant-1", "user-1"))
+	rec = httptest.NewRecorder()
+	h.HandleTemplateNested(rec, req)
+
+	json.Unmarshal(rec.Body.Bytes(), &created)
+	depID := created["id"].(string)
+
+	// Try to update from tenant-2 (non-status patch triggers fallback GET)
+	patchBody := map[string]interface{}{"metadata": map[string]interface{}{"hacked": true}}
+	req, _ = testRequest("PATCH", "/templates/"+tmplID+"/deployments/"+depID, patchBody)
+	req = req.WithContext(withTenantAndUser(req.Context(), "tenant-2", "user-2"))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	h.HandleTemplateNested(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for cross-tenant deployment update, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestHandleClone_TenantIsolation_Pass(t *testing.T) {
+	h := newTestHandlers(t)
+
+	// Create template for tenant-1
+	createBody := map[string]interface{}{"name": "Tenant-1 Source", "category": "engineering"}
+	req, _ := testRequest("POST", "/templates", createBody)
+	req = req.WithContext(withTenantAndUser(req.Context(), "tenant-1", "user-1"))
+	rec := httptest.NewRecorder()
+	h.CreateTemplate(rec, req)
+
+	var created map[string]interface{}
+	json.Unmarshal(rec.Body.Bytes(), &created)
+	sourceTmplID := created["id"].(string)
+
+	// Clone from tenant-1 (same tenant) - should succeed
+	cloneBody := map[string]interface{}{"name": "Cloned by Tenant-1", "category": "engineering"}
+	req, _ = testRequest("POST", "/templates/"+sourceTmplID+"/clone", cloneBody)
+	req = req.WithContext(withTenantAndUser(req.Context(), "tenant-1", "user-1"))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	h.HandleTemplateNested(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Errorf("expected 201 for same-tenant clone, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var cloned map[string]interface{}
+	json.Unmarshal(rec.Body.Bytes(), &cloned)
+	if cloned["tenant_id"] != "tenant-1" {
+		t.Errorf("expected cloned template to have tenant_id 'tenant-1', got %v", cloned["tenant_id"])
+	}
+}

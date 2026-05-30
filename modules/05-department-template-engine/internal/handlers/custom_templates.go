@@ -126,7 +126,8 @@ func (h *TemplateHandlers) UpdateCustomTemplate(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	_, err := h.CustomTemplateStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+	_, err := h.CustomTemplateStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "about:blank", "Not Found",
 			"Custom template not found", r.URL.Path, reqID)
@@ -143,7 +144,7 @@ func (h *TemplateHandlers) UpdateCustomTemplate(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	updated, err := h.CustomTemplateStore.Update(id, patch)
+	updated, err := h.CustomTemplateStore.UpdateByTenant(id, tenantID, patch)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "about:blank", "Internal Server Error",
 			"Failed to update custom template", r.URL.Path, reqID)
