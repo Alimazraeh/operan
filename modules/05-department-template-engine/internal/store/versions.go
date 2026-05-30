@@ -6,11 +6,12 @@ import (
 	"github.com/google/uuid"
 )
 
-// VersionStore provides immutable version storage for templates.
+// VersionStore provides immutable, tenant-isolated version storage for templates.
 type VersionStore struct {
-	mu        sync.RWMutex
-	versions  map[string]*TemplateVersion // id -> version
+	mu         sync.RWMutex
+	versions   map[string]*TemplateVersion // id -> version
 	byTemplate map[string][]*TemplateVersion // templateID -> versions
+	byTenant   map[string][]*TemplateVersion // tenantID -> versions
 }
 
 // NewVersionStore creates a new empty VersionStore.
@@ -18,10 +19,11 @@ func NewVersionStore() *VersionStore {
 	return &VersionStore{
 		versions:   make(map[string]*TemplateVersion),
 		byTemplate: make(map[string][]*TemplateVersion),
+		byTenant:   make(map[string][]*TemplateVersion),
 	}
 }
 
-// Create adds a new immutable version snapshot.
+// Create adds a new immutable version snapshot with tenant isolation.
 func (s *VersionStore) Create(v *TemplateVersion) (*TemplateVersion, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -29,10 +31,14 @@ func (s *VersionStore) Create(v *TemplateVersion) (*TemplateVersion, error) {
 	if v.ID == "" {
 		v.ID = uuid.New().String()
 	}
+	if v.TenantID == "" {
+		return nil, ErrTenantMismatch
+	}
 	v.CreatedAt = timeNow()
 
 	s.versions[v.ID] = v
 	s.byTemplate[v.TemplateID] = append(s.byTemplate[v.TemplateID], v)
+	s.byTenant[v.TenantID] = append(s.byTenant[v.TenantID], v)
 	return v, nil
 }
 
@@ -53,8 +59,25 @@ func (s *VersionStore) GetByID(id string) (*TemplateVersion, error) {
 	return &cp, nil
 }
 
-// ListByTemplate returns all versions for a template, ordered by creation time.
-func (s *VersionStore) ListByTemplate(templateID string) []TemplateVersion {
+// GetByIDAndTenant retrieves a version by ID and verifies tenant ownership.
+func (s *VersionStore) GetByIDAndTenant(id, tenantID string) (*TemplateVersion, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	v, ok := s.versions[id]
+	if !ok || v.TenantID != tenantID {
+		return nil, ErrNotFound
+	}
+	cp := *v
+	cp.Snapshot = make(map[string]interface{})
+	for k, val := range v.Snapshot {
+		cp.Snapshot[k] = val
+	}
+	return &cp, nil
+}
+
+// ListByTemplate returns all versions for a template and tenant, ordered by creation time.
+func (s *VersionStore) ListByTemplate(templateID, tenantID string) []TemplateVersion {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -65,6 +88,9 @@ func (s *VersionStore) ListByTemplate(templateID string) []TemplateVersion {
 
 	result := make([]TemplateVersion, 0, len(vers))
 	for _, v := range vers {
+		if v.TenantID != tenantID {
+			continue
+		}
 		cp := *v
 		cp.Snapshot = make(map[string]interface{})
 		for k, val := range v.Snapshot {
@@ -99,14 +125,15 @@ func (s *VersionStore) GetByVersion(templateID, version string) (*TemplateVersio
 	return nil, ErrNotFound
 }
 
-// CreateFromTemplate creates a version snapshot from a template.
-func (s *VersionStore) CreateFromTemplate(templateID, version string, templateData map[string]interface{}) (*TemplateVersion, error) {
+// CreateFromTemplate creates a version snapshot from a template with tenant isolation.
+func (s *VersionStore) CreateFromTemplate(templateID, version, tenantID string, templateData map[string]interface{}) (*TemplateVersion, error) {
 	snapshot := make(map[string]interface{})
 	for k, v := range templateData {
 		snapshot[k] = v
 	}
 
 	v := &TemplateVersion{
+		TenantID:   tenantID,
 		TemplateID: templateID,
 		Version:    version,
 		Snapshot:   snapshot,

@@ -9,24 +9,29 @@ import (
 
 // TemplateStore provides tenant-isolated CRUD for department templates.
 type TemplateStore struct {
-	mu     sync.RWMutex
+	mu       sync.RWMutex
 	templates map[string]*Template // id -> template
+	byTenant  map[string][]string  // tenantID -> []templateIDs
 }
 
 // NewTemplateStore creates a new empty TemplateStore.
 func NewTemplateStore() *TemplateStore {
 	return &TemplateStore{
 		templates: make(map[string]*Template),
+		byTenant:  make(map[string][]string),
 	}
 }
 
-// Create adds a new template. The ID and timestamps are auto-generated.
+// Create adds a new template with tenant isolation. The ID and timestamps are auto-generated.
 func (s *TemplateStore) Create(t *Template) (*Template, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if t.ID == "" {
 		t.ID = uuid.New().String()
+	}
+	if t.TenantID == "" {
+		return nil, ErrTenantMismatch
 	}
 	t.CreatedAt = timeNow()
 	t.UpdatedAt = t.CreatedAt
@@ -35,10 +40,11 @@ func (s *TemplateStore) Create(t *Template) (*Template, error) {
 	}
 
 	s.templates[t.ID] = t
+	s.byTenant[t.TenantID] = append(s.byTenant[t.TenantID], t.ID)
 	return t, nil
 }
 
-// GetByID retrieves a template by ID.
+// GetByID retrieves a template by ID, verifying tenant ownership.
 func (s *TemplateStore) GetByID(id string) (*Template, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -52,16 +58,37 @@ func (s *TemplateStore) GetByID(id string) (*Template, error) {
 	return &cp, nil
 }
 
+// GetByIDAndTenant retrieves a template by ID, verifying tenant ownership.
+func (s *TemplateStore) GetByIDAndTenant(id, tenantID string) (*Template, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	t, ok := s.templates[id]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	if t.TenantID != tenantID {
+		return nil, ErrNotFound
+	}
+	cp := *t
+	return &cp, nil
+}
+
 // List returns templates for the given tenant, with pagination.
 func (s *TemplateStore) List(tenantID string, page, pageSize int, filterCategory *string) ([]Template, int, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
+	ids, ok := s.byTenant[tenantID]
+	if !ok {
+		return nil, 0, false
+	}
+
 	var all []*Template
-	for _, t := range s.templates {
-		// Note: In production, tenant_id would be stored on the template
-		// and queried here. For this MVP, we return all templates.
-		all = append(all, t)
+	for _, id := range ids {
+		if t, exists := s.templates[id]; exists {
+			all = append(all, t)
+		}
 	}
 
 	// Apply category filter
@@ -187,14 +214,29 @@ func (s *TemplateStore) Update(id string, patch map[string]interface{}) (*Templa
 	return t, nil
 }
 
-// Delete removes a template by ID.
-func (s *TemplateStore) Delete(id string) error {
+// Delete removes a template by ID, verifying tenant ownership.
+func (s *TemplateStore) Delete(id, tenantID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.templates[id]; !ok {
+	t, ok := s.templates[id]
+	if !ok {
 		return ErrNotFound
 	}
+	if t.TenantID != tenantID {
+		return ErrNotFound
+	}
+
 	delete(s.templates, id)
+	// Remove from byTenant index
+	if ids, exists := s.byTenant[tenantID]; exists {
+		for i, tid := range ids {
+			if tid == id {
+				s.byTenant[tenantID] = append(ids[:i], ids[i+1:]...)
+				break
+			}
+		}
+	}
+
 	return nil
 }

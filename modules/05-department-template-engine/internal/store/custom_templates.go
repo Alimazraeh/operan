@@ -10,22 +10,27 @@ import (
 type CustomTemplateStore struct {
 	mu       sync.RWMutex
 	templates map[string]*CustomTemplate
+	byTenant  map[string][]string  // tenantID -> []customTemplateIDs
 }
 
 // NewCustomTemplateStore creates a new empty CustomTemplateStore.
 func NewCustomTemplateStore() *CustomTemplateStore {
 	return &CustomTemplateStore{
 		templates: make(map[string]*CustomTemplate),
+		byTenant:  make(map[string][]string),
 	}
 }
 
-// Create adds a new custom template.
+// Create adds a new custom template with tenant isolation.
 func (s *CustomTemplateStore) Create(ct *CustomTemplate) (*CustomTemplate, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if ct.ID == "" {
 		ct.ID = uuid.New().String()
+	}
+	if ct.TenantID == "" {
+		return nil, ErrTenantMismatch
 	}
 	ct.CreatedAt = timeNow()
 	ct.UpdatedAt = ct.CreatedAt
@@ -37,6 +42,7 @@ func (s *CustomTemplateStore) Create(ct *CustomTemplate) (*CustomTemplate, error
 	}
 
 	s.templates[ct.ID] = ct
+	s.byTenant[ct.TenantID] = append(s.byTenant[ct.TenantID], ct.ID)
 	return ct, nil
 }
 
@@ -59,14 +65,43 @@ func (s *CustomTemplateStore) GetByID(id string) (*CustomTemplate, error) {
 	return &cp, nil
 }
 
+// GetByIDAndTenant retrieves a custom template by ID, verifying tenant ownership.
+func (s *CustomTemplateStore) GetByIDAndTenant(id, tenantID string) (*CustomTemplate, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	ct, ok := s.templates[id]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	if ct.TenantID != tenantID {
+		return nil, ErrNotFound
+	}
+	cp := *ct
+	if ct.Content != nil {
+		cp.Content = make(map[string]interface{})
+		for k, v := range ct.Content {
+			cp.Content[k] = v
+		}
+	}
+	return &cp, nil
+}
+
 // List returns custom templates for the given tenant, with pagination.
 func (s *CustomTemplateStore) List(tenantID string, page, pageSize int, filterCategory *string) ([]CustomTemplate, int, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
+	ids, ok := s.byTenant[tenantID]
+	if !ok {
+		return nil, 0, false
+	}
+
 	var all []*CustomTemplate
-	for _, ct := range s.templates {
-		all = append(all, ct)
+	for _, id := range ids {
+		if ct, exists := s.templates[id]; exists {
+			all = append(all, ct)
+		}
 	}
 
 	if filterCategory != nil && *filterCategory != "" {
@@ -151,14 +186,29 @@ func (s *CustomTemplateStore) Update(id string, patch map[string]interface{}) (*
 	return ct, nil
 }
 
-// Delete removes a custom template by ID.
-func (s *CustomTemplateStore) Delete(id string) error {
+// Delete removes a custom template by ID, verifying tenant ownership.
+func (s *CustomTemplateStore) Delete(id, tenantID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.templates[id]; !ok {
+	ct, ok := s.templates[id]
+	if !ok {
 		return ErrNotFound
 	}
+	if ct.TenantID != tenantID {
+		return ErrNotFound
+	}
+
 	delete(s.templates, id)
+	// Remove from byTenant index
+	if ids, exists := s.byTenant[tenantID]; exists {
+		for i, tid := range ids {
+			if tid == id {
+				s.byTenant[tenantID] = append(ids[:i], ids[i+1:]...)
+				break
+			}
+		}
+	}
+
 	return nil
 }

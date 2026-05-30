@@ -237,7 +237,8 @@ func (h *TemplateHandlers) handleGetDeployment(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	deployment, err := h.DeploymentStore.GetByID(deploymentID)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+	deployment, err := h.DeploymentStore.GetByIDAndTenant(deploymentID, tenantID)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "about:blank", "Not Found",
 			"Deployment not found", r.URL.Path, reqID)
@@ -261,6 +262,21 @@ func (h *TemplateHandlers) handleUpdateDeployment(w http.ResponseWriter, r *http
 	if err := json.Unmarshal(body, &patch); err != nil {
 		writeError(w, http.StatusBadRequest, "about:blank", "Bad Request",
 			"Invalid JSON body", r.URL.Path, reqID)
+		return
+	}
+
+	tenantID := middleware.TenantIDFromContext(r.Context())
+	deployment, err := h.DeploymentStore.GetByIDAndTenant(deploymentID, tenantID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "about:blank", "Not Found",
+			"Deployment not found", r.URL.Path, reqID)
+		return
+	}
+
+	// Verify ownership
+	if deployment.TenantID != tenantID {
+		writeError(w, http.StatusForbidden, "about:blank", "Forbidden",
+			"Access denied", r.URL.Path, reqID)
 		return
 	}
 
@@ -346,7 +362,8 @@ func (h *TemplateHandlers) handleGetVersion(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	v, err := h.VersionStore.GetByID(versionID)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+	v, err := h.VersionStore.GetByIDAndTenant(versionID, tenantID)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "about:blank", "Not Found",
 			"Version not found", r.URL.Path, reqID)

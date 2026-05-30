@@ -88,6 +88,7 @@ func (h *TemplateHandlers) CreateTemplate(w http.ResponseWriter, r *http.Request
 	}
 
 	tmpl := &store.Template{
+		TenantID:            middleware.TenantIDFromContext(r.Context()),
 		Name:                req.Name,
 		Description:         req.Description,
 		Category:            req.Category,
@@ -153,7 +154,7 @@ func (h *TemplateHandlers) ListTemplates(w http.ResponseWriter, r *http.Request)
 		categoryFilter = &cat
 	}
 
-	templates, total, hasMore := h.TemplateStore.List("default", page, pageSize, categoryFilter)
+	templates, total, hasMore := h.TemplateStore.List(middleware.TenantIDFromContext(r.Context()), page, pageSize, categoryFilter)
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"data": toTemplateListResponse(templates),
@@ -177,7 +178,8 @@ func (h *TemplateHandlers) GetTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, err := h.TemplateStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+	tmpl, err := h.TemplateStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "about:blank", "Not Found",
 			"Template not found", r.URL.Path, reqID)
@@ -258,7 +260,7 @@ func (h *TemplateHandlers) DeleteTemplate(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err := h.TemplateStore.Delete(id); err != nil {
+	if err := h.TemplateStore.Delete(id, middleware.TenantIDFromContext(r.Context())); err != nil {
 		writeError(w, http.StatusInternalServerError, "about:blank", "Internal Server Error",
 			"Failed to delete template", r.URL.Path, reqID)
 		return
