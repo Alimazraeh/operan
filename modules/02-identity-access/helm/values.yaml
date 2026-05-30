@@ -1,0 +1,46 @@
+replicaCount: 2
+
+image:
+  repository: operan/identity-access
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8002
+  targetPort: 8002
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+
+# Authentik integration
+authentik:
+  serverURL: ""          # AUTHENTIK_SERVER_URL
+  adminAPIToken: ""      # AUTHENTIK_ADMIN_API_TOKEN
+  tokenTTL: 0            # AUTHENTIK_TOKEN_TTL_MIN
+  provisioningMethod: "none"
+  ingressDomain: "auth.operan.internal"
+
+# IAM configuration
+tokenSecret: ""          # IAM_TOKEN_SECRET — MUST be set in production
+tokenExpiry: 60          # IAM_TOKEN_EXPIRY_MIN
+eventBrokerURL: "amqp://mq.operan.internal:5672"  # IAM_EVENT_BROKER_URL
+otelEnabled: true        # IAM_OTEL_ENABLED
+otelCollectorURL: "http://otel-collector:4317"    # IAM_OTEL_COLLECTOR_URL
+
+# Extra environment variables
+extraEnv: []
+# - name: CUSTOM_VAR
+#   value: "custom"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

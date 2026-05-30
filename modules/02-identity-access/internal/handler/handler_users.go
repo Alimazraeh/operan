@@ -38,6 +38,11 @@ func NewUserHandler(auth *authentik.Client, users *store.UserStore, audit *store
 // Create handles POST /api/v1/iam/users
 func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
+	if tenantID == "" {
+		http.Error(w, `{"error":"tenant ID is required"}`, http.StatusUnauthorized)
+		return
+	}
+
 	actorID := middleware.GetUserID(r.Context())
 
 	var req models.CreateUserRequest
@@ -138,6 +143,10 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 // List handles GET /api/v1/iam/users
 func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
+	if tenantID == "" {
+		http.Error(w, `{"error":"tenant ID is required"}`, http.StatusUnauthorized)
+		return
+	}
 
 	pageStr := r.URL.Query().Get("page")
 	pageSizeStr := r.URL.Query().Get("page_size")
@@ -203,6 +212,12 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 
 // GetByID handles GET /api/v1/iam/users/{user_id}
 func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+	tenantID := middleware.GetTenantID(r.Context())
+	if tenantID == "" {
+		http.Error(w, `{"error":"tenant ID is required"}`, http.StatusUnauthorized)
+		return
+	}
+
 	userID := extractUserID(r.URL.Path)
 	if userID == "" {
 		http.Error(w, `{"error":"user_id is required"}`, http.StatusBadRequest)
@@ -235,6 +250,11 @@ func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 // Update handles PATCH /api/v1/iam/users/{user_id}
 func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
+	if tenantID == "" {
+		http.Error(w, `{"error":"tenant ID is required"}`, http.StatusUnauthorized)
+		return
+	}
+
 	actorID := middleware.GetUserID(r.Context())
 
 	userID := extractUserID(r.URL.Path)
@@ -317,6 +337,11 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 // Deactivate handles DELETE /api/v1/iam/users/{user_id}
 func (h *UserHandler) Deactivate(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
+	if tenantID == "" {
+		http.Error(w, `{"error":"tenant ID is required"}`, http.StatusUnauthorized)
+		return
+	}
+
 	actorID := middleware.GetUserID(r.Context())
 
 	userID := extractUserID(r.URL.Path)
@@ -358,6 +383,11 @@ func (h *UserHandler) Deactivate(w http.ResponseWriter, r *http.Request) {
 // SetRoles handles PUT /api/v1/iam/users/{user_id}/roles
 func (h *UserHandler) SetRoles(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
+	if tenantID == "" {
+		http.Error(w, `{"error":"tenant ID is required"}`, http.StatusUnauthorized)
+		return
+	}
+
 	actorID := middleware.GetUserID(r.Context())
 
 	userID, ok := extractUserRolesPath(r.URL.Path)
@@ -497,7 +527,6 @@ func (h *UserHandler) mapAuthentikUser(created *authentik.User, tenantID string)
 		Email:                created.Email,
 		DisplayName:          created.Name,
 		Status:               "active",
-		RoleIDs:              []string{},
 		MFAEnabled:           false,
 		AuthenticationMethod: "password",
 	}
@@ -521,6 +550,9 @@ func (h *UserHandler) mapAuthentikUser(created *authentik.User, tenantID string)
 
 // addToGroup adds a user to a group identified by name (interpreted as a role name).
 func addToGroup(ctx context.Context, auth *authentik.Client, userUUID, roleName string) error {
+	if auth == nil || auth.GroupsAPI == nil {
+		return nil // Skip group addition if GroupsAPI not available
+	}
 	groups, err := auth.GroupsAPI.List(ctx)
 	if err != nil {
 		return err

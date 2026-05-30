@@ -63,6 +63,11 @@ func (h *ADHandler) Configure(w http.ResponseWriter, r *http.Request) {
 		"group_search_base": req.OrganizationUnit,
 	}
 
+	if h.Auth == nil {
+		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
+		return
+	}
+
 	source, err := h.Auth.LDAPSources().Create(r.Context(), authentik.CreateLDAPSourceRequest{
 		Name:         "operan-" + tenantID + "-ad",
 		Authentication: authMap,
@@ -95,6 +100,11 @@ func (h *ADHandler) Test(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	if h.Auth == nil {
+		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
 		return
 	}
 
@@ -209,6 +219,11 @@ func (h *ADHandler) Test(w http.ResponseWriter, r *http.Request) {
 func (h *ADHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 
+	if h.Auth == nil {
+		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
+		return
+	}
+
 	sources, err := h.Auth.LDAPSources().List(r.Context())
 	if err != nil {
 		http.Error(w, `{"error":"failed to list AD sources: `+err.Error()+`"}`, http.StatusInternalServerError)
@@ -265,6 +280,11 @@ func (h *ADHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err := req.Validate(); err != nil {
 		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusBadRequest)
+		return
+	}
+
+	if h.Auth == nil {
+		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
 		return
 	}
 
@@ -335,6 +355,11 @@ func (h *ADHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 // DeleteConfig handles DELETE /api/v1/iam/auth/ad/config
 func (h *ADHandler) DeleteConfig(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
+
+	if h.Auth == nil {
+		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
+		return
+	}
 
 	sources, err := h.Auth.LDAPSources().List(r.Context())
 	if err != nil {

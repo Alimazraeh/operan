@@ -65,6 +65,11 @@ func (h *LDAPHandler) Configure(w http.ResponseWriter, r *http.Request) {
 		ingestionMap["group_filters"] = []string{req.GroupFilter}
 	}
 
+	if h.Auth == nil {
+		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
+		return
+	}
+
 	source, err := h.Auth.LDAPSources().Create(r.Context(), authentik.CreateLDAPSourceRequest{
 		Name:         "operan-" + tenantID + "-ldap",
 		Authentication: authMap,
@@ -75,10 +80,12 @@ func (h *LDAPHandler) Configure(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Publisher.Publish(r.Context(), "ldap.configured", tenantID, "", time.Now().UTC().Format(time.RFC3339), map[string]interface{}{
-		"provider": req.Provider,
-		"url":      req.URL,
-	})
+	if h.Publisher != nil {
+		h.Publisher.Publish(r.Context(), "ldap.configured", tenantID, "", time.Now().UTC().Format(time.RFC3339), map[string]interface{}{
+			"provider": req.Provider,
+			"url":      req.URL,
+		})
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -114,6 +121,11 @@ func (h *LDAPHandler) Test(w http.ResponseWriter, r *http.Request) {
 		"user_search_base": req.BaseDN,
 	}
 
+	if h.Auth == nil {
+		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
+		return
+	}
+
 	source, err := h.Auth.LDAPSources().Create(r.Context(), authentik.CreateLDAPSourceRequest{
 		Name:         "operan-" + tenantID + "-ldap-test",
 		Authentication: authMap,
@@ -124,7 +136,9 @@ func (h *LDAPHandler) Test(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer func() {
-		h.Auth.LDAPSources().Delete(r.Context(), source.UUID)
+		if h.Auth != nil {
+			h.Auth.LDAPSources().Delete(r.Context(), source.UUID)
+		}
 	}()
 
 	debug, err := h.Auth.LDAPSources().Debug(r.Context(), source.UUID)
@@ -161,6 +175,11 @@ func (h *LDAPHandler) Test(w http.ResponseWriter, r *http.Request) {
 // GetConfig handles GET /api/v1/iam/auth/ldap/config
 func (h *LDAPHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
+
+	if h.Auth == nil {
+		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
+		return
+	}
 
 	sources, err := h.Auth.LDAPSources().List(r.Context())
 	if err != nil {
@@ -218,6 +237,11 @@ func (h *LDAPHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err := req.Validate(); err != nil {
 		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusBadRequest)
+		return
+	}
+
+	if h.Auth == nil {
+		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
 		return
 	}
 
@@ -289,6 +313,11 @@ func (h *LDAPHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 // DeleteConfig handles DELETE /api/v1/iam/auth/ldap/config
 func (h *LDAPHandler) DeleteConfig(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
+
+	if h.Auth == nil {
+		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
+		return
+	}
 
 	sources, err := h.Auth.LDAPSources().List(r.Context())
 	if err != nil {

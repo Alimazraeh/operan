@@ -14,10 +14,11 @@ import (
 type contextKey string
 
 const (
-	TenantIDKey contextKey = "tenant_id"
-	UserIDKey   contextKey = "user_id"
-	UserTypeKey contextKey = "user_type" // "user", "service", "agent"
-	TraceIDKey  contextKey = "trace_id"
+	TenantIDKey  contextKey = "tenant_id"
+	UserIDKey    contextKey = "user_id"
+	UserTypeKey  contextKey = "user_type"  // "user", "service", "agent"
+	TraceIDKey   contextKey = "trace_id"
+	RequestIDKey contextKey = "request_id"
 )
 
 // JWTToken represents a validated IAM JWT token.
@@ -50,8 +51,8 @@ func TenantInjector(next http.Handler) http.Handler {
 // no fallback from one to the other.
 func AuthValidator(jwksCache *JWKSCache, authentikIssuerURL, tokenSecret string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Skip auth for health check and token introspection
-		if r.URL.Path == "/health" || r.URL.Path == "/internal/auth/proxy" {
+		// Skip auth for health check, readiness, and token introspection
+		if r.URL.Path == "/health" || r.URL.Path == "/ready" || r.URL.Path == "/internal/auth/proxy" {
 			next.ServeHTTP(w, r)
 			return
 		}

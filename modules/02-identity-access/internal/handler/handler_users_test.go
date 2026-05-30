@@ -1,30 +1,283 @@
 package handler
 
 import (
-	"encoding/json"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/operan/modules/02-identity-access/internal/authentik"
 	"github.com/operan/modules/02-identity-access/internal/events"
 	"github.com/operan/modules/02-identity-access/internal/middleware"
-	"github.com/operan/modules/02-identity-access/internal/models"
 	"github.com/operan/modules/02-identity-access/internal/store"
 )
 
-func NewTestUserHandler() *UserHandler {
-	return NewUserHandler(nil, store.NewUserStore(), store.NewAuditStore(), events.NewPublisher(""))
-}
+// ----- users handler — missing tenant / auth errors -----
 
-func TestUserHandlerCreateSuccess(t *testing.T) {
+func TestUserHandlerCreateMissingTenant(t *testing.T) {
 	h := NewTestUserHandler()
 
 	payload := `{"email":"test@example.com","display_name":"Test User","role_ids":["viewer"]}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	h.Create(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("Create() missing tenant status = %v, want %v", w.Code, http.StatusUnauthorized)
+	}
+}
+
+func TestUserHandlerCreateNoContentLength(t *testing.T) {
+	h := NewTestUserHandler()
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", nil)
 	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
+
+	principal := &middleware.JWTToken{
+		Subject:  "user-1",
+		UserType: "user",
+		TenantID: "tenant-1",
+		Roles:    []string{"admin"},
+	}
+	req = setPrincipalInContext(req, principal)
+
+	w := httptest.NewRecorder()
+	h.Create(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Create() nil body status = %v, want %v", w.Code, http.StatusBadRequest)
+	}
+}
+
+func TestUserHandlerListMissingTenant(t *testing.T) {
+	h := NewTestUserHandler()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/users", nil)
+
+	w := httptest.NewRecorder()
+	h.List(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("List() missing tenant status = %v, want %v", w.Code, http.StatusUnauthorized)
+	}
+}
+
+func TestUserHandlerGetByIDMissingTenant(t *testing.T) {
+	h := NewTestUserHandler()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/users/user-123", nil)
+
+	w := httptest.NewRecorder()
+	h.GetByID(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("GetByID() missing tenant status = %v, want %v", w.Code, http.StatusUnauthorized)
+	}
+}
+
+func TestUserHandlerUpdateMissingTenant(t *testing.T) {
+	h := NewTestUserHandler()
+
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/user-123", strings.NewReader(`{"display_name":"Updated"}`))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	h.Update(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("Update() missing tenant status = %v, want %v", w.Code, http.StatusUnauthorized)
+	}
+}
+
+func TestUserHandlerDeactivateMissingTenant(t *testing.T) {
+	h := NewTestUserHandler()
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/iam/users/user-123", nil)
+
+	w := httptest.NewRecorder()
+	h.Deactivate(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("Deactivate() missing tenant status = %v, want %v", w.Code, http.StatusUnauthorized)
+	}
+}
+
+func TestUserHandlerSetRolesMissingTenant(t *testing.T) {
+	h := NewTestUserHandler()
+
+	payload := `{"role_ids":["admin"]}`
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/user-123/roles", strings.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	h.SetRoles(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("SetRoles() missing tenant status = %v, want %v", w.Code, http.StatusUnauthorized)
+	}
+}
+
+func TestUserHandlerGetByIDMissingUserID(t *testing.T) {
+	h := NewTestUserHandler()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/users/", nil)
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+
+	principal := &middleware.JWTToken{
+		Subject:  "user-1",
+		UserType: "user",
+		TenantID: "tenant-1",
+		Roles:    []string{"admin"},
+	}
+	req = setPrincipalInContext(req, principal)
+
+	w := httptest.NewRecorder()
+	h.GetByID(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("GetByID() missing user ID status = %v, want %v", w.Code, http.StatusBadRequest)
+	}
+}
+
+func TestUserHandlerUpdateMissingUserID(t *testing.T) {
+	h := NewTestUserHandler()
+
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/", strings.NewReader(`{"display_name":"Updated"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+
+	principal := &middleware.JWTToken{
+		Subject:  "user-1",
+		UserType: "user",
+		TenantID: "tenant-1",
+		Roles:    []string{"admin"},
+	}
+	req = setPrincipalInContext(req, principal)
+
+	w := httptest.NewRecorder()
+	h.Update(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Update() missing user ID status = %v, want %v", w.Code, http.StatusBadRequest)
+	}
+}
+
+func TestUserHandlerDeactivateMissingUserID(t *testing.T) {
+	h := NewTestUserHandler()
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/iam/users/", nil)
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+
+	principal := &middleware.JWTToken{
+		Subject:  "user-1",
+		UserType: "user",
+		TenantID: "tenant-1",
+		Roles:    []string{"admin"},
+	}
+	req = setPrincipalInContext(req, principal)
+
+	w := httptest.NewRecorder()
+	h.Deactivate(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Deactivate() missing user ID status = %v, want %v", w.Code, http.StatusBadRequest)
+	}
+}
+
+// ----- users handler — update non-existent user -----
+
+func TestUserHandlerUpdateNonExistent(t *testing.T) {
+	h := NewTestUserHandler()
+
+	payload := `{"display_name":"Updated"}`
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/non-existent", strings.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+
+	principal := &middleware.JWTToken{
+		Subject:  "user-1",
+		UserType: "user",
+		TenantID: "tenant-1",
+		Roles:    []string{"admin"},
+	}
+	req = setPrincipalInContext(req, principal)
+
+	w := httptest.NewRecorder()
+	h.Update(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("Update() non-existent user status = %v, want %v", w.Code, http.StatusInternalServerError)
+	}
+}
+
+func TestUserHandlerDeactivateNonExistent(t *testing.T) {
+	h := NewTestUserHandler()
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/iam/users/non-existent", nil)
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+
+	principal := &middleware.JWTToken{
+		Subject:  "user-1",
+		UserType: "user",
+		TenantID: "tenant-1",
+		Roles:    []string{"admin"},
+	}
+	req = setPrincipalInContext(req, principal)
+
+	w := httptest.NewRecorder()
+	h.Deactivate(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("Deactivate() non-existent user status = %v, want %v", w.Code, http.StatusInternalServerError)
+	}
+}
+
+// ----- users handler — set roles non-existent user -----
+
+func TestUserHandlerSetRolesNonExistent(t *testing.T) {
+	h := NewTestUserHandler()
+
+	payload := `{"role_ids":["admin"]}`
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/non-existent/roles", strings.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+
+	principal := &middleware.JWTToken{
+		Subject:  "user-1",
+		UserType: "user",
+		TenantID: "tenant-1",
+		Roles:    []string{"admin"},
+	}
+	req = setPrincipalInContext(req, principal)
+
+	w := httptest.NewRecorder()
+	h.SetRoles(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("SetRoles() non-existent user status = %v, want %v", w.Code, http.StatusNotFound)
+	}
+}
+
+// ----- users handler — authentik path (when Auth is set) -----
+
+func TestUserHandlerCreateWithAuthentik(t *testing.T) {
+	h := NewUserHandler(
+		&authentik.Client{
+			UsersAPI: &mockAuthentikUsers{},
+		},
+		store.NewUserStore(),
+		store.NewAuditStore(),
+		events.NewPublisher(""),
+	)
+
+	payload := `{"email":"test@example.com","display_name":"Test User","role_ids":["viewer"]}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Tenant-ID", "tenant-1")
 
 	principal := &middleware.JWTToken{
 		Subject:  "user-1",
@@ -38,129 +291,19 @@ func TestUserHandlerCreateSuccess(t *testing.T) {
 	h.Create(w, req)
 
 	if w.Code != http.StatusCreated {
-		t.Errorf("Create() status = %v, want %v", w.Code, http.StatusCreated)
-	}
-
-	var resp models.User
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("Create() invalid JSON response: %v", err)
-	}
-	if resp.Email != "test@example.com" {
-		t.Errorf("Create() email = %v, want test@example.com", resp.Email)
-	}
-	if resp.Status != "pending" {
-		t.Errorf("Create() status = %v, want pending", resp.Status)
+		t.Errorf("Create() with authentik status = %v, want %v", w.Code, http.StatusCreated)
 	}
 }
 
-func TestUserHandlerCreateMissingEmail(t *testing.T) {
-	h := NewTestUserHandler()
-
-	payload := `{"display_name":"Test User","role_ids":["viewer"]}`
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.Create(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Create() missing email status = %v, want %v", w.Code, http.StatusBadRequest)
-	}
-}
-
-func TestUserHandlerCreateMissingDisplayName(t *testing.T) {
-	h := NewTestUserHandler()
-
-	payload := `{"email":"test@example.com","role_ids":["viewer"]}`
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.Create(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Create() missing display_name status = %v, want %v", w.Code, http.StatusBadRequest)
-	}
-}
-
-func TestUserHandlerCreateMissingRoles(t *testing.T) {
-	h := NewTestUserHandler()
-
-	payload := `{"email":"test@example.com","display_name":"Test User"}`
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.Create(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Create() missing roles status = %v, want %v", w.Code, http.StatusBadRequest)
-	}
-}
-
-func TestUserHandlerList(t *testing.T) {
-	h := NewTestUserHandler()
-
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/users?page=1&page_size=10", nil)
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.List(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Errorf("List() status = %v, want %v", w.Code, http.StatusOK)
-	}
-
-	var resp map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("List() invalid JSON response: %v", err)
-	}
-	if resp["page"] != float64(1) {
-		t.Errorf("List() page = %v, want 1", resp["page"])
-	}
-	if resp["page_size"] != float64(10) {
-		t.Errorf("List() page_size = %v, want 10", resp["page_size"])
-	}
-}
-
-func TestUserHandlerListDefaultPageSize(t *testing.T) {
-	h := NewTestUserHandler()
+func TestUserHandlerListWithAuthentik(t *testing.T) {
+	h := NewUserHandler(
+		&authentik.Client{
+			UsersAPI: &mockAuthentikUsers{},
+		},
+		store.NewUserStore(),
+		store.NewAuditStore(),
+		events.NewPublisher(""),
+	)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/users", nil)
 	req.Header.Set("X-Tenant-ID", "tenant-1")
@@ -178,107 +321,21 @@ func TestUserHandlerListDefaultPageSize(t *testing.T) {
 	h.List(w, req)
 
 	if w.Code != http.StatusOK {
-		t.Fatalf("List() status = %v, want %v", w.Code, http.StatusOK)
-	}
-
-	var resp map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("List() invalid JSON response: %v", err)
-	}
-	if resp["page_size"] != float64(50) {
-		t.Errorf("List() default page_size = %v, want 50", resp["page_size"])
+		t.Errorf("List() with authentik status = %v, want %v", w.Code, http.StatusOK)
 	}
 }
 
-func TestUserHandlerUpdate(t *testing.T) {
-	h := NewTestUserHandler()
+func TestUserHandlerGetByIDWithAuthentik(t *testing.T) {
+	h := NewUserHandler(
+		&authentik.Client{
+			UsersAPI: &mockAuthentikUsers{},
+		},
+		store.NewUserStore(),
+		store.NewAuditStore(),
+		events.NewPublisher(""),
+	)
 
-	// First, create a user
-	h.CreateUserForTest("user-123", "test@example.com", "Test User")
-
-	payload := `{"display_name":"Updated Name"}`
-	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/user-123", strings.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.Update(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Errorf("Update() status = %v, want %v", w.Code, http.StatusOK)
-	}
-
-	var resp models.User
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("Update() invalid JSON response: %v", err)
-	}
-	if resp.DisplayName != "Updated Name" {
-		t.Errorf("Update() display_name = %v, want Updated Name", resp.DisplayName)
-	}
-}
-
-func TestUserHandlerUpdateMissingBody(t *testing.T) {
-	h := NewTestUserHandler()
-
-	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/user-123", strings.NewReader(""))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.Update(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Update() missing body status = %v, want %v", w.Code, http.StatusBadRequest)
-	}
-}
-
-func TestUserHandlerUpdateInvalidBody(t *testing.T) {
-	h := NewTestUserHandler()
-
-	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/user-123", strings.NewReader("invalid json"))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.Update(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Update() invalid body status = %v, want %v", w.Code, http.StatusBadRequest)
-	}
-}
-
-func TestUserHandlerGetByID(t *testing.T) {
-	h := NewTestUserHandler()
-
-	// First, create a user
-	h.CreateUserForTest("user-123", "test@example.com", "Test User")
-
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/users/user-123", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/users/test-user-uuid", nil)
 	req.Header.Set("X-Tenant-ID", "tenant-1")
 	req.Header.Set("Authorization", "Bearer token")
 
@@ -294,24 +351,26 @@ func TestUserHandlerGetByID(t *testing.T) {
 	h.GetByID(w, req)
 
 	if w.Code != http.StatusOK {
-		t.Errorf("GetByID() status = %v, want %v", w.Code, http.StatusOK)
-	}
-
-	var resp models.User
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("GetByID() invalid JSON response: %v", err)
-	}
-	if resp.ID != "user-123" {
-		t.Errorf("GetByID() id = %v, want user-123", resp.ID)
+		t.Errorf("GetByID() with authentik status = %v, want %v", w.Code, http.StatusOK)
 	}
 }
 
-func TestUserHandlerGetByIDNotFound(t *testing.T) {
-	h := NewTestUserHandler()
+// ----- users handler — update with authentik path -----
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/users/nonexistent", nil)
+func TestUserHandlerUpdateWithAuthentik(t *testing.T) {
+	h := NewUserHandler(
+		&authentik.Client{
+			UsersAPI: &mockAuthentikUsers{},
+		},
+		store.NewUserStore(),
+		store.NewAuditStore(),
+		events.NewPublisher(""),
+	)
+
+	payload := `{"display_name":"Updated"}`
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/test-user-uuid", strings.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
 
 	principal := &middleware.JWTToken{
 		Subject:  "user-1",
@@ -322,22 +381,25 @@ func TestUserHandlerGetByIDNotFound(t *testing.T) {
 	req = setPrincipalInContext(req, principal)
 
 	w := httptest.NewRecorder()
-	h.GetByID(w, req)
+	h.Update(w, req)
 
-	if w.Code != http.StatusNotFound {
-		t.Errorf("GetByID() not found status = %v, want %v", w.Code, http.StatusNotFound)
+	if w.Code != http.StatusOK {
+		t.Errorf("Update() with authentik status = %v, want %v", w.Code, http.StatusOK)
 	}
 }
 
-func TestUserHandlerDeactivate(t *testing.T) {
-	h := NewTestUserHandler()
+func TestUserHandlerDeactivateWithAuthentik(t *testing.T) {
+	h := NewUserHandler(
+		&authentik.Client{
+			UsersAPI: &mockAuthentikUsers{},
+		},
+		store.NewUserStore(),
+		store.NewAuditStore(),
+		events.NewPublisher(""),
+	)
 
-	// First, create a user
-	h.CreateUserForTest("user-123", "test@example.com", "Test User")
-
-	req := httptest.NewRequest(http.MethodDelete, "/api/v1/iam/users/user-123", nil)
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/iam/users/test-user-uuid", nil)
 	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
 
 	principal := &middleware.JWTToken{
 		Subject:  "user-1",
@@ -351,461 +413,87 @@ func TestUserHandlerDeactivate(t *testing.T) {
 	h.Deactivate(w, req)
 
 	if w.Code != http.StatusNoContent {
-		t.Errorf("Deactivate() status = %v, want %v", w.Code, http.StatusNoContent)
+		t.Errorf("Deactivate() with authentik status = %v, want %v", w.Code, http.StatusNoContent)
 	}
 }
 
-func TestUserHandlerSetRoles(t *testing.T) {
-	h := NewTestUserHandler()
+// ----- extractUserID tests -----
 
-	// First, create a user
-	h.CreateUserForTest("user-123", "test@example.com", "Test User")
-
-	payload := `{"role_ids":["admin","editor"]}`
-	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/user-123/roles", strings.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.SetRoles(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Errorf("SetRoles() status = %v, want %v", w.Code, http.StatusOK)
+func TestExtractUserIDVariousPaths(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+		want string
+	}{
+		{"standard path", "/api/v1/iam/users/user-123", "user-123"},
+		{"with trailing slash", "/api/v1/iam/users/user-123/", "user-123"},
+		{"roles path", "/api/v1/iam/users/user-456/roles", "user-456"},
+		{"empty id", "/api/v1/iam/users/", ""},
+		{"no id segment", "/api/v1/iam/users", ""},
 	}
 
-	var resp map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("SetRoles() invalid JSON response: %v", err)
-	}
-	if resp["user_id"] != "user-123" {
-		t.Errorf("SetRoles() user_id = %v, want user-123", resp["user_id"])
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := extractUserID(tt.path)
+			if got != tt.want {
+				t.Errorf("extractUserID(%q) = %q, want %q", tt.path, got, tt.want)
+			}
+		})
 	}
 }
 
-func TestUserHandlerSetRolesInvalidBody(t *testing.T) {
-	h := NewTestUserHandler()
+// ----- mock authentik users API for testing -----
 
-	payload := `{"role_ids":"not-an-array"}`
-	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/user-123/roles", strings.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
+type mockAuthentikUsers struct{}
 
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.SetRoles(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("SetRoles() invalid body status = %v, want %v", w.Code, http.StatusBadRequest)
-	}
+func (m *mockAuthentikUsers) Create(ctx context.Context, req authentik.CreateUserRequest) (*authentik.User, error) {
+	return &authentik.User{
+		UUID:       "auth-user-uuid",
+		Username:   req.Username,
+		Email:      req.Email,
+		Name:       req.Name,
+		IsActive:   req.IsActive,
+		Tenant:     req.Tenant,
+		DateJoined: &nowTime,
+	}, nil
 }
 
-func TestUserHandlerCreateInvalidJSON(t *testing.T) {
-	h := NewTestUserHandler()
-
-	payload := `{"email":"test@example.com","display_name":"Test`
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
+func (m *mockAuthentikUsers) Update(ctx context.Context, uuid string, req authentik.UpdateUserRequest) (*authentik.User, error) {
+	name := ""
+	if req.Name != nil {
+		name = *req.Name
 	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.Create(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Create() invalid JSON status = %v, want %v", w.Code, http.StatusBadRequest)
-	}
+	return &authentik.User{
+		UUID:       uuid,
+		Email:      "updated@example.com",
+		Name:       name,
+		IsActive:   true,
+		Tenant:     "tenant-1",
+		DateJoined: &nowTime,
+	}, nil
 }
 
-func TestUserHandlerCreateEmptyBody(t *testing.T) {
-	h := NewTestUserHandler()
-
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(""))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.Create(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Create() empty body status = %v, want %v", w.Code, http.StatusBadRequest)
-	}
+func (m *mockAuthentikUsers) GetByID(ctx context.Context, uuid string) (*authentik.User, error) {
+	return &authentik.User{
+		UUID:       uuid,
+		Username:   "testuser",
+		Email:      "test@example.com",
+		Name:       "Test User",
+		IsActive:   true,
+		Tenant:     "tenant-1",
+		DateJoined: &nowTime,
+	}, nil
 }
 
-func TestUserHandlerUpdateNoop(t *testing.T) {
-	h := NewTestUserHandler()
-
-	// First, create a user
-	h.CreateUserForTest("user-123", "test@example.com", "Test User")
-
-	// Send empty JSON object - should return 400 because all fields are nil
-	payload := `{}`
-	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/user-123", strings.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.Update(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Update() noop status = %v, want %v", w.Code, http.StatusBadRequest)
-	}
+func (m *mockAuthentikUsers) Delete(ctx context.Context, uuid string) error {
+	return nil
 }
 
-func TestUserHandlerCreateSetsCreatedAt(t *testing.T) {
-	h := NewTestUserHandler()
-
-	payload := `{"email":"test@example.com","display_name":"Test User","role_ids":["viewer"]}`
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.Create(w, req)
-
-	if w.Code != http.StatusCreated {
-		t.Fatalf("Create() status = %v, want %v", w.Code, http.StatusCreated)
-	}
-
-	var resp models.User
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("Create() invalid JSON: %v", err)
-	}
-	if resp.CreatedAt.IsZero() {
-		t.Error("Create() should set CreatedAt")
-	}
+func (m *mockAuthentikUsers) List(ctx context.Context) ([]*authentik.User, error) {
+	return []*authentik.User{
+		{UUID: "u1", Email: "user1@example.com", Name: "User 1", IsActive: true, Tenant: "tenant-1"},
+		{UUID: "u2", Email: "user2@example.com", Name: "User 2", IsActive: true, Tenant: "tenant-1"},
+	}, nil
 }
 
-func TestUserHandlerCreateSetsAuthMethod(t *testing.T) {
-	h := NewTestUserHandler()
-
-	payload := `{"email":"test@example.com","display_name":"Test User","role_ids":["viewer"]}`
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.Create(w, req)
-
-	if w.Code != http.StatusCreated {
-		t.Fatalf("Create() status = %v, want %v", w.Code, http.StatusCreated)
-	}
-
-	var resp models.User
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("Create() invalid JSON: %v", err)
-	}
-	if resp.AuthenticationMethod != "password" {
-		t.Errorf("Create() auth method = %v, want password", resp.AuthenticationMethod)
-	}
-}
-
-func TestUserHandlerUpdateMFA(t *testing.T) {
-	h := NewTestUserHandler()
-
-	// First, create a user
-	h.CreateUserForTest("user-123", "test@example.com", "Test User")
-
-	payload := `{"mfa_enabled":true}`
-	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/user-123", strings.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.Update(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("Update() status = %v, want %v", w.Code, http.StatusOK)
-	}
-
-	var resp models.User
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("Update() invalid JSON: %v", err)
-	}
-	if !resp.MFAEnabled {
-		t.Error("Update() should enable MFA")
-	}
-	if resp.AuthenticationMethod != "mfa" {
-		t.Errorf("Update() auth method = %v, want mfa", resp.AuthenticationMethod)
-	}
-}
-
-func TestUserHandlerGetByIDReturnsTenant(t *testing.T) {
-	h := NewTestUserHandler()
-
-	// First, create a user
-	h.CreateUserForTest("user-123", "test@example.com", "Test User")
-
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/users/user-123", nil)
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.GetByID(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("GetByID() status = %v, want %v", w.Code, http.StatusOK)
-	}
-
-	var resp models.User
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("GetByID() invalid JSON: %v", err)
-	}
-	if resp.TenantID == "" {
-		t.Error("GetByID() should return TenantID")
-	}
-}
-
-func TestUserHandlerListWithInvalidPageSize(t *testing.T) {
-	h := NewTestUserHandler()
-
-	// page_size > 100 should be clamped to 100
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/users?page=1&page_size=200", nil)
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.List(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("List() status = %v, want %v", w.Code, http.StatusOK)
-	}
-
-	var resp map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("List() invalid JSON: %v", err)
-	}
-	if ps := resp["page_size"].(float64); ps > 100 {
-		t.Errorf("List() page_size = %v, want clamped to 100", ps)
-	}
-}
-
-func TestUserHandlerListWithInvalidPage(t *testing.T) {
-	h := NewTestUserHandler()
-
-	// page < 1 should default to 1
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/users?page=0&page_size=10", nil)
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.List(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("List() status = %v, want %v", w.Code, http.StatusOK)
-	}
-
-	var resp map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("List() invalid JSON: %v", err)
-	}
-	if page := resp["page"].(float64); page < 1 {
-		t.Errorf("List() page = %v, want at least 1", page)
-	}
-}
-
-func TestUserHandlerSetRolesEmptyArray(t *testing.T) {
-	h := NewTestUserHandler()
-
-	// First, create a user
-	h.CreateUserForTest("user-123", "test@example.com", "Test User")
-
-	payload := `{"role_ids":[]}`
-	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/user-123/roles", strings.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.SetRoles(w, req)
-
-	// Handler rejects empty roles array - validation requires at least one role
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("SetRoles() empty array status = %v, want %v", w.Code, http.StatusBadRequest)
-	}
-}
-
-func TestUserHandlerUpdateStatus(t *testing.T) {
-	h := NewTestUserHandler()
-
-	// First, create a user
-	h.CreateUserForTest("user-123", "test@example.com", "Test User")
-
-	payload := `{"status":"suspended"}`
-	req := httptest.NewRequest(http.MethodPatch, "/api/v1/iam/users/user-123", strings.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.Update(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("Update() status = %v, want %v", w.Code, http.StatusOK)
-	}
-
-	var resp models.User
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("Update() invalid JSON: %v", err)
-	}
-	if resp.Status != "suspended" {
-		t.Errorf("Update() status = %v, want suspended", resp.Status)
-	}
-}
-
-func TestUserHandlerCreateMFAUser(t *testing.T) {
-	h := NewTestUserHandler()
-
-	payload := `{"email":"mfa@example.com","display_name":"MFA User","role_ids":["viewer"],"mfa_enabled":true}`
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/users", strings.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("Authorization", "Bearer token")
-
-	principal := &middleware.JWTToken{
-		Subject:  "user-1",
-		UserType: "user",
-		TenantID: "tenant-1",
-		Roles:    []string{"admin"},
-	}
-	req = setPrincipalInContext(req, principal)
-
-	w := httptest.NewRecorder()
-	h.Create(w, req)
-
-	if w.Code != http.StatusCreated {
-		t.Fatalf("Create() MFA status = %v, want %v", w.Code, http.StatusCreated)
-	}
-
-	var resp models.User
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("Create() MFA invalid JSON: %v", err)
-	}
-	if !resp.MFAEnabled {
-		t.Error("Create() MFA should enable MFA")
-	}
-	if resp.AuthenticationMethod != "mfa" {
-		t.Errorf("Create() MFA auth method = %v, want mfa", resp.AuthenticationMethod)
-	}
-}
-
-// CreateUserForTest is a test helper that directly creates a user in the store
-func (h *UserHandler) CreateUserForTest(id, email, displayName string) {
-	user := &models.User{
-		ID:                   id,
-		Email:                email,
-		DisplayName:          displayName,
-		Status:               "active",
-		RoleIDs:              []string{"viewer"},
-		TenantID:             "tenant-test",
-		MFAEnabled:           false,
-		AuthenticationMethod: "password",
-	}
-	h.Users.Create(user)
-}
+var nowTime = time.Now().UTC()

@@ -19,6 +19,8 @@ import (
 	"github.com/operan/modules/02-identity-access/internal/handler"
 	"github.com/operan/modules/02-identity-access/internal/middleware"
 	"github.com/operan/modules/02-identity-access/internal/store"
+
+	"github.com/streadway/amqp"
 )
 
 func main() {
@@ -531,11 +533,11 @@ func main() {
 	jwksCache.RefreshPeriodically(context.Background(), 55*time.Minute)
 	log.Println("JWKS background refresh started (55m interval)")
 
-	// Health check
+	// Health check — lightweight liveness probe
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{"status":"healthy"}`)
+		fmt.Fprint(w, `{"status":"healthy","module":"iam","version":"0.2.0"}`)
 	})
 
 	// Readiness check — verifies all dependencies are reachable
@@ -558,10 +560,15 @@ func main() {
 		},
 		"event-broker": func() bool {
 			if cfg.EventBrokerURL == "" {
-				// No broker configured — always pass
-				return true
+				return true // No broker configured — always pass
 			}
-			return true // publisher health check deferred
+			// AMQP connection health check
+			conn, err := amqp.Dial(cfg.EventBrokerURL)
+			if err != nil {
+				return false
+			}
+			conn.Close()
+			return true
 		},
 	}}
 
@@ -591,11 +598,34 @@ func main() {
 		fmt.Fprint(w, `}`)
 	})
 
-	// Wrap with middleware chain
+	// ─── Middleware chain ───
+	// Order (outermost → innermost): CORS → RequestID → Logging → TraceInjector → AuthValidator → TenantInjector → handlers
 	var chain http.Handler = mux
+
+	// 1. CORS — handle preflight before auth/rate-limit
+	chain = middleware.CORS(middleware.DefaultCORSConfig())(chain)
+
+	// 2. RequestID — generate/propagate request ID early
+	chain = middleware.RequestIDMiddleware(chain)
+
+	// 3. Logging — structured JSON logging with request ID
+	chain = middleware.Logging(middleware.LoggingConfig{})(chain)
+
+	// 4. TraceInjector — existing trace ID propagation
 	chain = middleware.TraceInjector(chain)
+
+	// 5. AuthValidator — JWT/HMAC validation + JWKS cache
 	chain = middleware.AuthValidator(jwksCache, jwksURL, cfg.TokenSecret, chain)
+
+	// 6. TenantInjector — extract tenant from header/context
 	chain = middleware.TenantInjector(chain)
+
+	// 7. RateLimiter — per-client token bucket
+	rateLimiter := middleware.NewRateLimiterMiddleware(middleware.RateLimiterConfig{
+		RequestsPerSecond: cfg.RateLimitRPS,
+		BurstSize:         cfg.RateLimitBurst,
+	})
+	chain = rateLimiter.Chain(chain)
 
 	// Start server
 	addr := fmt.Sprintf(":%d", cfg.Port)

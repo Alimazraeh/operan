@@ -1,0 +1,43 @@
+# Go build artifacts
+bin/
+pkg/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+test.test
+*.test
+
+# Go test coverage
+coverage.out
+cover.out
+*.coverprofile
+
+# Go module cache
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+*.bak
+*.log
+
+# Helm
+helm/.testOutput
+
+# Coverage reports
+*.cov
+.coverage
+
+# Local config overrides
+local.env
+.env.local

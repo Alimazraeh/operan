@@ -110,10 +110,15 @@ func (h *MFAHandler) Enroll(w http.ResponseWriter, r *http.Request) {
 		req.Issuer = "Operan Platform"
 	}
 
+	// Fetch user from Authentik to get their UUID for flow execution
+	if h.Auth == nil {
+		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 
-	// Fetch user from Authentik to get their UUID for flow execution
 	user, err := h.Auth.UsersAPI.GetByID(ctx, userID)
 	if err != nil {
 		http.Error(w, `{"error":"failed to retrieve user"}`, http.StatusInternalServerError)
@@ -219,6 +224,11 @@ func (h *MFAHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	// Build verification payload for Authentik.
+	if h.Auth == nil {
+		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
+		return
+	}
+
 	verifyReq := map[string]interface{}{
 		"flow_data": map[string]interface{}{
 			"uid":     req.Code,
@@ -290,6 +300,11 @@ func (h *MFAHandler) Disable(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	// Fetch the user from Authentik.
+	if h.Auth == nil {
+		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
+		return
+	}
+
 	user, err := h.Auth.UsersAPI.GetByID(ctx, userID)
 	if err != nil {
 		http.Error(w, `{"error":"user not found"}`, http.StatusNotFound)
@@ -353,6 +368,11 @@ func (h *MFAHandler) ListDevices(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 
+	if h.Auth == nil {
+		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
+		return
+	}
+
 	user, err := h.Auth.UsersAPI.GetByID(ctx, targetUserID)
 	if err != nil {
 		http.Error(w, `{"error":"user not found"}`, http.StatusNotFound)
@@ -380,6 +400,11 @@ func (h *MFAHandler) RegenerateRecoveryCodes(w http.ResponseWriter, r *http.Requ
 	defer cancel()
 
 	// Fetch the user to get their UUID.
+	if h.Auth == nil {
+		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
+		return
+	}
+
 	user, err := h.Auth.UsersAPI.GetByID(ctx, userID)
 	if err != nil {
 		http.Error(w, `{"error":"user not found"}`, http.StatusNotFound)

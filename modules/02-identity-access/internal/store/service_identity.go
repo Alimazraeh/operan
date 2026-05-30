@@ -46,11 +46,6 @@ func (s *ServiceIdentityStore) Create(identity *models.ServiceIdentity) error {
 		identity.APIKeyID = "sk_" + uuid.New().String()
 	}
 
-	// Check uniqueness within tenant
-	if _, exists := s.idByTenantAndName[identity.TenantID+"::"+identity.Name]; exists {
-		return fmt.Errorf("service identity with name %s already exists in tenant %s", identity.Name, identity.TenantID)
-	}
-
 	// Store roles as JSON
 	if len(identity.RoleIDs) > 0 {
 		data, err := json.Marshal(identity.RoleIDs)
@@ -62,7 +57,6 @@ func (s *ServiceIdentityStore) Create(identity *models.ServiceIdentity) error {
 
 	// Store metadata as JSON
 	if identity.Metadata != "" {
-		// Validate it's valid JSON
 		var j interface{}
 		if err := json.Unmarshal([]byte(identity.Metadata), &j); err != nil {
 			return fmt.Errorf("metadata must be valid JSON: %w", err)
@@ -73,6 +67,11 @@ func (s *ServiceIdentityStore) Create(identity *models.ServiceIdentity) error {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	// Check uniqueness within tenant (must be inside lock for thread safety)
+	if _, exists := s.idByTenantAndName[identity.TenantID+"::"+identity.Name]; exists {
+		return fmt.Errorf("service identity with name %s already exists in tenant %s", identity.Name, identity.TenantID)
+	}
 
 	s.idByID[identity.ID] = identity
 	s.idByTenantAndName[identity.TenantID+"::"+identity.Name] = identity
