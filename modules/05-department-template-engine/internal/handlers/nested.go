@@ -31,8 +31,9 @@ func (h *TemplateHandlers) HandleTemplateNested(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Verify template exists
-	_, err := h.TemplateStore.GetByID(templateID)
+	// Verify template exists (same-tenant pre-check to prevent cross-tenant resource enumeration)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+	_, err := h.TemplateStore.GetByIDAndTenant(templateID, tenantID)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "about:blank", "Not Found",
 			"Template not found", r.URL.Path, reqID)
