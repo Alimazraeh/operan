@@ -581,3 +581,298 @@ func TestVersionStore_GetByID_NotFound(t *testing.T) {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
+
+// ─── GetByIDAndTenant Tests ──────────────────────────────────────────────────
+
+func TestTemplateStore_GetByIDAndTenant_Success(t *testing.T) {
+	store := NewTemplateStore()
+
+	tmpl, err := store.Create(&Template{
+		TenantID: testTenantID,
+		Name:     "Cross-Tenant Test",
+		Category: "engineering",
+	})
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	// Correct tenant should find it
+	found, err := store.GetByIDAndTenant(tmpl.ID, testTenantID)
+	if err != nil {
+		t.Fatalf("GetByIDAndTenant failed: %v", err)
+	}
+	if found.Name != "Cross-Tenant Test" {
+		t.Errorf("expected name 'Cross-Tenant Test', got %s", found.Name)
+	}
+
+	// Different tenant should NOT find it
+	_, err = store.GetByIDAndTenant(tmpl.ID, "tenant-2")
+	if err == nil {
+		t.Fatal("expected error for wrong tenant, got nil")
+	}
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound for wrong tenant, got %v", err)
+	}
+}
+
+func TestTemplateStore_GetByIDAndTenant_NotFound(t *testing.T) {
+	store := NewTemplateStore()
+
+	_, err := store.GetByIDAndTenant("nonexistent-id", testTenantID)
+	if err == nil {
+		t.Fatal("expected error for nonexistent template, got nil")
+	}
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestCustomTemplateStore_GetByIDAndTenant_Success(t *testing.T) {
+	store := NewCustomTemplateStore()
+
+	ct, err := store.Create(&CustomTemplate{
+		TenantID: testTenantID,
+		Name:     "Custom Cross-Tenant",
+		Category: "sales",
+		Content:  map[string]interface{}{"key": "value"},
+	})
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	found, err := store.GetByIDAndTenant(ct.ID, testTenantID)
+	if err != nil {
+		t.Fatalf("GetByIDAndTenant failed: %v", err)
+	}
+	if found.Name != "Custom Cross-Tenant" {
+		t.Errorf("expected name 'Custom Cross-Tenant', got %s", found.Name)
+	}
+
+	_, err = store.GetByIDAndTenant(ct.ID, "tenant-2")
+	if err == nil {
+		t.Fatal("expected error for wrong tenant, got nil")
+	}
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound for wrong tenant, got %v", err)
+	}
+}
+
+func TestCustomTemplateStore_GetByIDAndTenant_NotFound(t *testing.T) {
+	store := NewCustomTemplateStore()
+
+	_, err := store.GetByIDAndTenant("nonexistent-id", testTenantID)
+	if err == nil {
+		t.Fatal("expected error for nonexistent template, got nil")
+	}
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestDeploymentStore_GetByIDAndTenant_Success(t *testing.T) {
+	store := NewDeploymentStore()
+
+	dep, err := store.Create(&TemplateDeployment{
+		TenantID:  testTenantID,
+		TemplateID: uuid.New().String(),
+		Environment: "production",
+	})
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	found, err := store.GetByIDAndTenant(dep.ID, testTenantID)
+	if err != nil {
+		t.Fatalf("GetByIDAndTenant failed: %v", err)
+	}
+	if found.Environment != "production" {
+		t.Errorf("expected environment 'production', got %s", found.Environment)
+	}
+
+	_, err = store.GetByIDAndTenant(dep.ID, "tenant-2")
+	if err == nil {
+		t.Fatal("expected error for wrong tenant, got nil")
+	}
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound for wrong tenant, got %v", err)
+	}
+}
+
+func TestDeploymentStore_GetByIDAndTenant_NotFound(t *testing.T) {
+	store := NewDeploymentStore()
+
+	_, err := store.GetByIDAndTenant("nonexistent-id", testTenantID)
+	if err == nil {
+		t.Fatal("expected error for nonexistent deployment, got nil")
+	}
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestDeploymentStore_Delete(t *testing.T) {
+	store := NewDeploymentStore()
+
+	dep, err := store.Create(&TemplateDeployment{
+		TenantID:  testTenantID,
+		TemplateID: uuid.New().String(),
+		Environment: "staging",
+	})
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	if err := store.Delete(dep.ID); err != nil {
+		t.Fatalf("Delete failed: %v", err)
+	}
+
+	_, err = store.GetByID(dep.ID)
+	if err == nil {
+		t.Fatal("expected error after delete, got nil")
+	}
+
+	_, err = store.GetByIDAndTenant(dep.ID, testTenantID)
+	if err == nil {
+		t.Fatal("expected error after delete, got nil")
+	}
+}
+
+func TestDeploymentStore_Delete_NotFound(t *testing.T) {
+	store := NewDeploymentStore()
+
+	err := store.Delete("nonexistent-id")
+	if err == nil {
+		t.Fatal("expected error for nonexistent deployment, got nil")
+	}
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestVersionStore_GetByIDAndTenant_Success(t *testing.T) {
+	store := NewVersionStore()
+
+	tmplID := uuid.New().String()
+
+	v, err := store.Create(&TemplateVersion{
+		TenantID: testTenantID,
+		TemplateID: tmplID,
+		Version:    "1.0.0",
+	})
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	found, err := store.GetByIDAndTenant(v.ID, testTenantID)
+	if err != nil {
+		t.Fatalf("GetByIDAndTenant failed: %v", err)
+	}
+	if found.Version != "1.0.0" {
+		t.Errorf("expected version '1.0.0', got %s", found.Version)
+	}
+
+	_, err = store.GetByIDAndTenant(v.ID, "tenant-2")
+	if err == nil {
+		t.Fatal("expected error for wrong tenant, got nil")
+	}
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound for wrong tenant, got %v", err)
+	}
+}
+
+func TestVersionStore_GetByIDAndTenant_NotFound(t *testing.T) {
+	store := NewVersionStore()
+
+	_, err := store.GetByIDAndTenant("nonexistent-id", testTenantID)
+	if err == nil {
+		t.Fatal("expected error for nonexistent version, got nil")
+	}
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+// ─── Tenant Isolation Tests ──────────────────────────────────────────────────
+
+func TestTenantIsolation_TemplateStore(t *testing.T) {
+	store := NewTemplateStore()
+
+	t1, err := store.Create(&Template{
+		TenantID: "t1",
+		Name:     "T1 Template",
+		Category: "engineering",
+	})
+	if err != nil {
+		t.Fatalf("Create t1 failed: %v", err)
+	}
+
+	t2, err := store.Create(&Template{
+		TenantID: "t2",
+		Name:     "T2 Template",
+		Category: "sales",
+	})
+	if err != nil {
+		t.Fatalf("Create t2 failed: %v", err)
+	}
+
+	// T1 can only see T1's template
+	found1, err := store.GetByIDAndTenant(t1.ID, "t1")
+	if err != nil {
+		t.Fatalf("GetByIDAndTenant t1 as t1 failed: %v", err)
+	}
+	if found1.Name != "T1 Template" {
+		t.Errorf("expected 'T1 Template', got %s", found1.Name)
+	}
+
+	// T1 cannot see T2's template
+	_, err = store.GetByIDAndTenant(t2.ID, "t1")
+	if err == nil {
+		t.Fatal("expected error when T1 tries to access T2's template, got nil")
+	}
+
+	// T2 can see T2's template
+	found2, err := store.GetByIDAndTenant(t2.ID, "t2")
+	if err != nil {
+		t.Fatalf("GetByIDAndTenant t2 as t2 failed: %v", err)
+	}
+	if found2.Name != "T2 Template" {
+		t.Errorf("expected 'T2 Template', got %s", found2.Name)
+	}
+}
+
+func TestTenantIsolation_DeploymentStore(t *testing.T) {
+	store := NewDeploymentStore()
+
+	_, err := store.Create(&TemplateDeployment{
+		TenantID:  "t1",
+		TemplateID: uuid.New().String(),
+		Environment: "production",
+	})
+	if err != nil {
+		t.Fatalf("Create t1 deployment failed: %v", err)
+	}
+
+	dep2, err := store.Create(&TemplateDeployment{
+		TenantID:  "t2",
+		TemplateID: uuid.New().String(),
+		Environment: "staging",
+	})
+	if err != nil {
+		t.Fatalf("Create t2 deployment failed: %v", err)
+	}
+
+	// T1 cannot access T2's deployment
+	_, err = store.GetByIDAndTenant(dep2.ID, "t1")
+	if err == nil {
+		t.Fatal("expected error when T1 tries to access T2's deployment, got nil")
+	}
+
+	// T2 can access T2's deployment
+	found, err := store.GetByIDAndTenant(dep2.ID, "t2")
+	if err != nil {
+		t.Fatalf("GetByIDAndTenant t2 deployment failed: %v", err)
+	}
+	if found.Environment != "staging" {
+		t.Errorf("expected 'staging', got %s", found.Environment)
+	}
+}

@@ -35,6 +35,7 @@ func (h *TemplateHandlers) CreateCustomTemplate(w http.ResponseWriter, r *http.R
 	}
 
 	ct := &store.CustomTemplate{
+		TenantID:    middleware.TenantIDFromContext(r.Context()),
 		Name:        req.Name,
 		Description: req.Description,
 		Category:    req.Category,
@@ -79,7 +80,7 @@ func (h *TemplateHandlers) ListCustomTemplates(w http.ResponseWriter, r *http.Re
 		categoryFilter = &cat
 	}
 
-	templates, total, hasMore := h.CustomTemplateStore.List("default", page, pageSize, categoryFilter)
+	templates, total, hasMore := h.CustomTemplateStore.List(middleware.TenantIDFromContext(r.Context()), page, pageSize, categoryFilter)
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"data": toCustomTemplateListResponse(templates),
@@ -103,7 +104,8 @@ func (h *TemplateHandlers) GetCustomTemplate(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	ct, err := h.CustomTemplateStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+	ct, err := h.CustomTemplateStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "about:blank", "Not Found",
 			"Custom template not found", r.URL.Path, reqID)
@@ -162,7 +164,7 @@ func (h *TemplateHandlers) DeleteCustomTemplate(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if err := h.CustomTemplateStore.Delete(id); err != nil {
+	if err := h.CustomTemplateStore.Delete(id, middleware.TenantIDFromContext(r.Context())); err != nil {
 		writeError(w, http.StatusNotFound, "about:blank", "Not Found",
 			"Custom template not found", r.URL.Path, reqID)
 		return

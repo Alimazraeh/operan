@@ -37,6 +37,7 @@ func writeError(w http.ResponseWriter, status int, typ, title, detail, instance,
 func toTemplateResponse(tmpl *store.Template) map[string]interface{} {
 	resp := map[string]interface{}{
 		"id":          tmpl.ID,
+		"tenant_id":   tmpl.TenantID,
 		"name":        tmpl.Name,
 		"description": tmpl.Description,
 		"category":    tmpl.Category,
@@ -80,17 +81,18 @@ func toTemplateListResponse(templates []store.Template) []interface{} {
 	result := make([]interface{}, 0, len(templates))
 	for _, t := range templates {
 		resp := map[string]interface{}{
-			"id":          t.ID,
-			"name":        t.Name,
-			"description": t.Description,
-			"category":    t.Category,
-			"version":     t.Version,
-			"status":      t.Status,
-			"created_at":  t.CreatedAt,
-			"updated_at":  t.UpdatedAt,
-			"created_by":  t.CreatedBy,
-			"agents_count":    len(t.Agents),
-			"workflows_count": len(t.Workflows),
+			"id":              t.ID,
+			"tenant_id":       t.TenantID,
+			"name":            t.Name,
+			"description":     t.Description,
+			"category":        t.Category,
+			"version":         t.Version,
+			"status":          t.Status,
+			"created_at":      t.CreatedAt,
+			"updated_at":      t.UpdatedAt,
+			"created_by":      t.CreatedBy,
+			"agents_count":       len(t.Agents),
+			"workflows_count":  len(t.Workflows),
 			"integrations_count": len(t.Integrations),
 		}
 		if t.Tags != nil {
@@ -104,6 +106,7 @@ func toTemplateListResponse(templates []store.Template) []interface{} {
 func toCustomTemplateResponse(ct *store.CustomTemplate) map[string]interface{} {
 	return map[string]interface{}{
 		"id":          ct.ID,
+		"tenant_id":   ct.TenantID,
 		"name":        ct.Name,
 		"description": ct.Description,
 		"category":    ct.Category,
@@ -121,15 +124,16 @@ func toCustomTemplateListResponse(templates []store.CustomTemplate) []interface{
 	result := make([]interface{}, 0, len(templates))
 	for _, ct := range templates {
 		resp := map[string]interface{}{
-			"id":         ct.ID,
-			"name":       ct.Name,
+			"id":          ct.ID,
+			"tenant_id":   ct.TenantID,
+			"name":        ct.Name,
 			"description": ct.Description,
-			"category":   ct.Category,
-			"owner_id":   ct.OwnerID,
-			"status":     ct.Status,
-			"version":    ct.Version,
-			"created_at": ct.CreatedAt,
-			"updated_at": ct.UpdatedAt,
+			"category":    ct.Category,
+			"owner_id":    ct.OwnerID,
+			"status":      ct.Status,
+			"version":     ct.Version,
+			"created_at":  ct.CreatedAt,
+			"updated_at":  ct.UpdatedAt,
 		}
 		result = append(result, resp)
 	}
@@ -139,6 +143,7 @@ func toCustomTemplateListResponse(templates []store.CustomTemplate) []interface{
 func toDeploymentResponse(d *store.TemplateDeployment) map[string]interface{} {
 	resp := map[string]interface{}{
 		"id":          d.ID,
+		"tenant_id":   d.TenantID,
 		"template_id": d.TemplateID,
 		"version":     d.Version,
 		"status":      d.Status,
@@ -170,6 +175,7 @@ func toDeploymentListResponse(deployments []store.TemplateDeployment) []interfac
 	for _, d := range deployments {
 		resp := map[string]interface{}{
 			"id":          d.ID,
+			"tenant_id":   d.TenantID,
 			"template_id": d.TemplateID,
 			"version":     d.Version,
 			"status":      d.Status,

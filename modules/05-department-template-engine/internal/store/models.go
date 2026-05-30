@@ -15,6 +15,7 @@ var timeNow = time.Now
 // Template represents a department template.
 type Template struct {
 	ID                  string                 `json:"id"`
+	TenantID            string                 `json:"tenant_id"`
 	Name                string                 `json:"name"`
 	Description         string                 `json:"description,omitempty"`
 	Category            string                 `json:"category"`
@@ -139,16 +140,18 @@ type OperationalPolicy struct {
 
 // TemplateVersion represents an immutable snapshot of a template at a version.
 type TemplateVersion struct {
-	ID        string                 `json:"id"`
-	TemplateID string                `json:"template_id"`
-	Version   string                `json:"version"`
-	Snapshot  map[string]interface{} `json:"snapshot"`
-	CreatedAt time.Time              `json:"created_at"`
+	ID         string                 `json:"id"`
+	TenantID   string                 `json:"tenant_id"`
+	TemplateID string                 `json:"template_id"`
+	Version    string                 `json:"version"`
+	Snapshot   map[string]interface{} `json:"snapshot"`
+	CreatedAt  time.Time              `json:"created_at"`
 }
 
 // TemplateDeployment represents a deployment of a template.
 type TemplateDeployment struct {
 	ID                  string                 `json:"id"`
+	TenantID            string                 `json:"tenant_id"`
 	TemplateID          string                 `json:"template_id"`
 	Version             string                 `json:"version"`
 	Status              string                 `json:"status"` // select, configure, connect_data, provision_memory, deploy_swarm, operational, failed, rolled_back
@@ -166,6 +169,7 @@ type TemplateDeployment struct {
 // CustomTemplate represents a user-created custom template.
 type CustomTemplate struct {
 	ID          string                 `json:"id"`
+	TenantID    string                 `json:"tenant_id"`
 	Name        string                 `json:"name"`
 	Description string                 `json:"description,omitempty"`
 	Category    string                 `json:"category,omitempty"`
