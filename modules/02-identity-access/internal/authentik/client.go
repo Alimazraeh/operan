@@ -17,14 +17,37 @@ import (
 	"time"
 )
 
+// UsersAPIOps is the interface for user operations.
+// Used to enable mocking in tests.
+type UsersAPIOps interface {
+    Create(ctx context.Context, req CreateUserRequest) (*User, error)
+    GetByID(ctx context.Context, uuid string) (*User, error)
+    List(ctx context.Context) ([]*User, error)
+    Update(ctx context.Context, uuid string, req UpdateUserRequest) (*User, error)
+    Delete(ctx context.Context, uuid string) error
+}
+
+// GroupsAPIOps is the interface for group operations.
+// Used to enable mocking in tests.
+type GroupsAPIOps interface {
+    Create(ctx context.Context, req CreateGroupRequest) (*Group, error)
+    GetByID(ctx context.Context, uuid string) (*Group, error)
+    List(ctx context.Context) ([]*Group, error)
+    Update(ctx context.Context, uuid string, name string) (*Group, error)
+    Delete(ctx context.Context, uuid string) error
+    AddUser(ctx context.Context, groupUUID, userUUID string) error
+    RemoveUser(ctx context.Context, groupUUID, userUUID string) error
+    GetMembers(ctx context.Context, groupUUID string) ([]string, error)
+}
+
 // Client is the Authentik REST API client.
 type Client struct {
 	HTTPClient      *http.Client
 	BaseURL         string
 	AuthToken       string
 	Timeout         time.Duration
-	UsersAPI        *UsersAPI
-	GroupsAPI       *GroupsAPI
+	UsersAPI        UsersAPIOps
+	GroupsAPI       GroupsAPIOps
 	ApplicationsAPI *ApplicationsAPI
 	TokensAPI       *TokensAPI
 	OAuth2ProvidersAPI *OAuth2ProvidersAPI
@@ -50,8 +73,8 @@ func NewClient(serverURL, authToken string) *Client {
 		Timeout:    30 * time.Second,
 	}
 	// Initialize all sub-APIs
-	c.UsersAPI = &UsersAPI{c}
-	c.GroupsAPI = &GroupsAPI{c}
+	c.UsersAPI = &UsersAPI{Client: c}
+	c.GroupsAPI = &GroupsAPI{Client: c}
 	c.ApplicationsAPI = &ApplicationsAPI{c}
 	c.TokensAPI = &TokensAPI{c}
 	c.OAuth2ProvidersAPI = &OAuth2ProvidersAPI{c}
@@ -85,12 +108,12 @@ func (c *Client) SAMLAPI() *SAMLProvidersAPI {
 }
 
 // Users returns the Users API client.
-func (c *Client) Users() *UsersAPI {
+func (c *Client) Users() UsersAPIOps {
 	return c.UsersAPI
 }
 
 // Groups returns the Groups API client.
-func (c *Client) Groups() *GroupsAPI {
+func (c *Client) Groups() GroupsAPIOps {
 	return c.GroupsAPI
 }
 
