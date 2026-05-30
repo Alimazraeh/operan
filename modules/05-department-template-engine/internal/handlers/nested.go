@@ -158,7 +158,8 @@ func (h *TemplateHandlers) handleClone(w http.ResponseWriter, r *http.Request, r
 	}
 	json.Unmarshal(body, &req)
 
-	tmpl, err := h.TemplateStore.GetByID(templateID)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+	tmpl, err := h.TemplateStore.GetByIDAndTenant(templateID, tenantID)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "about:blank", "Not Found",
 			"Template not found", r.URL.Path, reqID)
@@ -166,7 +167,7 @@ func (h *TemplateHandlers) handleClone(w http.ResponseWriter, r *http.Request, r
 	}
 
 	clone := &store.Template{
-		TenantID:            middleware.TenantIDFromContext(r.Context()),
+		TenantID:            tenantID,
 		Name:                req.Name,
 		Description:         tmpl.Description,
 		Category:            req.Category,
@@ -329,7 +330,7 @@ func (h *TemplateHandlers) handleUpdateDeployment(w http.ResponseWriter, r *http
 		}
 	}
 
-	updated, err := h.DeploymentStore.GetByID(deploymentID)
+	updated, err := h.DeploymentStore.GetByIDAndTenant(deploymentID, tenantID)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "about:blank", "Not Found",
 			"Deployment not found", r.URL.Path, reqID)

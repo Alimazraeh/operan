@@ -124,12 +124,22 @@ func (s *TemplateStore) List(tenantID string, page, pageSize int, filterCategory
 }
 
 // Update partially updates a template. Only non-empty fields are applied.
+// NOTE: This method does NOT verify tenant ownership. Use UpdateByTenant for
+// handlers that need tenant isolation.
 func (s *TemplateStore) Update(id string, patch map[string]interface{}) (*Template, error) {
+	return s.UpdateByTenant(id, "", patch)
+}
+
+// UpdateByTenant partially updates a template with tenant verification.
+func (s *TemplateStore) UpdateByTenant(id, tenantID string, patch map[string]interface{}) (*Template, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	t, ok := s.templates[id]
 	if !ok {
+		return nil, ErrNotFound
+	}
+	if t.TenantID != tenantID {
 		return nil, ErrNotFound
 	}
 
