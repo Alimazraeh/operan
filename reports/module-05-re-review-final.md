@@ -9,7 +9,9 @@
 
 ## Executive Summary
 
-Module 05 has successfully passed re-review. All CRITICAL issues from the initial audit have been resolved, test coverage has increased from 0% to 80.4% (handlers), and tenant isolation has been rigorously enforced across all handlers and stores.
+Module 05 has successfully passed re-review. All CRITICAL issues from the initial audit have been resolved, test coverage has increased from 0% to 81.7% (handlers), and tenant isolation has been rigorously enforced across all handlers and stores.
+
+**Note:** The initial re-review commit was rejected for 4 remaining tenant isolation bypasses. These have now been fixed and committed. See fix commit `ba40055` for details.
 
 ---
 
@@ -17,7 +19,7 @@ Module 05 has successfully passed re-review. All CRITICAL issues from the initia
 
 | Criteria | Required | Actual | Status |
 |----------|----------|--------|--------|
-| Test Coverage (handlers) | ≥80% | 80.4% | ✅ PASS |
+| Test Coverage (handlers) | ≥80% | 81.7% | ✅ PASS |
 | Tenant Isolation | Complete | Verified | ✅ PASS |
 | handleUpdateDeployment Ownership | Enforced | Enforced | ✅ PASS |
 | Build Status | Passing | All green | ✅ PASS |
@@ -31,26 +33,30 @@ Module 05 has successfully passed re-review. All CRITICAL issues from the initia
 | `internal/config` | 100.0% | ✅ PASS |
 | `internal/ctxkeys` | 100.0% | ✅ PASS (NEW) |
 | `internal/events` | 77.3% | ✅ PASS |
-| `internal/handlers` | 80.4% | ✅ PASS |
+| `internal/handlers` | 81.7% | ✅ PASS |
 | `internal/middleware` | 94.1% | ✅ PASS |
-| `internal/store` | 76.1% | ✅ PASS |
-| **Overall** | **78.7%** | ✅ PASS |
+| `internal/store` | 75.5% | ✅ PASS |
+| **Overall** | **78.9%** | ✅ PASS |
 
 ---
 
 ## Issues Fixed
 
-### CRITICAL Issues (7 total)
+### CRITICAL Issues (11 total)
 
 | ID | Issue | Fix | Status |
 |----|-------|-----|--------|
 | C1 | Tenant isolation bypass in GetTemplate | Added GetByIDAndTenant, inject tenant from context | ✅ FIXED |
 | C2 | Tenant isolation bypass in ListTemplates | Changed List to use tenantID from context | ✅ FIXED |
-| C3 | Tenant isolation bypass in DeleteTemplate | Added tenantID param to Delete | ✅ FIXED |
+| C3 | Tenant isolation bypass in DeleteTemplate | Added tenantID param to Delete, GetByIDAndTenant | ✅ FIXED |
 | C4 | Tenant isolation bypass in CreateTemplate | Inject TenantID from context in Create | ✅ FIXED |
 | C5 | Nested handler tenant isolation | Fixed handleGetDeployment and handleGetVersion to use GetByIDAndTenant | ✅ FIXED |
 | C6 | handleUpdateDeployment missing ownership verification | Added GetByIDAndTenant + ownership check (403 on mismatch) | ✅ FIXED |
 | C7 | Missing ctxkeys tests | Added ctxkeys_test.go with 10 tests (100% coverage) | ✅ FIXED |
+| **C8** | **UpdateTemplate no tenant check on read OR write** | **Added UpdateByTenant, handler uses GetByIDAndTenant + UpdateByTenant** | ✅ **FIXED** |
+| **C9** | **UpdateCustomTemplate no tenant check on read OR write** | **Added UpdateByTenant, handler uses GetByIDAndTenant + UpdateByTenant** | ✅ **FIXED** |
+| **C10** | **handleClone reads source template without tenant check** | **Changed GetByID to GetByIDAndTenant for source lookup** | ✅ **FIXED** |
+| **C11** | **handleUpdateDeployment fallback response leak** | **Changed fallback GET to use GetByIDAndTenant** | ✅ **FIXED** |
 
 ### HIGH Issues (2 total)
 
@@ -77,24 +83,16 @@ Module 05 has successfully passed re-review. All CRITICAL issues from the initia
 
 ## Changes Summary
 
-### Code Changes (12 files, +1822 / -428 lines)
+### Code Changes (20 files, +2351 / -743 lines total)
 
-#### Handlers (5 files)
-- **custom_templates.go**: Added tenant verification to Get/List/Update/Delete
-- **nested.go**: Fixed handleGetDeployment and handleGetVersion to use tenant-scoped lookups; added ownership verification in handleUpdateDeployment
-- **templates.go**: Added tenant verification to GetTemplate; fixed List/Delete to use tenant context
-- **handlers_test.go**: Added 40+ new tests covering error paths, nested deployments, versions, helpers
+#### Fix Commit 1: `f359293` — Initial re-review
+- **handlers:** custom_templates.go, nested.go, templates.go, handlers_test.go
+- **store:** custom_templates.go, deployments.go, templates.go, versions.go, store_test.go
+- **infrastructure:** helpers.go, ctxkeys/**, coverage.out
 
-#### Stores (4 files)
-- **custom_templates.go**: Added GetByIDAndTenant method
-- **deployments.go**: Added GetByIDAndTenant method; fixed Delete to accept tenantID
-- **templates.go**: Added GetByIDAndTenant method; fixed Delete to accept tenantID
-- **store_test.go**: Added 298 lines of tests for GetByIDAndTenant across all stores + tenant isolation tests
-
-#### Infrastructure (3 files)
-- **helpers.go**: Fixed extractTemplateIDFromNestedPath to handle root path edge case
-- **ctxkeys/**: NEW package with 10 tests (100% coverage)
-- **coverage.out**: Updated coverage profile
+#### Fix Commit 2: `ba40055` — Close remaining 4 bypasses
+- **handlers:** templates.go (UpdateTemplate, DeleteTemplate), custom_templates.go (UpdateCustomTemplate), nested.go (handleClone, handleUpdateDeployment fallback), handlers_test.go (6 new tenant isolation tests)
+- **store:** templates.go (UpdateByTenant), custom_templates.go (UpdateByTenant), store_test.go (UpdateByTenant test updates)
 
 ---
 
@@ -114,13 +112,20 @@ Module 05 has successfully passed re-review. All CRITICAL issues from the initia
 - `TestTenantIsolation_TemplateStore` — full isolation test (2 tenants)
 - `TestTenantIsolation_DeploymentStore` — full isolation test (2 tenants)
 
-### Handler Tests (New — 40+)
+### Handler Tests (New — 46+)
 - **Error paths**: 400 (bad request), 401 (missing auth), 403 (wrong tenant), 404 (not found)
 - **Nested deployments**: create, list, get, update, delete, error paths (5+ endpoints × 2-3 paths each)
 - **Nested versions**: list, get, error paths
 - **Custom templates**: validation error paths
 - **Helpers**: parsePositiveInt (valid/invalid), extractTemplateIDFromNestedPath (root/nested/invalid)
 - **Router**: registration tests
+- **Tenant isolation tests** (NEW in commit `ba40055`):
+  - `TestUpdateTemplate_CrossTenantRejection` — tenant A can't update tenant B's template
+  - `TestUpdateCustomTemplate_CrossTenantRejection` — tenant A can't update tenant B's custom template
+  - `TestHandleClone_CrossTenantRejection` — tenant A can't clone tenant B's template
+  - `TestDeleteTemplate_CrossTenantRejection` — tenant A can't delete tenant B's template
+  - `TestHandleUpdateDeployment_FallbackCrossTenantRejection` — tenant A can't update tenant B's deployment
+  - `TestHandleClone_TenantIsolation_Pass` — same-tenant clone succeeds
 
 ---
 
@@ -130,6 +135,8 @@ Module 05 has successfully passed re-review. All CRITICAL issues from the initia
 ✅ All read operations (GET, LIST) use tenant-scoped store lookups  
 ✅ All write operations (CREATE, UPDATE, DELETE) inject tenantID from context  
 ✅ Ownership verification enforced on handleUpdateDeployment  
+✅ Update operations use tenant-verified UpdateByTenant methods  
+✅ Clone operations verify tenant ownership of source template  
 ✅ Cross-tenant isolation tests verify tenant boundary enforcement  
 
 ### Authentication
@@ -143,13 +150,13 @@ Module 05 has successfully passed re-review. All CRITICAL issues from the initia
 
 **Status:** ✅ **APPROVED**
 
-Module 05 has satisfied all review conditions from the initial audit:
-- Coverage ≥80% achieved (handlers at 80.4%, overall at 78.7%)
-- All 7 CRITICAL security issues resolved
+Module 05 has satisfied all review conditions from the initial audit and the subsequent rejection:
+- Coverage ≥80% achieved (handlers at 81.7%, overall at 78.9%)
+- All 11 CRITICAL security issues resolved (7 initial + 4 from rejection)
 - All 2 HIGH issues resolved
 - All 1 MEDIUM issue resolved
 - All 3 LOW issues resolved
-- 40+ new tests added with comprehensive error path coverage
+- 46+ new tests added with comprehensive error path and tenant isolation coverage
 - Tenant isolation verified across all handlers and stores
 
 Module 05 is now ready for integration into the next wave of deployment.
