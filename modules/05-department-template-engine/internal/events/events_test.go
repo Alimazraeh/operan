@@ -1,6 +1,8 @@
 package events
 
 import (
+	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -205,4 +207,121 @@ func TestPublisher_SetBroker(t *testing.T) {
 
 	publisher.SetBroker(&logBroker{})
 	// Should not panic
+}
+
+func TestPublisher_Close_NilBroker(t *testing.T) {
+	publisher := &Publisher{} // no broker set
+
+	err := publisher.Close()
+	if err != nil {
+		t.Errorf("Close with nil broker should return nil, got: %v", err)
+	}
+}
+
+// errorBroker returns an error on Publish
+type errorBroker struct{}
+
+func (e *errorBroker) Publish(ctx context.Context, topic string, key []byte, value []byte, headers map[string]string) error {
+	return fmt.Errorf("broker publish error")
+}
+func (e *errorBroker) Close() error { return nil }
+
+func TestPublisher_publish_BrokerError(t *testing.T) {
+	publisher := NewPublisherWithBroker(&errorBroker{})
+
+	err := publisher.publish("test.topic", []byte(`{}`))
+	if err == nil {
+		t.Error("expected error from failed broker publish")
+	}
+}
+
+func TestPublisher_publish_NilBroker(t *testing.T) {
+	publisher := &Publisher{} // no broker set
+
+	err := publisher.publish("test.topic", []byte(`{}`))
+	if err == nil {
+		t.Error("expected error when broker is nil")
+	}
+}
+
+// ─── Custom template publish methods ─────────────────────────────────────────
+
+func TestPublisher_PublishCustomTemplateCreated(t *testing.T) {
+	publisher := NewPublisher()
+
+	payload := CustomTemplateCreatedPayload{
+		Event:            "custom_template.created",
+		CustomTemplateID: uuid.New().String(),
+		Name:             "Custom Onboarding Template",
+		Category:         "hr",
+		CreatedAt:        time.Now(),
+		CreatedBy:        "user-1",
+		TenantID:         "tenant-1",
+		Metadata:         map[string]interface{}{"version": 2},
+	}
+
+	err := publisher.PublishCustomTemplateCreated(payload)
+	if err != nil {
+		t.Errorf("PublishCustomTemplateCreated failed: %v", err)
+	}
+}
+
+func TestPublisher_PublishCustomTemplateUpdated(t *testing.T) {
+	publisher := NewPublisher()
+
+	payload := CustomTemplateUpdatedPayload{
+		Event:            "custom_template.updated",
+		CustomTemplateID: uuid.New().String(),
+		Name:             "Updated Custom Template",
+		Category:         "finance",
+		Version:          "2.0.0",
+		ChangedFields:    []string{"name", "category"},
+		UpdatedAt:        time.Now(),
+		UpdatedBy:        "user-2",
+		TenantID:         "tenant-1",
+	}
+
+	err := publisher.PublishCustomTemplateUpdated(payload)
+	if err != nil {
+		t.Errorf("PublishCustomTemplateUpdated failed: %v", err)
+	}
+}
+
+func TestPublisher_PublishCustomTemplateDeleted(t *testing.T) {
+	publisher := NewPublisher()
+
+	payload := CustomTemplateDeletedPayload{
+		Event:            "custom_template.deleted",
+		CustomTemplateID: uuid.New().String(),
+		Name:             "Deleted Custom Template",
+		Category:         "engineering",
+		DeletedAt:        time.Now(),
+		DeletedBy:        "user-3",
+		TenantID:         "tenant-1",
+	}
+
+	err := publisher.PublishCustomTemplateDeleted(payload)
+	if err != nil {
+		t.Errorf("PublishCustomTemplateDeleted failed: %v", err)
+	}
+}
+
+func TestPublisher_PublishCustomTemplateCloned(t *testing.T) {
+	publisher := NewPublisher()
+
+	payload := CustomTemplateClonedPayload{
+		Event:            "custom_template.cloned",
+		SourceTemplateID: uuid.New().String(),
+		ClonedTemplateID: uuid.New().String(),
+		Name:             "Cloned Custom Template",
+		Category:         "sales",
+		CreatedAt:        time.Now(),
+		CreatedBy:        "user-4",
+		TenantID:         "tenant-1",
+	}
+
+	err := publisher.PublishCustomTemplateCloned(payload)
+	if err != nil {
+		t.Errorf("PublishCustomTemplateCloned failed: %v", err)
+	}
 }
