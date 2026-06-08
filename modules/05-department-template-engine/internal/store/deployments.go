@@ -72,19 +72,6 @@ func (s *DeploymentStore) GetByIDAndTenant(id, tenantID string) (*TemplateDeploy
 	return &cp, nil
 }
 
-// GetByIDAndTemplate retrieves a deployment, verifying it belongs to the given template.
-func (s *DeploymentStore) GetByIDAndTemplate(id, templateID string) (*TemplateDeployment, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	d, ok := s.deployments[id]
-	if !ok || d.TemplateID != templateID {
-		return nil, ErrNotFound
-	}
-	cp := *d
-	return &cp, nil
-}
-
 // ListByTemplate returns deployments for a given template and tenant, with pagination.
 func (s *DeploymentStore) ListByTemplate(templateID, tenantID string, page, pageSize int) ([]TemplateDeployment, int, bool) {
 	s.mu.RLock()
