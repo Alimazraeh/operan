@@ -1874,3 +1874,133 @@ type errorReader struct {
 func (r errorReader) Read(p []byte) (n int, err error) {
 	return 0, r.err
 }
+
+// ─── CloneCustomTemplate Tests ────────────────────────────────────────────────
+
+func TestCloneCustomTemplate(t *testing.T) {
+	h := newTestHandlers(t)
+
+	// First create a custom template to clone
+	createBody := map[string]interface{}{
+		"name":        "Source Custom",
+		"category":    "engineering",
+		"description": "Original custom template",
+		"content":     map[string]interface{}{"key": "value"},
+	}
+	createReq, _ := testRequest("POST", "/templates/custom", createBody)
+	createRec := httptest.NewRecorder()
+	h.CreateCustomTemplate(createRec, createReq)
+
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("CreateCustomTemplate failed: %d: %s", createRec.Code, createRec.Body.String())
+	}
+
+	var created map[string]interface{}
+	json.Unmarshal(createRec.Body.Bytes(), &created)
+	ctID := created["id"].(string)
+
+	// Clone the custom template
+	cloneBody := map[string]interface{}{
+		"name":     "Cloned Custom",
+		"category": "devops",
+	}
+	cloneReq, _ := testRequest("POST", "/templates/custom/"+ctID+"/clone", cloneBody)
+	cloneRec := httptest.NewRecorder()
+	h.CloneCustomTemplate(cloneRec, cloneReq)
+
+	if cloneRec.Code != http.StatusCreated {
+		t.Fatalf("CloneCustomTemplate failed: %d: %s", cloneRec.Code, cloneRec.Body.String())
+	}
+
+	var cloned map[string]interface{}
+	json.Unmarshal(cloneRec.Body.Bytes(), &cloned)
+	if cloned["name"] != "Cloned Custom" {
+		t.Errorf("expected name 'Cloned Custom', got %v", cloned["name"])
+	}
+	if cloned["category"] != "devops" {
+		t.Errorf("expected category 'devops', got %v", cloned["category"])
+	}
+	if cloned["id"] == ctID {
+		t.Error("cloned template should have a different ID than source")
+	}
+}
+
+func TestCloneCustomTemplate_NotFound(t *testing.T) {
+	h := newTestHandlers(t)
+
+	cloneBody := map[string]interface{}{"name": "Cloned"}
+	cloneReq, _ := testRequest("POST", "/templates/custom/nonexistent-id/clone", cloneBody)
+	cloneRec := httptest.NewRecorder()
+	h.CloneCustomTemplate(cloneRec, cloneReq)
+
+	if cloneRec.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", cloneRec.Code)
+	}
+}
+
+func TestCloneCustomTemplate_InvalidBody(t *testing.T) {
+	h := newTestHandlers(t)
+
+	// First create a custom template to clone
+	createBody := map[string]interface{}{
+		"name":     "Source Custom",
+		"category": "engineering",
+	}
+	createReq, _ := testRequest("POST", "/templates/custom", createBody)
+	createRec := httptest.NewRecorder()
+	h.CreateCustomTemplate(createRec, createReq)
+
+	var created map[string]interface{}
+	json.Unmarshal(createRec.Body.Bytes(), &created)
+	ctID := created["id"].(string)
+
+	// Send invalid JSON
+	cloneReq, _ := testRequest("POST", "/templates/custom/"+ctID+"/clone", nil)
+	cloneReq.Body = io.NopCloser(bytes.NewReader([]byte("not json")))
+	cloneRec := httptest.NewRecorder()
+	h.CloneCustomTemplate(cloneRec, cloneReq)
+
+	if cloneRec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", cloneRec.Code)
+	}
+}
+
+func TestCloneCustomTemplate_MissingID(t *testing.T) {
+	h := newTestHandlers(t)
+
+	cloneBody := map[string]interface{}{"name": "Cloned"}
+	cloneReq, _ := testRequest("POST", "/templates/custom//clone", cloneBody)
+	cloneRec := httptest.NewRecorder()
+	h.CloneCustomTemplate(cloneRec, cloneReq)
+
+	if cloneRec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for missing ID, got %d", cloneRec.Code)
+	}
+}
+
+func TestCloneCustomTemplate_WrongPath(t *testing.T) {
+	h := newTestHandlers(t)
+
+	// First create a custom template
+	createBody := map[string]interface{}{
+		"name":     "Source Custom",
+		"category": "engineering",
+	}
+	createReq, _ := testRequest("POST", "/templates/custom", createBody)
+	createRec := httptest.NewRecorder()
+	h.CreateCustomTemplate(createRec, createReq)
+
+	var created map[string]interface{}
+	json.Unmarshal(createRec.Body.Bytes(), &created)
+	ctID := created["id"].(string)
+
+	// POST to /templates/custom/{id} without /clone suffix — should 404
+	cloneBody := map[string]interface{}{"name": "Cloned"}
+	cloneReq, _ := testRequest("POST", "/templates/custom/"+ctID, cloneBody)
+	cloneRec := httptest.NewRecorder()
+	h.CloneCustomTemplate(cloneRec, cloneReq)
+
+	if cloneRec.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for wrong path, got %d", cloneRec.Code)
+	}
+}

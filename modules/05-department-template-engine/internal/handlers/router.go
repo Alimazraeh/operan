@@ -19,6 +19,7 @@ func RegisterRoutes(mux *http.ServeMux, h *TemplateHandlers) {
 	mux.HandleFunc("GET /templates/custom/", h.GetCustomTemplate)
 	mux.HandleFunc("PATCH /templates/custom/", h.UpdateCustomTemplate)
 	mux.HandleFunc("DELETE /templates/custom/", h.DeleteCustomTemplate)
+	mux.HandleFunc("POST /templates/custom/", h.CloneCustomTemplate)
 
 	// ─── Deploy, Deployments, Versions, Clone (nested under /templates/{id}) ─
 	// These use /templates/ prefix and extract template ID from path.
