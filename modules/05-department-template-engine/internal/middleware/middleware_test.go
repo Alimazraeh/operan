@@ -5,9 +5,13 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
+
+	"github.com/operan/modules/05-department-template-engine/internal/ctxkeys"
 )
 
 func TestRequestID(t *testing.T) {
@@ -398,4 +402,89 @@ func createTestTokenWithRoles(userID string, roles []string) (string, error) {
 	sigB64 := base64.RawURLEncoding.EncodeToString(signature)
 
 	return signingInput + "." + sigB64, nil
+}
+
+// ─── Rate Limiting Tests ─────────────────────────────────────────────────────
+
+func TestRateLimit_Allow(t *testing.T) {
+	rl := newRateLimiter(5, 1*time.Minute)
+
+	// Should allow first 5 requests
+	for i := 0; i < 5; i++ {
+		if !rl.Allow("tenant-1") {
+			t.Errorf("request %d should be allowed", i+1)
+		}
+	}
+
+	// 6th request should be rejected
+	if rl.Allow("tenant-1") {
+		t.Error("6th request should be rejected")
+	}
+}
+
+func TestRateLimit_DifferentTenants(t *testing.T) {
+	rl := newRateLimiter(3, 1*time.Minute)
+
+	// Fill up tenant-1
+	for i := 0; i < 3; i++ {
+		rl.Allow("tenant-1")
+	}
+
+	// tenant-2 should still be allowed
+	if !rl.Allow("tenant-2") {
+		t.Error("tenant-2 should be allowed independently")
+	}
+}
+
+func TestRateLimit_Middleware(t *testing.T) {
+	rateLimitMW := RateLimit(2, 1*time.Second)
+
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// Wrap with rate limit middleware
+	handler := rateLimitMW(next)
+
+	// Create request with tenant context
+	req1 := httptest.NewRequest("GET", "/test", nil)
+	req1.Header.Set("X-Tenant-ID", "tenant-1")
+	req1 = req1.WithContext(context.WithValue(req1.Context(), ctxkeys.TenantID, "tenant-1"))
+
+	rec1 := httptest.NewRecorder()
+	handler.ServeHTTP(rec1, req1)
+
+	if rec1.Code != http.StatusOK {
+		t.Errorf("first request: expected 200, got %d", rec1.Code)
+	}
+
+	// Second request should also succeed
+	req2 := httptest.NewRequest("GET", "/test", nil)
+	req2.Header.Set("X-Tenant-ID", "tenant-1")
+	req2 = req2.WithContext(context.WithValue(req2.Context(), ctxkeys.TenantID, "tenant-1"))
+
+	rec2 := httptest.NewRecorder()
+	handler.ServeHTTP(rec2, req2)
+
+	if rec2.Code != http.StatusOK {
+		t.Errorf("second request: expected 200, got %d", rec2.Code)
+	}
+
+	// Third request should be rate-limited
+	req3 := httptest.NewRequest("GET", "/test", nil)
+	req3.Header.Set("X-Tenant-ID", "tenant-1")
+	req3 = req3.WithContext(context.WithValue(req3.Context(), ctxkeys.TenantID, "tenant-1"))
+
+	rec3 := httptest.NewRecorder()
+	handler.ServeHTTP(rec3, req3)
+
+	if rec3.Code != http.StatusTooManyRequests {
+		t.Errorf("third request: expected 429, got %d: %s", rec3.Code, rec3.Body.String())
+	}
+
+	var resp map[string]interface{}
+	json.Unmarshal(rec3.Body.Bytes(), &resp)
+	if resp["status"] != float64(http.StatusTooManyRequests) {
+		t.Errorf("expected status 429 in response, got %v", resp["status"])
+	}
 }

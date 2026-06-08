@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
+	"time"
 
+	"github.com/operan/modules/05-department-template-engine/internal/events"
 	"github.com/operan/modules/05-department-template-engine/internal/middleware"
 	"github.com/operan/modules/05-department-template-engine/internal/store"
 )
@@ -53,6 +56,16 @@ func (h *TemplateHandlers) CreateCustomTemplate(w http.ResponseWriter, r *http.R
 			"Failed to create custom template", r.URL.Path, reqID)
 		return
 	}
+
+	h.EventPublisher.PublishCustomTemplateCreated(events.CustomTemplateCreatedPayload{
+		Event:            "custom_template.created",
+		CustomTemplateID: created.ID,
+		Name:             created.Name,
+		Category:         created.Category,
+		CreatedAt:        created.CreatedAt,
+		CreatedBy:        created.CreatedBy,
+		TenantID:         middleware.TenantIDFromContext(r.Context()),
+	})
 
 	writeJSON(w, http.StatusCreated, toCustomTemplateResponse(created))
 }
@@ -151,6 +164,23 @@ func (h *TemplateHandlers) UpdateCustomTemplate(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	changedFields := make([]string, 0, len(patch))
+	for k := range patch {
+		changedFields = append(changedFields, k)
+	}
+
+	h.EventPublisher.PublishCustomTemplateUpdated(events.CustomTemplateUpdatedPayload{
+		Event:            "custom_template.updated",
+		CustomTemplateID: updated.ID,
+		Name:             updated.Name,
+		Category:         updated.Category,
+		Version:          updated.Version,
+		ChangedFields:    changedFields,
+		UpdatedAt:        updated.UpdatedAt,
+		UpdatedBy:        middleware.UserIDFromContext(r.Context()),
+		TenantID:         tenantID,
+	})
+
 	writeJSON(w, http.StatusOK, toCustomTemplateResponse(updated))
 }
 
@@ -171,5 +201,94 @@ func (h *TemplateHandlers) DeleteCustomTemplate(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	h.EventPublisher.PublishCustomTemplateDeleted(events.CustomTemplateDeletedPayload{
+		Event:            "custom_template.deleted",
+		CustomTemplateID: id,
+		DeletedAt:        time.Now().UTC(),
+		DeletedBy:        middleware.UserIDFromContext(r.Context()),
+		TenantID:         middleware.TenantIDFromContext(r.Context()),
+	})
+
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// CloneCustomTemplate handles POST /templates/custom/{id}/clone
+func (h *TemplateHandlers) CloneCustomTemplate(w http.ResponseWriter, r *http.Request) {
+	reqID := middleware.RequestIDFromContext(r.Context())
+
+	// Verify path ends with /clone
+	remaining := strings.TrimPrefix(r.URL.Path, "/templates/custom/")
+	if !strings.HasSuffix(remaining, "/clone") {
+		writeError(w, http.StatusNotFound, "about:blank", "Not Found",
+			"Clone endpoint not found", r.URL.Path, reqID)
+		return
+	}
+	id := strings.TrimSuffix(remaining, "/clone")
+
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "about:blank", "Bad Request",
+			"Invalid custom template ID", r.URL.Path, reqID)
+		return
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "about:blank", "Bad Request",
+			"Failed to read request body", r.URL.Path, reqID)
+		return
+	}
+	defer r.Body.Close()
+
+	var req struct {
+		Name        string                 `json:"name"`
+		Category    string                 `json:"category"`
+		Metadata    map[string]interface{} `json:"metadata"`
+		SharedWith  []string               `json:"shared_with"`
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "about:blank", "Bad Request",
+			"Invalid JSON body", r.URL.Path, reqID)
+		return
+	}
+
+	tenantID := middleware.TenantIDFromContext(r.Context())
+	orig, err := h.CustomTemplateStore.GetByIDAndTenant(id, tenantID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "about:blank", "Not Found",
+			"Custom template not found", r.URL.Path, reqID)
+		return
+	}
+
+	clone := &store.CustomTemplate{
+		TenantID:    tenantID,
+		Name:        req.Name,
+		Description: orig.Description,
+		Category:    req.Category,
+		Content:     orig.Content,
+		OwnerID:     middleware.UserIDFromContext(r.Context()),
+		SharedWith:  req.SharedWith,
+		Version:     "1.0.0",
+		Status:      "draft",
+		CreatedBy:   middleware.UserIDFromContext(r.Context()),
+	}
+
+	created, err := h.CustomTemplateStore.Create(clone)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "about:blank", "Internal Server Error",
+			"Failed to clone custom template", r.URL.Path, reqID)
+		return
+	}
+
+	h.EventPublisher.PublishCustomTemplateCloned(events.CustomTemplateClonedPayload{
+		Event:            "custom_template.cloned",
+		SourceTemplateID: id,
+		ClonedTemplateID: created.ID,
+		Name:             created.Name,
+		Category:         created.Category,
+		CreatedAt:        created.CreatedAt,
+		CreatedBy:        created.CreatedBy,
+		TenantID:         tenantID,
+	})
+
+	writeJSON(w, http.StatusCreated, toCustomTemplateResponse(created))
 }
