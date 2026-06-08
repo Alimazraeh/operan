@@ -9,15 +9,16 @@ servers:
 
 security:
   - BearerAuth: []
-  - TenantContext: []
+  - TenantHeader: []
 
 paths:
   /deployments:
     get:
+      operationId: listDeployments
       summary: List all deployments for a tenant
       security:
         - BearerAuth: []
-        - TenantContext: []
+        - TenantHeader: []
       parameters:
         - name: tenant_id
           in: query
@@ -68,10 +69,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
     post:
+      operationId: createDeployment
       summary: Create a new deployment
       security:
         - BearerAuth: []
-        - TenantContext: []
+        - TenantHeader: []
       requestBody:
         required: true
         content:
@@ -106,10 +108,11 @@ paths:
 
   /deployments/{id}:
     get:
+      operationId: getDeployment
       summary: Get deployment details
       security:
         - BearerAuth: []
-        - TenantContext: []
+        - TenantHeader: []
       parameters:
         - name: id
           in: path
@@ -149,10 +152,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
     patch:
+      operationId: updateDeployment
       summary: Update deployment configuration
       security:
         - BearerAuth: []
-        - TenantContext: []
+        - TenantHeader: []
       parameters:
         - name: id
           in: path
@@ -198,10 +202,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
     delete:
+      operationId: deleteDeployment
       summary: Initiate deployment deprovisioning
       security:
         - BearerAuth: []
-        - TenantContext: []
+        - TenantHeader: []
       parameters:
         - name: id
           in: path
@@ -243,10 +248,11 @@ paths:
 
   /deployments/{id}/validate:
     post:
+      operationId: validateDeployment
       summary: Validate deployment against sovereign policies
       security:
         - BearerAuth: []
-        - TenantContext: []
+        - TenantHeader: []
       parameters:
         - name: id
           in: path
@@ -294,10 +300,11 @@ paths:
 
   /deployments/{id}/deploy:
     post:
+      operationId: executeDeployment
       summary: Trigger deployment activation
       security:
         - BearerAuth: []
-        - TenantContext: []
+        - TenantHeader: []
       parameters:
         - name: id
           in: path
@@ -345,10 +352,11 @@ paths:
 
   /deployments/{id}/rollback:
     post:
+      operationId: rollbackDeployment
       summary: Rollback deployment to previous version
       security:
         - BearerAuth: []
-        - TenantContext: []
+        - TenantHeader: []
       parameters:
         - name: id
           in: path
@@ -396,10 +404,11 @@ paths:
 
   /deployments/{id}/cancel:
     post:
+      operationId: cancelDeployment
       summary: Cancel an in-progress deployment
       security:
         - BearerAuth: []
-        - TenantContext: []
+        - TenantHeader: []
       parameters:
         - name: id
           in: path
@@ -441,10 +450,11 @@ paths:
 
   /deployments/{id}/health:
     get:
+      operationId: getDeploymentHealth
       summary: Get deployment health status
       security:
         - BearerAuth: []
-        - TenantContext: []
+        - TenantHeader: []
       parameters:
         - name: id
           in: path
@@ -486,10 +496,11 @@ paths:
 
   /regions:
     get:
+      operationId: listRegions
       summary: List available deployment regions
       security:
         - BearerAuth: []
-        - TenantContext: []
+        - TenantHeader: []
       responses:
         "200":
           description: Regions list
@@ -511,10 +522,11 @@ paths:
 
   /regions/{region_id}:
     get:
+      operationId: getRegion
       summary: Get region details
       security:
         - BearerAuth: []
-        - TenantContext: []
+        - TenantHeader: []
       parameters:
         - name: region_id
           in: path
@@ -538,10 +550,11 @@ paths:
 
   /compliance/check:
     post:
+      operationId: checkCompliance
       summary: Check compliance against sovereign policies
       security:
         - BearerAuth: []
-        - TenantContext: []
+        - TenantHeader: []
       requestBody:
         required: true
         content:
@@ -576,10 +589,11 @@ paths:
 
   /infrastructure/provision:
     post:
+      operationId: provisionInfrastructure
       summary: Provision infrastructure resources
       security:
         - BearerAuth: []
-        - TenantContext: []
+        - TenantHeader: []
       requestBody:
         required: true
         content:
@@ -618,7 +632,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-    TenantContext:
+    TenantHeader:
       type: apiKey
       in: header
       name: X-Tenant-ID
@@ -1248,4 +1262,4 @@ components:
 
 security:
   - BearerAuth: []
-  - TenantContext: []
+  - TenantHeader: []
