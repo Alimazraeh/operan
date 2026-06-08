@@ -92,9 +92,7 @@ func TestIdentityHandlerConstructors(t *testing.T) {
 	if NewAgentIdentityHandler(nil, nil) == nil {
 		t.Error("NewAgentIdentityHandler returned nil")
 	}
-	// NewRoleHandler dereferences auth.RBACAPI, so it needs a real (un-dialed)
-	// client rather than nil.
-	if NewRoleHandler(authentik.NewClient("http://localhost", "t"), nil) == nil {
+	if NewRoleHandler(nil, nil) == nil {
 		t.Error("NewRoleHandler returned nil")
 	}
 	if NewSessionReplayHandler(nil, nil, nil) == nil {
