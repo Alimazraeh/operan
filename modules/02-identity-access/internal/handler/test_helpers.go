@@ -19,11 +19,6 @@ func setPrincipalInContext(r *http.Request, principal *middleware.JWTToken) *htt
 	return r.WithContext(ctx)
 }
 
-// newTestRoleHandler creates a RoleHandler with nil Auth (uses in-memory store).
-func newTestRoleHandler() *RoleHandler {
-	return NewRoleHandler(nil, nil)
-}
-
 // newTestAuditHandler creates an AuditHandler with nil Auth.
 func newTestAuditHandler() *AuditHandler {
 	return NewAuditHandler(nil)
@@ -32,16 +27,6 @@ func newTestAuditHandler() *AuditHandler {
 // newTestRBACHandler creates an RBACHandler with nil Auth.
 func newTestRBACHandler() *RBACHandler {
 	return NewRBACHandler(nil)
-}
-
-// newTestSSOHandler creates an SSOHandler with nil Auth.
-func newTestSSOHandler() *SSOHandler {
-	return NewSSOHandler(nil, nil)
-}
-
-// newTestSCIMHandler creates a SCIMHandler with nil Auth.
-func newTestSCIMHandler() *SCIMHandler {
-	return NewSCIMHandler(nil, nil)
 }
 
 // newTestMFAHandler creates an MFAHandler with nil Auth.
@@ -57,11 +42,6 @@ func newTestLDAPHandler() *LDAPHandler {
 // newTestADHandler creates an ADHandler with nil Auth.
 func newTestADHandler() *ADHandler {
 	return NewADHandler(nil, nil)
-}
-
-// newTestDelegationHandler creates a DelegationHandler with nil Auth.
-func newTestDelegationHandler() *DelegationHandler {
-	return NewDelegationHandler(nil, nil)
 }
 
 // newTestABACHandler creates an ABACHandler with nil Auth.
