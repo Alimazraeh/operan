@@ -1,0 +1,49 @@
+replicaCount: 2
+
+image:
+  repository: operan/agent-registry
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+
+# JWT configuration
+jwtSecret: ""              # JWT_SECRET — MUST be set in production (≥32 bytes)
+jwtIssuer: "operan-agent-registry"  # JWT_ISSUER
+
+# Database configuration
+dbHost: ""                 # DB_HOST
+dbPort: 5432               # DB_PORT
+dbName: "agent_registry"   # DB_NAME
+dbUser: ""                 # DB_USER — set in production
+dbPassword: ""             # DB_PASSWORD — set in production
+
+# Event broker configuration
+eventBrokerURL: "amqp://mq.operan.internal:5672"  # EVENT_BROKER_URL
+
+# OTEL configuration
+otelEnabled: true          # OTEL_ENABLED
+otelCollectorURL: "http://otel-collector:4317"    # OTEL_COLLECTOR_URL
+
+# Extra environment variables
+extraEnv: []
+# - name: CUSTOM_VAR
+#   value: "custom"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
