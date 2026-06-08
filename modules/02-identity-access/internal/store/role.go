@@ -41,10 +41,7 @@ func (s *RoleStore) Create(role *models.Role) error {
 		return fmt.Errorf("role name is required")
 	}
 
-	// Check uniqueness
-	if _, exists := s.byName[role.TenantID+"::"+role.Name]; exists {
-		return fmt.Errorf("role with name %s already exists in tenant %s", role.Name, role.TenantID)
-	}
+	// Uniqueness is checked under the write lock below to avoid a TOCTOU race.
 
 	if role.CreatedAt.IsZero() {
 		role.CreatedAt = time.Now().UTC()
