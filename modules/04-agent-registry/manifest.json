@@ -1,14 +1,17 @@
 {
-  "coverage": 68.6,
+  "coverage": 72.6,
   "contract_compliant": true,
   "details": {
-    "handlers": 56.9,
-    "middleware": 93.9,
-    "store": 77.7,
+    "broker": 97.8,
+    "cache": 98.2,
     "config": 100.0,
-    "events": 100.0
+    "ctxkeys": 100.0,
+    "events": 96.0,
+    "handlers": 58.5,
+    "middleware": 83.8,
+    "store": 77.7
   },
-  "tests_passed": 107,
+  "tests_passed": 148,
   "tests_failed": 0,
   "module": "04-agent-registry"
 }

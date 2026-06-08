@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "operan-agent-registry.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "operan-agent-registry.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "operan-agent-registry.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "operan-agent-registry.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: LISTEN_ADDR
+              value: ":8080"
+            - name: JWT_SECRET
+              value: {{ required "jwtSecret is required" .Values.jwtSecret | quote }}
+            - name: JWT_ISSUER
+              value: {{ .Values.jwtIssuer | quote }}
+            {{- if .Values.dbHost }}
+            - name: DB_HOST
+              value: {{ .Values.dbHost | quote }}
+            - name: DB_PORT
+              value: "{{ .Values.dbPort }}"
+            - name: DB_NAME
+              value: {{ .Values.dbName | quote }}
+            - name: DB_USER
+              value: {{ required "dbUser is required when dbHost is set" .Values.dbUser | quote }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "operan-agent-registry.fullname" . }}-db-credentials
+                  key: password
+            {{- end }}
+            - name: EVENT_BROKER_URL
+              value: {{ .Values.eventBrokerURL | quote }}
+            - name: OTEL_ENABLED
+              value: "{{ .Values.otelEnabled }}"
+            - name: OTEL_COLLECTOR_URL
+              value: {{ .Values.otelCollectorURL | quote }}
+            {{- range .Values.extraEnv }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+---
+{{- if .Values.dbHost }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "operan-agent-registry.fullname" . }}-db-credentials
+type: Opaque
+data:
+  password: {{ .Values.dbPassword | b64enc | quote }}
+{{- end }}
