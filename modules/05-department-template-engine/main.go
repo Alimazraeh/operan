@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/operan/modules/05-department-template-engine/internal/config"
 	"github.com/operan/modules/05-department-template-engine/internal/events"
@@ -49,13 +50,14 @@ func main() {
 	handlers.RegisterRoutes(mux, h)
 
 	// ─── Middleware chain ─────────────────────────────────────────────────
-	// Logger → RequestID → TraceID → JWT Auth → Tenant Context → Handlers
+	// Logger → RequestID → TraceID → JWT Auth → Tenant Context → Rate Limit → Handlers
 	var chain http.Handler = mux
 	chain = middleware.Logger(chain)
 	chain = middleware.RequestID(chain)
 	chain = middleware.TraceID(chain)
 	chain = middleware.JWTAuth(cfg.JWTSecret, chain)
 	chain = middleware.TenantContext(chain)
+	chain = middleware.RateLimit(100, 1*time.Minute)(chain)
 
 	// ─── Health check ─────────────────────────────────────────────────────
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {

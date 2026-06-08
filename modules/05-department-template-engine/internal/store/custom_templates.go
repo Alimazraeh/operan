@@ -141,13 +141,6 @@ func (s *CustomTemplateStore) List(tenantID string, page, pageSize int, filterCa
 	return result, total, hasMore
 }
 
-// Update partially updates a custom template.
-// NOTE: This method does NOT verify tenant ownership. Use UpdateByTenant for
-// handlers that need tenant isolation.
-func (s *CustomTemplateStore) Update(id string, patch map[string]interface{}) (*CustomTemplate, error) {
-	return s.UpdateByTenant(id, "", patch)
-}
-
 // UpdateByTenant partially updates a custom template with tenant verification.
 func (s *CustomTemplateStore) UpdateByTenant(id, tenantID string, patch map[string]interface{}) (*CustomTemplate, error) {
 	s.mu.Lock()

@@ -47,8 +47,11 @@ func envInt(key string, fallback int) int {
 }
 
 func (c *Config) Validate() error {
+	if c.JWTSecret == "" {
+		return fmt.Errorf("MODULE05_JWT_SECRET must be set")
+	}
 	if c.JWTSecret == "change-me-in-production" {
-		return fmt.Errorf("MODULE05_JWT_SECRET must be set in production")
+		return fmt.Errorf("MODULE05_JWT_SECRET must be changed from default value in production")
 	}
 	return nil
 }

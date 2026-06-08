@@ -128,6 +128,19 @@ func (h *TemplateHandlers) CreateTemplate(w http.ResponseWriter, r *http.Request
 		TenantID:          middleware.TenantIDFromContext(r.Context()),
 	})
 
+	// Also publish versioned event since creation is effectively v1.0.0 versioning
+	h.EventPublisher.PublishTemplateVersioned(events.TemplateVersionedPayload{
+		Event:           "template.versioned",
+		TemplateID:      created.ID,
+		Version:         created.Version,
+		PreviousVersion: "",
+		Name:            created.Name,
+		Category:        created.Category,
+		CreatedAt:       created.CreatedAt,
+		CreatedBy:       created.CreatedBy,
+		TenantID:        middleware.TenantIDFromContext(r.Context()),
+	})
+
 	writeJSON(w, http.StatusCreated, toTemplateResponse(created))
 }
 

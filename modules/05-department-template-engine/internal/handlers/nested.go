@@ -148,7 +148,12 @@ func (h *TemplateHandlers) handleDeploy(w http.ResponseWriter, r *http.Request, 
 func (h *TemplateHandlers) handleClone(w http.ResponseWriter, r *http.Request, reqID string) {
 	templateID := extractTemplateIDFromNestedPath(r.URL.Path)
 
-	body, _ := io.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "about:blank", "Bad Request",
+			"Failed to read request body", r.URL.Path, reqID)
+		return
+	}
 	defer r.Body.Close()
 
 	var req struct {
@@ -157,7 +162,11 @@ func (h *TemplateHandlers) handleClone(w http.ResponseWriter, r *http.Request, r
 		Metadata    map[string]interface{} `json:"metadata"`
 		Tags        []string               `json:"tags"`
 	}
-	json.Unmarshal(body, &req)
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "about:blank", "Bad Request",
+			"Invalid JSON body", r.URL.Path, reqID)
+		return
+	}
 
 	tenantID := middleware.TenantIDFromContext(r.Context())
 	tmpl, err := h.TemplateStore.GetByIDAndTenant(templateID, tenantID)

@@ -16,6 +16,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/operan/modules/05-department-template-engine/internal/ctxkeys"
@@ -137,6 +138,99 @@ func base64URLEncode(data []byte) string {
 
 func secureCompare(a, b string) bool {
 	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
+}
+
+// ─── Rate Limiting ───────────────────────────────────────────────────────────
+
+// rateLimiter implements a simple per-tenant sliding window rate limiter.
+type rateLimiter struct {
+	mu       sync.Mutex
+	requests map[string][]time.Time
+	limit    int
+	window   time.Duration
+}
+
+// newRateLimiter creates a rate limiter allowing `limit` requests per `window` duration per tenant.
+func newRateLimiter(limit int, window time.Duration) *rateLimiter {
+	rl := &rateLimiter{
+		requests: make(map[string][]time.Time),
+		limit:    limit,
+		window:   window,
+	}
+	// Start cleanup goroutine
+	go rl.cleanup()
+	return rl
+}
+
+func (rl *rateLimiter) cleanup() {
+	ticker := time.NewTicker(rl.window)
+	defer ticker.Stop()
+	for range ticker.C {
+		rl.mu.Lock()
+		now := time.Now()
+		for key, times := range rl.requests {
+			// Filter out old entries
+			filtered := make([]time.Time, 0, len(times))
+			for _, t := range times {
+				if now.Sub(t) <= rl.window {
+					filtered = append(filtered, t)
+				}
+			}
+			if len(filtered) == 0 {
+				delete(rl.requests, key)
+			} else {
+				rl.requests[key] = filtered
+			}
+		}
+		rl.mu.Unlock()
+	}
+}
+
+func (rl *rateLimiter) Allow(key string) bool {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	now := time.Now()
+	windowStart := now.Add(-rl.window)
+
+	// Filter to only requests within the window
+	filtered := make([]time.Time, 0, len(rl.requests[key]))
+	for _, t := range rl.requests[key] {
+		if t.After(windowStart) {
+			filtered = append(filtered, t)
+		}
+	}
+
+	if len(filtered) >= rl.limit {
+		rl.requests[key] = filtered
+		return false
+	}
+
+	rl.requests[key] = append(filtered, now)
+	return true
+}
+
+// RateLimit returns middleware that enforces per-tenant request rate limiting.
+// Default: 100 requests per minute per tenant.
+func RateLimit(limit int, window time.Duration) func(http.Handler) http.Handler {
+	rl := newRateLimiter(limit, window)
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			tenantID := TenantIDFromContext(r.Context())
+			if !rl.Allow(tenantID) {
+				writeJSON(w, http.StatusTooManyRequests, map[string]interface{}{
+					"type":       "about:blank",
+					"title":      "Too Many Requests",
+					"status":     http.StatusTooManyRequests,
+					"detail":     "Rate limit exceeded; retry after 1 minute",
+					"instance":   r.URL.Path,
+					"request_id": getReqID(r.Context()),
+				})
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 // ─── Middleware chain ────────────────────────────────────────────────────────
