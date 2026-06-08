@@ -157,9 +157,27 @@ type RateLimiterConfig struct {
 }
 
 // RateLimitEntry wraps a token bucket with its last-access timestamp.
+// Entries are shared across request goroutines via sync.Map (always by
+// pointer), so lastAccess is guarded by accessMu.
 type RateLimitEntry struct {
 	Limiter    *TokenBucket
+	accessMu   sync.Mutex
 	LastAccess time.Time
+}
+
+// touch records the current time as the entry's last access (concurrency-safe).
+func (e *RateLimitEntry) touch() {
+	e.accessMu.Lock()
+	e.LastAccess = time.Now()
+	e.accessMu.Unlock()
+}
+
+// lastAccessBefore reports whether the entry was last accessed before t
+// (concurrency-safe).
+func (e *RateLimitEntry) lastAccessBefore(t time.Time) bool {
+	e.accessMu.Lock()
+	defer e.accessMu.Unlock()
+	return e.LastAccess.Before(t)
 }
 
 // RateLimiterMiddleware provides per-client token bucket rate limiting.
@@ -216,7 +234,7 @@ func (m *RateLimiterMiddleware) evictExpired() {
 
 	m.entries.Range(func(key, value interface{}) bool {
 		entry := value.(*RateLimitEntry)
-		if entry.LastAccess.Before(cutoff) {
+		if entry.lastAccessBefore(cutoff) {
 			m.entries.Delete(key)
 		}
 		return true
@@ -292,8 +310,8 @@ func (m *RateLimiterMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request
 	})
 	entry := entryIface.(*RateLimitEntry)
 	if loaded {
-		// Update last access timestamp
-		entry.LastAccess = time.Now()
+		// Update last access timestamp (concurrency-safe).
+		entry.touch()
 	}
 
 	// Check rate limit
