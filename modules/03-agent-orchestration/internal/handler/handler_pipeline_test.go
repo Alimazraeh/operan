@@ -24,7 +24,7 @@ func TestPipelineHandler_CreatePipeline(t *testing.T) {
 			"trigger_type": "manual"
 		}`)
 		req := httptest.NewRequest("POST", "/pipeline", body)
-		req.Header.Set("X-Tenant-ID", "tenant-1")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.CreatePipeline(w, req)
 
@@ -45,6 +45,7 @@ func TestPipelineHandler_CreatePipeline(t *testing.T) {
 	t.Run("rejects missing name", func(t *testing.T) {
 		body := strings.NewReader(`{"steps": []}`)
 		req := httptest.NewRequest("POST", "/pipeline", body)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.CreatePipeline(w, req)
 
@@ -56,6 +57,7 @@ func TestPipelineHandler_CreatePipeline(t *testing.T) {
 	t.Run("rejects invalid JSON", func(t *testing.T) {
 		body := strings.NewReader(`{invalid`)
 		req := httptest.NewRequest("POST", "/pipeline", body)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.CreatePipeline(w, req)
 
@@ -73,7 +75,7 @@ func TestPipelineHandler_ListPipelines(t *testing.T) {
 
 	t.Run("lists pipelines", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/pipeline?page=1&page_size=20", nil)
-		req.Header.Set("X-Tenant-ID", "tenant-1")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ListPipelines(w, req)
 
@@ -90,7 +92,7 @@ func TestPipelineHandler_ListPipelines(t *testing.T) {
 
 	t.Run("filters by status", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/pipeline?status=active", nil)
-		req.Header.Set("X-Tenant-ID", "tenant-1")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ListPipelines(w, req)
 
@@ -109,6 +111,7 @@ func TestPipelineHandler_GetPipeline(t *testing.T) {
 
 	t.Run("gets pipeline by id", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/pipeline/"+pipelines[0].ID, nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.GetPipeline(w, req)
 
@@ -119,6 +122,7 @@ func TestPipelineHandler_GetPipeline(t *testing.T) {
 
 	t.Run("returns 404 for missing", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/pipeline/non-existent", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.GetPipeline(w, req)
 
@@ -136,6 +140,7 @@ func TestPipelineHandler_UpdatePipeline(t *testing.T) {
 	t.Run("updates pipeline", func(t *testing.T) {
 		body := strings.NewReader(`{"name": "Updated Pipeline"}`)
 		req := httptest.NewRequest("PUT", "/pipeline/"+pipeline.ID, body)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.UpdatePipeline(w, req)
 
@@ -157,6 +162,7 @@ func TestPipelineHandler_DeletePipeline(t *testing.T) {
 
 	t.Run("deletes pipeline", func(t *testing.T) {
 		req := httptest.NewRequest("DELETE", "/pipeline/"+pipeline.ID, nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.DeletePipeline(w, req)
 
@@ -178,6 +184,7 @@ func TestPipelineHandler_StartStopPipeline(t *testing.T) {
 
 	t.Run("starts pipeline", func(t *testing.T) {
 		req := httptest.NewRequest("POST", "/pipeline/"+pipeline.ID+"/start", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.StartPipeline(w, req)
 
@@ -195,6 +202,7 @@ func TestPipelineHandler_StartStopPipeline(t *testing.T) {
 		// Create active pipeline
 		active, _ := ps.Create(&store.Pipeline{Name: "Active", TenantID: "tenant-1", Status: store.PipelineStatusActive})
 		req := httptest.NewRequest("POST", "/pipeline/"+active.ID+"/stop", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.StopPipeline(w, req)
 
@@ -219,6 +227,7 @@ func TestPipelineHandler_GetPipelineAnalytics(t *testing.T) {
 	h := NewPipelineHandler(ps, store.NewExecutionStore(), store.NewHumanTaskStore())
 
 	req := httptest.NewRequest("GET", "/pipeline/pipeline-1/analytics", nil)
+	req = setTenant(req)
 	w := httptest.NewRecorder()
 	h.GetPipelineAnalytics(w, req)
 
@@ -236,7 +245,10 @@ func TestPipelineHandler_GetPipelineHistory(t *testing.T) {
 	ps := store.NewPipelineStore()
 	h := NewPipelineHandler(ps, store.NewExecutionStore(), store.NewHumanTaskStore())
 
-	req := httptest.NewRequest("GET", "/pipeline/history", nil)
+	pipeline, _ := ps.Create(&store.Pipeline{Name: "Test", TenantID: "tenant-1"})
+
+	req := httptest.NewRequest("GET", "/pipeline/"+pipeline.ID+"/history", nil)
+	req = setTenant(req)
 	w := httptest.NewRecorder()
 	h.GetPipelineHistory(w, req)
 
@@ -269,7 +281,7 @@ func TestScheduleHandler_ScheduleWorkflow(t *testing.T) {
 			"enabled": true
 		}`)
 		req := httptest.NewRequest("POST", "/schedules", body)
-		req.Header.Set("X-Tenant-ID", "tenant-1")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ScheduleWorkflow(w, req)
 
@@ -290,6 +302,7 @@ func TestScheduleHandler_ScheduleWorkflow(t *testing.T) {
 	t.Run("rejects missing workflow_template_id", func(t *testing.T) {
 		body := strings.NewReader(`{"name": "No Template", "cron": "0 * * * *"}`)
 		req := httptest.NewRequest("POST", "/schedules", body)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ScheduleWorkflow(w, req)
 
@@ -301,6 +314,7 @@ func TestScheduleHandler_ScheduleWorkflow(t *testing.T) {
 	t.Run("rejects missing cron", func(t *testing.T) {
 		body := strings.NewReader(`{"workflow_template_id": "wt-1", "name": "No Cron"}`)
 		req := httptest.NewRequest("POST", "/schedules", body)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ScheduleWorkflow(w, req)
 
@@ -328,6 +342,7 @@ func TestScheduleHandler_GetSchedule(t *testing.T) {
 			t.Skip("no schedules found")
 		}
 		req := httptest.NewRequest("GET", "/schedules/"+schedules[0].ID, nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.GetSchedule(w, req)
 
@@ -338,6 +353,7 @@ func TestScheduleHandler_GetSchedule(t *testing.T) {
 
 	t.Run("returns 404 for missing", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/schedules/non-existent", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.GetSchedule(w, req)
 
@@ -367,6 +383,7 @@ func TestScheduleHandler_UpdateSchedule(t *testing.T) {
 	t.Run("updates schedule", func(t *testing.T) {
 		body := strings.NewReader(`{"enabled": false}`)
 		req := httptest.NewRequest("PUT", "/schedules/"+schedules[0].ID, body)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.UpdateSchedule(w, req)
 
@@ -390,6 +407,7 @@ func TestScheduleHandler_DeleteSchedule(t *testing.T) {
 
 	t.Run("deletes schedule", func(t *testing.T) {
 		req := httptest.NewRequest("DELETE", "/schedules/"+schedule.ID, nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.DeleteSchedule(w, req)
 
@@ -418,6 +436,7 @@ func TestScheduleHandler_TriggerSchedule(t *testing.T) {
 
 	t.Run("triggers schedule", func(t *testing.T) {
 		req := httptest.NewRequest("POST", "/schedules/"+schedule.ID+"/trigger", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.TriggerSchedule(w, req)
 
@@ -431,7 +450,7 @@ func TestScheduleHandler_ListSchedules(t *testing.T) {
 	scheduleStore := store.NewScheduleStore()
 	wfStore := store.NewWorkflowStore()
 	agStore := store.NewAgentStore()
-	
+
 	scheduleStore.Create(&store.Schedule{
 		TenantID:           "tenant-1",
 		Name:               "Test Schedule",
@@ -444,7 +463,7 @@ func TestScheduleHandler_ListSchedules(t *testing.T) {
 
 	t.Run("lists schedules", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/schedules", nil)
-		req.Header.Set("X-Tenant-ID", "tenant-1")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ListSchedules(w, req)
 
@@ -462,7 +481,7 @@ func TestScheduleHandler_ListSchedules(t *testing.T) {
 
 	t.Run("filters by status", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/schedules?status=active", nil)
-		req.Header.Set("X-Tenant-ID", "tenant-1")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ListSchedules(w, req)
 
@@ -486,6 +505,7 @@ func TestScheduleHandler_PauseResumeSchedule(t *testing.T) {
 
 	t.Run("pauses schedule", func(t *testing.T) {
 		req := httptest.NewRequest("POST", "/schedules/"+schedule.ID+"/pause", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.PauseSchedule(w, req)
 
@@ -509,7 +529,7 @@ func TestScheduleHandler_PauseResumeSchedule(t *testing.T) {
 		})
 
 		req := httptest.NewRequest("PATCH", "/schedules/"+schedule.ID+"/resume", nil)
-		req.Header.Set("X-Tenant-ID", "tenant-1")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ResumeSchedule(w, req)
 
@@ -546,7 +566,7 @@ func TestSchedulingHandler_AssignAgent(t *testing.T) {
 			"reason": "load_balancing"
 		}`)
 		req := httptest.NewRequest("POST", "/scheduling/assign", body)
-		req.Header.Set("X-Tenant-ID", "tenant-1")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.AssignAgent(w, req)
 
@@ -564,6 +584,7 @@ func TestSchedulingHandler_AssignAgent(t *testing.T) {
 	t.Run("rejects invalid body", func(t *testing.T) {
 		body := strings.NewReader(`{invalid`)
 		req := httptest.NewRequest("POST", "/scheduling/assign", body)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.AssignAgent(w, req)
 
@@ -587,6 +608,7 @@ func TestSchedulingHandler_GetAgentAvailability(t *testing.T) {
 
 	t.Run("gets availability by agent", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/scheduling/availability?agent_id=agent-1", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.GetAgentAvailability(w, req)
 
@@ -597,6 +619,7 @@ func TestSchedulingHandler_GetAgentAvailability(t *testing.T) {
 
 	t.Run("returns empty for missing agent", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/scheduling/availability?agent_id=non-existent", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.GetAgentAvailability(w, req)
 
@@ -619,7 +642,7 @@ func TestSchedulingHandler_ListAgents(t *testing.T) {
 	})
 
 	req := httptest.NewRequest("GET", "/scheduling/agents", nil)
-	req.Header.Set("X-Tenant-ID", "tenant-1")
+	req = setTenant(req)
 	w := httptest.NewRecorder()
 	h.ListAgents(w, req)
 
