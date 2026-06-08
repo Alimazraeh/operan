@@ -25,10 +25,11 @@ type RoleHandler struct {
 
 // NewRoleHandler creates a new role handler.
 func NewRoleHandler(auth *authentik.Client, publisher *events.Publisher) *RoleHandler {
-	return &RoleHandler{
-		RBAC:      auth.RBACAPI,
-		Publisher: publisher,
+	h := &RoleHandler{Publisher: publisher}
+	if auth != nil {
+		h.RBAC = auth.RBACAPI
 	}
+	return h
 }
 
 // NewTestRoleHandler creates a new role handler for testing.
