@@ -49,13 +49,9 @@ func (h *EscalationHandler) WriteError(w http.ResponseWriter, status int, code i
 func (h *EscalationHandler) ListWorkflowEscalations(w http.ResponseWriter, r *http.Request, workflowID string) {
 	tenantID := middleware.TenantIDFromContext(r.Context())
 
-	wf, err := h.WorkflowStore.GetByID(workflowID)
-	if err != nil || wf == nil {
+	// Verify workflow belongs to tenant using tenant-scoped query
+	if _, err := h.WorkflowStore.GetByIDAndTenant(workflowID, tenantID); err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, "workflow not found")
-		return
-	}
-	if wf.TenantID != tenantID {
-		h.WriteError(w, http.StatusForbidden, 403, "tenant mismatch")
 		return
 	}
 
@@ -71,13 +67,9 @@ func (h *EscalationHandler) ListWorkflowEscalations(w http.ResponseWriter, r *ht
 func (h *EscalationHandler) CreateEscalation(w http.ResponseWriter, r *http.Request, workflowID string) {
 	tenantID := middleware.TenantIDFromContext(r.Context())
 
-	wf, err := h.WorkflowStore.GetByID(workflowID)
-	if err != nil || wf == nil {
+	// Verify workflow belongs to tenant using tenant-scoped query
+	if _, err := h.WorkflowStore.GetByIDAndTenant(workflowID, tenantID); err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, "workflow not found")
-		return
-	}
-	if wf.TenantID != tenantID {
-		h.WriteError(w, http.StatusForbidden, 403, "tenant mismatch")
 		return
 	}
 
@@ -137,9 +129,17 @@ func (h *EscalationHandler) CreateEscalation(w http.ResponseWriter, r *http.Requ
 
 // AcknowledgeEscalation handles PATCH /escalations/{id}/acknowledge.
 func (h *EscalationHandler) AcknowledgeEscalation(w http.ResponseWriter, r *http.Request, escalationID string) {
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
 	esc, ok := h.EscalationStore.GetByID(escalationID)
 	if !ok {
 		h.WriteError(w, http.StatusNotFound, 404, "escalation not found")
+		return
+	}
+
+	// Verify escalation belongs to tenant by checking its workflow
+	if _, err := h.WorkflowStore.GetByIDAndTenant(esc.WorkflowID, tenantID); err != nil {
+		h.WriteError(w, http.StatusForbidden, 403, "tenant mismatch")
 		return
 	}
 
@@ -164,9 +164,17 @@ func (h *EscalationHandler) AcknowledgeEscalation(w http.ResponseWriter, r *http
 
 // ResolveEscalation handles PATCH /escalations/{id}/resolve.
 func (h *EscalationHandler) ResolveEscalation(w http.ResponseWriter, r *http.Request, escalationID string) {
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
 	esc, ok := h.EscalationStore.GetByID(escalationID)
 	if !ok {
 		h.WriteError(w, http.StatusNotFound, 404, "escalation not found")
+		return
+	}
+
+	// Verify escalation belongs to tenant by checking its workflow
+	if _, err := h.WorkflowStore.GetByIDAndTenant(esc.WorkflowID, tenantID); err != nil {
+		h.WriteError(w, http.StatusForbidden, 403, "tenant mismatch")
 		return
 	}
 
@@ -232,6 +240,14 @@ func (h *RetryHandler) WriteError(w http.ResponseWriter, status int, code int, m
 
 // ListWorkflowRetryRecords handles GET /workflows/{id}/retries.
 func (h *RetryHandler) ListWorkflowRetryRecords(w http.ResponseWriter, r *http.Request, workflowID string) {
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify workflow belongs to tenant using tenant-scoped query
+	if _, err := h.WorkflowStore.GetByIDAndTenant(workflowID, tenantID); err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "workflow not found")
+		return
+	}
+
 	records := h.RetryStore.ListByWorkflow(workflowID)
 	h.WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"retry_records": records,
@@ -244,13 +260,9 @@ func (h *RetryHandler) ListWorkflowRetryRecords(w http.ResponseWriter, r *http.R
 func (h *RetryHandler) RetryNode(w http.ResponseWriter, r *http.Request, workflowID, nodeID string) {
 	tenantID := middleware.TenantIDFromContext(r.Context())
 
-	wf, err := h.WorkflowStore.GetByID(workflowID)
-	if err != nil || wf == nil {
+	// Verify workflow belongs to tenant using tenant-scoped query
+	if _, err := h.WorkflowStore.GetByIDAndTenant(workflowID, tenantID); err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, "workflow not found")
-		return
-	}
-	if wf.TenantID != tenantID {
-		h.WriteError(w, http.StatusForbidden, 403, "tenant mismatch")
 		return
 	}
 
@@ -302,8 +314,10 @@ func (h *NodesResultsHandler) WriteError(w http.ResponseWriter, status int, code
 
 // ListWorkflowNodes handles GET /workflows/{id}/nodes.
 func (h *NodesResultsHandler) ListWorkflowNodes(w http.ResponseWriter, r *http.Request, workflowID string) {
-	wf, err := h.WorkflowStore.GetByID(workflowID)
-	if err != nil || wf == nil {
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	wf, err := h.WorkflowStore.GetByIDAndTenant(workflowID, tenantID)
+	if err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, "workflow not found")
 		return
 	}
@@ -318,6 +332,14 @@ func (h *NodesResultsHandler) ListWorkflowNodes(w http.ResponseWriter, r *http.R
 
 // ListWorkflowResults handles GET /workflows/{id}/results.
 func (h *NodesResultsHandler) ListWorkflowResults(w http.ResponseWriter, r *http.Request, workflowID string) {
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify workflow belongs to tenant
+	if _, err := h.WorkflowStore.GetByIDAndTenant(workflowID, tenantID); err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "workflow not found")
+		return
+	}
+
 	checkpoints := h.WorkflowStore.GetCheckpoints(workflowID)
 	if checkpoints == nil {
 		checkpoints = []store.Checkpoint{}
@@ -873,13 +895,10 @@ func (h *DelegationHandler) WriteError(w http.ResponseWriter, status int, code i
 func (h *DelegationHandler) DelegateNodeTask(w http.ResponseWriter, r *http.Request, workflowID string) {
 	tenantID := middleware.TenantIDFromContext(r.Context())
 
-	wf, err := h.WorkflowStore.GetByID(workflowID)
+	// Verify workflow belongs to tenant using tenant-scoped query
+	wf, err := h.WorkflowStore.GetByIDAndTenant(workflowID, tenantID)
 	if err != nil || wf == nil {
 		h.WriteError(w, http.StatusNotFound, 404, "workflow not found")
-		return
-	}
-	if wf.TenantID != tenantID {
-		h.WriteError(w, http.StatusForbidden, 403, "tenant mismatch")
 		return
 	}
 
@@ -904,11 +923,18 @@ func (h *DelegationHandler) DelegateNodeTask(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Use first current node as original agent (simplified); may be empty for
+	// workflows that have not started executing yet.
+	var originalAgentID string
+	if len(wf.CurrentNodes) > 0 {
+		originalAgentID = wf.CurrentNodes[0]
+	}
+
 	delegate := &store.Delegation{
 		ID:              generateID(),
 		WorkflowID:      workflowID,
 		NodeID:          req.NodeID,
-		OriginalAgentID: wf.CurrentNodes[0], // Use first current node as original agent (simplified)
+		OriginalAgentID: originalAgentID,
 		DelegatedAgentID: req.DelegatedAgentID,
 		TenantID:        tenantID,
 		DepartmentID:    wf.DepartmentID,

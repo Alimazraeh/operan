@@ -112,8 +112,10 @@ func TestDelegationHandler_DelegateNodeTask(t *testing.T) {
 		w := httptest.NewRecorder()
 		h.DelegateNodeTask(w, req, "wf-1")
 
-		if w.Code != http.StatusForbidden {
-			t.Errorf("Expected 403, got %d", w.Code)
+		// Tenant-scoped lookup returns "not found" for a cross-tenant workflow
+		// rather than 403, so the handler does not leak the workflow's existence.
+		if w.Code != http.StatusNotFound {
+			t.Errorf("Expected 404, got %d", w.Code)
 		}
 	})
 }
@@ -174,7 +176,23 @@ func (m *mockDelegationWorkflowStore) GetByID(id string) (*store.Workflow, error
 	return &cp, nil
 }
 
+func (m *mockDelegationWorkflowStore) GetByIDAndTenant(id, tenantID string) (*store.Workflow, error) {
+	wf, ok := m.workflows[id]
+	if !ok {
+		return nil, errors.New("workflow not found")
+	}
+	if wf.TenantID != tenantID {
+		return nil, errors.New("workflow not found")
+	}
+	cp := *wf
+	return &cp, nil
+}
+
 func (m *mockDelegationWorkflowStore) UpdateStatus(id string, status store.WorkflowStatus) error {
+	return nil
+}
+
+func (m *mockDelegationWorkflowStore) UpdateStatusAndTenant(id, tenantID string, status store.WorkflowStatus) error {
 	return nil
 }
 

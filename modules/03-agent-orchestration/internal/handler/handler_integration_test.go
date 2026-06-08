@@ -11,7 +11,6 @@ import (
 
 	"github.com/operan/modules/03-agent-orchestration/internal/events"
 	"github.com/operan/modules/03-agent-orchestration/internal/execution"
-	"github.com/operan/modules/03-agent-orchestration/internal/middleware"
 	"github.com/operan/modules/03-agent-orchestration/internal/store"
 )
 
@@ -36,6 +35,7 @@ func TestExecuteWorkflow(t *testing.T) {
 			Graph:    store.WorkflowGraph{Nodes: []store.WorkflowNode{{ID: "n1", Type: "agent"}}},
 		})
 		req := httptest.NewRequest("POST", "/workflows/"+wf.ID+"/execute", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ExecuteWorkflow(w, req)
 		if w.Code != http.StatusNoContent {
@@ -61,6 +61,7 @@ func TestExecuteWorkflow(t *testing.T) {
 			Graph:    store.WorkflowGraph{Nodes: []store.WorkflowNode{{ID: "n1", Type: "agent"}}},
 		})
 		req := httptest.NewRequest("POST", "/workflows/"+wf.ID+"/execute", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ExecuteWorkflow(w, req)
 		if w.Code != http.StatusNoContent {
@@ -86,9 +87,8 @@ func TestEscalationHandler_ListWorkflowEscalations(t *testing.T) {
 	h := NewEscalationHandler(escStore, wfStore)
 
 	t.Run("lists escalations", func(t *testing.T) {
-		ctx := middleware.SetTenantIDToContext(context.Background(), "tenant-1")
-		req := httptest.NewRequest("GET", "/workflows/"+wf.ID+"/escalations", nil)
-		req = req.WithContext(ctx)
+				req := httptest.NewRequest("GET", "/workflows/"+wf.ID+"/escalations", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ListWorkflowEscalations(w, req, wf.ID)
 		if w.Code != http.StatusOK {
@@ -102,9 +102,8 @@ func TestEscalationHandler_ListWorkflowEscalations(t *testing.T) {
 	})
 
 	t.Run("workflow not found", func(t *testing.T) {
-		ctx := middleware.SetTenantIDToContext(context.Background(), "tenant-1")
-		req := httptest.NewRequest("GET", "/workflows/non-existent/escalations", nil)
-		req = req.WithContext(ctx)
+				req := httptest.NewRequest("GET", "/workflows/non-existent/escalations", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ListWorkflowEscalations(w, req, "non-existent")
 		if w.Code != http.StatusNotFound {
@@ -125,10 +124,9 @@ func TestEscalationHandler_CreateEscalation(t *testing.T) {
 			"reason":   "node failed",
 			"node_id":  "n1",
 		})
-		ctx := middleware.SetTenantIDToContext(context.Background(), "tenant-1")
-		req := httptest.NewRequest("POST", "/workflows/"+wf.ID+"/escalations", bytes.NewReader(body))
+				req := httptest.NewRequest("POST", "/workflows/"+wf.ID+"/escalations", bytes.NewReader(body))
+		req = setTenant(req)
 		req.Header.Set("Content-Type", "application/json")
-		req = req.WithContext(ctx)
 		w := httptest.NewRecorder()
 		h.CreateEscalation(w, req, wf.ID)
 		if w.Code != http.StatusCreated {
@@ -142,10 +140,9 @@ func TestEscalationHandler_CreateEscalation(t *testing.T) {
 	})
 
 	t.Run("invalid body", func(t *testing.T) {
-		ctx := middleware.SetTenantIDToContext(context.Background(), "tenant-1")
-		req := httptest.NewRequest("POST", "/workflows/"+wf.ID+"/escalations", bytes.NewReader([]byte("not json")))
+				req := httptest.NewRequest("POST", "/workflows/"+wf.ID+"/escalations", bytes.NewReader([]byte("not json")))
+		req = setTenant(req)
 		req.Header.Set("Content-Type", "application/json")
-		req = req.WithContext(ctx)
 		w := httptest.NewRecorder()
 		h.CreateEscalation(w, req, wf.ID)
 		if w.Code != http.StatusBadRequest {
@@ -156,15 +153,20 @@ func TestEscalationHandler_CreateEscalation(t *testing.T) {
 
 func TestEscalationHandler_AcknowledgeEscalation(t *testing.T) {
 	escStore := store.NewEscalationStore()
+	wfStore := store.NewWorkflowStore()
+	wf, _ := wfStore.Create(&store.Workflow{TenantID: "tenant-1", Name: "Test"})
 	escStore.Create(&store.Escalation{
-		ID:     "esc-1",
-		Status: store.EscalationPending,
+		ID:         "esc-1",
+		WorkflowID: wf.ID,
+		TenantID:   "tenant-1",
+		Status:     store.EscalationPending,
 	})
-	h := NewEscalationHandler(escStore, store.NewWorkflowStore())
+	h := NewEscalationHandler(escStore, wfStore)
 
 	t.Run("acknowledges pending escalation", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest("PATCH", "/escalations/esc-1/acknowledge", nil)
+		req = setTenant(req)
 		h.AcknowledgeEscalation(w, req, "esc-1")
 		if w.Code != http.StatusOK {
 			t.Errorf("Expected 200, got %d", w.Code)
@@ -187,15 +189,20 @@ func TestEscalationHandler_AcknowledgeEscalation(t *testing.T) {
 
 func TestEscalationHandler_ResolveEscalation(t *testing.T) {
 	escStore := store.NewEscalationStore()
+	wfStore := store.NewWorkflowStore()
+	wf, _ := wfStore.Create(&store.Workflow{TenantID: "tenant-1", Name: "Test"})
 	escStore.Create(&store.Escalation{
-		ID:     "esc-1",
-		Status: store.EscalationAcknowledged,
+		ID:         "esc-1",
+		WorkflowID: wf.ID,
+		TenantID:   "tenant-1",
+		Status:     store.EscalationAcknowledged,
 	})
-	h := NewEscalationHandler(escStore, store.NewWorkflowStore())
+	h := NewEscalationHandler(escStore, wfStore)
 
 	t.Run("resolves acknowledged escalation", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest("PATCH", "/escalations/esc-1/resolve", nil)
+		req = setTenant(req)
 		h.ResolveEscalation(w, req, "esc-1")
 		if w.Code != http.StatusOK {
 			t.Errorf("Expected 200, got %d", w.Code)
@@ -211,19 +218,22 @@ func TestEscalationHandler_ResolveEscalation(t *testing.T) {
 
 func TestRetryHandler_ListWorkflowRetryRecords(t *testing.T) {
 	retryStore := store.NewRetryRecordStore()
+	wfStore := store.NewWorkflowStore()
+	wf, _ := wfStore.Create(&store.Workflow{TenantID: "tenant-1", Name: "Test"})
 	retryStore.Create(&store.RetryRecord{
 		ID:         "retry-1",
-		WorkflowID: "wf-1",
+		WorkflowID: wf.ID,
 		TenantID:   "tenant-1",
 		NodeID:     "n1",
 		Status:     store.RetryPending,
 	})
-	h := NewRetryHandler(retryStore, store.NewWorkflowStore(), store.NewExecutionStore())
+	h := NewRetryHandler(retryStore, wfStore, store.NewExecutionStore())
 
 	t.Run("lists retry records", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest("GET", "/workflows/wf-1/retries", nil)
-		h.ListWorkflowRetryRecords(w, req, "wf-1")
+		req := httptest.NewRequest("GET", "/workflows/"+wf.ID+"/retries", nil)
+		req = setTenant(req)
+		h.ListWorkflowRetryRecords(w, req, wf.ID)
 		if w.Code != http.StatusOK {
 			t.Errorf("Expected 200, got %d", w.Code)
 		}
@@ -245,9 +255,8 @@ func TestRetryHandler_RetryNode(t *testing.T) {
 	h := NewRetryHandler(retryStore, wfStore, store.NewExecutionStore())
 
 	t.Run("creates retry record", func(t *testing.T) {
-		ctx := middleware.SetTenantIDToContext(context.Background(), "tenant-1")
-		req := httptest.NewRequest("POST", "/workflows/wf-1/nodes/n1/retry", nil)
-		req = req.WithContext(ctx)
+				req := httptest.NewRequest("POST", "/workflows/wf-1/nodes/n1/retry", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.RetryNode(w, req, "wf-1", "n1")
 		if w.Code != http.StatusCreated {
@@ -280,6 +289,7 @@ func TestNodesResultsHandler_ListWorkflowNodes(t *testing.T) {
 	t.Run("lists nodes", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "/workflows/"+wf.ID+"/nodes", nil)
+		req = setTenant(req)
 		h.ListWorkflowNodes(w, req, wf.ID)
 		if w.Code != http.StatusOK {
 			t.Errorf("Expected 200, got %d", w.Code)
@@ -316,6 +326,7 @@ func TestNodesResultsHandler_ListWorkflowResults(t *testing.T) {
 	t.Run("lists results", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "/workflows/"+wf.ID+"/results", nil)
+		req = setTenant(req)
 		h.ListWorkflowResults(w, req, wf.ID)
 		if w.Code != http.StatusOK {
 			t.Errorf("Expected 200, got %d", w.Code)
@@ -365,9 +376,8 @@ func TestStackHealthHandler_GetStackHealth(t *testing.T) {
 	h := NewStackHealthHandler(healthStore)
 
 	t.Run("returns health status", func(t *testing.T) {
-		ctx := middleware.SetTenantIDToContext(context.Background(), "tenant-1")
-		req := httptest.NewRequest("GET", "/stack/health", nil)
-		req = req.WithContext(ctx)
+				req := httptest.NewRequest("GET", "/stack/health", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.GetStackHealth(w, req)
 		if w.Code != http.StatusOK {
@@ -381,9 +391,8 @@ func TestStackHealthHandler_LangGraph(t *testing.T) {
 	h := NewStackHealthHandler(healthStore)
 
 	t.Run("list langgraphs (empty)", func(t *testing.T) {
-		ctx := middleware.SetTenantIDToContext(context.Background(), "tenant-1")
-		req := httptest.NewRequest("GET", "/stack/langgraph/graphs", nil)
-		req = req.WithContext(ctx)
+				req := httptest.NewRequest("GET", "/stack/langgraph/graphs", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ListLangGraphs(w, req)
 		if w.Code != http.StatusOK {
@@ -396,10 +405,9 @@ func TestStackHealthHandler_LangGraph(t *testing.T) {
 			"name":       "test-graph",
 			"graph_def":  map[string]interface{}{"nodes": []string{"n1"}},
 		})
-		ctx := middleware.SetTenantIDToContext(context.Background(), "tenant-1")
-		req := httptest.NewRequest("POST", "/stack/langgraph/graphs", bytes.NewReader(body))
+				req := httptest.NewRequest("POST", "/stack/langgraph/graphs", bytes.NewReader(body))
+		req = setTenant(req)
 		req.Header.Set("Content-Type", "application/json")
-		req = req.WithContext(ctx)
 		w := httptest.NewRecorder()
 		h.CreateLangGraph(w, req)
 		if w.Code != http.StatusCreated {
@@ -413,9 +421,8 @@ func TestStackHealthHandler_Celery(t *testing.T) {
 	h := NewStackHealthHandler(healthStore)
 
 	t.Run("list celery queues (empty)", func(t *testing.T) {
-		ctx := middleware.SetTenantIDToContext(context.Background(), "tenant-1")
-		req := httptest.NewRequest("GET", "/stack/celery/queues", nil)
-		req = req.WithContext(ctx)
+				req := httptest.NewRequest("GET", "/stack/celery/queues", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ListCeleryQueues(w, req)
 		if w.Code != http.StatusOK {
@@ -428,10 +435,9 @@ func TestStackHealthHandler_Celery(t *testing.T) {
 			"name":    "default",
 			"backend": "rpc://",
 		})
-		ctx := middleware.SetTenantIDToContext(context.Background(), "tenant-1")
-		req := httptest.NewRequest("POST", "/stack/celery/queues", bytes.NewReader(body))
+				req := httptest.NewRequest("POST", "/stack/celery/queues", bytes.NewReader(body))
+		req = setTenant(req)
 		req.Header.Set("Content-Type", "application/json")
-		req = req.WithContext(ctx)
 		w := httptest.NewRecorder()
 		h.CreateCeleryQueue(w, req)
 		if w.Code != http.StatusCreated {
@@ -447,9 +453,8 @@ func TestListAgents(t *testing.T) {
 	h := ListAgents(agStore)
 
 	t.Run("returns empty list", func(t *testing.T) {
-		ctx := middleware.SetTenantIDToContext(context.Background(), "tenant-1")
-		req := httptest.NewRequest("GET", "/agents", nil)
-		req = req.WithContext(ctx)
+				req := httptest.NewRequest("GET", "/agents", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h(w, req)
 		if w.Code != http.StatusOK {
@@ -478,6 +483,7 @@ func TestUpdateWorkflowVariables(t *testing.T) {
 			"variables": map[string]interface{}{"key1": "value1", "key2": 42},
 		})
 		req := httptest.NewRequest("PATCH", "/workflows/"+wf.ID+"/variables", bytes.NewReader(body))
+		req = setTenant(req)
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 		h.UpdateWorkflowVariables(w, req)
