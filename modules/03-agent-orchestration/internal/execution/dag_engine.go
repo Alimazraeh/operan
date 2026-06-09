@@ -209,8 +209,11 @@ func (e *Engine) execute(ctx context.Context, workflowID string) {
 		currentBatch := ready
 		ready = nil
 
-		// Execute all ready nodes in parallel (bounded by concurrency)
+		// Execute all ready nodes in parallel (bounded by concurrency).
+		// batchMu guards the shared completed/failed maps and the ready slice,
+		// which the per-node goroutines below write concurrently.
 		var wg sync.WaitGroup
+		var batchMu sync.Mutex
 		batchErrors := make([]error, len(currentBatch))
 
 		for i, nodeID := range currentBatch {
@@ -239,17 +242,24 @@ func (e *Engine) execute(ctx context.Context, workflowID string) {
 				if err == nil {
 					ns.Output = result
 					ns.Status = store.NodeStatusCompleted
+					batchMu.Lock()
 					completed[nid] = true
+					batchMu.Unlock()
 				} else {
 					ns.Error = err.Error()
-					failed[nid] = true
 					// Check if we should retry
 					if nd.Retry != nil && ns.RetryCount < nd.Retry.MaxAttempts {
 						ns.RetryCount++
 						ns.Status = store.NodeStatusRunning
+						batchMu.Lock()
+						failed[nid] = true
 						ready = append(ready, nid) // Re-queue for retry
+						batchMu.Unlock()
 					} else {
 						ns.Status = store.NodeStatusFailed
+						batchMu.Lock()
+						failed[nid] = true
+						batchMu.Unlock()
 					}
 				}
 			}(i, nodeID, node, state)

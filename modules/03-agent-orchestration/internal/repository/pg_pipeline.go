@@ -57,6 +57,31 @@ func (r *PipelinePostgres) GetByID(id string) (*store.Pipeline, error) {
 	return scanPipeline(row)
 }
 
+func (r *PipelinePostgres) GetByIDAndTenant(id, tenantID string) (*store.Pipeline, error) {
+	ctx := defaultCtx()
+	query := `SELECT id,tenant_id,name,description,steps,error_handling,
+		timeout_minutes,max_retries,trigger_type,variables,
+		status,execution_count,last_execution_at,success_rate,avg_duration_ms,
+		created_by,created_at,updated_at,tags
+		FROM pipelines WHERE id=$1 AND tenant_id=$2`
+	row := r.db.QueryRowContext(ctx, query, id, tenantID)
+	return scanPipeline(row)
+}
+
+func (r *PipelinePostgres) UpdateStatusAndTenant(id, tenantID string, status store.PipelineStatus) error {
+	ctx := defaultCtx()
+	result, err := r.db.ExecContext(ctx,
+		"UPDATE pipelines SET status=$1 WHERE id=$2 AND tenant_id=$3", status, id, tenantID)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("pipeline %s not found or tenant mismatch", id)
+	}
+	return nil
+}
+
 func (r *PipelinePostgres) Update(id string, name, description *string, steps []store.PipelineStep, errorHandling *store.PipelineErrorHandlingConfig, timeoutMinutes, maxRetries *int, status *store.PipelineStatus, variables *map[string]interface{}, tags *[]string) (*store.Pipeline, error) {
 	ctx := defaultCtx()
 	query := "UPDATE pipelines SET updated_at=now()"
@@ -276,6 +301,33 @@ func (r *ExecutionPostgres) GetByID(id string) (*store.PipelineExecution, error)
 		FROM executions WHERE id=$1`
 	row := r.db.QueryRowContext(ctx, query, id)
 	return scanExecution(row)
+}
+
+func (r *ExecutionPostgres) GetByIDAndTenant(id, tenantID string) (*store.PipelineExecution, error) {
+	ctx := defaultCtx()
+	query := `SELECT id,pipeline_id,tenant_id,status,inputs,outputs,
+		current_step_id,current_step_status,error_message,
+		retry_count,duration_ms,started_at,completed_at,created_at
+		FROM executions WHERE id=$1 AND tenant_id=$2`
+	row := r.db.QueryRowContext(ctx, query, id, tenantID)
+	return scanExecution(row)
+}
+
+func (r *ExecutionPostgres) UpdateStatusAndTenant(id, tenantID string, status store.PipelineExecutionStatus) error {
+	ctx := defaultCtx()
+	result, err := r.db.ExecContext(ctx,
+		`UPDATE executions SET status=$1,
+		 started_at=COALESCE(started_at, now()),
+		 completed_at=CASE WHEN $1 IN ('completed','failed','cancelled') THEN now() ELSE completed_at END
+		 WHERE id=$2 AND tenant_id=$3`, status, id, tenantID)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("execution %s not found or tenant mismatch", id)
+	}
+	return nil
 }
 
 func (r *ExecutionPostgres) UpdateStatus(id string, status store.PipelineExecutionStatus) error {

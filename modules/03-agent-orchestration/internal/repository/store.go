@@ -77,7 +77,9 @@ type Repository interface {
 type WorkflowStoreIface interface {
 	Create(*store.Workflow) (*store.Workflow, error)
 	GetByID(string) (*store.Workflow, error)
+	GetByIDAndTenant(string, string) (*store.Workflow, error)
 	UpdateStatus(string, store.WorkflowStatus) error
+	UpdateStatusAndTenant(string, string, store.WorkflowStatus) error
 	UpdateCurrentNodes(string, []string) error
 	List(string, int, int, *string) ([]*store.Workflow, int, bool)
 	AddCheckpoint(store.Checkpoint)
@@ -94,7 +96,9 @@ type WorkflowStoreIface interface {
 type ScheduleStoreIface interface {
 	Create(*store.Schedule) (*store.Schedule, error)
 	GetByID(string) (*store.Schedule, error)
+	GetByIDAndTenant(string, string) (*store.Schedule, error)
 	Patch(string, *string, *string, *string, *map[string]interface{}, *bool) (*store.Schedule, error)
+	UpdateStatusAndTenant(string, string, bool) error
 	Delete(string) error
 	List(string, int, int, *bool) ([]*store.Schedule, int, bool)
 }
@@ -114,8 +118,10 @@ type AgentStoreIface interface {
 type PipelineStoreIface interface {
 	Create(*store.Pipeline) (*store.Pipeline, error)
 	GetByID(string) (*store.Pipeline, error)
+	GetByIDAndTenant(string, string) (*store.Pipeline, error)
 	Update(string, *string, *string, *[]store.PipelineStep, *store.PipelineErrorHandlingConfig, *int, *int, *store.PipelineStatus, *map[string]interface{}, *[]string) (*store.Pipeline, error)
 	UpdateStatus(string, store.PipelineStatus) error
+	UpdateStatusAndTenant(string, string, store.PipelineStatus) error
 	Delete(string) error
 	List(string, int, int, *string) ([]*store.Pipeline, int, bool)
 	IncrementExecutionCount(string, bool)
@@ -125,7 +131,9 @@ type PipelineStoreIface interface {
 type ExecutionStoreIface interface {
 	Create(*store.PipelineExecution) (*store.PipelineExecution, error)
 	GetByID(string) (*store.PipelineExecution, error)
+	GetByIDAndTenant(string, string) (*store.PipelineExecution, error)
 	UpdateStatus(string, store.PipelineExecutionStatus) error
+	UpdateStatusAndTenant(string, string, store.PipelineExecutionStatus) error
 	Delete(string) error
 	ListByPipeline(string, int, int, *string, int) ([]*store.PipelineExecution, int, bool)
 	ListByTenant(string, int, int) ([]*store.PipelineExecution, int, bool)
@@ -138,7 +146,9 @@ type ExecutionStoreIface interface {
 type HumanTaskStoreIface interface {
 	Create(*store.HumanTask) (*store.HumanTask, error)
 	GetByID(string) (*store.HumanTask, error)
+	GetByIDAndTenant(string, string) (*store.HumanTask, error)
 	Respond(string, string, map[string]interface{}, string, string) (*store.HumanTask, error)
+	UpdateStatusAndTenant(string, string, store.HumanTaskStatus) error
 	List(string, *string) ([]*store.HumanTask, int)
 }
 
@@ -232,6 +242,28 @@ func (s *Store) GetWorkflow(id string) (*store.Workflow, error) {
 		return s.repo.Workflow().GetByID(id)
 	default:
 		return nil, fmt.Errorf("unknown store mode: %d", s.mode)
+	}
+}
+
+func (s *Store) GetWorkflowAndTenant(id, tenantID string) (*store.Workflow, error) {
+	switch s.mode {
+	case ModeInMemory:
+		return s.wf.GetByIDAndTenant(id, tenantID)
+	case ModePostgreSQL:
+		return s.repo.Workflow().GetByIDAndTenant(id, tenantID)
+	default:
+		return nil, fmt.Errorf("unknown store mode: %d", s.mode)
+	}
+}
+
+func (s *Store) UpdateWorkflowStatusAndTenant(id, tenantID string, status store.WorkflowStatus) error {
+	switch s.mode {
+	case ModeInMemory:
+		return s.wf.UpdateStatusAndTenant(id, tenantID, status)
+	case ModePostgreSQL:
+		return s.repo.Workflow().UpdateStatusAndTenant(id, tenantID, status)
+	default:
+		return fmt.Errorf("unknown store mode: %d", s.mode)
 	}
 }
 
@@ -405,6 +437,28 @@ func (s *Store) GetSchedule(id string) (*store.Schedule, error) {
 		return s.repo.Schedule().GetByID(id)
 	default:
 		return nil, fmt.Errorf("unknown store mode: %d", s.mode)
+	}
+}
+
+func (s *Store) GetScheduleAndTenant(id, tenantID string) (*store.Schedule, error) {
+	switch s.mode {
+	case ModeInMemory:
+		return s.sc.GetByIDAndTenant(id, tenantID)
+	case ModePostgreSQL:
+		return s.repo.Schedule().GetByIDAndTenant(id, tenantID)
+	default:
+		return nil, fmt.Errorf("unknown store mode: %d", s.mode)
+	}
+}
+
+func (s *Store) UpdateScheduleStatusAndTenant(id, tenantID string, enabled bool) error {
+	switch s.mode {
+	case ModeInMemory:
+		return s.sc.UpdateStatusAndTenant(id, tenantID, enabled)
+	case ModePostgreSQL:
+		return s.repo.Schedule().UpdateStatusAndTenant(id, tenantID, enabled)
+	default:
+		return fmt.Errorf("unknown store mode: %d", s.mode)
 	}
 }
 
@@ -602,6 +656,28 @@ func (s *Store) GetPipeline(id string) (*store.Pipeline, error) {
 	}
 }
 
+func (s *Store) GetPipelineAndTenant(id, tenantID string) (*store.Pipeline, error) {
+	switch s.mode {
+	case ModeInMemory:
+		return s.pl.GetByIDAndTenant(id, tenantID)
+	case ModePostgreSQL:
+		return s.repo.Pipeline().GetByIDAndTenant(id, tenantID)
+	default:
+		return nil, fmt.Errorf("unknown store mode: %d", s.mode)
+	}
+}
+
+func (s *Store) UpdatePipelineStatusAndTenant(id, tenantID string, status store.PipelineStatus) error {
+	switch s.mode {
+	case ModeInMemory:
+		return s.pl.UpdateStatusAndTenant(id, tenantID, status)
+	case ModePostgreSQL:
+		return s.repo.Pipeline().UpdateStatusAndTenant(id, tenantID, status)
+	default:
+		return fmt.Errorf("unknown store mode: %d", s.mode)
+	}
+}
+
 func (s *Store) UpdatePipeline(id string, name, description *string, steps []store.PipelineStep, errorHandling *store.PipelineErrorHandlingConfig, timeoutMinutes, maxRetries *int, status *store.PipelineStatus, variables *map[string]interface{}, tags *[]string) (*store.Pipeline, error) {
 	switch s.mode {
 	case ModeInMemory:
@@ -684,6 +760,28 @@ func (s *Store) GetExecution(id string) (*store.PipelineExecution, error) {
 		return s.repo.Execution().GetByID(id)
 	default:
 		return nil, fmt.Errorf("unknown store mode: %d", s.mode)
+	}
+}
+
+func (s *Store) GetExecutionAndTenant(id, tenantID string) (*store.PipelineExecution, error) {
+	switch s.mode {
+	case ModeInMemory:
+		return s.ex.GetByIDAndTenant(id, tenantID)
+	case ModePostgreSQL:
+		return s.repo.Execution().GetByIDAndTenant(id, tenantID)
+	default:
+		return nil, fmt.Errorf("unknown store mode: %d", s.mode)
+	}
+}
+
+func (s *Store) UpdateExecutionStatusAndTenant(id, tenantID string, status store.PipelineExecutionStatus) error {
+	switch s.mode {
+	case ModeInMemory:
+		return s.ex.UpdateStatusAndTenant(id, tenantID, status)
+	case ModePostgreSQL:
+		return s.repo.Execution().UpdateStatusAndTenant(id, tenantID, status)
+	default:
+		return fmt.Errorf("unknown store mode: %d", s.mode)
 	}
 }
 
@@ -817,6 +915,28 @@ func (s *Store) GetHumanTask(id string) (*store.HumanTask, error) {
 		return s.repo.HumanTask().GetByID(id)
 	default:
 		return nil, fmt.Errorf("unknown store mode: %d", s.mode)
+	}
+}
+
+func (s *Store) GetHumanTaskAndTenant(id, tenantID string) (*store.HumanTask, error) {
+	switch s.mode {
+	case ModeInMemory:
+		return s.ht.GetByIDAndTenant(id, tenantID)
+	case ModePostgreSQL:
+		return s.repo.HumanTask().GetByIDAndTenant(id, tenantID)
+	default:
+		return nil, fmt.Errorf("unknown store mode: %d", s.mode)
+	}
+}
+
+func (s *Store) UpdateHumanTaskStatusAndTenant(id, tenantID string, status store.HumanTaskStatus) error {
+	switch s.mode {
+	case ModeInMemory:
+		return s.ht.UpdateStatusAndTenant(id, tenantID, status)
+	case ModePostgreSQL:
+		return s.repo.HumanTask().UpdateStatusAndTenant(id, tenantID, status)
+	default:
+		return fmt.Errorf("unknown store mode: %d", s.mode)
 	}
 }
 
@@ -1156,8 +1276,14 @@ func (p *storePassthroughWorkflow) Create(wf *store.Workflow) (*store.Workflow, 
 	return p.repo.GetByID(wf.ID)
 }
 func (p *storePassthroughWorkflow) GetByID(id string) (*store.Workflow, error) { return p.repo.GetByID(id) }
+func (p *storePassthroughWorkflow) GetByIDAndTenant(id, tenantID string) (*store.Workflow, error) {
+	return p.repo.GetByIDAndTenant(id, tenantID)
+}
 func (p *storePassthroughWorkflow) UpdateStatus(id string, status store.WorkflowStatus) error {
 	return p.repo.UpdateStatus(id, status)
+}
+func (p *storePassthroughWorkflow) UpdateStatusAndTenant(id, tenantID string, status store.WorkflowStatus) error {
+	return p.repo.UpdateStatusAndTenant(id, tenantID, status)
 }
 func (p *storePassthroughWorkflow) UpdateCurrentNodes(id string, nodeIDs []string) error {
 	return p.repo.UpdateCurrentNodes(id, nodeIDs)
@@ -1233,10 +1359,16 @@ func (p *storePassthroughSchedule) Create(sc *store.Schedule) (*store.Schedule, 
 	return p.repo.GetByID(sc.ID)
 }
 func (p *storePassthroughSchedule) GetByID(id string) (*store.Schedule, error) { return p.repo.GetByID(id) }
+func (p *storePassthroughSchedule) GetByIDAndTenant(id, tenantID string) (*store.Schedule, error) {
+	return p.repo.GetByIDAndTenant(id, tenantID)
+}
 func (p *storePassthroughSchedule) Patch(id string, name, cron, workflowTemplateID *string, variables *map[string]interface{}, enabled *bool) (*store.Schedule, error) {
 	return p.repo.Patch(id, name, cron, workflowTemplateID, variables, enabled)
 }
 func (p *storePassthroughSchedule) Delete(id string) error { return p.repo.Delete(id) }
+func (p *storePassthroughSchedule) UpdateStatusAndTenant(id, tenantID string, enabled bool) error {
+	return p.repo.UpdateStatusAndTenant(id, tenantID, enabled)
+}
 func (p *storePassthroughSchedule) List(tenantID string, page, pageSize int, enabled *bool) ([]*store.Schedule, int, bool) {
 	scs, total, err := p.repo.List(tenantID, page, pageSize, enabled)
 	if err != nil {
@@ -1290,6 +1422,9 @@ func (p *storePassthroughPipeline) Create(pipeline *store.Pipeline) (*store.Pipe
 	return p.repo.GetByID(pipeline.ID)
 }
 func (p *storePassthroughPipeline) GetByID(id string) (*store.Pipeline, error) { return p.repo.GetByID(id) }
+func (p *storePassthroughPipeline) GetByIDAndTenant(id, tenantID string) (*store.Pipeline, error) {
+	return p.repo.GetByIDAndTenant(id, tenantID)
+}
 func (p *storePassthroughPipeline) Update(id string, name, description *string, steps *[]store.PipelineStep, errorHandling *store.PipelineErrorHandlingConfig, timeoutMinutes, maxRetries *int, status *store.PipelineStatus, variables *map[string]interface{}, tags *[]string) (*store.Pipeline, error) {
 	var s []store.PipelineStep
 	if steps != nil {
@@ -1299,6 +1434,9 @@ func (p *storePassthroughPipeline) Update(id string, name, description *string, 
 }
 func (p *storePassthroughPipeline) UpdateStatus(id string, status store.PipelineStatus) error {
 	return p.repo.UpdateStatus(id, status)
+}
+func (p *storePassthroughPipeline) UpdateStatusAndTenant(id, tenantID string, status store.PipelineStatus) error {
+	return p.repo.UpdateStatusAndTenant(id, tenantID, status)
 }
 func (p *storePassthroughPipeline) Delete(id string) error { return p.repo.Delete(id) }
 func (p *storePassthroughPipeline) List(tenantID string, page, pageSize int, status *string) ([]*store.Pipeline, int, bool) {
@@ -1323,8 +1461,14 @@ func (p *storePassthroughExecution) Create(e *store.PipelineExecution) (*store.P
 	return p.repo.GetByID(e.ID)
 }
 func (p *storePassthroughExecution) GetByID(id string) (*store.PipelineExecution, error) { return p.repo.GetByID(id) }
+func (p *storePassthroughExecution) GetByIDAndTenant(id, tenantID string) (*store.PipelineExecution, error) {
+	return p.repo.GetByIDAndTenant(id, tenantID)
+}
 func (p *storePassthroughExecution) UpdateStatus(id string, status store.PipelineExecutionStatus) error {
 	return p.repo.UpdateStatus(id, status)
+}
+func (p *storePassthroughExecution) UpdateStatusAndTenant(id, tenantID string, status store.PipelineExecutionStatus) error {
+	return p.repo.UpdateStatusAndTenant(id, tenantID, status)
 }
 func (p *storePassthroughExecution) Delete(id string) error { return p.repo.Delete(id) }
 func (p *storePassthroughExecution) ListByPipeline(pipelineID string, page, pageSize int, status *string, limit int) ([]*store.PipelineExecution, int, bool) {
@@ -1382,8 +1526,14 @@ func (p *storePassthroughHumanTask) Create(t *store.HumanTask) (*store.HumanTask
 	return p.repo.GetByID(t.ID)
 }
 func (p *storePassthroughHumanTask) GetByID(id string) (*store.HumanTask, error) { return p.repo.GetByID(id) }
+func (p *storePassthroughHumanTask) GetByIDAndTenant(id, tenantID string) (*store.HumanTask, error) {
+	return p.repo.GetByIDAndTenant(id, tenantID)
+}
 func (p *storePassthroughHumanTask) Respond(id string, action string, response map[string]interface{}, respondedBy string, comments string) (*store.HumanTask, error) {
 	return p.repo.Respond(id, action, response, respondedBy, comments)
+}
+func (p *storePassthroughHumanTask) UpdateStatusAndTenant(id, tenantID string, status store.HumanTaskStatus) error {
+	return p.repo.UpdateStatusAndTenant(id, tenantID, status)
 }
 func (p *storePassthroughHumanTask) List(tenantID string, status *string) ([]*store.HumanTask, int) {
 	tasks, total, err := p.repo.List(tenantID, status)

@@ -118,20 +118,9 @@ func computeHMAC(secret, data string) string {
 	return base64URLEncode(hash)
 }
 
-// base64URLDecode decodes base64url-encoded string.
+// base64URLDecode decodes base64url-encoded string (no padding).
 func base64URLDecode(s string) ([]byte, error) {
-	// Add padding if needed
-	switch len(s) % 4 {
-	case 2:
-		s += "=="
-	case 3:
-		s += "="
-	}
-	// Replace URL-safe characters
-	s = strings.ReplaceAll(s, "-", "+")
-	s = strings.ReplaceAll(s, "_", "/")
-
-	dec, err := decodeBase64(s)
+	dec, err := base64.RawURLEncoding.DecodeString(s)
 	if err != nil {
 		return nil, err
 	}

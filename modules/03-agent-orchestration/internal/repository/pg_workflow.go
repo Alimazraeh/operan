@@ -52,6 +52,29 @@ func (r *WorkflowPostgres) GetByID(id string) (*store.Workflow, error) {
 	return scanWorkflow(row)
 }
 
+func (r *WorkflowPostgres) GetByIDAndTenant(id, tenantID string) (*store.Workflow, error) {
+	ctx := defaultCtx()
+	query := `SELECT id,tenant_id,department_id,name,version,status,current_nodes,graph,
+		priority,description,created_by,created_at,started_at,completed_at
+		FROM workflows WHERE id=$1 AND tenant_id=$2`
+	row := r.db.QueryRowContext(ctx, query, id, tenantID)
+	return scanWorkflow(row)
+}
+
+func (r *WorkflowPostgres) UpdateStatusAndTenant(id, tenantID string, status store.WorkflowStatus) error {
+	ctx := defaultCtx()
+	result, err := r.db.ExecContext(ctx,
+		"UPDATE workflows SET status=$1 WHERE id=$2 AND tenant_id=$3", status, id, tenantID)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("workflow %s not found or tenant mismatch", id)
+	}
+	return nil
+}
+
 func (r *WorkflowPostgres) UpdateStatus(id string, status store.WorkflowStatus) error {
 	ctx := defaultCtx()
 	_, err := r.db.ExecContext(ctx,
@@ -305,6 +328,28 @@ func (r *SchedulePostgres) GetByID(id string) (*store.Schedule, error) {
 		FROM schedules WHERE id=$1`
 	row := r.db.QueryRowContext(ctx, query, id)
 	return scanSchedule(row)
+}
+
+func (r *SchedulePostgres) GetByIDAndTenant(id, tenantID string) (*store.Schedule, error) {
+	ctx := defaultCtx()
+	query := `SELECT id,tenant_id,name,cron,workflow_template_id,variables,enabled,created_at,updated_at
+		FROM schedules WHERE id=$1 AND tenant_id=$2`
+	row := r.db.QueryRowContext(ctx, query, id, tenantID)
+	return scanSchedule(row)
+}
+
+func (r *SchedulePostgres) UpdateStatusAndTenant(id, tenantID string, enabled bool) error {
+	ctx := defaultCtx()
+	result, err := r.db.ExecContext(ctx,
+		"UPDATE schedules SET enabled=$1, updated_at=now() WHERE id=$2 AND tenant_id=$3", enabled, id, tenantID)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("schedule %s not found or tenant mismatch", id)
+	}
+	return nil
 }
 
 func (r *SchedulePostgres) Patch(id string, name, cron, workflowTemplateID *string, variables *map[string]interface{}, enabled *bool) (*store.Schedule, error) {

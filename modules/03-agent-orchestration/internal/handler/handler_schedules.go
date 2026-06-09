@@ -98,9 +98,11 @@ func (h *ScheduleHandler) GetSchedule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sc, err := h.ScheduleStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	sc, err := h.ScheduleStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
-		h.WriteError(w, http.StatusNotFound, 404, err.Error())
+		h.WriteError(w, http.StatusNotFound, 404, "schedule not found")
 		return
 	}
 
@@ -114,6 +116,14 @@ func (h *ScheduleHandler) UpdateSchedule(w http.ResponseWriter, r *http.Request)
 	id := extractScheduleIDFromPath(r.URL.Path)
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "schedule id is required")
+		return
+	}
+
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify ownership
+	if _, err := h.ScheduleStore.GetByIDAndTenant(id, tenantID); err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "schedule not found")
 		return
 	}
 
@@ -145,6 +155,14 @@ func (h *ScheduleHandler) DeleteSchedule(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify ownership
+	if _, err := h.ScheduleStore.GetByIDAndTenant(id, tenantID); err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "schedule not found")
+		return
+	}
+
 	if err := h.ScheduleStore.Delete(id); err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, err.Error())
 		return
@@ -163,9 +181,11 @@ func (h *ScheduleHandler) TriggerSchedule(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	sc, err := h.ScheduleStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	sc, err := h.ScheduleStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
-		h.WriteError(w, http.StatusNotFound, 404, err.Error())
+		h.WriteError(w, http.StatusNotFound, 404, "schedule not found")
 		return
 	}
 
@@ -248,6 +268,14 @@ func (h *ScheduleHandler) PauseSchedule(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify ownership
+	if _, err := h.ScheduleStore.GetByIDAndTenant(id, tenantID); err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "schedule not found")
+		return
+	}
+
 	sc, err := h.ScheduleStore.Patch(id, nil, nil, nil, nil, ptrBool(false))
 	if err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, err.Error())
@@ -264,6 +292,14 @@ func (h *ScheduleHandler) ResumeSchedule(w http.ResponseWriter, r *http.Request)
 	id := extractScheduleIDFromPath(r.URL.Path)
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "schedule id is required")
+		return
+	}
+
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify ownership
+	if _, err := h.ScheduleStore.GetByIDAndTenant(id, tenantID); err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "schedule not found")
 		return
 	}
 

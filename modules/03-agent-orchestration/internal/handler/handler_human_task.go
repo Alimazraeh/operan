@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/operan/modules/03-agent-orchestration/internal/events"
+	"github.com/operan/modules/03-agent-orchestration/internal/middleware"
 	"github.com/operan/modules/03-agent-orchestration/internal/repository"
 	"github.com/operan/modules/03-agent-orchestration/internal/store"
 )
@@ -66,16 +67,12 @@ func (h *HumanTaskHandler) CreateHumanTask(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Verify execution exists
-	_, err := h.ExecutionStore.GetByID(req.PipelineExecutionID)
-	if err != nil {
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify execution belongs to tenant
+	if _, err := h.ExecutionStore.GetByIDAndTenant(req.PipelineExecutionID, tenantID); err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, "execution not found")
 		return
-	}
-
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		tenantID = "default"
 	}
 
 	task := &store.HumanTask{
@@ -118,10 +115,7 @@ func (h *HumanTaskHandler) CreateHumanTask(w http.ResponseWriter, r *http.Reques
 
 // ListHumanTasks handles GET /human-tasks
 func (h *HumanTaskHandler) ListHumanTasks(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		tenantID = "default"
-	}
+	tenantID := middleware.TenantIDFromContext(r.Context())
 
 	status := (*string)(nil)
 	if s := r.URL.Query().Get("status"); s != "" {
@@ -146,9 +140,11 @@ func (h *HumanTaskHandler) GetHumanTask(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	task, err := h.HumanTaskStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	task, err := h.HumanTaskStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
-		h.WriteError(w, http.StatusNotFound, 404, err.Error())
+		h.WriteError(w, http.StatusNotFound, 404, "human task not found")
 		return
 	}
 
@@ -165,11 +161,20 @@ func (h *HumanTaskHandler) RespondToHumanTask(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify ownership
+	_, err := h.HumanTaskStore.GetByIDAndTenant(id, tenantID)
+	if err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "human task not found")
+		return
+	}
+
 	var req struct {
-		Action    string                 `json:"action"`
-		Response  map[string]interface{} `json:"response,omitempty"`
-		Comments  string                 `json:"comments,omitempty"`
-		RespondedBy string               `json:"responded_by"`
+		Action        string                 `json:"action"`
+		Response      map[string]interface{} `json:"response,omitempty"`
+		Comments      string                 `json:"comments,omitempty"`
+		RespondedBy   string                 `json:"responded_by"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.WriteError(w, http.StatusBadRequest, 400, "invalid request body")
@@ -193,10 +198,7 @@ func (h *HumanTaskHandler) RespondToHumanTask(w http.ResponseWriter, r *http.Req
 
 // GetPendingTasks handles GET /human-tasks/pending
 func (h *HumanTaskHandler) GetPendingTasks(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		tenantID = "default"
-	}
+	tenantID := middleware.TenantIDFromContext(r.Context())
 
 	status := string(store.HumanTaskStatusPending)
 	tasks, total := h.HumanTaskStore.List(tenantID, &status)
@@ -217,14 +219,18 @@ func (h *HumanTaskHandler) GetTasksByExecution(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// The store doesn't have a direct by-execution list, but we can get all
-	// tenant tasks and filter. For a proper implementation, we'd add
-	// ListByExecution to the store. For now, return all pending tasks
-	// that match the execution.
-	status := string(store.HumanTaskStatusPending)
-	tasks, _ := h.HumanTaskStore.List(r.Header.Get("X-Tenant-ID"), &status)
+	tenantID := middleware.TenantIDFromContext(r.Context())
 
-	// Filter to matching execution — in production this would be a direct query
+	// Verify execution belongs to tenant
+	if _, err := h.ExecutionStore.GetByIDAndTenant(executionID, tenantID); err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "execution not found")
+		return
+	}
+
+	status := string(store.HumanTaskStatusPending)
+	tasks, _ := h.HumanTaskStore.List(tenantID, &status)
+
+	// Filter to matching execution
 	var filtered []*store.HumanTask
 	for _, t := range tasks {
 		if t.PipelineExecutionID == executionID {
@@ -248,10 +254,12 @@ func (h *HumanTaskHandler) CancelHumanTask(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Get current task, update to cancelled
-	task, err := h.HumanTaskStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify ownership
+	task, err := h.HumanTaskStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
-		h.WriteError(w, http.StatusNotFound, 404, err.Error())
+		h.WriteError(w, http.StatusNotFound, 404, "human task not found")
 		return
 	}
 
