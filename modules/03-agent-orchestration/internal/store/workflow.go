@@ -296,6 +296,36 @@ func (s *WorkflowStore) GetByID(id string) (*Workflow, error) {
 	return &cpy, nil
 }
 
+// GetByIDAndTenant retrieves a workflow by ID with tenant verification.
+// Returns 404 if workflow doesn't exist or tenant doesn't match.
+func (s *WorkflowStore) GetByIDAndTenant(id, tenantID string) (*Workflow, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	w, ok := s.workflows[id]
+	if !ok {
+		return nil, fmt.Errorf("workflow %s not found", id)
+	}
+	if w.TenantID != tenantID {
+		return nil, fmt.Errorf("workflow %s not found", id)
+	}
+	cpy := *w
+	if w.CurrentNodes != nil {
+		cpy.CurrentNodes = make([]string, len(w.CurrentNodes))
+		copy(cpy.CurrentNodes, w.CurrentNodes)
+	}
+	if w.Graph.Nodes != nil {
+		cpy.Graph = *w.Graph.DeepCopy()
+	}
+	if w.Variables != nil {
+		cpy.Variables = make(map[string]interface{})
+		for k, v := range w.Variables {
+			cpy.Variables[k] = v
+		}
+	}
+	return &cpy, nil
+}
+
 // UpdateStatus updates the status of a workflow.
 func (s *WorkflowStore) UpdateStatus(id string, status WorkflowStatus) error {
 	s.mu.Lock()
@@ -303,6 +333,38 @@ func (s *WorkflowStore) UpdateStatus(id string, status WorkflowStatus) error {
 
 	w, ok := s.workflows[id]
 	if !ok {
+		return fmt.Errorf("workflow %s not found", id)
+	}
+
+	valid := validWorkflowTransitions[w.Status]
+	if !slices.Contains(valid, status) {
+		return fmt.Errorf("invalid workflow status transition from %s to %s", w.Status, status)
+	}
+
+	w.Status = status
+	if status == WorkflowStatusRunning && w.StartedAt == nil {
+		t := timeNow()
+		w.StartedAt = &t
+	}
+	if status == WorkflowStatusCompleted || status == WorkflowStatusFailed || status == WorkflowStatusCancelled {
+		now := timeNow()
+		w.CompletedAt = &now
+	}
+
+	return nil
+}
+
+// UpdateStatusAndTenant updates the status of a workflow with tenant verification.
+// Returns error if workflow doesn't exist or tenant doesn't match.
+func (s *WorkflowStore) UpdateStatusAndTenant(id, tenantID string, status WorkflowStatus) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	w, ok := s.workflows[id]
+	if !ok {
+		return fmt.Errorf("workflow %s not found", id)
+	}
+	if w.TenantID != tenantID {
 		return fmt.Errorf("workflow %s not found", id)
 	}
 
@@ -619,6 +681,29 @@ func (s *ScheduleStore) GetByID(id string) (*Schedule, error) {
 	return &cpy, nil
 }
 
+// GetByIDAndTenant retrieves a schedule by ID with tenant verification.
+// Returns error if schedule doesn't exist or tenant doesn't match.
+func (s *ScheduleStore) GetByIDAndTenant(id, tenantID string) (*Schedule, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	sc, ok := s.schedules[id]
+	if !ok {
+		return nil, fmt.Errorf("schedule %s not found", id)
+	}
+	if sc.TenantID != tenantID {
+		return nil, fmt.Errorf("schedule %s not found", id)
+	}
+	cpy := *sc
+	if sc.Variables != nil {
+		cpy.Variables = make(map[string]interface{})
+		for k, v := range sc.Variables {
+			cpy.Variables[k] = v
+		}
+	}
+	return &cpy, nil
+}
+
 // Patch updates fields of a schedule.
 func (s *ScheduleStore) Patch(id string, name *string, cron *string, workflowTemplateID *string, variables *map[string]interface{}, enabled *bool) (*Schedule, error) {
 	s.mu.Lock()
@@ -650,6 +735,24 @@ func (s *ScheduleStore) Patch(id string, name *string, cron *string, workflowTem
 
 	sc.UpdatedAt = timeNow()
 	return sc, nil
+}
+
+// UpdateStatusAndTenant updates a schedule's enabled status with tenant verification.
+// Returns error if schedule doesn't exist or tenant doesn't match.
+func (s *ScheduleStore) UpdateStatusAndTenant(id, tenantID string, enabled bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	sc, ok := s.schedules[id]
+	if !ok {
+		return fmt.Errorf("schedule %s not found", id)
+	}
+	if sc.TenantID != tenantID {
+		return fmt.Errorf("schedule %s not found", id)
+	}
+	sc.Enabled = enabled
+	sc.UpdatedAt = timeNow()
+	return nil
 }
 
 // Delete removes a schedule.

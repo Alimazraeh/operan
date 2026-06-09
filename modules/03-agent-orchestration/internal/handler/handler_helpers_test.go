@@ -7,8 +7,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/operan/modules/03-agent-orchestration/internal/middleware"
 	"github.com/operan/modules/03-agent-orchestration/internal/store"
 )
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+// setTenant injects tenant-1 into the request context for testing.
+func setTenant(req *http.Request) *http.Request {
+	ctx := middleware.SetTenantIDToContext(req.Context(), "tenant-1")
+	return req.WithContext(ctx)
+}
 
 // ─── Extract helper function tests ───────────────────────────────────────────
 
@@ -96,7 +105,7 @@ func TestListAgentEndpoint(t *testing.T) {
 
 	t.Run("lists agents from store", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/agents", nil)
-		req.Header.Set("X-Tenant-ID", "tenant-1")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		ListAgents(agStore).ServeHTTP(w, req)
 

@@ -16,7 +16,9 @@ import (
 type WorkflowRepo interface {
 	Create(wf *store.Workflow) error
 	GetByID(id string) (*store.Workflow, error)
+	GetByIDAndTenant(id, tenantID string) (*store.Workflow, error)
 	UpdateStatus(id string, status store.WorkflowStatus) error
+	UpdateStatusAndTenant(id, tenantID string, status store.WorkflowStatus) error
 	UpdateCurrentNodes(id string, nodeIDs []string) error
 	List(tenantID string, page, pageSize int, status *string) ([]*store.Workflow, int, error)
 	AddCheckpoint(cp *store.Checkpoint) error
@@ -33,7 +35,9 @@ type WorkflowRepo interface {
 type ScheduleRepo interface {
 	Create(sc *store.Schedule) error
 	GetByID(id string) (*store.Schedule, error)
+	GetByIDAndTenant(id, tenantID string) (*store.Schedule, error)
 	Patch(id string, name, cron, workflowTemplateID *string, variables *map[string]interface{}, enabled *bool) (*store.Schedule, error)
+	UpdateStatusAndTenant(id, tenantID string, enabled bool) error
 	Delete(id string) error
 	List(tenantID string, page, pageSize int, enabled *bool) ([]*store.Schedule, int, error)
 }
@@ -57,8 +61,10 @@ type AgentRepo interface {
 type PipelineRepo interface {
 	Create(p *store.Pipeline) error
 	GetByID(id string) (*store.Pipeline, error)
+	GetByIDAndTenant(id, tenantID string) (*store.Pipeline, error)
 	Update(id string, name, description *string, steps []store.PipelineStep, errorHandling *store.PipelineErrorHandlingConfig, timeoutMinutes, maxRetries *int, status *store.PipelineStatus, variables *map[string]interface{}, tags *[]string) (*store.Pipeline, error)
 	UpdateStatus(id string, status store.PipelineStatus) error
+	UpdateStatusAndTenant(id, tenantID string, status store.PipelineStatus) error
 	Delete(id string) error
 	List(tenantID string, page, pageSize int, status *string) ([]*store.Pipeline, int, error)
 	IncrementExecutionCount(pipelineID string, success bool) error
@@ -68,7 +74,9 @@ type PipelineRepo interface {
 type ExecutionRepo interface {
 	Create(e *store.PipelineExecution) error
 	GetByID(id string) (*store.PipelineExecution, error)
+	GetByIDAndTenant(id, tenantID string) (*store.PipelineExecution, error)
 	UpdateStatus(id string, status store.PipelineExecutionStatus) error
+	UpdateStatusAndTenant(id, tenantID string, status store.PipelineExecutionStatus) error
 	Delete(id string) error
 	ListByPipeline(pipelineID string, page, pageSize int, status *string) ([]*store.PipelineExecution, int, error)
 	ListByTenant(tenantID string, page, pageSize int) ([]*store.PipelineExecution, int, error)
@@ -81,7 +89,9 @@ type ExecutionRepo interface {
 type HumanTaskRepo interface {
 	Create(t *store.HumanTask) error
 	GetByID(id string) (*store.HumanTask, error)
+	GetByIDAndTenant(id, tenantID string) (*store.HumanTask, error)
 	Respond(id string, action string, response map[string]interface{}, respondedBy, comments string) (*store.HumanTask, error)
+	UpdateStatusAndTenant(id, tenantID string, status store.HumanTaskStatus) error
 	List(tenantID string, status *string) ([]*store.HumanTask, int, error)
 }
 

@@ -2,13 +2,11 @@ package handler
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/operan/modules/03-agent-orchestration/internal/middleware"
 	"github.com/operan/modules/03-agent-orchestration/internal/store"
 )
 
@@ -34,16 +32,17 @@ func TestCreateWorkflow(t *testing.T) {
 		}
 
 		reqBody, _ := json.Marshal(map[string]interface{}{
-			"name":         "Test Workflow",
-			"version":      "1.0.0",
-			"tenant_id":    "tenant-1",
+			"name":          "Test Workflow",
+			"version":       "1.0.0",
+			"tenant_id":     "tenant-1",
 			"department_id": "dept-1",
-			"graph":        graph,
-			"priority":     5,
+			"graph":         graph,
+			"priority":      5,
 		})
 
 		req := httptest.NewRequest("POST", "/workflows", bytes.NewReader(reqBody))
 		req.Header.Set("Content-Type", "application/json")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 
 		h.CreateWorkflow(w, req)
@@ -69,6 +68,7 @@ func TestCreateWorkflow(t *testing.T) {
 
 		req := httptest.NewRequest("POST", "/workflows", bytes.NewReader(reqBody))
 		req.Header.Set("Content-Type", "application/json")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 
 		h.CreateWorkflow(w, req)
@@ -94,9 +94,8 @@ func TestListWorkflows(t *testing.T) {
 	h.WorkflowStore = wfStore
 
 	t.Run("returns workflows", func(t *testing.T) {
-		ctx := middleware.SetTenantIDToContext(context.Background(), "tenant-1")
 		req := httptest.NewRequest("GET", "/workflows?page=1&page_size=50", nil)
-		req = req.WithContext(ctx)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 
 		h.ListWorkflows(w, req)
@@ -125,6 +124,7 @@ func TestGetWorkflow(t *testing.T) {
 
 	t.Run("returns workflow by ID", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/workflows/"+wf.ID, nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 
 		h.GetWorkflow(w, req)
@@ -142,6 +142,7 @@ func TestGetWorkflow(t *testing.T) {
 
 	t.Run("not found", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/workflows/non-existent", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 
 		h.GetWorkflow(w, req)
@@ -166,8 +167,7 @@ func TestPauseResumeWorkflow(t *testing.T) {
 
 	t.Run("pause workflow", func(t *testing.T) {
 		req := httptest.NewRequest("POST", "/workflows/"+wf.ID+"/pause", nil)
-		ctx := middleware.SetTenantIDToContext(context.Background(), "tenant-1")
-		req = req.WithContext(ctx)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 
 		h.PauseWorkflow(w, req)
@@ -187,8 +187,7 @@ func TestPauseResumeWorkflow(t *testing.T) {
 		h.WorkflowStore.UpdateStatus(wf.ID, store.WorkflowStatusPaused)
 
 		req := httptest.NewRequest("POST", "/workflows/"+wf.ID+"/resume", nil)
-		ctx := middleware.SetTenantIDToContext(context.Background(), "tenant-1")
-		req = req.WithContext(ctx)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 
 		h.ResumeWorkflow(w, req)
@@ -205,8 +204,7 @@ func TestPauseResumeWorkflow(t *testing.T) {
 
 	t.Run("not found", func(t *testing.T) {
 		req := httptest.NewRequest("POST", "/workflows/non-existent/pause", nil)
-		ctx := middleware.SetTenantIDToContext(context.Background(), "tenant-1")
-		req = req.WithContext(ctx)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 
 		h.PauseWorkflow(w, req)
@@ -228,6 +226,7 @@ func TestCancelWorkflow(t *testing.T) {
 	})
 
 	req := httptest.NewRequest("DELETE", "/workflows/"+wf.ID, nil)
+	req = setTenant(req)
 	w := httptest.NewRecorder()
 
 	h.CancelWorkflow(w, req)
@@ -259,6 +258,7 @@ func TestCreateCheckpoint(t *testing.T) {
 
 		req := httptest.NewRequest("POST", "/workflows/"+wf.ID+"/checkpoint", bytes.NewReader(reqBody))
 		req.Header.Set("Content-Type", "application/json")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 
 		h.CreateCheckpoint(w, req)
@@ -281,6 +281,7 @@ func TestCreateCheckpoint(t *testing.T) {
 
 		req := httptest.NewRequest("POST", "/workflows/"+wf.ID+"/checkpoint", bytes.NewReader(reqBody))
 		req.Header.Set("Content-Type", "application/json")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 
 		h.CreateCheckpoint(w, req)
@@ -303,6 +304,7 @@ func TestCreateCheckpoint(t *testing.T) {
 
 		req := httptest.NewRequest("POST", "/workflows/non-existent/checkpoint", bytes.NewReader(reqBody))
 		req.Header.Set("Content-Type", "application/json")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 
 		h.CreateCheckpoint(w, req)
@@ -329,6 +331,7 @@ func TestGetWorkflowState(t *testing.T) {
 
 	t.Run("returns node states", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/workflows/"+wf.ID+"/state", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 
 		h.GetWorkflowState(w, req)
@@ -362,6 +365,7 @@ func TestReplayWorkflow(t *testing.T) {
 
 		req := httptest.NewRequest("POST", "/workflows/"+wf.ID+"/replay", bytes.NewReader(reqBody))
 		req.Header.Set("Content-Type", "application/json")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 
 		h.ReplayWorkflow(w, req)
@@ -378,6 +382,7 @@ func TestReplayWorkflow(t *testing.T) {
 
 		req := httptest.NewRequest("POST", "/workflows/non-existent/replay", bytes.NewReader(reqBody))
 		req.Header.Set("Content-Type", "application/json")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 
 		h.ReplayWorkflow(w, req)

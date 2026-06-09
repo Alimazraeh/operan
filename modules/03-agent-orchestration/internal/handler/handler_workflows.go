@@ -88,7 +88,7 @@ func (h *WorkflowHandler) CreateWorkflow(w http.ResponseWriter, r *http.Request)
 		Variables:      req.Variables,
 		Priority:       req.Priority,
 		Description:    req.Description,
-		CreatedBy:      middleware.TenantIDFromContext(r.Context()),
+		CreatedBy:      middleware.UserIDFromContext(r.Context()),
 	}
 	if wf.Priority < 1 {
 		wf.Priority = 5
@@ -171,7 +171,9 @@ func (h *WorkflowHandler) GetWorkflow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wf, err := h.WorkflowStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	wf, err := h.WorkflowStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, err.Error())
 		return
@@ -190,7 +192,9 @@ func (h *WorkflowHandler) CancelWorkflow(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := h.WorkflowStore.UpdateStatus(id, store.WorkflowStatusCancelled); err != nil {
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	if err := h.WorkflowStore.UpdateStatusAndTenant(id, tenantID, store.WorkflowStatusCancelled); err != nil {
 		h.WriteError(w, http.StatusConflict, 409, err.Error())
 		return
 	}
@@ -218,7 +222,9 @@ func (h *WorkflowHandler) PauseWorkflow(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := h.WorkflowStore.UpdateStatus(id, store.WorkflowStatusPaused); err != nil {
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	if err := h.WorkflowStore.UpdateStatusAndTenant(id, tenantID, store.WorkflowStatusPaused); err != nil {
 		h.WriteError(w, http.StatusBadRequest, 400, err.Error())
 		return
 	}
@@ -245,7 +251,9 @@ func (h *WorkflowHandler) ResumeWorkflow(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := h.WorkflowStore.UpdateStatus(id, store.WorkflowStatusRunning); err != nil {
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	if err := h.WorkflowStore.UpdateStatusAndTenant(id, tenantID, store.WorkflowStatusRunning); err != nil {
 		h.WriteError(w, http.StatusBadRequest, 400, err.Error())
 		return
 	}
@@ -271,7 +279,9 @@ func (h *WorkflowHandler) GetWorkflowState(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	wf, err := h.WorkflowStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	wf, err := h.WorkflowStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, err.Error())
 		return
@@ -346,13 +356,14 @@ func (h *WorkflowHandler) CreateCheckpoint(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Verify workflow exists
-	wf, err := h.WorkflowStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify workflow exists and belongs to tenant
+	_, err := h.WorkflowStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, err.Error())
 		return
 	}
-	_ = wf
 
 	var req struct {
 		NodeID     string                 `json:"node_id,omitempty"`
@@ -399,7 +410,9 @@ func (h *WorkflowHandler) ReplayWorkflow(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	wf, err := h.WorkflowStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	wf, err := h.WorkflowStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, err.Error())
 		return
@@ -476,6 +489,14 @@ func (h *WorkflowHandler) GetWorkflowVariables(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify workflow exists and belongs to tenant
+	if _, err := h.WorkflowStore.GetByIDAndTenant(id, tenantID); err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, err.Error())
+		return
+	}
+
 	vars, err := h.WorkflowStore.GetVariables(id)
 	if err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, err.Error())
@@ -495,6 +516,8 @@ func (h *WorkflowHandler) UpdateWorkflowVariables(w http.ResponseWriter, r *http
 		return
 	}
 
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
 	var req struct {
 		Variables map[string]interface{} `json:"variables"`
 	}
@@ -503,7 +526,7 @@ func (h *WorkflowHandler) UpdateWorkflowVariables(w http.ResponseWriter, r *http
 		return
 	}
 
-	wf, err := h.WorkflowStore.GetByID(id)
+	wf, err := h.WorkflowStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, err.Error())
 		return
@@ -527,8 +550,10 @@ func (h *WorkflowHandler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Verify workflow exists
-	if _, err := h.WorkflowStore.GetByID(id); err != nil {
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify workflow exists and belongs to tenant
+	if _, err := h.WorkflowStore.GetByIDAndTenant(id, tenantID); err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, "workflow not found")
 		return
 	}
@@ -541,7 +566,7 @@ func (h *WorkflowHandler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request
 		}
 	} else {
 		// Fallback: update status to running without DAG engine
-		if err := h.WorkflowStore.UpdateStatus(id, store.WorkflowStatusRunning); err != nil {
+		if err := h.WorkflowStore.UpdateStatusAndTenant(id, tenantID, store.WorkflowStatusRunning); err != nil {
 			h.WriteError(w, http.StatusInternalServerError, 500, "failed to start execution: "+err.Error())
 			return
 		}

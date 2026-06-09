@@ -54,7 +54,7 @@ jobs:
       # ─── Test gate (per module) ──────────────────────────────────────────
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          go-version-file: modules/${{ matrix.module }}/go.mod
           cache-dependency-path: modules/${{ matrix.module }}/go.sum
 
       - name: go vet (advisory)

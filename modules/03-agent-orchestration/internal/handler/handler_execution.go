@@ -56,16 +56,12 @@ func (h *ExecutionHandler) CreateExecution(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Verify pipeline exists
-	_, err := h.PipelineStore.GetByID(req.PipelineID)
-	if err != nil {
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify pipeline exists and belongs to tenant
+	if _, err := h.PipelineStore.GetByIDAndTenant(req.PipelineID, tenantID); err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, "pipeline not found")
 		return
-	}
-
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		tenantID = "default"
 	}
 
 	execution := &store.PipelineExecution{
@@ -89,10 +85,7 @@ func (h *ExecutionHandler) CreateExecution(w http.ResponseWriter, r *http.Reques
 
 // ListExecutions handles GET /executions
 func (h *ExecutionHandler) ListExecutions(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		tenantID = "default"
-	}
+	tenantID := middleware.TenantIDFromContext(r.Context())
 
 	page := 1
 	pageSize := 20
@@ -128,9 +121,11 @@ func (h *ExecutionHandler) GetExecution(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	execution, err := h.ExecutionStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	execution, err := h.ExecutionStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
-		h.WriteError(w, http.StatusNotFound, 404, err.Error())
+		h.WriteError(w, http.StatusNotFound, 404, "execution not found")
 		return
 	}
 
@@ -147,7 +142,16 @@ func (h *ExecutionHandler) DeleteExecution(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err := h.ExecutionStore.Delete(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify ownership
+	_, err := h.ExecutionStore.GetByIDAndTenant(id, tenantID)
+	if err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "execution not found")
+		return
+	}
+
+	err = h.ExecutionStore.Delete(id)
 	if err != nil {
 		h.WriteError(w, http.StatusInternalServerError, 500, err.Error())
 		return
@@ -166,8 +170,17 @@ func (h *ExecutionHandler) StartExecution(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify ownership
+	_, err := h.ExecutionStore.GetByIDAndTenant(id, tenantID)
+	if err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "execution not found")
+		return
+	}
+
 	status := store.PipelineExecutionRunning
-	err := h.ExecutionStore.UpdateStatus(id, status)
+	err = h.ExecutionStore.UpdateStatus(id, status)
 	if err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, err.Error())
 		return
@@ -186,8 +199,17 @@ func (h *ExecutionHandler) StopExecution(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify ownership
+	_, err := h.ExecutionStore.GetByIDAndTenant(id, tenantID)
+	if err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "execution not found")
+		return
+	}
+
 	status := store.PipelineExecutionCancelled
-	err := h.ExecutionStore.UpdateStatus(id, status)
+	err = h.ExecutionStore.UpdateStatus(id, status)
 	if err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, err.Error())
 		return
@@ -206,10 +228,19 @@ func (h *ExecutionHandler) RetryExecution(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify ownership
+	_, err := h.ExecutionStore.GetByIDAndTenant(id, tenantID)
+	if err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "execution not found")
+		return
+	}
+
 	retryCount := h.ExecutionStore.IncrementRetryCount(id)
 
 	status := store.PipelineExecutionRunning
-	err := h.ExecutionStore.UpdateStatus(id, status)
+	err = h.ExecutionStore.UpdateStatus(id, status)
 	if err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, err.Error())
 		return
@@ -231,6 +262,15 @@ func (h *ExecutionHandler) GetExecutionSteps(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify ownership
+	_, err := h.ExecutionStore.GetByIDAndTenant(id, tenantID)
+	if err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "execution not found")
+		return
+	}
+
 	steps := h.ExecutionStore.GetSteps(id)
 
 	h.WriteJSON(w, http.StatusOK, steps)
@@ -243,6 +283,14 @@ func (h *ExecutionHandler) GetExecutionsByPipeline(w http.ResponseWriter, r *htt
 	pipelineID := extractIDFromPath(r.URL.Path, "/executions/pipeline/")
 	if pipelineID == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "pipeline id is required")
+		return
+	}
+
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify pipeline belongs to tenant
+	if _, err := h.PipelineStore.GetByIDAndTenant(pipelineID, tenantID); err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "pipeline not found")
 		return
 	}
 

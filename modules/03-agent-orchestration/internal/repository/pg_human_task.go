@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -52,6 +53,31 @@ func (r *HumanTaskPostgres) GetByID(id string) (*store.HumanTask, error) {
 		FROM human_tasks WHERE id=$1`
 	row := r.db.QueryRowContext(ctx, query, id)
 	return scanHumanTask(row)
+}
+
+func (r *HumanTaskPostgres) GetByIDAndTenant(id, tenantID string) (*store.HumanTask, error) {
+	ctx := defaultCtx()
+	query := `SELECT id,tenant_id,pipeline_execution_id,step_id,
+		assignee_type,assignee_id,task_type,instructions,
+		context,timeout_minutes,label,priority,status,
+		response,responded_by,responded_at,created_at
+		FROM human_tasks WHERE id=$1 AND tenant_id=$2`
+	row := r.db.QueryRowContext(ctx, query, id, tenantID)
+	return scanHumanTask(row)
+}
+
+func (r *HumanTaskPostgres) UpdateStatusAndTenant(id, tenantID string, status store.HumanTaskStatus) error {
+	ctx := defaultCtx()
+	result, err := r.db.ExecContext(ctx,
+		"UPDATE human_tasks SET status=$1 WHERE id=$2 AND tenant_id=$3", status, id, tenantID)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("human task %s not found or tenant mismatch", id)
+	}
+	return nil
 }
 
 func (r *HumanTaskPostgres) Respond(id string, action string, response map[string]interface{}, respondedBy, comments string) (*store.HumanTask, error) {

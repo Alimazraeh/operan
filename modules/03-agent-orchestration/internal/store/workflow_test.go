@@ -287,3 +287,173 @@ func TestWorkflowStore_ExecutionHistory(t *testing.T) {
 func strPtr(s string) *string {
 	return &s
 }
+
+// ─── WorkflowStore UpdateCurrentNodes tests ──────────────────────────────────
+
+func TestWorkflowStore_UpdateCurrentNodes(t *testing.T) {
+	store := NewWorkflowStore()
+
+	wf := &Workflow{
+		TenantID: "tenant-1",
+		Name:     "Test Workflow",
+		Graph:    WorkflowGraph{Nodes: []WorkflowNode{{ID: "n1", Type: WorkflowNodeAgent}}},
+	}
+	created, _ := store.Create(wf)
+
+	t.Run("updates current nodes", func(t *testing.T) {
+		err := store.UpdateCurrentNodes(created.ID, []string{"n1", "n2"})
+		if err != nil {
+			t.Fatalf("UpdateCurrentNodes failed: %v", err)
+		}
+		got, _ := store.GetByID(created.ID)
+		if len(got.CurrentNodes) != 2 {
+			t.Errorf("Expected 2 current nodes, got %d", len(got.CurrentNodes))
+		}
+		if got.CurrentNodes[0] != "n1" || got.CurrentNodes[1] != "n2" {
+			t.Errorf("Expected [n1, n2], got %v", got.CurrentNodes)
+		}
+	})
+
+	t.Run("clears current nodes", func(t *testing.T) {
+		err := store.UpdateCurrentNodes(created.ID, []string{})
+		if err != nil {
+			t.Fatalf("UpdateCurrentNodes failed: %v", err)
+		}
+		got, _ := store.GetByID(created.ID)
+		if len(got.CurrentNodes) != 0 {
+			t.Errorf("Expected 0 current nodes, got %d", len(got.CurrentNodes))
+		}
+	})
+
+	t.Run("non-existent workflow", func(t *testing.T) {
+		err := store.UpdateCurrentNodes("non-existent", []string{"n1"})
+		if err == nil {
+			t.Error("Expected error for non-existent workflow")
+		}
+	})
+}
+
+// ─── WorkflowStore Variable tests ─────────────────────────────────────────────
+
+func TestWorkflowStore_AddVariable(t *testing.T) {
+	store := NewWorkflowStore()
+
+	wf := &Workflow{
+		TenantID: "tenant-1",
+		Name:     "Test Workflow",
+		Graph:    WorkflowGraph{Nodes: []WorkflowNode{{ID: "n1", Type: WorkflowNodeAgent}}},
+	}
+	created, _ := store.Create(wf)
+
+	t.Run("add variable to new workflow", func(t *testing.T) {
+		err := store.AddVariable(created.ID, "tenant-1", "key1", "value1")
+		if err != nil {
+			t.Fatalf("AddVariable failed: %v", err)
+		}
+		vars, err := store.GetVariables(created.ID)
+		if err != nil {
+			t.Fatalf("GetVariables failed: %v", err)
+		}
+		if vars.Variables["key1"] != "value1" {
+			t.Errorf("Expected key1=value1, got %v", vars.Variables["key1"])
+		}
+		if vars.Version != 1 {
+			t.Errorf("Expected version 1, got %d", vars.Version)
+		}
+	})
+
+	t.Run("add multiple variables increments version", func(t *testing.T) {
+		store := NewWorkflowStore()
+		wf := &Workflow{TenantID: "tenant-1", Name: "Test Workflow", Graph: WorkflowGraph{Nodes: []WorkflowNode{{ID: "n1", Type: WorkflowNodeAgent}}}}
+		created, _ := store.Create(wf)
+
+		store.AddVariable(created.ID, "tenant-1", "a", 1)
+		store.AddVariable(created.ID, "tenant-1", "b", 2)
+		store.AddVariable(created.ID, "tenant-1", "a", 3) // update
+
+		vars, _ := store.GetVariables(created.ID)
+		if vars.Version != 3 {
+			t.Errorf("Expected version 3, got %d", vars.Version)
+		}
+		if vars.Variables["a"] != 3 {
+			t.Errorf("Expected a=3, got %v", vars.Variables["a"])
+		}
+		if vars.Variables["b"] != 2 {
+			t.Errorf("Expected b=2, got %v", vars.Variables["b"])
+		}
+	})
+
+	t.Run("get variables for non-existent workflow", func(t *testing.T) {
+		_, err := store.GetVariables("non-existent")
+		if err == nil {
+			t.Error("Expected error for non-existent workflow")
+		}
+	})
+}
+
+func TestWorkflowStore_SetVariables(t *testing.T) {
+	store := NewWorkflowStore()
+
+	wf := &Workflow{
+		TenantID: "tenant-1",
+		Name:     "Test Workflow",
+		Graph:    WorkflowGraph{Nodes: []WorkflowNode{{ID: "n1", Type: WorkflowNodeAgent}}},
+	}
+	created, _ := store.Create(wf)
+
+	t.Run("set variables on new workflow", func(t *testing.T) {
+		vars := map[string]interface{}{
+			"x": 10,
+			"y": "hello",
+		}
+		err := store.SetVariables(created.ID, "tenant-1", vars)
+		if err != nil {
+			t.Fatalf("SetVariables failed: %v", err)
+		}
+		got, err := store.GetVariables(created.ID)
+		if err != nil {
+			t.Fatalf("GetVariables failed: %v", err)
+		}
+		if got.Variables["x"] != 10 {
+			t.Errorf("Expected x=10, got %v", got.Variables["x"])
+		}
+		if got.Variables["y"] != "hello" {
+			t.Errorf("Expected y=hello, got %v", got.Variables["y"])
+		}
+		if got.Version != 1 {
+			t.Errorf("Expected version 1, got %d", got.Version)
+		}
+	})
+
+	t.Run("set variables replaces existing", func(t *testing.T) {
+		store := NewWorkflowStore()
+		wf := &Workflow{TenantID: "tenant-1", Name: "Test Workflow", Graph: WorkflowGraph{Nodes: []WorkflowNode{{ID: "n1", Type: WorkflowNodeAgent}}}}
+		created, _ := store.Create(wf)
+
+		store.AddVariable(created.ID, "tenant-1", "old", "value")
+		store.SetVariables(created.ID, "tenant-1", map[string]interface{}{"new": "data"})
+
+		got, _ := store.GetVariables(created.ID)
+		if _, exists := got.Variables["old"]; exists {
+			t.Error("Expected 'old' key to be removed after SetVariables")
+		}
+		if got.Variables["new"] != "data" {
+			t.Errorf("Expected new=data, got %v", got.Variables["new"])
+		}
+		// Version should be 1 because SetVariables creates a new entry when one exists but treats it as a full replace
+	})
+
+	t.Run("set variables on existing increments version", func(t *testing.T) {
+		store := NewWorkflowStore()
+		wf := &Workflow{TenantID: "tenant-1", Name: "Test Workflow", Graph: WorkflowGraph{Nodes: []WorkflowNode{{ID: "n1", Type: WorkflowNodeAgent}}}}
+		created, _ := store.Create(wf)
+
+		store.SetVariables(created.ID, "tenant-1", map[string]interface{}{"v": 1})
+		store.SetVariables(created.ID, "tenant-1", map[string]interface{}{"v": 2})
+
+		got, _ := store.GetVariables(created.ID)
+		if got.Version != 2 {
+			t.Errorf("Expected version 2, got %d", got.Version)
+		}
+	})
+}

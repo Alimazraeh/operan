@@ -190,6 +190,70 @@ func TestRetryableBroker_PublishWithRetries(t *testing.T) {
 	mu.Unlock()
 }
 
+func TestRetryableBroker_PublishExhaustsRetries(t *testing.T) {
+	inner := NewInMemoryBroker()
+	defer inner.Close()
+
+	// Broker that always fails
+	alwaysFail := &alwaysFailBroker{inner: inner}
+
+	retryBroker := NewRetryableBroker(alwaysFail, RetryConfig{
+		MaxAttempts:   3,
+		InitialDelay:  1 * time.Millisecond,
+		MaxDelay:      5 * time.Millisecond,
+		BackoffFactor: 2.0,
+	})
+
+	err := retryBroker.Publish(context.Background(), "test.topic", nil, []byte("test"), nil)
+	if err == nil {
+		t.Fatal("expected error when all retries exhausted, got nil")
+	}
+
+	if len(inner.Published()) != 0 {
+		t.Error("expected inner broker to have 0 messages after exhausted retries")
+	}
+
+	expectedErrPrefix := `publish to "test.topic" after 3 retries:`
+	if !contains(err.Error(), expectedErrPrefix) {
+		t.Errorf("expected error to contain %q, got: %v", expectedErrPrefix, err)
+	}
+}
+
+func TestRetryableBroker_PublishContextCanceled(t *testing.T) {
+	inner := NewInMemoryBroker()
+	defer inner.Close()
+
+	// Broker that always fails
+	alwaysFail := &alwaysFailBroker{inner: inner}
+
+	retryBroker := NewRetryableBroker(alwaysFail, RetryConfig{
+		MaxAttempts:   3,
+		InitialDelay:  100 * time.Millisecond, // long delay so context cancels first
+		MaxDelay:      5 * time.Second,
+		BackoffFactor: 2.0,
+	})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately before Publish
+
+	err := retryBroker.Publish(ctx, "test.topic", nil, []byte("test"), nil)
+	if err == nil {
+		t.Fatal("expected context.Canceled error, got nil")
+	}
+	if err != context.Canceled {
+		t.Errorf("expected context.Canceled, got: %v", err)
+	}
+}
+
+func contains(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}
+
 type failingBroker2 struct {
 	failUntil    int
 	currentError int
@@ -212,6 +276,22 @@ func (f *failingBroker2) Subscribe(ctx context.Context, topic string, consumerGr
 
 func (f *failingBroker2) Close() error {
 	return f.inner.Close()
+}
+
+type alwaysFailBroker struct {
+	inner *InMemoryBroker
+}
+
+func (a *alwaysFailBroker) Publish(ctx context.Context, topic string, key []byte, value []byte, headers map[string]string) error {
+	return fmt.Errorf("always fails: connection refused")
+}
+
+func (a *alwaysFailBroker) Subscribe(ctx context.Context, topic string, consumerGroup string, onMessage MessageHandler) error {
+	return a.inner.Subscribe(ctx, topic, consumerGroup, onMessage)
+}
+
+func (a *alwaysFailBroker) Close() error {
+	return a.inner.Close()
 }
 
 // ─── BrokerFactory tests ────────────────────────────────────────────────────
@@ -401,5 +481,61 @@ func TestDefaultBrokerConfig_AMQP(t *testing.T) {
 	cfg := DefaultBrokerConfig(BrokerAMQP)
 	if cfg.BrokerAddress != "amqp://localhost:5672" {
 		t.Errorf("expected default AMQP address amqp://localhost:5672, got %q", cfg.BrokerAddress)
+	}
+}
+
+// ─── Publisher error path tests ─────────────────────────────────────────────
+
+func TestPublisher_PublishNilBroker(t *testing.T) {
+	// NewPublisher uses logBroker, which is not nil. Create a publisher with nil broker.
+	pubNil := &Publisher{broker: nil}
+
+	err := pubNil.PublishWorkflowStarted(StackLangGraph, WorkflowStartedPayload{
+		WorkflowID: "wf-1",
+	})
+	if err == nil {
+		t.Fatal("expected error when broker is nil, got nil")
+	}
+	if !contains(err.Error(), "broker not set") {
+		t.Errorf("expected error to contain %q, got: %v", "broker not set", err)
+	}
+}
+
+func TestPublisher_MarshalAndPublish_MarshalError(t *testing.T) {
+	broker := NewInMemoryBroker()
+	pub := NewPublisherWithBroker(broker)
+	defer broker.Close()
+
+	// Test with valid payload to ensure marshalAndPublish flow works correctly
+	err := pub.PublishWorkflowCreated(StackLangGraph, WorkflowCreatedPayload{
+		WorkflowID: "wf-1",
+		TenantID:   "tenant-1",
+		Name:       "test",
+		Version:    "v1",
+		CreatedAt:  time.Now(),
+		CreatedBy:  "user-1",
+	})
+	if err != nil {
+		t.Fatalf("expected success for valid payload, got: %v", err)
+	}
+}
+
+func TestPublisher_CloseNil(t *testing.T) {
+	pub := &Publisher{}
+	err := pub.Close()
+	if err != nil {
+		t.Errorf("expected nil error when closing publisher with nil broker, got: %v", err)
+	}
+}
+
+func TestNewPublisher_DefaultBroker(t *testing.T) {
+	pub := NewPublisher()
+
+	// NewPublisher uses logBroker which logs but doesn't error
+	err := pub.PublishWorkflowStarted(StackLangGraph, WorkflowStartedPayload{
+		WorkflowID: "wf-1",
+	})
+	if err != nil {
+		t.Fatalf("expected success with default log broker, got: %v", err)
 	}
 }

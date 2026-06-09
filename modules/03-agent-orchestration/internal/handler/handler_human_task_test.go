@@ -37,7 +37,7 @@ func TestHumanTaskHandler_CreateHumanTask(t *testing.T) {
 			"priority": "high"
 		}`)
 		req := httptest.NewRequest("POST", "/human-tasks", body)
-		req.Header.Set("X-Tenant-ID", "tenant-1")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.CreateHumanTask(w, req)
 
@@ -59,6 +59,7 @@ func TestHumanTaskHandler_CreateHumanTask(t *testing.T) {
 		h := NewHumanTaskHandler(taskStore, execStore)
 		body := strings.NewReader(`{"pipeline_execution_id": "` + exec.ID + `", "instructions": "test"}`)
 		req := httptest.NewRequest("POST", "/human-tasks", body)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.CreateHumanTask(w, req)
 
@@ -71,6 +72,7 @@ func TestHumanTaskHandler_CreateHumanTask(t *testing.T) {
 		h := NewHumanTaskHandler(taskStore, execStore)
 		body := strings.NewReader(`{"pipeline_execution_id": "` + exec.ID + `", "assignee_id": "user-1"}`)
 		req := httptest.NewRequest("POST", "/human-tasks", body)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.CreateHumanTask(w, req)
 
@@ -83,6 +85,7 @@ func TestHumanTaskHandler_CreateHumanTask(t *testing.T) {
 		h := NewHumanTaskHandler(taskStore, execStore)
 		body := strings.NewReader(`{"pipeline_execution_id": "non-existent", "assignee_id": "user-1", "instructions": "test"}`)
 		req := httptest.NewRequest("POST", "/human-tasks", body)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.CreateHumanTask(w, req)
 
@@ -115,7 +118,7 @@ func TestHumanTaskHandler_ListHumanTasks(t *testing.T) {
 
 	t.Run("lists tasks", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/human-tasks", nil)
-		req.Header.Set("X-Tenant-ID", "tenant-1")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ListHumanTasks(w, req)
 
@@ -132,7 +135,7 @@ func TestHumanTaskHandler_ListHumanTasks(t *testing.T) {
 
 	t.Run("filters by status", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/human-tasks?status=pending", nil)
-		req.Header.Set("X-Tenant-ID", "tenant-1")
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.ListHumanTasks(w, req)
 
@@ -157,6 +160,7 @@ func TestHumanTaskHandler_GetHumanTask(t *testing.T) {
 
 	t.Run("gets task by id", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/human-tasks/"+task.ID, nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.GetHumanTask(w, req)
 
@@ -173,6 +177,7 @@ func TestHumanTaskHandler_GetHumanTask(t *testing.T) {
 
 	t.Run("returns 404 for missing", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/human-tasks/non-existent", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.GetHumanTask(w, req)
 
@@ -198,6 +203,7 @@ func TestHumanTaskHandler_RespondToHumanTask(t *testing.T) {
 	t.Run("approves task", func(t *testing.T) {
 		body := strings.NewReader(`{"action": "approve", "response": {"approved": true}, "responded_by": "user-1"}`)
 		req := httptest.NewRequest("POST", "/human-tasks/"+task.ID+"/respond", body)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.RespondToHumanTask(w, req)
 
@@ -221,6 +227,7 @@ func TestHumanTaskHandler_RespondToHumanTask(t *testing.T) {
 		})
 		body := strings.NewReader(`{"action": "reject", "comments": "Not sufficient info", "responded_by": "user-2"}`)
 		req := httptest.NewRequest("POST", "/human-tasks/"+task2.ID+"/respond", body)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.RespondToHumanTask(w, req)
 
@@ -238,6 +245,7 @@ func TestHumanTaskHandler_RespondToHumanTask(t *testing.T) {
 	t.Run("rejects missing action", func(t *testing.T) {
 		body := strings.NewReader(`{"responded_by": "user-1"}`)
 		req := httptest.NewRequest("POST", "/human-tasks/"+task.ID+"/respond", body)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.RespondToHumanTask(w, req)
 
@@ -249,6 +257,7 @@ func TestHumanTaskHandler_RespondToHumanTask(t *testing.T) {
 	t.Run("rejects non-pending task", func(t *testing.T) {
 		body := strings.NewReader(`{"action": "approve", "responded_by": "user-1"}`)
 		req := httptest.NewRequest("POST", "/human-tasks/"+task.ID+"/respond", body)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.RespondToHumanTask(w, req)
 		// First response already converted this to approved
@@ -278,7 +287,7 @@ func TestHumanTaskHandler_GetPendingTasks(t *testing.T) {
 	h := NewHumanTaskHandler(taskStore, execStore)
 
 	req := httptest.NewRequest("GET", "/human-tasks/pending", nil)
-	req.Header.Set("X-Tenant-ID", "tenant-1")
+	req = setTenant(req)
 	w := httptest.NewRecorder()
 	h.GetPendingTasks(w, req)
 
@@ -316,7 +325,7 @@ func TestHumanTaskHandler_GetTasksByExecution(t *testing.T) {
 	h := NewHumanTaskHandler(taskStore, execStore)
 
 	req := httptest.NewRequest("GET", "/human-tasks/execution/"+exec.ID, nil)
-	req.Header.Set("X-Tenant-ID", "tenant-1")
+	req = setTenant(req)
 	w := httptest.NewRecorder()
 	h.GetTasksByExecution(w, req)
 
@@ -346,6 +355,7 @@ func TestHumanTaskHandler_CancelHumanTask(t *testing.T) {
 
 	t.Run("cancels pending task", func(t *testing.T) {
 		req := httptest.NewRequest("POST", "/human-tasks/"+task.ID+"/cancel", nil)
+		req = setTenant(req)
 		w := httptest.NewRecorder()
 		h.CancelHumanTask(w, req)
 

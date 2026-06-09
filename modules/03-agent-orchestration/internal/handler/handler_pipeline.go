@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/operan/modules/03-agent-orchestration/internal/events"
+	"github.com/operan/modules/03-agent-orchestration/internal/middleware"
 	"github.com/operan/modules/03-agent-orchestration/internal/repository"
 	"github.com/operan/modules/03-agent-orchestration/internal/store"
 )
@@ -63,10 +64,8 @@ func (h *PipelineHandler) CreatePipeline(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		tenantID = "default"
-	}
+	tenantID := middleware.TenantIDFromContext(r.Context())
+	userID := middleware.UserIDFromContext(r.Context())
 
 	pipeline := &store.Pipeline{
 		TenantID:       tenantID,
@@ -79,7 +78,7 @@ func (h *PipelineHandler) CreatePipeline(w http.ResponseWriter, r *http.Request)
 		TriggerType:    "",
 		Variables:      nil,
 		Status:         store.PipelineStatusActive,
-		CreatedBy:      "anonymous",
+		CreatedBy:      userID,
 		CreatedAt:      time.Now(),
 	}
 	if req.Description != nil {
@@ -114,10 +113,7 @@ func (h *PipelineHandler) CreatePipeline(w http.ResponseWriter, r *http.Request)
 
 // ListPipelines handles GET /pipeline
 func (h *PipelineHandler) ListPipelines(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		tenantID = "default"
-	}
+	tenantID := middleware.TenantIDFromContext(r.Context())
 
 	page := 1
 	pageSize := 20
@@ -157,9 +153,11 @@ func (h *PipelineHandler) GetPipeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pipeline, err := h.PipelineStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	pipeline, err := h.PipelineStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
-		h.WriteError(w, http.StatusNotFound, 404, err.Error())
+		h.WriteError(w, http.StatusNotFound, 404, "pipeline not found")
 		return
 	}
 
@@ -173,6 +171,15 @@ func (h *PipelineHandler) UpdatePipeline(w http.ResponseWriter, r *http.Request)
 	id := extractIDFromPath(r.URL.Path, "/pipeline/")
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "pipeline id is required")
+		return
+	}
+
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify ownership
+	existing, err := h.PipelineStore.GetByIDAndTenant(id, tenantID)
+	if err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "pipeline not found")
 		return
 	}
 
@@ -192,7 +199,53 @@ func (h *PipelineHandler) UpdatePipeline(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	updated, err := h.PipelineStore.Update(id, req.Name, req.Description, req.Steps, req.ErrorHandling, req.TimeoutMinutes, req.MaxRetries, req.Status, req.Variables, req.Tags)
+	// Use existing values as defaults for unchanged fields
+	name := existing.Name
+	description := existing.Description
+	steps := existing.Steps
+	errorHandling := existing.ErrorHandling
+	timeoutMinutes := existing.TimeoutMinutes
+	maxRetries := existing.MaxRetries
+	variables := existing.Variables
+	tags := existing.Tags
+
+	if req.Name != nil {
+		name = *req.Name
+	}
+	if req.Description != nil {
+		description = *req.Description
+	}
+	if req.Steps != nil {
+		steps = *req.Steps
+	}
+	if req.ErrorHandling != nil {
+		errorHandling = req.ErrorHandling
+	}
+	if req.TimeoutMinutes != nil {
+		timeoutMinutes = *req.TimeoutMinutes
+	}
+	if req.MaxRetries != nil {
+		maxRetries = *req.MaxRetries
+	}
+	if req.Status != nil {
+		// Update status using tenant-scoped method
+		if err := h.PipelineStore.UpdateStatusAndTenant(id, tenantID, *req.Status); err != nil {
+			h.WriteError(w, http.StatusInternalServerError, 500, err.Error())
+			return
+		}
+		updated := *existing
+		updated.Status = *req.Status
+		h.WriteJSON(w, http.StatusOK, &updated)
+		return
+	}
+	if req.Variables != nil {
+		variables = *req.Variables
+	}
+	if req.Tags != nil {
+		tags = *req.Tags
+	}
+
+	updated, err := h.PipelineStore.Update(id, &name, &description, &steps, errorHandling, &timeoutMinutes, &maxRetries, nil, &variables, &tags)
 	if err != nil {
 		h.WriteError(w, http.StatusInternalServerError, 500, err.Error())
 		return
@@ -211,7 +264,16 @@ func (h *PipelineHandler) DeletePipeline(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err := h.PipelineStore.Delete(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify ownership
+	_, err := h.PipelineStore.GetByIDAndTenant(id, tenantID)
+	if err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "pipeline not found")
+		return
+	}
+
+	err = h.PipelineStore.Delete(id)
 	if err != nil {
 		h.WriteError(w, http.StatusInternalServerError, 500, err.Error())
 		return
@@ -230,8 +292,17 @@ func (h *PipelineHandler) StartPipeline(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify ownership
+	_, err := h.PipelineStore.GetByIDAndTenant(id, tenantID)
+	if err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "pipeline not found")
+		return
+	}
+
 	status := store.PipelineStatusActive
-	err := h.PipelineStore.UpdateStatus(id, status)
+	err = h.PipelineStore.UpdateStatus(id, status)
 	if err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, err.Error())
 		return
@@ -250,8 +321,17 @@ func (h *PipelineHandler) StopPipeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify ownership
+	_, err := h.PipelineStore.GetByIDAndTenant(id, tenantID)
+	if err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "pipeline not found")
+		return
+	}
+
 	status := store.PipelineStatusInactive
-	err := h.PipelineStore.UpdateStatus(id, status)
+	err = h.PipelineStore.UpdateStatus(id, status)
 	if err != nil {
 		h.WriteError(w, http.StatusNotFound, 404, err.Error())
 		return
@@ -270,9 +350,11 @@ func (h *PipelineHandler) GetPipelineAnalytics(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	pipeline, err := h.PipelineStore.GetByID(id)
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	pipeline, err := h.PipelineStore.GetByIDAndTenant(id, tenantID)
 	if err != nil {
-		h.WriteError(w, http.StatusNotFound, 404, err.Error())
+		h.WriteError(w, http.StatusNotFound, 404, "pipeline not found")
 		return
 	}
 
@@ -292,6 +374,14 @@ func (h *PipelineHandler) GetPipelineHistory(w http.ResponseWriter, r *http.Requ
 	id := extractIDFromPath(r.URL.Path, "/pipeline/")
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "pipeline id is required")
+		return
+	}
+
+	tenantID := middleware.TenantIDFromContext(r.Context())
+
+	// Verify pipeline belongs to tenant
+	if _, err := h.PipelineStore.GetByIDAndTenant(id, tenantID); err != nil {
+		h.WriteError(w, http.StatusNotFound, 404, "pipeline not found")
 		return
 	}
 

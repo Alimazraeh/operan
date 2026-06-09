@@ -330,6 +330,22 @@ func (s *PipelineStore) GetByID(id string) (*Pipeline, error) {
 	return p, nil
 }
 
+// GetByIDAndTenant retrieves a pipeline by ID with tenant verification.
+// Returns 404 if pipeline doesn't exist or tenant doesn't match.
+func (s *PipelineStore) GetByIDAndTenant(id, tenantID string) (*Pipeline, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	p, ok := s.pipelines[id]
+	if !ok {
+		return nil, fmt.Errorf("pipeline %s not found", id)
+	}
+	if p.TenantID != tenantID {
+		return nil, fmt.Errorf("pipeline %s not found", id)
+	}
+	return p, nil
+}
+
 // Update patches a pipeline's fields.
 func (s *PipelineStore) Update(id string, name *string, description *string, steps *[]PipelineStep, errorHandling *PipelineErrorHandlingConfig, timeoutMinutes *int, maxRetries *int, status *PipelineStatus, variables *map[string]interface{}, tags *[]string) (*Pipeline, error) {
 	s.mu.Lock()
@@ -379,6 +395,24 @@ func (s *PipelineStore) UpdateStatus(id string, status PipelineStatus) error {
 
 	p, ok := s.pipelines[id]
 	if !ok {
+		return fmt.Errorf("pipeline %s not found", id)
+	}
+	p.Status = status
+	p.UpdatedAt = timeNow()
+	return nil
+}
+
+// UpdateStatusAndTenant sets the status of a pipeline with tenant verification.
+// Returns error if pipeline doesn't exist or tenant doesn't match.
+func (s *PipelineStore) UpdateStatusAndTenant(id, tenantID string, status PipelineStatus) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	p, ok := s.pipelines[id]
+	if !ok {
+		return fmt.Errorf("pipeline %s not found", id)
+	}
+	if p.TenantID != tenantID {
 		return fmt.Errorf("pipeline %s not found", id)
 	}
 	p.Status = status
@@ -536,6 +570,22 @@ func (s *ExecutionStore) GetByID(id string) (*PipelineExecution, error) {
 	return e, nil
 }
 
+// GetByIDAndTenant retrieves an execution by ID with tenant verification.
+// Returns 404 if execution doesn't exist or tenant doesn't match.
+func (s *ExecutionStore) GetByIDAndTenant(id, tenantID string) (*PipelineExecution, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	e, ok := s.executions[id]
+	if !ok {
+		return nil, fmt.Errorf("execution %s not found", id)
+	}
+	if e.TenantID != tenantID {
+		return nil, fmt.Errorf("execution %s not found", id)
+	}
+	return e, nil
+}
+
 // UpdateStatus updates execution status.
 func (s *ExecutionStore) UpdateStatus(id string, status PipelineExecutionStatus) error {
 	s.mu.Lock()
@@ -543,6 +593,31 @@ func (s *ExecutionStore) UpdateStatus(id string, status PipelineExecutionStatus)
 
 	e, ok := s.executions[id]
 	if !ok {
+		return fmt.Errorf("execution %s not found", id)
+	}
+	e.Status = status
+	if status == PipelineExecutionRunning && e.StartedAt == nil {
+		t := timeNow()
+		e.StartedAt = &t
+	}
+	if status == PipelineExecutionCompleted || status == PipelineExecutionFailed || status == PipelineExecutionCancelled {
+		now := timeNow()
+		e.CompletedAt = &now
+	}
+	return nil
+}
+
+// UpdateStatusAndTenant updates execution status with tenant verification.
+// Returns error if execution doesn't exist or tenant doesn't match.
+func (s *ExecutionStore) UpdateStatusAndTenant(id, tenantID string, status PipelineExecutionStatus) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	e, ok := s.executions[id]
+	if !ok {
+		return fmt.Errorf("execution %s not found", id)
+	}
+	if e.TenantID != tenantID {
 		return fmt.Errorf("execution %s not found", id)
 	}
 	e.Status = status
@@ -774,6 +849,22 @@ func (s *HumanTaskStore) GetByID(id string) (*HumanTask, error) {
 	return t, nil
 }
 
+// GetByIDAndTenant retrieves a human task by ID with tenant verification.
+// Returns error if task doesn't exist or tenant doesn't match.
+func (s *HumanTaskStore) GetByIDAndTenant(id, tenantID string) (*HumanTask, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	t, ok := s.tasks[id]
+	if !ok {
+		return nil, fmt.Errorf("human task %s not found", id)
+	}
+	if t.TenantID != tenantID {
+		return nil, fmt.Errorf("human task %s not found", id)
+	}
+	return t, nil
+}
+
 // Respond updates a task's response and status.
 func (s *HumanTaskStore) Respond(id string, action string, response map[string]interface{}, respondedBy string, comments string) (*HumanTask, error) {
 	s.mu.Lock()
@@ -803,6 +894,23 @@ func (s *HumanTaskStore) Respond(id string, action string, response map[string]i
 	t.RespondedAt = &now
 
 	return t, nil
+}
+
+// UpdateStatusAndTenant updates a human task's status with tenant verification.
+// Returns error if task doesn't exist or tenant doesn't match.
+func (s *HumanTaskStore) UpdateStatusAndTenant(id, tenantID string, status HumanTaskStatus) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	t, ok := s.tasks[id]
+	if !ok {
+		return fmt.Errorf("human task %s not found", id)
+	}
+	if t.TenantID != tenantID {
+		return fmt.Errorf("human task %s not found", id)
+	}
+	t.Status = status
+	return nil
 }
 
 // List returns paginated tasks for a tenant, with optional status filter.
