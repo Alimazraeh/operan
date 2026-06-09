@@ -1,0 +1,13 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Go build/test artifacts
+*.out
+coverage.out
+cover.out
+
+# Editor / local tooling
+.idea/
+.vscode/
+*.swp

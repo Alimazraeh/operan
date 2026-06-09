@@ -1,0 +1,36 @@
+=== OPERAN MANUAL HANDOFF: MODULE {ID} ===
+MODULE: {ID}-{name}
+WAVE: {1|2|3|4|5}
+STATUS: RECONCILED ✅
+
+GLOBAL CONSTANTS (PASTE EXACTLY):
+• Tenant ID: uuid-v4
+• Auth: Authorization: Bearer {jwt} + X-Tenant-ID header
+• Errors: RFC 7807 { code: int, message: string, request_id: uuid }
+• Timestamps: ISO 8601 UTC
+• Trace ID: X-Trace-Id: {uuid}
+
+CONTRACTS PROVIDED:
+--- BEGIN openapi-{ID}.yaml ---
+{paste full OpenAPI content}
+--- END openapi-{ID}.yaml ---
+
+--- BEGIN schema-{ID}.json ---
+{paste full JSON Schema content}
+--- END schema-{ID}.json ---
+
+--- BEGIN asyncapi-{ID}.yaml ---
+{paste AsyncAPI content}
+--- END asyncapi-{ID}.yaml ---
+
+KNOWN INCONSISTENCIES (REVIEW WILL CHECK):
+{Paste relevant rows from Cross-Spec Tracker for this module, or "None"}
+
+CODER INSTRUCTIONS:
+1. Implement ONLY this module in modules/{ID}-{name}/
+2. Structure: src/, tests/, Dockerfile, helm/values.yaml, README.md
+3. Enforce: ≥80% unit tests, OpenTelemetry traces, deterministic errors
+4. NO imports from other modules. Use ONLY contracts/ + stdlib.
+5. Output manifest.json: { "coverage": 0.0, "contract_compliant": true }
+
+End with: "✅ CODER COMPLETE: {ID}"

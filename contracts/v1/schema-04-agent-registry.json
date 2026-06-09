@@ -26,8 +26,9 @@
 
     "DependencyType": {
       "type": "string",
-      "description": "Nature of the dependency. Harmonized: soft, optional.",
+      "description": "Nature of the dependency relationship. Harmonized across OpenAPI, JSON Schema, and AsyncAPI: hard, soft, optional.",
       "enum": [
+        "hard",
         "soft",
         "optional"
       ]
@@ -150,13 +151,16 @@
 
     "Agent": {
       "type": "object",
-      "description": "A registered AI agent within the Operan platform. Includes PRD Section 8 fields: objectives, execution_budget.",
+      "description": "A registered AI agent within the Operan platform. Includes PRD Section 8 fields: objectives, execution_budget, supported_languages (Module 19).",
       "required": [
         "id",
         "name",
         "role",
         "tenant_id",
-        "status"
+        "status",
+        "capabilities",
+        "tools",
+        "created_at"
       ],
       "properties": {
         "id": {
@@ -402,6 +406,9 @@
         },
         "execution_budget": {
           "$ref": "#/definitions/ExecutionBudget"
+        },
+        "runtime_constraints": {
+          "$ref": "#/definitions/RuntimeConstraints"
         }
       }
     },
@@ -479,6 +486,9 @@
         },
         "execution_budget": {
           "$ref": "#/definitions/ExecutionBudget"
+        },
+        "runtime_constraints": {
+          "$ref": "#/definitions/RuntimeConstraints"
         }
       }
     },
@@ -700,10 +710,9 @@
         "promoted_to": {
           "type": "object",
           "additionalProperties": {
-            "type": "string",
-            "format": "date-time"
+            "type": "string"
           },
-          "description": "Map of environment names to promotion timestamps."
+          "description": "Map of environment names to promoted version IDs."
         }
       }
     },
@@ -754,6 +763,85 @@
         },
         "change_summary": {
           "type": "string"
+        }
+      }
+    },
+
+    "PromoteVersionRequest": {
+      "type": "object",
+      "required": ["environment"],
+      "description": "Request payload for promoting an agent version to a target environment.",
+      "properties": {
+        "environment": {
+          "type": "string",
+          "enum": ["dev", "staging", "production"],
+          "description": "Target environment for the promotion."
+        }
+      }
+    },
+
+    "AgentListResponse": {
+      "type": "object",
+      "required": ["items", "total"],
+      "description": "Paginated list of agents.",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Agent"
+          },
+          "description": "List of agent objects."
+        },
+        "total": {
+          "type": "integer",
+          "description": "Total number of agents matching the query."
+        },
+        "page": {
+          "type": "integer",
+          "description": "Current page number."
+        },
+        "page_size": {
+          "type": "integer",
+          "description": "Number of items per page."
+        },
+        "has_more": {
+          "type": "boolean",
+          "description": "Whether there are more pages available."
+        }
+      }
+    },
+
+    "VersionList": {
+      "type": "object",
+      "required": ["agent_id", "versions"],
+      "description": "List of versions for a specific agent.",
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the parent agent."
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AgentVersion"
+          },
+          "description": "List of version objects for this agent."
+        }
+      }
+    },
+
+    "DependencyList": {
+      "type": "object",
+      "required": ["dependencies"],
+      "description": "List of dependencies for an agent.",
+      "properties": {
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Dependency"
+          },
+          "description": "List of dependency objects."
         }
       }
     },

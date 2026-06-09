@@ -12,7 +12,7 @@
         "region",
         "plan",
         "status",
-        "admin_email",
+        "contact_email",
         "quotas",
         "created_at",
         "updated_at",
@@ -68,7 +68,7 @@
           ],
           "description": "Current lifecycle status of the tenant."
         },
-        "admin_email": {
+        "contact_email": {
           "type": "string",
           "format": "email",
           "description": "Email address of the tenant administrator, used for account management and notifications."
@@ -176,7 +176,7 @@
         "name",
         "region",
         "plan",
-        "admin_email"
+        "contact_email"
       ],
       "properties": {
         "name": {
@@ -212,7 +212,7 @@
           ],
           "description": "The subscription plan for the new tenant."
         },
-        "admin_email": {
+        "contact_email": {
           "type": "string",
           "format": "email",
           "description": "Email address of the tenant administrator."
@@ -220,10 +220,6 @@
         "quotas": {
           "$ref": "#/definitions/Quota",
           "description": "Custom resource quotas for the tenant. If omitted, defaults from the chosen plan apply."
-        },
-        "custom_policies": {
-          "type": "object",
-          "description": "Additional policy definitions specific to this tenant, applied alongside default policies."
         }
       }
     },
@@ -237,7 +233,7 @@
           "maxLength": 128,
           "description": "Updated human-readable display name for the tenant."
         },
-        "admin_email": {
+        "contact_email": {
           "type": "string",
           "format": "email",
           "description": "Updated email address for the tenant administrator."
@@ -250,10 +246,6 @@
             "deprovisioning"
           ],
           "description": "New status to set for the tenant. Only these transitions are permitted via patch."
-        },
-        "custom_policies": {
-          "type": "object",
-          "description": "Updated custom policy definitions for this tenant, replacing any previous custom policies."
         }
       }
     },

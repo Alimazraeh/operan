@@ -603,6 +603,94 @@ components:
           schema:
             $ref: "#/components/schemas/EvaluateRequest"
 
+
+  responses:
+  InvalidInput:
+  description: Invalid request input
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/schemas/StandardError"
+      example:
+        code: INVALID_INPUT
+        message: "Query parameter 'query_type' must be one of: translation, reasoning, summarization, classification, generation, embedding, vision, code, data_analysis"
+        details:
+          field: query_type
+          value: "invalid_type"
+        request_id: "00000000-0000-0000-0000-000000000000"
+  Unauthorized:
+  description: Authentication required
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/schemas/StandardError"
+      example:
+        code: UNAUTHORIZED
+        message: "Invalid or expired authentication token"
+        request_id: "00000000-0000-0000-0000-000000000000"
+  Forbidden:
+  description: Insufficient permissions
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/schemas/StandardError"
+      example:
+        code: FORBIDDEN
+        message: "Access denied to this resource"
+        details:
+          required_permission: routing:access
+          granted_permissions: []
+        request_id: "00000000-0000-0000-0000-000000000000"
+  NotFound:
+  description: Resource not found
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/schemas/StandardError"
+      example:
+        code: NOT_FOUND
+        message: "The requested resource was not found"
+        details:
+          resource_type: routing_decision
+          resource_id: "00000000-0000-0000-0000-000000000000"
+        request_id: "00000000-0000-0000-0000-000000000000"
+  Conflict:
+  description: Resource conflict
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/schemas/StandardError"
+      example:
+        code: CONFLICT
+        message: "A resource with this name already exists"
+        details:
+          conflict_field: name
+          conflict_value: "quality_first_strategy"
+        request_id: "00000000-0000-0000-0000-000000000000"
+  UnprocessableEntity:
+  description: Unprocessable entity
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/schemas/StandardError"
+      example:
+        code: UNPROCESSABLE_ENTITY
+        message: "Request body validation failed"
+        details:
+          violations:
+            - field: scoring_rules
+              message: "At least one scoring rule is required"
+        request_id: "00000000-0000-0000-0000-000000000000"
+  InternalError:
+  description: Internal server error
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/schemas/StandardError"
+      example:
+        code: INTERNAL_ERROR
+        message: "An unexpected error occurred"
+        request_id: "00000000-0000-0000-0000-000000000000"
 paths:
   /routing/decisions:
     post:
@@ -912,7 +1000,6 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
-components:
   responses:
     InvalidInput:
       description: Invalid request input

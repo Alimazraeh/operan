@@ -1,18 +1,28 @@
-openapi: 3.0.3
+openapi: "3.0.3"
 info:
   title: Operan Knowledge Ingestion API
   description: Knowledge document ingestion, chunking, and semantic search. Module 06.
   version: 1.0.0
+  contact:
+    name: Platform Architecture
+    email: arch@operan.io
+
 servers:
-  - url: /api/v1/knowledge
-    description: Knowledge ingestion API root
+  - url: https://api.operan.io/v1/knowledge
+    description: Production
+  - url: https://api-staging.operan.io/v1/knowledge
+    description: Staging
+
+security:
+  - BearerAuth: []
+  - TenantHeader: []
 
 paths:
   /ingest:
     post:
       operationId: ingestKnowledge
       summary: Initiate knowledge document ingestion
-      tags: [ingestion]
+      tags: [Ingestion]
       requestBody:
         required: true
         content:
@@ -27,35 +37,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/IngestionStatus'
         '400':
-          description: Invalid request
+          description: Invalid request body or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /documents:
     get:
       operationId: listDocuments
       summary: List knowledge documents for the current tenant
-      tags: [documents]
+      tags: [Documents]
       parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
         - name: status
           in: query
+          required: false
+          description: Filter documents by processing status
           schema:
             type: string
             enum: [pending, parsing, chunking, embedding, indexed, failed]
         - name: source_type
           in: query
+          required: false
+          description: Filter documents by source type
           schema:
             type: string
             enum: [pdf, docx, pptx, csv, json, xml, html, text, email, url]
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 20
-            maximum: 100
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
       responses:
         '200':
           description: Document list
@@ -63,19 +84,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DocumentList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /documents/{documentId}:
+  /documents/{id}:
     parameters:
-      - name: documentId
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
         in: path
         required: true
+        description: UUID of the knowledge document
         schema:
           type: string
           format: uuid
     get:
       operationId: getDocument
       summary: Get document details
-      tags: [documents]
+      tags: [Documents]
       responses:
         '200':
           description: Document details
@@ -83,40 +118,67 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/KnowledgeDocument'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
       operationId: deleteDocument
       summary: Delete a knowledge document and its chunks
-      tags: [documents]
+      tags: [Documents]
       responses:
         '204':
           description: Document deleted
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /documents/{documentId}/chunks:
+  /documents/{id}/chunks:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
+        in: path
+        required: true
+        description: UUID of the knowledge document
+        schema:
+          type: string
+          format: uuid
     get:
       operationId: listDocumentChunks
       summary: List chunks for a document
-      tags: [documents, chunks]
+      tags: [Documents]
       parameters:
-        - name: documentId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 50
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
       responses:
         '200':
           description: Chunk list
@@ -124,12 +186,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChunkList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /search:
     post:
       operationId: searchKnowledge
       summary: Search ingested knowledge documents and sections
-      tags: [search]
+      tags: [Search]
       requestBody:
         required: true
         content:
@@ -145,19 +225,37 @@ paths:
                 $ref: '#/components/schemas/SearchResultList'
         '400':
           description: Invalid search query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /ingestion/{ingestionId}:
+  /ingestions/{id}:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
+        in: path
+        required: true
+        description: UUID of the ingestion job
+        schema:
+          type: string
+          format: uuid
     get:
       operationId: getIngestionStatus
       summary: Get ingestion job status
-      tags: [ingestion]
-      parameters:
-        - name: ingestionId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      tags: [Ingestion]
       responses:
         '200':
           description: Ingestion status
@@ -165,18 +263,74 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IngestionStatus'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Ingestion not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer token with tenant-scoped claims
+    TenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Tenant identifier header required on every request
+
+  parameters:
+    TenantIdPath:
+      name: id
+      in: path
+      required: true
+      description: UUID of the tenant
+      schema:
+        type: string
+        format: uuid
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
   schemas:
     IngestRequest:
       type: object
       required: [tenant_id, source_type, source_uri]
       properties:
         tenant_id:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/TenantId'
         source_type:
           type: string
           enum: [pdf, docx, pptx, csv, json, xml, html, text, email, url]
@@ -194,6 +348,7 @@ components:
           $ref: '#/components/schemas/ProcessingOptions'
         requested_by:
           type: string
+      additionalProperties: false
 
     ProcessingOptions:
       type: object
@@ -220,6 +375,7 @@ components:
         extract_metadata:
           type: boolean
           default: true
+      additionalProperties: false
 
     KnowledgeDocument:
       type: object
@@ -229,8 +385,7 @@ components:
           type: string
           format: uuid
         tenant_id:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/TenantId'
         source_type:
           type: string
           enum: [pdf, docx, pptx, csv, json, xml, html, text, email, url]
@@ -260,6 +415,7 @@ components:
         updated_at:
           type: string
           format: date-time
+      additionalProperties: false
 
     IngestionStatus:
       type: object
@@ -269,8 +425,7 @@ components:
           type: string
           format: uuid
         tenant_id:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/TenantId'
         document_id:
           type: string
           format: uuid
@@ -289,6 +444,7 @@ components:
         updated_at:
           type: string
           format: date-time
+      additionalProperties: false
 
     DocumentList:
       type: object
@@ -299,8 +455,19 @@ components:
             $ref: '#/components/schemas/KnowledgeDocument'
         total:
           type: integer
-        offset:
+        page:
           type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     KnowledgeSection:
       type: object
@@ -324,6 +491,7 @@ components:
           type: number
           minimum: 0
           maximum: 1
+      additionalProperties: false
 
     ChunkList:
       type: object
@@ -334,16 +502,26 @@ components:
             $ref: '#/components/schemas/KnowledgeSection'
         total:
           type: integer
-        offset:
+        page:
           type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     SearchQuery:
       type: object
       required: [tenant_id, query_text]
       properties:
         tenant_id:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/TenantId'
         query_text:
           type: string
         filters:
@@ -362,6 +540,7 @@ components:
         include_metadata:
           type: boolean
           default: true
+      additionalProperties: false
 
     SearchResult:
       type: object
@@ -392,6 +571,7 @@ components:
           type: number
           minimum: 0
           maximum: 1
+      additionalProperties: false
 
     SearchResultList:
       type: object
@@ -402,13 +582,43 @@ components:
             $ref: '#/components/schemas/SearchResult'
         total:
           type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
-    ErrorResponse:
+    Error:
       type: object
       properties:
         code:
-          type: string
+          type: integer
         message:
           type: string
         details:
-          type: object
+          type: string
+        request_id:
+          type: string
+          format: uuid
+      required:
+        - code
+        - message
+        - request_id
+
+    ErrorList:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Error"
+      required:
+        - errors

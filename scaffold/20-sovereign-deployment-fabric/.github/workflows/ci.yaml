@@ -1,0 +1,173 @@
+name: Module 20 — Sovereign Deployment Fabric CI
+
+on:
+  push:
+    branches: [main, develop, 'release/**']
+  pull_request:
+    branches: [main, develop]
+
+env:
+  GO_VERSION: '1.22'
+  IMAGE_REGISTRY: registry.operan.internal
+  MODULE_NAME: sovereign-deployment-fabric
+  MODULE_DIR: modules/20-sovereign-deployment-fabric
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.55
+          working-directory: ${{ env.MODULE_DIR }}
+
+      - name: Validate OpenAPI contract
+        run: |
+          npx @apidevtools/swagger-cli validate contracts/v1/openapi-20-sovereign-deployment-fabric.yaml
+
+      - name: Validate AsyncAPI contract
+        run: |
+          npx asyncapi linter contracts/v1/asyncapi-20-sovereign-deployment-fabric.yaml
+
+      - name: Validate JSON Schema
+        run: |
+          npx ajv-cli validate -s contracts/v1/schema-20-sovereign-deployment-fabric.json -d modules/20-sovereign-deployment-fabric/internal/testdata/*.json
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      rabbitmq:
+        image: rabbitmq:3.13-management-alpine
+        ports:
+          - 5672:5672
+          - 15672:15672
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: operan
+          POSTGRES_PASSWORD: operan_dev
+          POSTGRES_DB: operan_deployment_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run unit tests
+        run: |
+          cd ${{ env.MODULE_DIR }}
+          go test -race -coverprofile=coverage.out -covermode=atomic ./...
+        env:
+          RABBITMQ_URL: amqp://guest:guest@localhost:5672/
+          POSTGRES_URL: postgres://operan:operan_dev@localhost:5432/operan_deployment_test?sslmode=disable
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ${{ env.MODULE_DIR }}/coverage.out
+          fail_ci_if_error: false
+
+      - name: Run integration tests
+        run: |
+          cd ${{ env.MODULE_DIR }}
+          go test -run Integration -tags=integration ./...
+
+  build:
+    name: Build & Scan
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ secrets.IMAGE_REGISTRY_USER }}
+          password: ${{ secrets.IMAGE_REGISTRY_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_REGISTRY }}/${{ env.MODULE_NAME }}
+          tags: |
+            type=sha,prefix=
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: scaffold/20-sovereign-deployment-fabric/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.MODULE_NAME }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'tr-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'tr-results.sarif'
+
+  helm-validate:
+    name: Helm Chart Validation
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Install helm-unittest
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest || true
+
+      - name: Validate Helm values schema
+        run: |
+          helm lint scaffold/20-sovereign-deployment-fabric/helm-values.yaml
+          helm template test scaffold/20-sovereign-deployment-fabric/helm-values.yaml 2>&1 | head -200

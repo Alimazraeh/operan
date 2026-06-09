@@ -14,7 +14,7 @@ servers:
 
 security:
   - BearerAuth: []
-  - TenantID: []
+  - TenantHeader: []
 
 tags:
   - name: policies
@@ -387,7 +387,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-    TenantID:
+    TenantHeader:
       type: apiKey
       in: header
       name: X-Tenant-ID

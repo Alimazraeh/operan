@@ -8,7 +8,7 @@
         "id",
         "tenant_id",
         "agent_id",
-        "tool_name",
+        "tool",
         "status",
         "retry_count",
         "created_at",
@@ -30,7 +30,7 @@
           "format": "uuid",
           "description": "Agent that initiated the tool execution"
         },
-        "tool_name": {
+        "tool": {
           "type": "string",
           "description": "Name of the tool being executed"
         },
@@ -92,7 +92,7 @@
       "required": [
         "tenant_id",
         "agent_id",
-        "tool_name",
+        "tool",
         "input"
       ],
       "properties": {
@@ -106,7 +106,7 @@
           "format": "uuid",
           "description": "Agent submitting the tool execution request"
         },
-        "tool_name": {
+        "tool": {
           "type": "string",
           "description": "Name of the tool to execute"
         },
@@ -279,7 +279,7 @@
         "id",
         "tenant_id",
         "agent_id",
-        "tool_name",
+        "tool",
         "status",
         "cost",
         "token_usage",
@@ -301,7 +301,7 @@
           "format": "uuid",
           "description": "Agent that made the tool call"
         },
-        "tool_name": {
+        "tool": {
           "type": "string",
           "description": "Name of the tool being called"
         },

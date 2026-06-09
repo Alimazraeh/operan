@@ -1,18 +1,28 @@
-openapi: 3.0.3
+openapi: "3.0.3"
 info:
-  title: Operan Agent Collaboration API
+  title: Operan Agent Collaboration & Context Sharing API
   description: Inter-agent messaging, task coordination, and team management. Module 14.
   version: 1.0.0
+  contact:
+    name: Platform Architecture
+    email: arch@operan.io
+
 servers:
-  - url: /api/v1/collaboration
-    description: Agent collaboration API root
+  - url: https://api.operan.io/v1/collaboration
+    description: Production
+  - url: https://api-staging.operan.io/v1/collaboration
+    description: Staging
+
+security:
+  - BearerAuth: []
+  - TenantHeader: []
 
 paths:
   /messages:
     post:
       operationId: sendMessage
       summary: Send a collaboration message to other agents
-      tags: [messages]
+      tags: [Messages]
       requestBody:
         required: true
         content:
@@ -25,41 +35,61 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CollaborationMessage'
+                $ref: '#/components/schemas/Message'
         '400':
           description: Invalid message
-
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     get:
       operationId: listMessages
       summary: List messages for the current tenant
-      tags: [messages]
+      tags: [Messages]
       parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/TenantIdParam'
         - name: message_type
           in: query
+          required: false
+          description: Filter by message type
           schema:
             type: string
             enum: [task_request, task_update, question, answer, resource_share, status_update, escalation]
         - name: sender_id
           in: query
+          required: false
+          description: Filter by sender agent ID
           schema:
             type: string
             format: uuid
         - name: conversation_id
           in: query
+          required: false
+          description: Filter by conversation ID
           schema:
             type: string
             format: uuid
         - name: priority
           in: query
+          required: false
+          description: Filter by message priority
           schema:
             type: string
             enum: [low, normal, high, urgent]
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 20
-            maximum: 100
       responses:
         '200':
           description: Message list
@@ -67,41 +97,73 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /messages/{messageId}:
+  /messages/{id}:
     parameters:
-      - name: messageId
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
         in: path
         required: true
+        description: UUID of the message
         schema:
           type: string
           format: uuid
     get:
       operationId: getMessage
       summary: Get message details
-      tags: [messages]
+      tags: [Messages]
       responses:
         '200':
           description: Message details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CollaborationMessage'
+                $ref: '#/components/schemas/Message'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /messages/{messageId}/read:
+  /messages/{id}/read:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
+        in: path
+        required: true
+        description: UUID of the message to mark as read
+        schema:
+          type: string
+          format: uuid
     post:
       operationId: markMessageRead
       summary: Mark a message as read
-      tags: [messages]
-      parameters:
-        - name: messageId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      tags: [Messages]
       requestBody:
         required: true
         content:
@@ -114,37 +176,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CollaborationMessage'
-        '404':
-          description: Message not found
-
-  /conversations/{conversationId}:
-    get:
-      operationId: getConversation
-      summary: Get a conversation with its messages
-      tags: [conversations]
-      parameters:
-        - name: conversationId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Conversation detail
+                $ref: '#/components/schemas/Message'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConversationDetail'
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
-          description: Conversation not found
+          description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /conversations:
     post:
       operationId: createConversation
       summary: Create a new collaboration conversation
-      tags: [conversations]
+      tags: [Conversations]
       requestBody:
         required: true
         content:
@@ -157,40 +213,103 @@ paths:
           content:
             application/json:
               schema:
+                $ref: '#/components/schemas/Conversation'
+        '400':
+          description: Invalid request body or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /conversations/{id}:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
+        in: path
+        required: true
+        description: UUID of the conversation
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getConversation
+      summary: Get a conversation with its messages
+      tags: [Conversations]
+      responses:
+        '200':
+          description: Conversation detail
+          content:
+            application/json:
+              schema:
                 $ref: '#/components/schemas/ConversationDetail'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Conversation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /tasks:
     get:
       operationId: listTasks
       summary: List tasks
-      tags: [tasks]
+      tags: [Tasks]
       parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/TenantIdParam'
         - name: status
           in: query
+          required: false
+          description: Filter by task status
           schema:
             type: string
             enum: [pending, accepted, in_progress, completed, rejected, expired]
         - name: assignee_id
           in: query
+          required: false
+          description: Filter by assignee agent ID
           schema:
             type: string
             format: uuid
         - name: requester_id
           in: query
+          required: false
+          description: Filter by requester agent ID
           schema:
             type: string
             format: uuid
         - name: priority
           in: query
+          required: false
+          description: Filter by task priority
           schema:
             type: string
             enum: [low, normal, high, urgent]
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 20
-            maximum: 100
       responses:
         '200':
           description: Task list
@@ -198,34 +317,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TaskList'
-
-  /tasks/{taskId}:
-    parameters:
-      - name: taskId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-    get:
-      operationId: getTask
-      summary: Get task details
-      tags: [tasks]
-      responses:
-        '200':
-          description: Task details
+        '401':
+          description: Unauthorized — invalid or expired bearer token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CollaborationTask'
-        '404':
-          description: Task not found
-
-  /tasks:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     post:
       operationId: createTask
       summary: Create and assign a new task to an agent
-      tags: [tasks]
+      tags: [Tasks]
       requestBody:
         required: true
         content:
@@ -238,22 +345,80 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CollaborationTask'
+                $ref: '#/components/schemas/Task'
         '400':
           description: Invalid task request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /tasks/{taskId}/complete:
+  /tasks/{id}:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
+        in: path
+        required: true
+        description: UUID of the task
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getTask
+      summary: Get task details
+      tags: [Tasks]
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tasks/{id}/complete:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
+        in: path
+        required: true
+        description: UUID of the task to complete
+        schema:
+          type: string
+          format: uuid
     post:
       operationId: completeTask
       summary: Mark a task as completed
-      tags: [tasks]
-      parameters:
-        - name: taskId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      tags: [Tasks]
       requestBody:
         required: true
         content:
@@ -266,22 +431,40 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CollaborationTask'
+                $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /tasks/{taskId}/escalate:
+  /tasks/{id}/escalate:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
+        in: path
+        required: true
+        description: UUID of the task to escalate
+        schema:
+          type: string
+          format: uuid
     post:
       operationId: escalateTask
       summary: Escalate a task
-      tags: [tasks]
-      parameters:
-        - name: taskId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      tags: [Tasks]
       requestBody:
         required: true
         content:
@@ -294,109 +477,76 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CollaborationTask'
+                $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Task not found
-
-  /teams:
-    get:
-      operationId: listTeams
-      summary: List teams
-      tags: [teams]
-      responses:
-        '200':
-          description: Team list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TeamList'
-    post:
-      operationId: createTeam
-      summary: Create a new team
-      tags: [teams]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TeamCreateRequest'
-      responses:
-        '201':
-          description: Team created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Team'
-
-  /teams/{teamId}:
-    parameters:
-      - name: teamId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-    get:
-      operationId: getTeam
-      summary: Get team details
-      tags: [teams]
-      responses:
-        '200':
-          description: Team details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Team'
-        '404':
-          description: Team not found
-
-  /teams/{teamId}/members:
-    get:
-      operationId: listTeamMembers
-      summary: List team members
-      tags: [teams]
-      parameters:
-        - name: teamId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Member list
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TeamMemberList'
-    post:
-      operationId: addTeamMember
-      summary: Add a member to a team
-      tags: [teams]
-      parameters:
-        - name: teamId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MemberAddRequest'
-      responses:
-        '201':
-          description: Member added
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TeamMembership'
-        '404':
-          description: Team not found
+                $ref: '#/components/schemas/Error'
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer token with tenant-scoped claims
+    TenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Tenant identifier header required on every request
+
+  parameters:
+    TenantIdPath:
+      name: id
+      in: path
+      required: true
+      description: UUID of the tenant
+      schema:
+        type: string
+        format: uuid
+    TenantIdParam:
+      name: tenant_id
+      in: query
+      required: true
+      description: UUID of the tenant
+      schema:
+        type: string
+        format: uuid
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
   schemas:
     MessageSendRequest:
       type: object
@@ -422,19 +572,16 @@ components:
           type: string
           enum: [low, normal, high, urgent]
         conversation_id:
-          type:
-            - string
-            - 'null'
+          type: string
           format: uuid
         expires_at:
-          type:
-            - string
-            - 'null'
+          type: string
           format: date-time
         metadata:
           type: object
+      additionalProperties: false
 
-    CollaborationMessage:
+    Message:
       type: object
       required: [id, tenant_id, sender_id, content, message_type, sent_at]
       properties:
@@ -464,29 +611,30 @@ components:
           type: string
           enum: [low, normal, high, urgent]
         conversation_id:
-          type:
-            - string
-            - 'null'
+          type: string
           format: uuid
         expires_at:
-          type:
-            - string
-            - 'null'
+          type: string
           format: date-time
         read_by:
           type: array
           items:
-            type: object
-            required: [user_id, read_at]
-            properties:
-              user_id:
-                type: string
-                format: uuid
-              read_at:
-                type: string
-                format: date-time
+            $ref: '#/components/schemas/ReadReceipt'
         metadata:
           type: object
+      additionalProperties: false
+
+    ReadReceipt:
+      type: object
+      required: [user_id, read_at]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        read_at:
+          type: string
+          format: date-time
+      additionalProperties: false
 
     MessageList:
       type: object
@@ -494,9 +642,22 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/CollaborationMessage'
+            $ref: '#/components/schemas/Message'
         total:
           type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     MarkReadRequest:
       type: object
@@ -505,6 +666,34 @@ components:
         user_id:
           type: string
           format: uuid
+      additionalProperties: false
+
+    Conversation:
+      type: object
+      required: [id, tenant_id, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        participant_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        title:
+          type: string
+        metadata:
+          type: object
+      additionalProperties: false
 
     ConversationDetail:
       type: object
@@ -525,7 +714,17 @@ components:
         messages:
           type: array
           items:
-            $ref: '#/components/schemas/CollaborationMessage'
+            $ref: '#/components/schemas/Message'
+        participant_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        title:
+          type: string
+        metadata:
+          type: object
+      additionalProperties: false
 
     ConversationCreateRequest:
       type: object
@@ -543,6 +742,7 @@ components:
           type: string
         metadata:
           type: object
+      additionalProperties: false
 
     TaskCreateRequest:
       type: object
@@ -557,21 +757,18 @@ components:
         task_description:
           type: string
         task_context:
-          type:
-            - object
-            - 'null'
+          type: object
         priority:
           type: string
           enum: [low, normal, high, urgent]
         due_at:
-          type:
-            - string
-            - 'null'
+          type: string
           format: date-time
         message_type:
           type: string
+      additionalProperties: false
 
-    CollaborationTask:
+    Task:
       type: object
       required: [id, tenant_id, requester_id, assignee_id, task_description, status, created_at, updated_at]
       properties:
@@ -604,24 +801,17 @@ components:
           type: string
           enum: [low, normal, high, urgent]
         due_at:
-          type:
-            - string
-            - 'null'
+          type: string
           format: date-time
         result:
-          type:
-            - object
-            - 'null'
+          type: object
         conversation_id:
-          type:
-            - string
-            - 'null'
+          type: string
           format: uuid
         assignment_id:
-          type:
-            - string
-            - 'null'
+          type: string
           format: uuid
+      additionalProperties: false
 
     TaskList:
       type: object
@@ -629,9 +819,22 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/CollaborationTask'
+            $ref: '#/components/schemas/Task'
         total:
           type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     TaskCompleteRequest:
       type: object
@@ -639,6 +842,7 @@ components:
       properties:
         result:
           type: object
+      additionalProperties: false
 
     TaskEscalateRequest:
       type: object
@@ -648,117 +852,31 @@ components:
           format: uuid
         reason:
           type: string
+      additionalProperties: false
 
-    TeamCreateRequest:
-      type: object
-      required: [tenant_id, name, member_ids]
-      properties:
-        tenant_id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        description:
-          type: string
-        member_ids:
-          type: array
-          items:
-            type: string
-            format: uuid
-        metadata:
-          type: object
-
-    Team:
-      type: object
-      required: [id, tenant_id, name]
-      properties:
-        id:
-          type: string
-          format: uuid
-        tenant_id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        description:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-
-    TeamList:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/Team'
-        total:
-          type: integer
-
-    TeamMembership:
-      type: object
-      required: [id, tenant_id, team_id, agent_id, role, joined_at]
-      properties:
-        id:
-          type: string
-          format: uuid
-        tenant_id:
-          type: string
-          format: uuid
-        team_id:
-          type: string
-          format: uuid
-        agent_id:
-          type: string
-          format: uuid
-        role:
-          type: string
-          enum: [member, lead, observer]
-        joined_at:
-          type: string
-          format: date-time
-        status:
-          type: string
-          enum: [active, inactive, pending]
-        permissions:
-          type: object
-        left_at:
-          type:
-            - string
-            - 'null'
-          format: date-time
-
-    TeamMemberList:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/TeamMembership'
-        total:
-          type: integer
-
-    MemberAddRequest:
-      type: object
-      required: [agent_id, role]
-      properties:
-        agent_id:
-          type: string
-          format: uuid
-        role:
-          type: string
-          enum: [member, lead, observer]
-
-    ErrorResponse:
+    Error:
       type: object
       properties:
         code:
-          type: string
+          type: integer
         message:
           type: string
         details:
-          type: object
+          type: string
+        request_id:
+          type: string
+          format: uuid
+      required:
+        - code
+        - message
+        - request_id
+
+    ErrorList:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Error"
+      required:
+        - errors

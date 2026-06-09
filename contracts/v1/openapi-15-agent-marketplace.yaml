@@ -1,40 +1,48 @@
-openapi: 3.0.3
+openapi: "3.0.3"
 info:
   title: Operan Agent Marketplace API
   description: Procure and onboard agents from internal registries and external vendors. Negotiate pricing, verify trust/audits, license, deploy, and monitor. Module 15.
   version: 1.0.0
+  contact:
+    name: Platform Architecture
+    email: arch@operan.io
 
 servers:
-  - url: /api/v1/marketplace
+  - url: https://api.operan.io/v1/marketplace
+    description: Production
+  - url: https://api-staging.operan.io/v1/marketplace
+    description: Staging
 
 security:
   - BearerAuth: []
-  - X-Tenant-ID:
-      schema:
-        type: string
+  - TenantHeader: []
 
 paths:
   /catalog:
     get:
-      summary: Browse agent catalog
       operationId: browseCatalog
-      tags: [catalog]
+      summary: Browse agent catalog
+      tags: [Catalog]
       parameters:
-        - name: tenant_id
-          in: query
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/TenantIdParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
         - name: category
           in: query
+          required: false
+          description: Filter by category
           schema:
             type: string
         - name: search
           in: query
+          required: false
+          description: Search query
           schema:
             type: string
         - name: min_trust_score
           in: query
+          required: false
+          description: Minimum trust score filter
           schema:
             type: integer
             minimum: 0
@@ -46,19 +54,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Catalog'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /catalog/{agent_id}:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: agent_id
+        in: path
+        required: true
+        description: UUID of the agent
+        schema:
+          type: string
+          format: uuid
     get:
-      summary: Get agent details
       operationId: getAgentDetails
-      tags: [catalog]
-      parameters:
-        - name: agent_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      summary: Get agent details
+      tags: [Catalog]
       responses:
         '200':
           description: Agent details
@@ -66,28 +88,70 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MarketplaceAgent'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /catalog/{agent_id}/trust:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: agent_id
+        in: path
+        required: true
+        description: UUID of the agent
+        schema:
+          type: string
+          format: uuid
     get:
-      summary: Get agent trust score and audits
       operationId: getAgentTrust
-      tags: [trust]
-      parameters:
-        - name: agent_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      summary: Get agent trust score and audits
+      tags: [Trust]
       responses:
         '200':
           description: Trust score and audit history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrustRecord'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /orders:
     post:
-      summary: Submit an order for an agent
       operationId: submitOrder
-      tags: [orders]
+      summary: Submit an order for an agent
+      tags: [Orders]
       requestBody:
         required: true
         content:
@@ -101,49 +165,106 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Order'
-
+        '400':
+          description: Invalid request body or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     get:
-      summary: List orders
       operationId: listOrders
-      tags: [orders]
+      summary: List orders
+      tags: [Orders]
       parameters:
-        - name: tenant_id
-          in: query
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/TenantIdParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
       responses:
         '200':
           description: Order list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /orders/{order_id}:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: order_id
+        in: path
+        required: true
+        description: UUID of the order
+        schema:
+          type: string
+          format: uuid
     get:
-      summary: Get order status
       operationId: getOrderStatus
-      tags: [orders]
-      parameters:
-        - name: order_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      summary: Get order status
+      tags: [Orders]
       responses:
         '200':
           description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /orders/{order_id}/approve:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: order_id
+        in: path
+        required: true
+        description: UUID of the order to approve
+        schema:
+          type: string
+          format: uuid
     post:
-      summary: Approve an order (governance)
       operationId: approveOrder
-      tags: [orders]
-      parameters:
-        - name: order_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      summary: Approve an order (governance)
+      tags: [Orders]
       requestBody:
         required: true
         content:
@@ -153,19 +274,49 @@ paths:
       responses:
         '200':
           description: Order approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Invalid approval request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /orders/{order_id}/reject:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: order_id
+        in: path
+        required: true
+        description: UUID of the order to reject
+        schema:
+          type: string
+          format: uuid
     post:
-      summary: Reject an order (governance)
       operationId: rejectOrder
-      tags: [orders]
-      parameters:
-        - name: order_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      summary: Reject an order (governance)
+      tags: [Orders]
       requestBody:
         required: true
         content:
@@ -175,68 +326,148 @@ paths:
       responses:
         '200':
           description: Order rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Invalid rejection request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /licenses:
     get:
-      summary: List active licenses
       operationId: listLicenses
-      tags: [licenses]
+      summary: List active licenses
+      tags: [Licenses]
       parameters:
-        - name: tenant_id
-          in: query
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/TenantIdParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
       responses:
         '200':
           description: Active licenses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /licenses/{license_id}:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: license_id
+        in: path
+        required: true
+        description: UUID of the license
+        schema:
+          type: string
+          format: uuid
     get:
-      summary: Get license details
       operationId: getLicense
-      tags: [licenses]
-      parameters:
-        - name: license_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      summary: Get license details
+      tags: [Licenses]
       responses:
         '200':
           description: License details
-
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: License not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
-      summary: Revoke a license
       operationId: revokeLicense
-      tags: [licenses]
-      parameters:
-        - name: license_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      summary: Revoke a license
+      tags: [Licenses]
       responses:
         '204':
           description: License revoked
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: License not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /agents/{agent_id}/install:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: agent_id
+        in: path
+        required: true
+        description: UUID of the agent to install
+        schema:
+          type: string
+          format: uuid
     post:
-      summary: Install an acquired agent
       operationId: installAgent
-      tags: [installation]
+      summary: Install an acquired agent
+      tags: [Installation]
       parameters:
-        - name: agent_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
         - name: license_id
           in: query
           required: true
+          description: UUID of the license to use for installation
           schema:
             type: string
             format: uuid
@@ -249,32 +480,89 @@ paths:
       responses:
         '202':
           description: Agent installation in progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstallResult'
+        '400':
+          description: Invalid installation request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Agent or license not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /agents/{agent_id}/telemetry:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: agent_id
+        in: path
+        required: true
+        description: UUID of the agent
+        schema:
+          type: string
+          format: uuid
     get:
-      summary: Get agent usage telemetry
       operationId: getAgentTelemetry
-      tags: [telemetry]
+      summary: Get agent usage telemetry
+      tags: [Telemetry]
       parameters:
-        - name: agent_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
         - name: start_date
           in: query
+          required: false
+          description: Start of telemetry period
           schema:
             type: string
             format: date-time
         - name: end_date
           in: query
+          required: false
+          description: End of telemetry period
           schema:
             type: string
             format: date-time
       responses:
         '200':
           description: Usage telemetry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageTelemetry'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   securitySchemes:
@@ -282,21 +570,54 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-    X-Tenant-ID:
-      name: X-Tenant-ID
+      description: JWT Bearer token with tenant-scoped claims
+    TenantHeader:
+      type: apiKey
       in: header
+      name: X-Tenant-ID
+      description: Tenant identifier header required on every request
+
+  parameters:
+    TenantIdPath:
+      name: id
+      in: path
       required: true
+      description: UUID of the tenant
       schema:
         type: string
+        format: uuid
+    TenantIdParam:
+      name: tenant_id
+      in: query
+      required: true
+      description: UUID of the tenant
+      schema:
+        type: string
+        format: uuid
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
 
   schemas:
     MarketplaceAgent:
       type: object
-      required:
-        - id
-        - name
-        - vendor
-        - trust_score
+      required: [id, name, vendor, trust_score]
       properties:
         id:
           type: string
@@ -334,13 +655,11 @@ components:
           type: boolean
         license_terms:
           type: string
+      additionalProperties: false
 
     AuditRecord:
       type: object
-      required:
-        - date
-        - auditor
-        - result
+      required: [date, auditor, result]
       properties:
         date:
           type: string
@@ -360,12 +679,27 @@ components:
           type: boolean
         capability_verified:
           type: boolean
+      additionalProperties: false
+
+    TrustRecord:
+      type: object
+      properties:
+        agent_id:
+          type: string
+          format: uuid
+        trust_score:
+          type: integer
+          minimum: 0
+          maximum: 10
+        audit_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditRecord'
+      additionalProperties: false
 
     SubmitOrderRequest:
       type: object
-      required:
-        - tenant_id
-        - agent_id
+      required: [tenant_id, agent_id]
       properties:
         tenant_id:
           type: string
@@ -377,15 +711,11 @@ components:
           type: string
         custom_terms:
           type: string
+      additionalProperties: false
 
     Order:
       type: object
-      required:
-        - id
-        - agent_id
-        - tenant_id
-        - status
-        - requires_approval
+      required: [id, agent_id, tenant_id, status, requires_approval]
       properties:
         id:
           type: string
@@ -410,35 +740,104 @@ components:
         license_id:
           type: string
           format: uuid
+      additionalProperties: false
+
+    OrderList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     OrderApproval:
       type: object
-      required:
-        - approver_id
+      required: [approver_id]
       properties:
         approver_id:
           type: string
           format: uuid
         comments:
           type: string
+      additionalProperties: false
 
     OrderRejection:
       type: object
-      required:
-        - approver_id
-        - reason
+      required: [approver_id, reason]
       properties:
         approver_id:
           type: string
           format: uuid
         reason:
           type: string
+      additionalProperties: false
+
+    License:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        license_type:
+          type: string
+        status:
+          type: string
+          enum: [active, revoked, expired]
+        issued_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+
+    LicenseList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/License'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     InstallRequest:
       type: object
-      required:
-        - tenant_id
-        - department_id
+      required: [tenant_id, department_id]
       properties:
         tenant_id:
           type: string
@@ -450,6 +849,24 @@ components:
           type: object
         environment_variables:
           type: object
+      additionalProperties: false
+
+    InstallResult:
+      type: object
+      properties:
+        agent_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [installing, ready, failed]
+        install_id:
+          type: string
+          format: uuid
+        estimated_completion:
+          type: string
+          format: date-time
+      additionalProperties: false
 
     Catalog:
       type: object
@@ -460,8 +877,19 @@ components:
             $ref: '#/components/schemas/MarketplaceAgent'
         total:
           type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
         has_more:
           type: boolean
+      required:
+        - agents
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     UsageTelemetry:
       type: object
@@ -481,3 +909,31 @@ components:
           type: integer
         peak_concurrent:
           type: integer
+      additionalProperties: false
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        details:
+          type: string
+        request_id:
+          type: string
+          format: uuid
+      required:
+        - code
+        - message
+        - request_id
+
+    ErrorList:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Error"
+      required:
+        - errors

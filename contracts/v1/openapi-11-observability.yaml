@@ -1,18 +1,28 @@
-openapi: 3.0.3
+openapi: "3.0.3"
 info:
   title: Operan Observability & Tracing API
   description: Telemetry ingestion, span queries, alerts, and health monitoring. Module 11.
   version: 1.0.0
+  contact:
+    name: Platform Architecture
+    email: arch@operan.io
+
 servers:
-  - url: /api/v1/observability
-    description: Observability API root
+  - url: https://api.operan.io/v1/observability
+    description: Production
+  - url: https://api-staging.operan.io/v1/observability
+    description: Staging
+
+security:
+  - BearerAuth: []
+  - TenantHeader: []
 
 paths:
   /metrics:
     post:
       operationId: recordMetric
       summary: Record a metric value
-      tags: [metrics]
+      tags: [Metrics]
       requestBody:
         required: true
         content:
@@ -28,33 +38,62 @@ paths:
                 $ref: '#/components/schemas/Metric'
         '400':
           description: Invalid metric
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     get:
       operationId: listMetrics
       summary: Query recorded metrics
-      tags: [metrics]
+      tags: [Metrics]
       parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/TenantIdParam'
         - name: metric_type
           in: query
+          required: false
+          description: Filter by metric type
           schema:
             type: string
             enum: [counter, gauge, histogram, timer]
         - name: metric_name
           in: query
+          required: false
+          description: Filter by metric name
           schema:
             type: string
         - name: source_id
           in: query
+          required: false
+          description: Filter by source ID
           schema:
             type: string
             format: uuid
         - name: start
           in: query
+          required: false
+          description: Start of time range
           schema:
             type: string
             format: date-time
         - name: end
           in: query
+          required: false
+          description: End of time range
           schema:
             type: string
             format: date-time
@@ -65,44 +104,63 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetricList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /spans:
     get:
       operationId: listSpans
       summary: Query trace spans
-      tags: [spans]
+      tags: [Spans]
       parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/TenantIdParam'
         - name: trace_id
           in: query
+          required: false
+          description: Filter by trace ID
           schema:
             type: string
             format: uuid
         - name: span_type
           in: query
+          required: false
+          description: Filter by span type
           schema:
             type: string
             enum: [orchestration, tool, memory, policy, human_gate]
         - name: workflow_id
           in: query
+          required: false
+          description: Filter by workflow ID
           schema:
             type: string
             format: uuid
         - name: agent_id
           in: query
+          required: false
+          description: Filter by agent ID
           schema:
             type: string
             format: uuid
         - name: status
           in: query
+          required: false
+          description: Filter by span status
           schema:
             type: string
             enum: [ok, error, cancelled]
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 20
-            maximum: 100
       responses:
         '200':
           description: Span list
@@ -110,19 +168,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SpanList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /traces/{traceId}:
+  /traces/{id}:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
+        in: path
+        required: true
+        description: UUID of the trace
+        schema:
+          type: string
+          format: uuid
     get:
       operationId: getTrace
       summary: Get a full trace with all spans
-      tags: [spans]
-      parameters:
-        - name: traceId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      tags: [Spans]
       responses:
         '200':
           description: Trace with spans
@@ -130,22 +202,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TraceDetail'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Trace not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /alerts:
     get:
       operationId: listAlerts
       summary: List alerts
-      tags: [alerts]
+      tags: [Alerts]
       parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/TenantIdParam'
         - name: severity
           in: query
+          required: false
+          description: Filter by alert severity
           schema:
             type: string
             enum: [info, warning, critical]
         - name: resolved
           in: query
+          required: false
+          description: Filter by resolved status
           schema:
             type: boolean
       responses:
@@ -155,19 +250,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AlertList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /alerts/{alertId}/resolve:
+  /alerts/{id}/resolve:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
+        in: path
+        required: true
+        description: UUID of the alert to resolve
+        schema:
+          type: string
+          format: uuid
     post:
       operationId: resolveAlert
       summary: Resolve an alert
-      tags: [alerts]
-      parameters:
-        - name: alertId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      tags: [Alerts]
       responses:
         '200':
           description: Alert resolved
@@ -175,14 +284,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Alert'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Alert not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /health:
     get:
       operationId: getHealthStatus
       summary: Get overall system health status
-      tags: [health]
+      tags: [Health]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdParam'
       responses:
         '200':
           description: Health status
@@ -190,18 +317,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthOverview'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /health/{componentId}:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: componentId
+        in: path
+        required: true
+        description: ID of the component
+        schema:
+          type: string
     get:
       operationId: getComponentHealth
       summary: Get health status for a specific component
-      tags: [health]
-      parameters:
-        - name: componentId
-          in: path
-          required: true
-          schema:
-            type: string
+      tags: [Health]
       responses:
         '200':
           description: Component health status
@@ -209,10 +350,75 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Component not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer token with tenant-scoped claims
+    TenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Tenant identifier header required on every request
+
+  parameters:
+    TenantIdPath:
+      name: id
+      in: path
+      required: true
+      description: UUID of the tenant
+      schema:
+        type: string
+        format: uuid
+    TenantIdParam:
+      name: tenant_id
+      in: query
+      required: true
+      description: UUID of the tenant
+      schema:
+        type: string
+        format: uuid
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
   schemas:
     MetricRecord:
       type: object
@@ -233,6 +439,7 @@ components:
         source_id:
           type: string
           format: uuid
+      additionalProperties: false
 
     Metric:
       type: object
@@ -259,6 +466,7 @@ components:
         recorded_at:
           type: string
           format: date-time
+      additionalProperties: false
 
     MetricList:
       type: object
@@ -269,6 +477,19 @@ components:
             $ref: '#/components/schemas/Metric'
         total:
           type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     TraceSpan:
       type: object
@@ -307,6 +528,7 @@ components:
           enum: [ok, error, cancelled]
         tags:
           type: object
+      additionalProperties: false
 
     SpanList:
       type: object
@@ -317,10 +539,23 @@ components:
             $ref: '#/components/schemas/TraceSpan'
         total:
           type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     TraceDetail:
       type: object
-      required: [trace_id]
+      required: [trace_id, tenant_id]
       properties:
         trace_id:
           type: string
@@ -334,6 +569,7 @@ components:
             $ref: '#/components/schemas/TraceSpan'
         total_duration_ms:
           type: integer
+      additionalProperties: false
 
     Alert:
       type: object
@@ -360,10 +596,14 @@ components:
         threshold:
           type: number
         resolved_at:
-          type:
-            - string
-            - 'null'
-          format: date-time
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        resolved_by:
+          type: string
+          format: uuid
+      additionalProperties: false
 
     AlertList:
       type: object
@@ -374,6 +614,19 @@ components:
             $ref: '#/components/schemas/Alert'
         total:
           type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     HealthStatus:
       type: object
@@ -398,10 +651,11 @@ components:
           enum: [healthy, degraded, unhealthy]
         reason:
           type: string
+      additionalProperties: false
 
     HealthOverview:
       type: object
-      required: [tenant_id, components]
+      required: [tenant_id, components, overall_status]
       properties:
         tenant_id:
           type: string
@@ -413,13 +667,34 @@ components:
         overall_status:
           type: string
           enum: [healthy, degraded, unhealthy]
+        last_updated:
+          type: string
+          format: date-time
+      additionalProperties: false
 
-    ErrorResponse:
+    Error:
       type: object
       properties:
         code:
-          type: string
+          type: integer
         message:
           type: string
         details:
-          type: object
+          type: string
+        request_id:
+          type: string
+          format: uuid
+      required:
+        - code
+        - message
+        - request_id
+
+    ErrorList:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Error"
+      required:
+        - errors

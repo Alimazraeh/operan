@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Request Executive Briefing — Operan | Enterprise Agentic Workforce Infrastructure</title>
+  <meta name="description" content="Request an executive briefing to understand how Operan's digital department platform can be configured for your organization's operational requirements.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+  <nav class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">
+        <svg><use href="assets/svg/logo.svg#icon-logo"/></svg>
+        OPERAN
+      </a>
+      <div class="nav__links" id="navLinks">
+        <a href="index.html" class="nav__link">Home</a>
+        <a href="platform.html" class="nav__link">Platform</a>
+        <a href="departments.html" class="nav__link">Departments</a>
+        <a href="industries.html" class="nav__link">Industries</a>
+        <a href="security.html" class="nav__link">Security</a>
+        <a href="about.html" class="nav__link">About</a>
+        <a href="private-cloud.html" class="nav__link">Private Cloud</a>
+        <a href="briefing.html" class="btn btn--primary nav__cta">Request Executive Briefing</a>
+      </div>
+      <div class="nav__toggle" id="navToggle"><span></span><span></span><span></span></div>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <section class="section" style="padding-top:calc(var(--header-height) + var(--space-4xl));padding-bottom:var(--space-4xl);">
+    <div class="container">
+      <div class="reveal" style="max-width:720px;margin:0 auto;text-align:center;">
+        <p class="section-label" style="justify-content:center;">Executive Briefing</p>
+        <h1 class="text-gradient">Request an Executive Briefing</h1>
+        <p style="color:var(--color-gray-400);font-size:var(--text-lg);margin-top:var(--space-xl);line-height:1.8;">
+          Tell us about your organization and operational goals. A strategic advisor will reach out within one business day to schedule a confidential briefing tailored to your sector's requirements.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Briefing Form -->
+  <section class="section section--darker" style="padding-bottom:var(--space-5xl);">
+    <div class="container">
+      <div class="reveal" style="max-width:680px;margin:0 auto;">
+        <form class="briefing-form" id="briefingForm">
+
+          <!-- Personal Information -->
+          <div style="margin-bottom:var(--space-3xl);">
+            <h3 style="font-size:var(--text-xl);margin-bottom:var(--space-lg);display:flex;align-items:center;gap:var(--space-md);">
+              <svg style="width:24px;height:24px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-users"/></svg>
+              Personal Information
+            </h3>
+
+            <div class="grid grid--2" style="margin-bottom:var(--space-lg);">
+              <div>
+                <label for="firstName" style="display:block;font-size:var(--text-sm);color:var(--color-gray-400);margin-bottom:var(--space-sm);font-weight:500;">First Name *</label>
+                <input type="text" id="firstName" name="firstName" required placeholder="Enter your first name" style="width:100%;padding:var(--space-sm) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);color:var(--color-white);font-size:var(--text-sm);transition:border-color var(--transition-base);">
+              </div>
+              <div>
+                <label for="lastName" style="display:block;font-size:var(--text-sm);color:var(--color-gray-400);margin-bottom:var(--space-sm);font-weight:500;">Last Name *</label>
+                <input type="text" id="lastName" name="lastName" required placeholder="Enter your last name" style="width:100%;padding:var(--space-sm) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);color:var(--color-white);font-size:var(--text-sm);transition:border-color var(--transition-base);">
+              </div>
+            </div>
+
+            <div style="margin-bottom:var(--space-lg);">
+              <label for="email" style="display:block;font-size:var(--text-sm);color:var(--color-gray-400);margin-bottom:var(--space-sm);font-weight:500;">Work Email *</label>
+              <input type="email" id="email" name="email" required placeholder="your.name@organization.gov" style="width:100%;padding:var(--space-sm) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);color:var(--color-white);font-size:var(--text-sm);transition:border-color var(--transition-base);">
+            </div>
+
+            <div class="grid grid--2" style="margin-bottom:var(--space-lg);">
+              <div>
+                <label for="role" style="display:block;font-size:var(--text-sm);color:var(--color-gray-400);margin-bottom:var(--space-sm);font-weight:500;">Your Role *</label>
+                <select id="role" name="role" required style="width:100%;padding:var(--space-sm) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);color:var(--color-white);font-size:var(--text-sm);transition:border-color var(--transition-base);appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;utf8,<svg fill=&quot;%2394A3B8&quot; viewBox=&quot;0 0 24 24&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;><path d=&quot;M7 10l5 5 5-5z&quot;/></svg>');background-repeat:no-repeat;background-position:right 12px center;background-size:20px;">
+                  <option value="" disabled selected>Select your role</option>
+                  <option value="c-level">C-Level Executive</option>
+                  <option value="director">Director / VP</option>
+                  <option value="manager">Manager / Team Lead</option>
+                  <option value="analyst">Analyst / Specialist</option>
+                  <option value="it">IT / Technology</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label for="orgSize" style="display:block;font-size:var(--text-sm);color:var(--color-gray-400);margin-bottom:var(--space-sm);font-weight:500;">Organization Size *</label>
+                <select id="orgSize" name="orgSize" required style="width:100%;padding:var(--space-sm) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);color:var(--color-white);font-size:var(--text-sm);transition:border-color var(--transition-base);appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;utf8,<svg fill=&quot;%2394A3B8&quot; viewBox=&quot;0 0 24 24&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;><path d=&quot;M7 10l5 5 5-5z&quot;/></svg>');background-repeat:no-repeat;background-position:right 12px center;background-size:20px;">
+                  <option value="" disabled selected>Select organization size</option>
+                  <option value="1-50">1 – 50 employees</option>
+                  <option value="51-200">51 – 200 employees</option>
+                  <option value="201-1000">201 – 1,000 employees</option>
+                  <option value="1001-5000">1,001 – 5,000 employees</option>
+                  <option value="5001-10000">5,001 – 10,000 employees</option>
+                  <option value="10000+">10,000+ employees</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Organization Information -->
+          <div style="margin-bottom:var(--space-3xl);">
+            <h3 style="font-size:var(--text-xl);margin-bottom:var(--space-lg);display:flex;align-items:center;gap:var(--space-md);">
+              <svg style="width:24px;height:24px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-building"/></svg>
+              Organization Information
+            </h3>
+
+            <div style="margin-bottom:var(--space-lg);">
+              <label for="industry" style="display:block;font-size:var(--text-sm);color:var(--color-gray-400);margin-bottom:var(--space-sm);font-weight:500;">Industry / Sector *</label>
+              <select id="industry" name="industry" required style="width:100%;padding:var(--space-sm) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);color:var(--color-white);font-size:var(--text-sm);transition:border-color var(--transition-base);appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;utf8,<svg fill=&quot;%2394A3B8&quot; viewBox=&quot;0 0 24 24&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;><path d=&quot;M7 10l5 5 5-5z&quot;/></svg>');background-repeat:no-repeat;background-position:right 12px center;background-size:20px;">
+                <option value="" disabled selected>Select your sector</option>
+                <option value="government">Government & Public Sector</option>
+                <option value="defense">Defense & National Security</option>
+                <option value="healthcare">Healthcare & Public Health</option>
+                <option value="energy">Energy & Utilities</option>
+                <option value="banking">Banking & Financial Services</option>
+                <option value="telecom">Telecommunications</option>
+                <option value="education">Education & Academic</option>
+                <option value="research">Research Institutions</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div style="margin-bottom:var(--space-lg);">
+              <label for="orgName" style="display:block;font-size:var(--text-sm);color:var(--color-gray-400);margin-bottom:var(--space-sm);font-weight:500;">Organization Name *</label>
+              <input type="text" id="orgName" name="orgName" required placeholder="Your organization or agency name" style="width:100%;padding:var(--space-sm) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);color:var(--color-white);font-size:var(--text-sm);transition:border-color var(--transition-base);">
+            </div>
+
+            <div style="margin-bottom:var(--space-lg);">
+              <label for="country" style="display:block;font-size:var(--text-sm);color:var(--color-gray-400);margin-bottom:var(--space-sm);font-weight:500;">Country / Region</label>
+              <input type="text" id="country" name="country" placeholder="Your country or region" style="width:100%;padding:var(--space-sm) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);color:var(--color-white);font-size:var(--text-sm);transition:border-color var(--transition-base);">
+            </div>
+          </div>
+
+          <!-- Operational Context -->
+          <div style="margin-bottom:var(--space-3xl);">
+            <h3 style="font-size:var(--text-xl);margin-bottom:var(--space-lg);display:flex;align-items:center;gap:var(--space-md);">
+              <svg style="width:24px;height:24px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-target"/></svg>
+              Operational Context
+            </h3>
+
+            <div style="margin-bottom:var(--space-lg);">
+              <label for="challenges" style="display:block;font-size:var(--text-sm);color:var(--color-gray-400);margin-bottom:var(--space-sm);font-weight:500;">Key Operational Challenges *</label>
+              <textarea id="challenges" name="challenges" rows="4" required placeholder="Describe the operational challenges you're looking to address — staffing constraints, compliance complexity, process inefficiencies, etc." style="width:100%;padding:var(--space-sm) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);color:var(--color-white);font-size:var(--text-sm);line-height:1.6;resize:vertical;transition:border-color var(--transition-base);"></textarea>
+            </div>
+
+            <div style="margin-bottom:var(--space-lg);">
+              <label for="departments" style="display:block;font-size:var(--text-sm);color:var(--color-gray-400);margin-bottom:var(--space-sm);font-weight:500;">Departments of Interest</label>
+              <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);">
+                <label style="display:flex;align-items:center;gap:var(--space-sm);padding:var(--space-xs) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);cursor:pointer;transition:border-color var(--transition-base);">
+                  <input type="checkbox" name="departments" value="hr" style="accent-color:var(--color-cyan);">
+                  <span style="font-size:var(--text-sm);color:var(--color-gray-300);">Human Resources</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:var(--space-sm);padding:var(--space-xs) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);cursor:pointer;transition:border-color var(--transition-base);">
+                  <input type="checkbox" name="departments" value="finance" style="accent-color:var(--color-cyan);">
+                  <span style="font-size:var(--text-sm);color:var(--color-gray-300);">Finance</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:var(--space-sm);padding:var(--space-xs) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);cursor:pointer;transition:border-color var(--transition-base);">
+                  <input type="checkbox" name="departments" value="legal" style="accent-color:var(--color-cyan);">
+                  <span style="font-size:var(--text-sm);color:var(--color-gray-300);">Legal</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:var(--space-sm);padding:var(--space-xs) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);cursor:pointer;transition:border-color var(--transition-base);">
+                  <input type="checkbox" name="departments" value="engineering" style="accent-color:var(--color-cyan);">
+                  <span style="font-size:var(--text-sm);color:var(--color-gray-300);">Engineering</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:var(--space-sm);padding:var(--space-xs) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);cursor:pointer;transition:border-color var(--transition-base);">
+                  <input type="checkbox" name="departments" value="research" style="accent-color:var(--color-cyan);">
+                  <span style="font-size:var(--text-sm);color:var(--color-gray-300);">Research</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:var(--space-sm);padding:var(--space-xs) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);cursor:pointer;transition:border-color var(--transition-base);">
+                  <input type="checkbox" name="departments" value="compliance" style="accent-color:var(--color-cyan);">
+                  <span style="font-size:var(--text-sm);color:var(--color-gray-300);">Compliance</span>
+                </label>
+              </div>
+            </div>
+
+            <div style="margin-bottom:var(--space-xl);">
+              <label for="timeline" style="display:block;font-size:var(--text-sm);color:var(--color-gray-400);margin-bottom:var(--space-sm);font-weight:500;">Desired Implementation Timeline *</label>
+              <select id="timeline" name="timeline" required style="width:100%;padding:var(--space-sm) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);color:var(--color-white);font-size:var(--text-sm);transition:border-color var(--transition-base);appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;utf8,<svg fill=&quot;%2394A3B8&quot; viewBox=&quot;0 0 24 24&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;><path d=&quot;M7 10l5 5 5-5z&quot;/></svg>');background-repeat:no-repeat;background-position:right 12px center;background-size:20px;">
+                <option value="" disabled selected>Select your timeline</option>
+                <option value="asap">As soon as possible</option>
+                <option value="3months">Within 3 months</option>
+                <option value="6months">Within 6 months</option>
+                <option value="12months">Within 12 months</option>
+                <option value="exploring">Still exploring — no timeline</option>
+              </select>
+            </div>
+
+            <div style="margin-bottom:var(--space-xl);">
+              <label for="additional" style="display:block;font-size:var(--text-sm);color:var(--color-gray-400);margin-bottom:var(--space-sm);font-weight:500;">Additional Information</label>
+              <textarea id="additional" name="additional" rows="3" placeholder="Any other context that would help us prepare your briefing" style="width:100%;padding:var(--space-sm) var(--space-md);background:var(--color-graphite);border:1px solid var(--color-slate);border-radius:var(--radius-md);color:var(--color-white);font-size:var(--text-sm);line-height:1.6;resize:vertical;transition:border-color var(--transition-base);"></textarea>
+            </div>
+          </div>
+
+          <!-- Submit -->
+          <div style="text-align:center;">
+            <button type="submit" class="btn btn--primary btn--lg" style="min-width:280px;">
+              <svg style="width:20px;height:20px;"><use href="assets/svg/icons.svg#icon-arrow-right"/></svg>
+              Submit Briefing Request
+            </button>
+            <p style="font-size:var(--text-xs);color:var(--color-gray-600);margin-top:var(--space-lg);max-width:400px;margin-left:auto;margin-right:auto;line-height:1.5;">
+              Your information will be handled confidentially. A strategic advisor will contact you within one business day to schedule your briefing.
+            </p>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Alternative Contact -->
+  <section class="section section--darker">
+    <div class="container">
+      <div class="reveal" style="max-width:600px;margin:0 auto;text-align:center;">
+        <h3 style="margin-bottom:var(--space-xl);">Prefer a Direct Contact?</h3>
+        <p style="color:var(--color-gray-400);margin-bottom:var(--space-2xl);line-height:1.7;">
+          You can also reach our team directly for immediate inquiries about Operan's platform capabilities, deployment options, or security architecture.
+        </p>
+        <div class="grid grid--2" style="gap:var(--space-xl);">
+          <div class="card reveal" style="text-align:center;">
+            <svg style="width:28px;height:28px;color:var(--color-cyan);margin:0 auto var(--space-md);"><use href="assets/svg/icons.svg#icon-phone"/></svg>
+            <div style="font-size:var(--text-sm);color:var(--color-gray-300);">Contact Us</div>
+            <div style="font-size:var(--text-xs);color:var(--color-gray-500);margin-top:var(--space-sm);">Email: info@operan.io</div>
+          </div>
+          <div class="card reveal" style="text-align:center;transition-delay:100ms;">
+            <svg style="width:28px;height:28px;color:var(--color-cyan);margin:0 auto var(--space-md);"><use href="assets/svg/icons.svg#icon-file"/></svg>
+            <div style="font-size:var(--text-sm);color:var(--color-gray-300);">Documentation</div>
+            <div style="font-size:var(--text-xs);color:var(--color-gray-500);margin-top:var(--space-sm);">Platform overview available</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div>
+          <div class="footer__brand-name">OPERAN</div>
+          <p class="footer__brand-tagline">The Operating System for Digital Departments.</p>
+        </div>
+        <div>
+          <h4 class="footer__heading">Platform</h4>
+          <div class="footer__links">
+            <a href="platform.html" class="footer__link">Architecture</a>
+            <a href="platform.html#modules" class="footer__link">Modules</a>
+          </div>
+        </div>
+        <div>
+          <h4 class="footer__heading">Solutions</h4>
+          <div class="footer__links">
+            <a href="departments.html" class="footer__link">Digital Departments</a>
+            <a href="industries.html" class="footer__link">Industries</a>
+            <a href="security.html" class="footer__link">Security</a>
+            <a href="private-cloud.html" class="footer__link">Private Cloud</a>
+          </div>
+        </div>
+        <div>
+          <h4 class="footer__heading">Company</h4>
+          <div class="footer__links">
+            <a href="about.html" class="footer__link">About</a>
+            <a href="briefing.html" class="footer__link">Request Briefing</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span>© 2026 Operan. All rights reserved.</span>
+        <span>Enterprise Agentic Workforce Infrastructure</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    /* ============================================================
+       Briefing form — input focus styling
+       ============================================================ */
+    (function() {
+      const inputs = document.querySelectorAll('.briefing-form input, .briefing-form textarea, .briefing-form select');
+      if (!inputs.length) return;
+
+      inputs.forEach(input => {
+        input.addEventListener('focus', () => {
+          input.style.borderColor = 'var(--color-cyan)';
+        });
+        input.addEventListener('blur', () => {
+          input.style.borderColor = '';
+        });
+      });
+
+      // Department checkbox style updates
+      const checkboxes = document.querySelectorAll('.briefing-form input[type="checkbox"]');
+      checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+          cb.closest('label').style.borderColor = cb.checked ? 'var(--color-cyan)' : '';
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

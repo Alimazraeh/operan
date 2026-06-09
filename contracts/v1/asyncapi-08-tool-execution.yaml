@@ -65,7 +65,7 @@ components:
           - execution_id
           - tenant_id
           - agent_id
-          - tool_name
+          - tool
           - tool_version
           - tool_input_schema
           - requested_at
@@ -98,7 +98,7 @@ components:
             type: string
             format: uuid
             description: Unique identifier for the agent requesting execution.
-          tool_name:
+          tool:
             type: string
             description: Name of the tool to execute.
           tool_version:
@@ -140,7 +140,7 @@ components:
           - execution_id
           - tenant_id
           - agent_id
-          - tool_name
+          - tool
           - started_at
           - timeout_ms
         properties:
@@ -172,7 +172,7 @@ components:
             type: string
             format: uuid
             description: Unique identifier for the agent that owns this execution.
-          tool_name:
+          tool:
             type: string
             description: Name of the tool being executed.
           started_at:
@@ -196,7 +196,7 @@ components:
           - execution_id
           - tenant_id
           - agent_id
-          - tool_name
+          - tool
           - output
           - execution_time_ms
           - cost
@@ -231,7 +231,7 @@ components:
             type: string
             format: uuid
             description: Unique identifier for the agent that owns this execution.
-          tool_name:
+          tool:
             type: string
             description: Name of the tool that was executed.
           output:
@@ -288,7 +288,7 @@ components:
           - execution_id
           - tenant_id
           - agent_id
-          - tool_name
+          - tool
           - error_code
           - error_message
           - retryable
@@ -322,7 +322,7 @@ components:
             type: string
             format: uuid
             description: Unique identifier for the agent that owns this execution.
-          tool_name:
+          tool:
             type: string
             description: Name of the tool that failed.
           error_code:

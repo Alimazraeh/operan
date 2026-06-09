@@ -1,0 +1,142 @@
+# Operan Sovereign Deployment Fabric — Helm Values
+# Module 20
+
+nameOverride: ""
+fullnameOverride: "sovereign-deployment"
+
+image:
+  repository: registry.operan.internal/sovereign-deployment-fabric
+  pullPolicy: IfNotPresent
+  tag: ""
+
+replicaCount: 3
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+  metricsPort: 9090
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+  hosts:
+    - host: api.operan.internal
+      paths:
+        - path: /api/v1/deployments
+          pathType: Prefix
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 2Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Sovereign deployment configuration
+deployment:
+  # Default isolation level for new deployments
+  defaultIsolationLevel: logical
+  # Maximum concurrent provisioning operations
+  maxConcurrentProvisioning: 5
+  # Default data retention in days after deprovisioning
+  defaultDataRetentionDays: 90
+  # Enable automatic health-based scaling
+  autoScaleOnHealth: true
+  # Provisioning timeout per deployment (seconds)
+  provisioningTimeoutSeconds: 900
+
+# RabbitMQ connection for event streaming
+rabbitmq:
+  hosts:
+    - rabbitmq-operan.prod.internal:5672
+  username: operan-service
+  password: ""  # Use Kubernetes secret ref in production
+  virtualHost: /operan
+  retry:
+    maxAttempts: 3
+    backoffSeconds: 2
+
+# Database (PostgreSQL) for deployment state
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: ""  # Use Kubernetes secret ref in production
+  primary:
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+
+# Observability integration
+observability:
+  metricsEnabled: true
+  metricsPort: 9090
+  healthCheckIntervalSeconds: 30
+  telemetryEndpoint: http://observability-operan:8080/ingest
+
+# IAM integration
+identity:
+  authenticationMethod: jwt
+  tenantContextHeader: X-Tenant-ID
+  tokenValidationEndpoint: http://identity-access-mgmt:8080/.well-known/jwks.json
+
+# Cost governance integration
+costGovernance:
+  enabled: true
+  endpoint: http://cost-governance:8080/api/v1/check
+  defaultBudgetPerRegion: 10000
+
+# Compliance validation
+compliance:
+  enabled: true
+  policyEngineEndpoint: http://policy-governance:8080/api/v1/compliance/validate
+  strictMode: true
+  onViolation: block
+
+# Region configuration — loaded at startup
+regions:
+  - name: "UAE"
+    code: "AE"
+    status: "active"
+  - name: "Saudi Arabia"
+    code: "SA"
+    status: "active"
+  - name: "European Union (Frankfurt)"
+    code: "EU"
+    status: "active"
+  - name: "Qatar"
+    code: "QA"
+    status: "active"
+  - name: "Bahrain"
+    code: "BH"
+    status: "active"
+
+# Network policies
+networkPolicy:
+  enabled: true
+  ingressNamespaces:
+    - tenant-control-plane
+    - agent-orchestration
+    - department-template-engine
+    - policy-governance
+  egressNamespaces:
+    - observability
+    - identity-access-mgmt
+    - enterprise-connector
+    - cost-governance

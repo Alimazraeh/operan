@@ -9,7 +9,7 @@ servers:
 
 security:
   - BearerAuth: []
-  - TenantHeader: []
+  - TenantContext: []
 
 paths:
   /deployments:
@@ -18,7 +18,7 @@ paths:
       summary: List all deployments for a tenant
       security:
         - BearerAuth: []
-        - TenantHeader: []
+        - TenantContext: []
       parameters:
         - name: tenant_id
           in: query
@@ -73,7 +73,7 @@ paths:
       summary: Create a new deployment
       security:
         - BearerAuth: []
-        - TenantHeader: []
+        - TenantContext: []
       requestBody:
         required: true
         content:
@@ -112,7 +112,7 @@ paths:
       summary: Get deployment details
       security:
         - BearerAuth: []
-        - TenantHeader: []
+        - TenantContext: []
       parameters:
         - name: id
           in: path
@@ -156,7 +156,7 @@ paths:
       summary: Update deployment configuration
       security:
         - BearerAuth: []
-        - TenantHeader: []
+        - TenantContext: []
       parameters:
         - name: id
           in: path
@@ -206,7 +206,7 @@ paths:
       summary: Initiate deployment deprovisioning
       security:
         - BearerAuth: []
-        - TenantHeader: []
+        - TenantContext: []
       parameters:
         - name: id
           in: path
@@ -252,7 +252,7 @@ paths:
       summary: Validate deployment against sovereign policies
       security:
         - BearerAuth: []
-        - TenantHeader: []
+        - TenantContext: []
       parameters:
         - name: id
           in: path
@@ -304,7 +304,7 @@ paths:
       summary: Trigger deployment activation
       security:
         - BearerAuth: []
-        - TenantHeader: []
+        - TenantContext: []
       parameters:
         - name: id
           in: path
@@ -356,7 +356,7 @@ paths:
       summary: Rollback deployment to previous version
       security:
         - BearerAuth: []
-        - TenantHeader: []
+        - TenantContext: []
       parameters:
         - name: id
           in: path
@@ -408,7 +408,7 @@ paths:
       summary: Cancel an in-progress deployment
       security:
         - BearerAuth: []
-        - TenantHeader: []
+        - TenantContext: []
       parameters:
         - name: id
           in: path
@@ -454,7 +454,7 @@ paths:
       summary: Get deployment health status
       security:
         - BearerAuth: []
-        - TenantHeader: []
+        - TenantContext: []
       parameters:
         - name: id
           in: path
@@ -500,7 +500,7 @@ paths:
       summary: List available deployment regions
       security:
         - BearerAuth: []
-        - TenantHeader: []
+        - TenantContext: []
       responses:
         "200":
           description: Regions list
@@ -526,7 +526,7 @@ paths:
       summary: Get region details
       security:
         - BearerAuth: []
-        - TenantHeader: []
+        - TenantContext: []
       parameters:
         - name: region_id
           in: path
@@ -554,7 +554,7 @@ paths:
       summary: Check compliance against sovereign policies
       security:
         - BearerAuth: []
-        - TenantHeader: []
+        - TenantContext: []
       requestBody:
         required: true
         content:
@@ -593,7 +593,7 @@ paths:
       summary: Provision infrastructure resources
       security:
         - BearerAuth: []
-        - TenantHeader: []
+        - TenantContext: []
       requestBody:
         required: true
         content:
@@ -632,7 +632,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-    TenantHeader:
+    TenantContext:
       type: apiKey
       in: header
       name: X-Tenant-ID
@@ -1262,4 +1262,4 @@ components:
 
 security:
   - BearerAuth: []
-  - TenantHeader: []
+  - TenantContext: []

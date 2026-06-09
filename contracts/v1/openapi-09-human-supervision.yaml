@@ -14,7 +14,7 @@ servers:
 
 security:
   - BearerAuth: []
-  - TenantID: []
+  - TenantHeader: []
 
 tags:
   - name: approvals
@@ -742,7 +742,7 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: JWT bearer token with appropriate scopes
-    TenantID:
+    TenantHeader:
       type: apiKey
       in: header
       name: X-Tenant-ID

@@ -412,7 +412,7 @@ components:
           format: uuid
         status:
           type: string
-          enum: [draft, reviewed, published, archived]
+          enum: [draft, deprecated, published, archived]
         tags:
           type: array
           items:
@@ -512,7 +512,7 @@ components:
             type: string
         status:
           type: string
-          enum: [draft, reviewed, published, archived]
+          enum: [draft, deprecated, published, archived]
       additionalProperties: false
 
     # ─── Deployment ───
@@ -561,11 +561,8 @@ components:
 
     TemplateDeployRequest:
       type: object
-      required: [template_id, version, environment]
+      required: [version, environment]
       properties:
-        template_id:
-          type: string
-          format: uuid
         version:
           type: string
         environment:
@@ -607,8 +604,7 @@ components:
         version:
           type: string
         status:
-          type: string
-          enum: [draft, published, archived]
+          $ref: '#/components/schemas/agentStatus'
         created_at:
           type: string
           format: date-time
@@ -662,8 +658,7 @@ components:
             type: string
             format: uuid
         status:
-          type: string
-          enum: [draft, published, archived]
+          $ref: '#/components/schemas/agentStatus'
       additionalProperties: false
 
   parameters:
@@ -726,9 +721,6 @@ paths:
       operationId: createTemplate
       tags:
         - Templates
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
       requestBody:
         required: true
         content:
@@ -760,9 +752,6 @@ paths:
       operationId: listTemplates
       tags:
         - Templates
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
       parameters:
         - $ref: '#/components/parameters/CategoryParam'
         - $ref: '#/components/parameters/VersionParam'
@@ -797,9 +786,6 @@ paths:
       operationId: getTemplate
       tags:
         - Templates
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
       parameters:
         - $ref: '#/components/parameters/TemplateId'
       responses:
@@ -823,9 +809,6 @@ paths:
       operationId: updateTemplate
       tags:
         - Templates
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
       parameters:
         - $ref: '#/components/parameters/TemplateId'
       requestBody:
@@ -859,9 +842,6 @@ paths:
       operationId: deleteTemplate
       tags:
         - Templates
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
       parameters:
         - $ref: '#/components/parameters/TemplateId'
       responses:
@@ -887,9 +867,6 @@ paths:
       operationId: deployTemplate
       tags:
         - Deployments
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
       parameters:
         - $ref: '#/components/parameters/TemplateId'
       requestBody:
@@ -927,9 +904,6 @@ paths:
       operationId: listDeployments
       tags:
         - Deployments
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
       parameters:
         - $ref: '#/components/parameters/TemplateId'
         - $ref: '#/components/parameters/PageParam'
@@ -967,9 +941,6 @@ paths:
       operationId: listCustomTemplates
       tags:
         - Custom Templates
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
       parameters:
         - $ref: '#/components/parameters/CategoryParam'
         - $ref: '#/components/parameters/VersionParam'
@@ -1002,9 +973,6 @@ paths:
       operationId: createCustomTemplate
       tags:
         - Custom Templates
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
       requestBody:
         required: true
         content:
@@ -1038,9 +1006,6 @@ paths:
       operationId: getCustomTemplate
       tags:
         - Custom Templates
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
       parameters:
         - $ref: '#/components/parameters/CustomTemplateId'
       responses:
@@ -1064,9 +1029,6 @@ paths:
       operationId: updateCustomTemplate
       tags:
         - Custom Templates
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
       parameters:
         - $ref: '#/components/parameters/CustomTemplateId'
       requestBody:
@@ -1100,9 +1062,6 @@ paths:
       operationId: deleteCustomTemplate
       tags:
         - Custom Templates
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
       parameters:
         - $ref: '#/components/parameters/CustomTemplateId'
       responses:
@@ -1126,9 +1085,6 @@ paths:
       operationId: listTemplateVersions
       tags:
         - Template Versions
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
       parameters:
         - $ref: '#/components/parameters/TemplateId'
         - $ref: '#/components/parameters/PageParam'
@@ -1164,9 +1120,6 @@ paths:
       operationId: getTemplateVersion
       tags:
         - Template Versions
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
       parameters:
         - $ref: '#/components/parameters/TemplateId'
         - name: version
@@ -1198,9 +1151,6 @@ paths:
       operationId: cloneTemplate
       tags:
         - Template Operations
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
       parameters:
         - $ref: '#/components/parameters/TemplateId'
       requestBody:
@@ -1288,3 +1238,7 @@ tags:
     description: Template deployment lifecycle management
   - name: Custom Templates
     description: Free-form custom template operations
+  - name: Template Versions
+    description: Template versioning operations
+  - name: Template Operations
+    description: Template deployment and cloning operations

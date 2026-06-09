@@ -474,9 +474,8 @@
 
     "TemplateDeployRequest": {
       "type": "object",
-      "required": ["template_id", "version", "environment"],
+      "required": ["version", "environment"],
       "properties": {
-        "template_id": { "$ref": "#/definitions/uuid" },
         "version": { "$ref": "#/definitions/semver" },
         "environment": { "$ref": "#/definitions/deploymentEnvironment" },
         "configuration": {
@@ -509,10 +508,7 @@
           "items": { "$ref": "#/definitions/uuid" }
         },
         "version": { "$ref": "#/definitions/semver" },
-        "status": {
-          "type": "string",
-          "enum": ["draft", "deprecated", "published", "archived"]
-        },
+        "status": { "$ref": "#/definitions/agentStatus" },
         "created_at": { "$ref": "#/definitions/date-time" },
         "updated_at": { "$ref": "#/definitions/date-time" },
         "created_by": { "$ref": "#/definitions/uuid" }
@@ -559,10 +555,7 @@
           "type": "array",
           "items": { "$ref": "#/definitions/uuid" }
         },
-        "status": {
-          "type": "string",
-          "enum": ["draft", "deprecated", "published", "archived"]
-        }
+        "status": { "$ref": "#/definitions/agentStatus" }
       },
       "additionalProperties": false
     },
