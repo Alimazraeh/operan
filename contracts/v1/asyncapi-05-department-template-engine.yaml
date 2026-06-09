@@ -24,9 +24,9 @@ servers:
 
 channels:
   # ─── template.created ───
-  operan.templates.template.created:
+  operan/events/template/created:
     description: Published when a new department template is created.
-    address: operan.templates.template.created
+    address: operan/events/template/created
     publish:
       summary: A template was created.
       operationId: onTemplateCreated
@@ -34,9 +34,9 @@ channels:
         $ref: '#/components/messages/TemplateCreated'
 
   # ─── template.updated ───
-  operan.templates.template.updated:
+  operan/events/template/updated:
     description: Published when an existing department template is updated.
-    address: operan.templates.template.updated
+    address: operan/events/template/updated
     publish:
       summary: A template was updated.
       operationId: onTemplateUpdated
@@ -44,9 +44,9 @@ channels:
         $ref: '#/components/messages/TemplateUpdated'
 
   # ─── template.deployed ───
-  operan.templates.template.deployed:
+  operan/events/template/deployed:
     description: Published when a template deployment reaches operational status.
-    address: operan.templates.template.deployed
+    address: operan/events/template/deployed
     publish:
       summary: A template deployment completed successfully.
       operationId: onTemplateDeployed
@@ -54,9 +54,9 @@ channels:
         $ref: '#/components/messages/TemplateDeployed'
 
   # ─── template.deployment_failed ───
-  operan.templates.template.deployment_failed:
+  operan/events/template/deployment_failed:
     description: Published when a template deployment fails at any stage.
-    address: operan.templates.template.deployment_failed
+    address: operan/events/template/deployment_failed
     publish:
       summary: A template deployment failed.
       operationId: onTemplateDeploymentFailed
@@ -64,9 +64,9 @@ channels:
         $ref: '#/components/messages/TemplateDeploymentFailed'
 
   # ─── template.undeployed ───
-  operan.templates.template.undeployed:
+  operan/events/template/undeployed:
     description: Published when a template deployment is undeployed / rolled back.
-    address: operan.templates.template.undeployed
+    address: operan/events/template/undeployed
     publish:
       summary: A template deployment was undeployed.
       operationId: onTemplateUndeployed
@@ -74,9 +74,9 @@ channels:
         $ref: '#/components/messages/TemplateUndeployed'
 
   # ─── template.deleted ───
-  operan.templates.template.deleted:
+  operan/events/template/deleted:
     description: Published when a template is deleted.
-    address: operan.templates.template.deleted
+    address: operan/events/template/deleted
     publish:
       summary: A template was deleted.
       operationId: onTemplateDeleted
@@ -84,9 +84,9 @@ channels:
         $ref: '#/components/messages/TemplateDeleted'
 
   # ─── template.versioned ───
-  operan.templates.template.versioned:
+  operan/events/template/versioned:
     description: Published when a new version of a template is created.
-    address: operan.templates.template.versioned
+    address: operan/events/template/versioned
     publish:
       summary: A new template version was created.
       operationId: onTemplateVersioned
@@ -94,9 +94,9 @@ channels:
         $ref: '#/components/messages/TemplateVersioned'
 
   # ─── template.cloned ───
-  operan.templates.template.cloned:
+  operan/events/template/cloned:
     description: Published when a template is cloned.
-    address: operan.templates.template.cloned
+    address: operan/events/template/cloned
     publish:
       summary: A template was cloned.
       operationId: onTemplateCloned
@@ -327,7 +327,7 @@ components:
           enum: [dev, staging, production]
         deployment_stage:
           type: string
-          enum: [select, configure, connect_data, provision_memory, deploy_swarm, operational]
+          enum: [select, configure, connect_data, provision_memory, deploy_swarm, operational, failed, rolled_back]
         error_message:
           type: string
         error_code:

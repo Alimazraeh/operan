@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Industries — Operan | Enterprise Agentic Workforce Infrastructure</title>
+  <meta name="description" content="Operan serves Government, Defense, Healthcare, Energy, Banking, Telecommunications, Education, and Research Institutions with sovereign, governed digital departments.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+  <nav class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">
+        <svg><use href="assets/svg/logo.svg#icon-logo"/></svg>
+        OPERAN
+      </a>
+      <div class="nav__links" id="navLinks">
+        <a href="index.html" class="nav__link">Home</a>
+        <a href="platform.html" class="nav__link">Platform</a>
+        <a href="departments.html" class="nav__link">Departments</a>
+        <a href="industries.html" class="nav__link nav__link--active">Industries</a>
+        <a href="security.html" class="nav__link">Security</a>
+        <a href="about.html" class="nav__link">About</a>
+        <a href="private-cloud.html" class="nav__link">Private Cloud</a>
+        <a href="briefing.html" class="btn btn--primary nav__cta">Request Executive Briefing</a>
+      </div>
+      <div class="nav__toggle" id="navToggle"><span></span><span></span><span></span></div>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <section class="section" style="padding-top:calc(var(--header-height) + var(--space-4xl));padding-bottom:var(--space-4xl);">
+    <div class="container">
+      <div class="reveal" style="max-width:720px;margin:0 auto;text-align:center;">
+        <p class="section-label" style="justify-content:center;">Industry Solutions</p>
+        <h1 class="text-gradient">Built for Every Sector. Governed for All.</h1>
+        <p style="color:var(--color-gray-400);font-size:var(--text-lg);margin-top:var(--space-xl);line-height:1.8;">
+          Operan adapts to the regulatory, operational, and governance requirements of every industry. Each sector template encodes domain-specific policies, compliance frameworks, and operational workflows.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Industry Tabs -->
+  <section class="section section--darker">
+    <div class="container">
+      <div class="reveal">
+        <div class="tabs" id="industryTabs">
+          <button class="tab-btn tab-btn--active" data-tab="government">Government</button>
+          <button class="tab-btn" data-tab="defense">Defense</button>
+          <button class="tab-btn" data-tab="healthcare">Healthcare</button>
+          <button class="tab-btn" data-tab="energy">Energy</button>
+          <button class="tab-btn" data-tab="banking">Banking</button>
+          <button class="tab-btn" data-tab="telecom">Telecommunications</button>
+          <button class="tab-btn" data-tab="education">Education</button>
+          <button class="tab-btn" data-tab="research">Research Institutions</button>
+        </div>
+
+        <!-- Government -->
+        <div class="tab-panel tab-panel--active" data-panel="government">
+          <div class="tab-panel__content">
+            <h3>Government & Public Sector</h3>
+            <p class="tab-panel__desc">
+              Digitally transform citizen services, internal operations, and regulatory compliance. Operan's government template encodes civil service rules, procurement regulations, FOIA requirements, and multi-tier governance structures. Each digital department operates within strictly defined policy boundaries with complete auditability.
+            </p>
+            <div class="feature-list">
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Automated citizen request triage and response</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Procurement compliance and vendor management</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Regulatory change tracking and policy alignment</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>FOIA and records management automation</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Inter-agency data sharing with sovereign controls</span>
+              </div>
+            </div>
+          </div>
+          <div class="tab-panel__visual">
+            <div style="position:relative;padding-bottom:75%;height:0;overflow:hidden;border-radius:var(--radius-lg);">
+              <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;position:absolute;top:0;left:0;">
+                <!-- Government Org Chart -->
+                <rect x="150" y="10" width="100" height="36" rx="6" fill="#1A2235" stroke="#00D4FF" stroke-width="1"/>
+                <text x="200" y="33" text-anchor="middle" fill="#FFFFFF" font-size="11" font-family="Inter, sans-serif">Agency Director</text>
+                <line x1="200" y1="46" x2="200" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="70" x2="50" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="70" x2="200" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="70" x2="350" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="50" y1="70" x2="50" y2="96" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="70" x2="200" y2="96" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="350" y1="70" x2="350" y2="96" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <rect x="0" y="96" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="50" y="116" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Citizen Svc</text>
+                <rect x="150" y="96" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="200" y="116" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Records Mgmt</text>
+                <rect x="300" y="96" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="350" y="116" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Policy Coord</text>
+                <line x1="50" y1="128" x2="35" y2="128" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="50" y1="128" x2="65" y2="128" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="35" y1="128" x2="35" y2="152" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="65" y1="128" x2="65" y2="152" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="0" y="152" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="35" y="169" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Inquiry Bot</text>
+                <rect x="70" y="152" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="105" y="169" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Request Triage</text>
+                <line x1="200" y1="128" x2="185" y2="128" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="200" y1="128" x2="215" y2="128" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="185" y1="128" x2="185" y2="152" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="215" y1="128" x2="215" y2="152" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="150" y="152" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="185" y="169" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">FOIA Process</text>
+                <rect x="220" y="152" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="255" y="169" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Records Arch</text>
+                <!-- Second row of children under Policy -->
+                <line x1="350" y1="128" x2="335" y2="128" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="350" y1="128" x2="365" y2="128" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="335" y1="128" x2="335" y2="152" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="365" y1="128" x2="365" y2="152" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="300" y="152" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="335" y="169" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Regulatory</text>
+                <rect x="330" y="152" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="365" y="169" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Inter-Agency</text>
+                <!-- Bottom labels -->
+                <rect x="120" y="195" width="160" height="28" rx="14" fill="#00D4FF" opacity="0.08" stroke="#00D4FF" stroke-width="0.5" stroke-opacity="0.3"/>
+                <text x="200" y="213" text-anchor="middle" fill="#00D4FF" font-size="9" font-family="JetBrains Mono, monospace">GOVERNMENT • FULLY GOVERNED</text>
+                <!-- glow -->
+                <line x1="200" y1="46" x2="200" y2="70" stroke="#00D4FF" stroke-width="1" opacity="0.2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Defense -->
+        <div class="tab-panel" data-panel="defense">
+          <div class="tab-panel__content">
+            <h3>Defense & National Security</h3>
+            <p class="tab-panel__desc">
+              Operate in classified and unclassified environments with air-gapped deployment support. Defense-specific templates handle mission planning, intelligence analysis, logistics coordination, and compliance with national security directives — all within sovereign infrastructure.
+            </p>
+            <div class="feature-list">
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Multi-level security classification support</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Mission planning and resource allocation</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Intelligence analysis and synthesis</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Logistics and supply chain automation</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>National security directive compliance</span>
+              </div>
+            </div>
+          </div>
+          <div class="tab-panel__visual">
+            <div style="position:relative;padding-bottom:75%;height:0;overflow:hidden;border-radius:var(--radius-lg);">
+              <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;position:absolute;top:0;left:0;">
+                <rect x="140" y="10" width="120" height="36" rx="6" fill="#1A2235" stroke="#00D4FF" stroke-width="1"/>
+                <text x="200" y="33" text-anchor="middle" fill="#FFFFFF" font-size="11" font-family="Inter, sans-serif">Command Authority</text>
+                <line x1="200" y1="46" x2="200" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="50" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="200" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="350" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="50" y1="72" x2="50" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="200" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="350" y1="72" x2="350" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <rect x="0" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="50" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Intel Analyst</text>
+                <rect x="150" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="200" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Mission Planner</text>
+                <rect x="300" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="350" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Logistics Agent</text>
+                <line x1="50" y1="132" x2="35" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="50" y1="132" x2="65" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="35" y1="132" x2="35" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="65" y1="132" x2="65" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="0" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="35" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Threat Analysis</text>
+                <rect x="70" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="105" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Sigint Sync</text>
+                <line x1="200" y1="132" x2="185" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="200" y1="132" x2="215" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="185" y1="132" x2="185" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="215" y1="132" x2="215" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="150" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="185" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Resource Plan</text>
+                <rect x="220" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="255" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Scenario Sim</text>
+                <line x1="350" y1="132" x2="335" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="350" y1="132" x2="365" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="335" y1="132" x2="335" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="365" y1="132" x2="365" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="300" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="335" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Supply Chain</text>
+                <rect x="330" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="365" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Asset Track</text>
+                <rect x="120" y="205" width="160" height="28" rx="14" fill="#00D4FF" opacity="0.08" stroke="#00D4FF" stroke-width="0.5" stroke-opacity="0.3"/>
+                <text x="200" y="223" text-anchor="middle" fill="#00D4FF" font-size="9" font-family="JetBrains Mono, monospace">DEFENSE • AIR-GAPPED READY</text>
+                <line x1="200" y1="46" x2="200" y2="72" stroke="#00D4FF" stroke-width="1" opacity="0.2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Healthcare -->
+        <div class="tab-panel" data-panel="healthcare">
+          <div class="tab-panel__content">
+            <h3>Healthcare & Public Health</h3>
+            <p class="tab-panel__desc">
+              Manage patient services, clinical operations, compliance with health regulations, and public health reporting. Operan's healthcare template encodes HIPAA requirements, clinical protocol support, and patient data governance — all within your sovereign infrastructure.
+            </p>
+            <div class="feature-list">
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Patient intake and appointment coordination</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Claims processing and insurance verification</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Clinical protocol and guideline management</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>HIPAA compliance and privacy monitoring</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Public health reporting and epidemiology support</span>
+              </div>
+            </div>
+          </div>
+          <div class="tab-panel__visual">
+            <div style="position:relative;padding-bottom:75%;height:0;overflow:hidden;border-radius:var(--radius-lg);">
+              <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;position:absolute;top:0;left:0;">
+                <rect x="140" y="10" width="120" height="36" rx="6" fill="#1A2235" stroke="#00D4FF" stroke-width="1"/>
+                <text x="200" y="33" text-anchor="middle" fill="#FFFFFF" font-size="11" font-family="Inter, sans-serif">Medical Director</text>
+                <line x1="200" y1="46" x2="200" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="50" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="200" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="350" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="50" y1="72" x2="50" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="200" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="350" y1="72" x2="350" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <rect x="0" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="50" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Patient Svc</text>
+                <rect x="150" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="200" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Clinical Ops</text>
+                <rect x="300" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="350" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Compliance</text>
+                <line x1="50" y1="132" x2="35" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="50" y1="132" x2="65" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="35" y1="132" x2="35" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="65" y1="132" x2="65" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="0" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="35" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Scheduling</text>
+                <rect x="70" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="105" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Intake Process</text>
+                <line x1="200" y1="132" x2="185" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="200" y1="132" x2="215" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="185" y1="132" x2="185" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="215" y1="132" x2="215" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="150" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="185" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Protocol Check</text>
+                <rect x="220" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="255" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Records Mgmt</text>
+                <line x1="350" y1="132" x2="335" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="350" y1="132" x2="365" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="335" y1="132" x2="335" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="365" y1="132" x2="365" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="300" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="335" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">HIPAA Monitor</text>
+                <rect x="330" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="365" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Reporting</text>
+                <rect x="120" y="205" width="160" height="28" rx="14" fill="#00D4FF" opacity="0.08" stroke="#00D4FF" stroke-width="0.5" stroke-opacity="0.3"/>
+                <text x="200" y="223" text-anchor="middle" fill="#00D4FF" font-size="9" font-family="JetBrains Mono, monospace">HEALTHCARE • HIPAA COMPLIANT</text>
+                <line x1="200" y1="46" x2="200" y2="72" stroke="#00D4FF" stroke-width="1" opacity="0.2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Energy -->
+        <div class="tab-panel" data-panel="energy">
+          <div class="tab-panel__content">
+            <h3>Energy & Utilities</h3>
+            <p class="tab-panel__desc">
+              Manage grid operations, regulatory reporting, safety compliance, and infrastructure maintenance. Operan's energy template handles complex operational workflows across generation, transmission, and distribution — with real-time monitoring and predictive analytics support.
+            </p>
+            <div class="feature-list">
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Infrastructure maintenance scheduling and tracking</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Regulatory compliance and environmental reporting</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Safety protocol enforcement and incident reporting</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Supply chain and procurement management</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Grid operations and load forecasting support</span>
+              </div>
+            </div>
+          </div>
+          <div class="tab-panel__visual">
+            <div style="position:relative;padding-bottom:75%;height:0;overflow:hidden;border-radius:var(--radius-lg);">
+              <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;position:absolute;top:0;left:0;">
+                <rect x="140" y="10" width="120" height="36" rx="6" fill="#1A2235" stroke="#00D4FF" stroke-width="1"/>
+                <text x="200" y="33" text-anchor="middle" fill="#FFFFFF" font-size="11" font-family="Inter, sans-serif">Operations Director</text>
+                <line x1="200" y1="46" x2="200" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="50" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="200" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="350" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="50" y1="72" x2="50" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="200" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="350" y1="72" x2="350" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <rect x="0" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="50" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Grid Ops</text>
+                <rect x="150" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="200" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Safety & Env</text>
+                <rect x="300" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="350" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Maintenance</text>
+                <line x1="50" y1="132" x2="35" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="50" y1="132" x2="65" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="35" y1="132" x2="35" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="65" y1="132" x2="65" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="0" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="35" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Load Forecast</text>
+                <rect x="70" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="105" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Grid Monitor</text>
+                <line x1="200" y1="132" x2="185" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="200" y1="132" x2="215" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="185" y1="132" x2="185" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="215" y1="132" x2="215" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="150" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="185" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Safety Audit</text>
+                <rect x="220" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="255" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Env Reporting</text>
+                <line x1="350" y1="132" x2="335" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="350" y1="132" x2="365" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="335" y1="132" x2="335" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="365" y1="132" x2="365" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="300" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="335" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Work Orders</text>
+                <rect x="330" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="365" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Asset Track</text>
+                <rect x="120" y="205" width="160" height="28" rx="14" fill="#00D4FF" opacity="0.08" stroke="#00D4FF" stroke-width="0.5" stroke-opacity="0.3"/>
+                <text x="200" y="223" text-anchor="middle" fill="#00D4FF" font-size="9" font-family="JetBrains Mono, monospace">ENERGY • INFRASTRUCTURE READY</text>
+                <line x1="200" y1="46" x2="200" y2="72" stroke="#00D4FF" stroke-width="1" opacity="0.2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Banking -->
+        <div class="tab-panel" data-panel="banking">
+          <div class="tab-panel__content">
+            <h3>Banking & Financial Services</h3>
+            <p class="tab-panel__desc">
+              Automate regulatory reporting, compliance monitoring, risk assessment, and operational workflows. Operan's banking template encodes anti-money laundering protocols, capital adequacy requirements, and financial governance frameworks — deployed within your own sovereign infrastructure.
+            </p>
+            <div class="feature-list">
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>AML/KYC compliance automation and monitoring</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Capital adequacy and Basel III reporting</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Risk assessment and portfolio analytics</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Transaction monitoring and fraud detection support</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Regulatory change management and impact analysis</span>
+              </div>
+            </div>
+          </div>
+          <div class="tab-panel__visual">
+            <div style="position:relative;padding-bottom:75%;height:0;overflow:hidden;border-radius:var(--radius-lg);">
+              <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;position:absolute;top:0;left:0;">
+                <rect x="140" y="10" width="120" height="36" rx="6" fill="#1A2235" stroke="#00D4FF" stroke-width="1"/>
+                <text x="200" y="33" text-anchor="middle" fill="#FFFFFF" font-size="11" font-family="Inter, sans-serif">Chief Risk Officer</text>
+                <line x1="200" y1="46" x2="200" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="50" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="200" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="350" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="50" y1="72" x2="50" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="200" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="350" y1="72" x2="350" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <rect x="0" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="50" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Compliance</text>
+                <rect x="150" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="200" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Risk Analytics</text>
+                <rect x="300" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="350" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Operations</text>
+                <line x1="50" y1="132" x2="35" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="50" y1="132" x2="65" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="35" y1="132" x2="35" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="65" y1="132" x2="65" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="0" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="35" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">AML Monitor</text>
+                <rect x="70" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="105" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">KYC Process</text>
+                <line x1="200" y1="132" x2="185" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="200" y1="132" x2="215" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="185" y1="132" x2="185" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="215" y1="132" x2="215" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="150" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="185" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Portfolio Risk</text>
+                <rect x="220" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="255" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Basel Reports</text>
+                <line x1="350" y1="132" x2="335" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="350" y1="132" x2="365" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="335" y1="132" x2="335" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="365" y1="132" x2="365" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="300" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="335" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Transaction</text>
+                <rect x="330" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="365" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Fraud Alert</text>
+                <rect x="120" y="205" width="160" height="28" rx="14" fill="#00D4FF" opacity="0.08" stroke="#00D4FF" stroke-width="0.5" stroke-opacity="0.3"/>
+                <text x="200" y="223" text-anchor="middle" fill="#00D4FF" font-size="9" font-family="JetBrains Mono, monospace">BANKING • REGULATORY READY</text>
+                <line x1="200" y1="46" x2="200" y2="72" stroke="#00D4FF" stroke-width="1" opacity="0.2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Telecommunications -->
+        <div class="tab-panel" data-panel="telecom">
+          <div class="tab-panel__content">
+            <h3>Telecommunications</h3>
+            <p class="tab-panel__desc">
+              Manage network operations, customer service workflows, regulatory compliance, and infrastructure planning. Operan's telecom template handles complex service provisioning, network monitoring coordination, and regulatory reporting across multi-tenant telecom infrastructure.
+            </p>
+            <div class="feature-list">
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Network operations coordination and monitoring</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Service provisioning and order management</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Customer service automation and escalation</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Spectrum and license compliance tracking</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Infrastructure planning and capital project management</span>
+              </div>
+            </div>
+          </div>
+          <div class="tab-panel__visual">
+            <div style="position:relative;padding-bottom:75%;height:0;overflow:hidden;border-radius:var(--radius-lg);">
+              <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;position:absolute;top:0;left:0;">
+                <rect x="140" y="10" width="120" height="36" rx="6" fill="#1A2235" stroke="#00D4FF" stroke-width="1"/>
+                <text x="200" y="33" text-anchor="middle" fill="#FFFFFF" font-size="11" font-family="Inter, sans-serif">CTO / COO</text>
+                <line x1="200" y1="46" x2="200" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="50" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="200" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="350" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="50" y1="72" x2="50" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="200" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="350" y1="72" x2="350" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <rect x="0" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="50" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Network Ops</text>
+                <rect x="150" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="200" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Customer Svc</text>
+                <rect x="300" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="350" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Infrastructure</text>
+                <line x1="50" y1="132" x2="35" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="50" y1="132" x2="65" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="35" y1="132" x2="35" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="65" y1="132" x2="65" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="0" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="35" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Monitor Net</text>
+                <rect x="70" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="105" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Incident Mgmt</text>
+                <line x1="200" y1="132" x2="185" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="200" y1="132" x2="215" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="185" y1="132" x2="185" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="215" y1="132" x2="215" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="150" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="185" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Order Proc</text>
+                <rect x="220" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="255" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Escalation</text>
+                <line x1="350" y1="132" x2="335" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="350" y1="132" x2="365" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="335" y1="132" x2="335" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="365" y1="132" x2="365" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="300" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="335" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Cap Project</text>
+                <rect x="330" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="365" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Spectrum Lic</text>
+                <rect x="120" y="205" width="160" height="28" rx="14" fill="#00D4FF" opacity="0.08" stroke="#00D4FF" stroke-width="0.5" stroke-opacity="0.3"/>
+                <text x="200" y="223" text-anchor="middle" fill="#00D4FF" font-size="9" font-family="JetBrains Mono, monospace">TELECOM • NETWORK READY</text>
+                <line x1="200" y1="46" x2="200" y2="72" stroke="#00D4FF" stroke-width="1" opacity="0.2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Education -->
+        <div class="tab-panel" data-panel="education">
+          <div class="tab-panel__content">
+            <h3>Education & Academic Institutions</h3>
+            <p class="tab-panel__desc">
+              Manage admissions, student services, research administration, and academic compliance. Operan's education template supports multi-campus operations, grant management, accreditation reporting, and student lifecycle automation within governed policy boundaries.
+            </p>
+            <div class="feature-list">
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Admissions processing and applicant screening</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Student lifecycle management and support</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Grant administration and compliance reporting</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Accreditation documentation and audit support</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Multi-campus coordination and policy alignment</span>
+              </div>
+            </div>
+          </div>
+          <div class="tab-panel__visual">
+            <div style="position:relative;padding-bottom:75%;height:0;overflow:hidden;border-radius:var(--radius-lg);">
+              <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;position:absolute;top:0;left:0;">
+                <rect x="140" y="10" width="120" height="36" rx="6" fill="#1A2235" stroke="#00D4FF" stroke-width="1"/>
+                <text x="200" y="33" text-anchor="middle" fill="#FFFFFF" font-size="11" font-family="Inter, sans-serif">University President</text>
+                <line x1="200" y1="46" x2="200" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="50" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="200" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="350" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="50" y1="72" x2="50" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="200" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="350" y1="72" x2="350" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <rect x="0" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="50" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Admissions</text>
+                <rect x="150" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="200" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Research Admin</text>
+                <rect x="300" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="350" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Student Svc</text>
+                <line x1="50" y1="132" x2="35" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="50" y1="132" x2="65" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="35" y1="132" x2="35" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="65" y1="132" x2="65" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="0" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="35" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">App Screening</text>
+                <rect x="70" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="105" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Enrollment</text>
+                <line x1="200" y1="132" x2="185" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="200" y1="132" x2="215" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="185" y1="132" x2="185" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="215" y1="132" x2="215" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="150" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="185" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Grant Mgmt</text>
+                <rect x="220" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="255" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Compliance</text>
+                <line x1="350" y1="132" x2="335" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="350" y1="132" x2="365" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="335" y1="132" x2="335" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="365" y1="132" x2="365" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="300" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="335" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Student Help</text>
+                <rect x="330" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="365" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Accreditation</text>
+                <rect x="120" y="205" width="160" height="28" rx="14" fill="#00D4FF" opacity="0.08" stroke="#00D4FF" stroke-width="0.5" stroke-opacity="0.3"/>
+                <text x="200" y="223" text-anchor="middle" fill="#00D4FF" font-size="9" font-family="JetBrains Mono, monospace">EDUCATION • MULTI-CAMPUS</text>
+                <line x1="200" y1="46" x2="200" y2="72" stroke="#00D4FF" stroke-width="1" opacity="0.2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Research Institutions -->
+        <div class="tab-panel" data-panel="research">
+          <div class="tab-panel__content">
+            <h3>Research Institutions</h3>
+            <p class="tab-panel__desc">
+              Manage research administration, grant lifecycle, intellectual property, and lab coordination. Operan's research template handles complex multi-project portfolios, federal compliance (IRB, IACUC), publication tracking, and cross-laboratory knowledge sharing.
+            </p>
+            <div class="feature-list">
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Grant proposal preparation and lifecycle management</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>IRB/IACUC protocol review and compliance tracking</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Intellectual property and publication management</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Cross-lab collaboration and knowledge sharing</span>
+              </div>
+              <div class="feature-list__item">
+                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+                <span>Research data management and documentation</span>
+              </div>
+            </div>
+          </div>
+          <div class="tab-panel__visual">
+            <div style="position:relative;padding-bottom:75%;height:0;overflow:hidden;border-radius:var(--radius-lg);">
+              <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;position:absolute;top:0;left:0;">
+                <rect x="140" y="10" width="120" height="36" rx="6" fill="#1A2235" stroke="#00D4FF" stroke-width="1"/>
+                <text x="200" y="33" text-anchor="middle" fill="#FFFFFF" font-size="11" font-family="Inter, sans-serif">Research Director</text>
+                <line x1="200" y1="46" x2="200" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="50" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="200" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="350" y2="72" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="50" y1="72" x2="50" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="200" y1="72" x2="200" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <line x1="350" y1="72" x2="350" y2="100" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
+                <rect x="0" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="50" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Grant Mgmt</text>
+                <rect x="150" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="200" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Lab Coord</text>
+                <rect x="300" y="100" width="100" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
+                <text x="350" y="120" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">IP & Pub</text>
+                <line x1="50" y1="132" x2="35" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="50" y1="132" x2="65" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="35" y1="132" x2="35" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="65" y1="132" x2="65" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="0" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="35" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Proposal Prep</text>
+                <rect x="70" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="105" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Reporting</text>
+                <line x1="200" y1="132" x2="185" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="200" y1="132" x2="215" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="185" y1="132" x2="185" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="215" y1="132" x2="215" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="150" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="185" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">IRB Protocol</text>
+                <rect x="220" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="255" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Lab Scheduling</text>
+                <line x1="350" y1="132" x2="335" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="350" y1="132" x2="365" y2="132" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="335" y1="132" x2="335" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <line x1="365" y1="132" x2="365" y2="156" stroke="#00D4FF" stroke-width="0.3" opacity="0.3"/>
+                <rect x="300" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="335" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Patent Filing</text>
+                <rect x="330" y="156" width="70" height="26" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
+                <text x="365" y="173" text-anchor="middle" fill="#64748B" font-size="8" font-family="Inter, sans-serif">Publication</text>
+                <rect x="120" y="205" width="160" height="28" rx="14" fill="#00D4FF" opacity="0.08" stroke="#00D4FF" stroke-width="0.5" stroke-opacity="0.3"/>
+                <text x="200" y="223" text-anchor="middle" fill="#00D4FF" font-size="9" font-family="JetBrains Mono, monospace">RESEARCH • MULTI-LAB READY</text>
+                <line x1="200" y1="46" x2="200" y2="72" stroke="#00D4FF" stroke-width="1" opacity="0.2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Cross-Industry CTA -->
+  <section class="section section--darker">
+    <div class="container">
+      <div class="reveal" style="max-width:720px;margin:0 auto;text-align:center;">
+        <h2 class="text-gradient" style="margin-bottom:var(--space-xl);">One Platform. Every Sector.</h2>
+        <p style="color:var(--color-gray-400);font-size:var(--text-lg);margin-bottom:var(--space-3xl);line-height:1.8;">
+          Operan's modular architecture means you can deploy the exact capabilities your sector needs — governance, compliance, department templates — all within your sovereign infrastructure. The same platform adapts to your regulatory environment.
+        </p>
+        <a href="briefing.html" class="btn btn--primary btn--lg">
+          Schedule Strategic Assessment
+          <svg><use href="assets/svg/icons.svg#icon-arrow-right"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div>
+          <div class="footer__brand-name">OPERAN</div>
+          <p class="footer__brand-tagline">The Operating System for Digital Departments.</p>
+        </div>
+        <div>
+          <h4 class="footer__heading">Platform</h4>
+          <div class="footer__links">
+            <a href="platform.html" class="footer__link">Architecture</a>
+            <a href="platform.html#modules" class="footer__link">Modules</a>
+          </div>
+        </div>
+        <div>
+          <h4 class="footer__heading">Solutions</h4>
+          <div class="footer__links">
+            <a href="departments.html" class="footer__link">Digital Departments</a>
+            <a href="industries.html" class="footer__link">Industries</a>
+            <a href="security.html" class="footer__link">Security</a>
+            <a href="private-cloud.html" class="footer__link">Private Cloud</a>
+          </div>
+        </div>
+        <div>
+          <h4 class="footer__heading">Company</h4>
+          <div class="footer__links">
+            <a href="about.html" class="footer__link">About</a>
+            <a href="briefing.html" class="footer__link">Request Briefing</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span>© 2026 Operan. All rights reserved.</span>
+        <span>Enterprise Agentic Workforce Infrastructure</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,21 +1,21 @@
 wave,module_id,module_name,coder_session,depends_on,contract_version,status,review_status
-1,01,Tenant Control Plane,CODER_A,,v1,READY,PENDING
-1,02,Identity & Access,CODER_B,01,v1,READY,PENDING
-1,12,Model Abstraction,CODER_A,,v1,READY,PENDING
-1,20,Sovereign Infra,CODER_B,01,v1,READY,PENDING
-2,03,Orchestration Engine,CODER_A,01;12,v1,READY,PENDING
-2,04,Agent Registry,CODER_B,01,v1,READY,PENDING
-2,14,Agent Comm Bus,CODER_A,03,v1,READY,PENDING
-2,16,Execution Sandbox,CODER_B,03,v1,READY,PENDING
-3,06,Knowledge Ingestion,CODER_A,01;07,v1,READY,PENDING
-3,07,Memory Fabric,CODER_B,01,v1,READY,PENDING
-3,08,Tool Execution,CODER_A,03;16,v1,READY,PENDING
-3,18,Enterprise Connectors,CODER_B,08;14,v1,READY,PENDING
-4,09,Human Supervision,CODER_A,03;09_schema,v1,READY,PENDING
-4,10,Policy Engine,CODER_B,01;09,v1,READY,PENDING
-4,11,Observability,CODER_A,03;14,v1,READY,PENDING
-4,17,Cost Governance,CODER_B,03;11,v1,READY,PENDING
-5,05,Department Templates,CODER_A,01;03;09,v1,READY,PENDING
-5,13,Multi-Model Routing,CODER_B,12;14,v1,READY,PENDING
-5,15,Marketplace,CODER_A,01;04;15,v1,READY,PENDING
-5,19,Arabic Intelligence,CODER_B,06;12,v1,READY,PENDING
+1,01,tenant-control-plane,CODER_A,,v1,READY,PENDING
+1,02,identity-access,CODER_B,01,v1,READY,PENDING
+1,12,model-abstraction,CODER_A,,v1,READY,PENDING
+1,20,sovereign-deployment,CODER_B,01,v1,READY,PENDING
+2,03,agent-orchestration,CODER_A,01;12,v1,READY,PENDING
+2,04,agent-registry,CODER_B,01,v1,READY,PENDING
+2,14,agent-collaboration,CODER_A,03,v1,READY,PENDING
+2,16,execution-sandbox,CODER_B,03,v1,READY,PENDING
+3,06,knowledge-ingestion,CODER_A,01;07,v1,READY,PENDING
+3,07,memory-fabric,CODER_B,01,v1,READY,PENDING
+3,08,tool-execution,CODER_A,03;16,v1,READY,PENDING
+3,18,enterprise-connector,CODER_B,08;14,v1,READY,PENDING
+4,09,human-supervision,CODER_A,03;09_schema,v1,READY,PENDING
+4,10,policy-governance,CODER_B,01;09,v1,READY,PENDING
+4,11,observability,CODER_A,03;14,v1,READY,PENDING
+4,17,cost-governance,CODER_B,03;11,v1,READY,PENDING
+5,05,department-template-engine,CODER_A,01;03;09,v1,READY,PENDING
+5,13,multi-model-routing,CODER_B,12;14,v1,READY,PENDING
+5,15,agent-marketplace,CODER_A,01;04;15,v1,READY,PENDING
+5,19,arabic-language-core,CODER_B,06;12,v1,READY,PENDING

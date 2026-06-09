@@ -1,18 +1,28 @@
-openapi: 3.0.3
+openapi: "3.0.3"
 info:
   title: Operan Memory Fabric API
   description: Vector memory storage, semantic search, and retention management. Module 07.
   version: 1.0.0
+  contact:
+    name: Platform Architecture
+    email: arch@operan.io
+
 servers:
-  - url: /api/v1/memory
-    description: Memory Fabric API root
+  - url: https://api.operan.io/v1/memory
+    description: Production
+  - url: https://api-staging.operan.io/v1/memory
+    description: Staging
+
+security:
+  - BearerAuth: []
+  - TenantHeader: []
 
 paths:
   /vectors:
     post:
       operationId: ingestVectors
       summary: Ingest one or more memory vectors
-      tags: [vectors]
+      tags: [Vectors]
       requestBody:
         required: true
         content:
@@ -27,39 +37,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/VectorIngestResult'
         '400':
-          description: Invalid request
+          description: Invalid request body or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     get:
       operationId: listVectors
       summary: List memory vectors
-      tags: [vectors]
+      tags: [Vectors]
       parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
         - name: embedding_type
           in: query
+          required: false
+          description: Filter vectors by embedding type
           schema:
             type: string
             enum: [agent_personal, agent_ephemeral, department, platform]
         - name: segment_type
           in: query
+          required: false
+          description: Filter vectors by segment type
           schema:
             type: string
             enum: [fact, context, memory, tool_output, policy]
         - name: document_id
           in: query
+          required: false
+          description: Filter vectors by document ID
           schema:
             type: string
             format: uuid
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 20
-            maximum: 100
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
       responses:
         '200':
           description: Vector list
@@ -67,19 +90,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VectorList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /vectors/{vectorId}:
+  /vectors/{id}:
     parameters:
-      - name: vectorId
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
         in: path
         required: true
+        description: UUID of the memory vector
         schema:
           type: string
           format: uuid
     get:
       operationId: getVector
       summary: Get vector details
-      tags: [vectors]
+      tags: [Vectors]
       responses:
         '200':
           description: Vector details
@@ -87,12 +124,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MemoryVector'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Vector not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     put:
       operationId: updateVector
       summary: Update a memory vector
-      tags: [vectors]
+      tags: [Vectors]
       requestBody:
         required: true
         content:
@@ -106,23 +159,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MemoryVector'
+        '400':
+          description: Invalid request body or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Vector not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
       operationId: deleteVector
       summary: Delete a memory vector
-      tags: [vectors]
+      tags: [Vectors]
       responses:
         '204':
           description: Vector deleted
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Vector not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /search:
     post:
       operationId: searchMemory
       summary: Perform semantic search over memory vectors
-      tags: [search]
+      tags: [Search]
       requestBody:
         required: true
         content:
@@ -138,19 +229,37 @@ paths:
                 $ref: '#/components/schemas/SearchResultList'
         '400':
           description: Invalid search request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /agents/{agentId}:
+  /agents/{id}:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
+        in: path
+        required: true
+        description: UUID of the agent
+        schema:
+          type: string
+          format: uuid
     get:
       operationId: getAgentMemory
       summary: Get an agent's aggregate memory state
-      tags: [agents]
-      parameters:
-        - name: agentId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      tags: [Agents]
       responses:
         '200':
           description: Agent memory state
@@ -158,14 +267,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AgentMemory'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /gc:
     post:
       operationId: triggerGarbageCollection
       summary: Trigger manual garbage collection for expired memory vectors
-      tags: [gc]
+      tags: [GarbageCollection]
       requestBody:
         required: false
         content:
@@ -179,12 +304,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OperationStatus'
+        '400':
+          description: Invalid request body or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /retention-policies:
     get:
       operationId: listRetentionPolicies
       summary: List retention policies
-      tags: [retention]
+      tags: [Retention]
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
       responses:
         '200':
           description: Policy list
@@ -192,10 +338,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RetentionPolicyList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     post:
       operationId: createRetentionPolicy
       summary: Create a retention policy
-      tags: [retention]
+      tags: [Retention]
       requestBody:
         required: true
         content:
@@ -209,20 +367,79 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RetentionPolicy'
+        '400':
+          description: Invalid request body or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer token with tenant-scoped claims
+    TenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Tenant identifier header required on every request
+
+  parameters:
+    TenantIdPath:
+      name: id
+      in: path
+      required: true
+      description: UUID of the tenant
+      schema:
+        type: string
+        format: uuid
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
   schemas:
     VectorIngestRequest:
       type: object
       required: [tenant_id, items]
       properties:
         tenant_id:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/TenantId'
         items:
           type: array
           items:
             $ref: '#/components/schemas/VectorWriteItem'
+      additionalProperties: false
 
     VectorWriteItem:
       type: object
@@ -253,6 +470,7 @@ components:
             - type: string
               format: date-time
             - type: 'null'
+      additionalProperties: false
 
     VectorIngestResult:
       type: object
@@ -266,6 +484,7 @@ components:
           type: array
           items:
             type: string
+      additionalProperties: false
 
     MemoryVector:
       type: object
@@ -275,8 +494,7 @@ components:
           type: string
           format: uuid
         tenant_id:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/TenantId'
         document_id:
           type: string
           format: uuid
@@ -309,6 +527,7 @@ components:
             - type: string
               format: date-time
             - type: 'null'
+      additionalProperties: false
 
     VectorUpdateRequest:
       type: object
@@ -325,6 +544,7 @@ components:
             - type: string
               format: date-time
             - type: 'null'
+      additionalProperties: false
 
     VectorList:
       type: object
@@ -335,16 +555,26 @@ components:
             $ref: '#/components/schemas/MemoryVector'
         total:
           type: integer
-        offset:
+        page:
           type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     SemanticSearchRequest:
       type: object
       required: [tenant_id, query, embedding_type]
       properties:
         tenant_id:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/TenantId'
         query:
           type: string
         embedding_type:
@@ -368,6 +598,7 @@ components:
         include_context:
           type: boolean
           default: true
+      additionalProperties: false
 
     SearchResult:
       type: object
@@ -400,6 +631,7 @@ components:
           type: integer
         embedding_model:
           type: string
+      additionalProperties: false
 
     SearchResultList:
       type: object
@@ -410,6 +642,19 @@ components:
             $ref: '#/components/schemas/SearchResult'
         total:
           type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     AgentMemory:
       type: object
@@ -419,8 +664,7 @@ components:
           type: string
           format: uuid
         tenant_id:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/TenantId'
         personal_memories:
           type: array
           items:
@@ -434,6 +678,7 @@ components:
         status:
           type: string
           enum: [active, suspended]
+      additionalProperties: false
 
     EphemeralWindow:
       type: object
@@ -442,6 +687,7 @@ components:
           type: integer
         ttl_seconds:
           type: integer
+      additionalProperties: false
 
     GCRequest:
       type: object
@@ -454,6 +700,7 @@ components:
         dry_run:
           type: boolean
           default: false
+      additionalProperties: false
 
     OperationStatus:
       type: object
@@ -475,6 +722,7 @@ components:
           format: date-time
         error_message:
           type: string
+      additionalProperties: false
 
     RetentionPolicy:
       type: object
@@ -484,8 +732,7 @@ components:
           type: string
           format: uuid
         tenant_id:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/TenantId'
         memory_type:
           type: string
           enum: [personal, ephemeral, department, platform]
@@ -500,6 +747,7 @@ components:
         creation_date:
           type: string
           format: date-time
+      additionalProperties: false
 
     RetentionPolicyList:
       type: object
@@ -510,13 +758,43 @@ components:
             $ref: '#/components/schemas/RetentionPolicy'
         total:
           type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
-    ErrorResponse:
+    Error:
       type: object
       properties:
         code:
-          type: string
+          type: integer
         message:
           type: string
         details:
-          type: object
+          type: string
+        request_id:
+          type: string
+          format: uuid
+      required:
+        - code
+        - message
+        - request_id
+
+    ErrorList:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Error"
+      required:
+        - errors

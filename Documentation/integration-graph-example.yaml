@@ -1,0 +1,29 @@
+version: "1.0"
+project: "Operan"
+modules:
+  - id: "01"
+    name: "tenant-control-plane"
+    provides: ["POST /tenants", "GET /tenants/{id}/quota"]
+    consumes: []
+  - id: "03"
+    name: "agent-orchestration"
+    provides: ["POST /workflows", "GET /workflows/{id}/state"]
+    consumes: ["01/tenants/{id}/quota", "14/events/workflow.signal"]
+  - id: "09"
+    name: "human-supervision"
+    provides: ["POST /approvals", "PATCH /approvals/{id}"]
+    consumes: ["03/workflows/{id}/pause", "14/events/approval.request"]
+
+edges:
+  - caller: "03"
+    callee: "01"
+    protocol: "REST"
+    sla_ms: 500
+  - caller: "09"
+    callee: "03"
+    protocol: "REST"
+    sla_ms: 1000
+  - caller: "03"
+    callee: "14"
+    protocol: "ASYNC"
+    sla_ms: 200

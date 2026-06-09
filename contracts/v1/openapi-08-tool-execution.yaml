@@ -1,18 +1,28 @@
-openapi: 3.0.3
+openapi: "3.0.3"
 info:
   title: Operan Tool Execution API
   description: Tool registration, execution, and cost tracking. Module 08.
   version: 1.0.0
+  contact:
+    name: Platform Architecture
+    email: arch@operan.io
+
 servers:
-  - url: /api/v1/tools
-    description: Tool execution API root
+  - url: https://api.operan.io/v1/tools
+    description: Production
+  - url: https://api-staging.operan.io/v1/tools
+    description: Staging
+
+security:
+  - BearerAuth: []
+  - TenantHeader: []
 
 paths:
   /register:
     post:
       operationId: registerTool
       summary: Register a new tool
-      tags: [registration]
+      tags: [Registration]
       requestBody:
         required: true
         content:
@@ -27,35 +37,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/Tool'
         '400':
-          description: Invalid request
+          description: Invalid request body or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /:
     get:
       operationId: listTools
       summary: List available tools
-      tags: [registration]
+      tags: [Registration]
       parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
         - name: category
           in: query
+          required: false
+          description: Filter by tool category
           schema:
             type: string
             enum: [knowledge, communication, enterprise, utility, business_logic, security, ai_model]
         - name: status
           in: query
+          required: false
+          description: Filter by tool status
           schema:
             type: string
             enum: [active, deprecated, disabled]
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 20
-            maximum: 100
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
       responses:
         '200':
           description: Tool list
@@ -63,19 +84,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ToolList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /{toolId}:
+  /{id}:
     parameters:
-      - name: toolId
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
         in: path
         required: true
+        description: UUID of the tool
         schema:
           type: string
           format: uuid
     get:
       operationId: getTool
       summary: Get tool details
-      tags: [registration]
+      tags: [Registration]
       responses:
         '200':
           description: Tool details
@@ -83,12 +118,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Tool'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Tool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     put:
       operationId: updateTool
       summary: Update tool metadata
-      tags: [registration]
+      tags: [Registration]
       requestBody:
         required: true
         content:
@@ -102,23 +153,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Tool'
+        '400':
+          description: Invalid request body or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Tool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /{toolId}/versions:
+  /{id}/versions:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
+        in: path
+        required: true
+        description: UUID of the tool
+        schema:
+          type: string
+          format: uuid
     get:
       operationId: listToolVersions
       summary: List tool versions
-      tags: [versions]
+      tags: [Versions]
       parameters:
-        - name: toolId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
         - name: status
           in: query
+          required: false
+          description: Filter by version status
           schema:
             type: string
             enum: [active, deprecated, draft]
@@ -129,12 +209,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ToolVersionList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /execute:
     post:
       operationId: executeTool
       summary: Execute a tool
-      tags: [execution]
+      tags: [Execution]
       requestBody:
         required: true
         content:
@@ -150,42 +242,63 @@ paths:
                 $ref: '#/components/schemas/ToolExecutionRecord'
         '400':
           description: Invalid execution request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Tool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '429':
           description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /executions:
     get:
       operationId: listExecutions
       summary: List tool execution records
-      tags: [execution]
+      tags: [Execution]
       parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
         - name: status
           in: query
+          required: false
+          description: Filter by execution status
           schema:
             type: string
             enum: [queued, running, completed, failed, cancelled]
-        - name: tool_name
+        - name: tool
           in: query
+          required: false
+          description: Filter by tool name
           schema:
             type: string
         - name: agent_id
           in: query
+          required: false
+          description: Filter by agent ID
           schema:
             type: string
             format: uuid
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 20
-            maximum: 100
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
       responses:
         '200':
           description: Execution list
@@ -193,19 +306,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExecutionList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /executions/{executionId}:
+  /executions/{id}:
     parameters:
-      - name: executionId
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
         in: path
         required: true
+        description: UUID of the execution record
         schema:
           type: string
           format: uuid
     get:
       operationId: getExecution
       summary: Get execution details
-      tags: [execution]
+      tags: [Execution]
       responses:
         '200':
           description: Execution details
@@ -213,21 +340,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ToolExecutionRecord'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Execution not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /executions/{executionId}/retry:
+  /executions/{id}/retry:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
+        in: path
+        required: true
+        description: UUID of the execution record to retry
+        schema:
+          type: string
+          format: uuid
     post:
       operationId: retryExecution
       summary: Retry a failed execution
-      tags: [execution]
-      parameters:
-        - name: executionId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      tags: [Execution]
       responses:
         '202':
           description: Retry accepted
@@ -235,26 +380,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ToolExecutionRecord'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Execution not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /cost:
     get:
       operationId: getToolCost
       summary: Get cost summary for tool executions
-      tags: [cost]
+      tags: [Cost]
       parameters:
-        - name: tool_name
+        - $ref: '#/components/parameters/TenantIdParam'
+        - name: tool
           in: query
+          required: false
+          description: Filter by tool name
           schema:
             type: string
         - name: start
           in: query
+          required: false
+          description: Start of time period
           schema:
             type: string
             format: date-time
         - name: end
           in: query
+          required: false
+          description: End of time period
           schema:
             type: string
             format: date-time
@@ -265,8 +433,69 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CostSummary'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer token with tenant-scoped claims
+    TenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Tenant identifier header required on every request
+
+  parameters:
+    TenantIdPath:
+      name: id
+      in: path
+      required: true
+      description: UUID of the tenant
+      schema:
+        type: string
+        format: uuid
+    TenantIdParam:
+      name: tenant_id
+      in: query
+      required: true
+      description: UUID of the tenant
+      schema:
+        type: string
+        format: uuid
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
   schemas:
     ToolRegisterRequest:
       type: object
@@ -298,6 +527,7 @@ components:
           type: array
           items:
             type: string
+      additionalProperties: false
 
     ToolUpdateRequest:
       type: object
@@ -318,6 +548,7 @@ components:
           enum: [active, deprecated, disabled]
         cost_per_call:
           $ref: '#/components/schemas/CostPerCall'
+      additionalProperties: false
 
     Tool:
       type: object
@@ -364,6 +595,7 @@ components:
         updated_at:
           type: string
           format: date-time
+      additionalProperties: false
 
     ToolList:
       type: object
@@ -374,8 +606,19 @@ components:
             $ref: '#/components/schemas/Tool'
         total:
           type: integer
-        offset:
+        page:
           type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     RateLimit:
       type: object
@@ -386,6 +629,7 @@ components:
           type: integer
         retry_after_ms:
           type: integer
+      additionalProperties: false
 
     CostPerCall:
       type: object
@@ -395,10 +639,11 @@ components:
           type: string
         amount:
           type: number
+      additionalProperties: false
 
     ToolExecutionRequest:
       type: object
-      required: [tenant_id, agent_id, tool_name, input]
+      required: [tenant_id, agent_id, tool, input]
       properties:
         tenant_id:
           type: string
@@ -406,7 +651,7 @@ components:
         agent_id:
           type: string
           format: uuid
-        tool_name:
+        tool:
           type: string
         tool_version:
           type: string
@@ -422,10 +667,11 @@ components:
           minimum: 1
           maximum: 10
           default: 5
+      additionalProperties: false
 
     ToolExecutionRecord:
       type: object
-      required: [id, tenant_id, agent_id, tool_name, status, retry_count, created_at, updated_at]
+      required: [id, tenant_id, agent_id, tool, status, retry_count, created_at, updated_at]
       properties:
         id:
           type: string
@@ -436,7 +682,7 @@ components:
         agent_id:
           type: string
           format: uuid
-        tool_name:
+        tool:
           type: string
         tool_version:
           type: string
@@ -462,6 +708,7 @@ components:
         updated_at:
           type: string
           format: date-time
+      additionalProperties: false
 
     ExecutionList:
       type: object
@@ -472,8 +719,19 @@ components:
             $ref: '#/components/schemas/ToolExecutionRecord'
         total:
           type: integer
-        offset:
+        page:
           type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     ToolVersion:
       type: object
@@ -504,6 +762,7 @@ components:
         status:
           type: string
           enum: [active, deprecated, draft]
+      additionalProperties: false
 
     ToolVersionList:
       type: object
@@ -514,11 +773,24 @@ components:
             $ref: '#/components/schemas/ToolVersion'
         total:
           type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     CostSummary:
       type: object
       properties:
-        tool_name:
+        tool:
           type: string
         total_calls:
           type: integer
@@ -535,13 +807,32 @@ components:
             end:
               type: string
               format: date-time
+          additionalProperties: false
+      additionalProperties: false
 
-    ErrorResponse:
+    Error:
       type: object
       properties:
         code:
-          type: string
+          type: integer
         message:
           type: string
         details:
-          type: object
+          type: string
+        request_id:
+          type: string
+          format: uuid
+      required:
+        - code
+        - message
+        - request_id
+
+    ErrorList:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Error"
+      required:
+        - errors

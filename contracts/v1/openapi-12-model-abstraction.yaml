@@ -1,18 +1,28 @@
-openapi: 3.0.3
+openapi: "3.0.3"
 info:
   title: Operan Model Abstraction & Routing API
   description: Model provider management, health monitoring, and routing decisions. Module 12.
   version: 1.0.0
+  contact:
+    name: Platform Architecture
+    email: arch@operan.io
+
 servers:
-  - url: /api/v1/models
-    description: Model abstraction API root
+  - url: https://api.operan.io/v1/models
+    description: Production
+  - url: https://api-staging.operan.io/v1/models
+    description: Staging
+
+security:
+  - BearerAuth: []
+  - TenantHeader: []
 
 paths:
   /provision:
     post:
       operationId: provisionModel
       summary: Register or provision a new model provider
-      tags: [providers]
+      tags: [Providers]
       requestBody:
         required: true
         content:
@@ -27,35 +37,54 @@ paths:
               schema:
                 $ref: '#/components/schemas/ModelProvider'
         '400':
-          description: Invalid request
+          description: Invalid request body or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /:
     get:
       operationId: listModels
       summary: List configured model providers
-      tags: [providers]
+      tags: [Providers]
       parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/TenantIdParam'
         - name: provider
           in: query
+          required: false
+          description: Filter by provider
           schema:
             type: string
             enum: [openai, azure, google, aws, local, anthropic, ollama]
         - name: tier
           in: query
+          required: false
+          description: Filter by tier
           schema:
             type: string
             enum: [standard, premium, experimental]
         - name: status
           in: query
+          required: false
+          description: Filter by status
           schema:
             type: string
             enum: [active, inactive, deprecated]
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 20
-            maximum: 100
       responses:
         '200':
           description: Model provider list
@@ -63,19 +92,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ModelProviderList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /{modelId}:
+  /{id}:
     parameters:
-      - name: modelId
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
         in: path
         required: true
+        description: UUID of the model provider
         schema:
           type: string
           format: uuid
     get:
       operationId: getModel
       summary: Get model provider details
-      tags: [providers]
+      tags: [Providers]
       responses:
         '200':
           description: Model provider details
@@ -83,12 +126,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ModelProvider'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     put:
       operationId: updateModel
       summary: Update model provider configuration
-      tags: [providers]
+      tags: [Providers]
       requestBody:
         required: true
         content:
@@ -102,30 +161,70 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ModelProvider'
+        '400':
+          description: Invalid request body or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
       operationId: deleteModel
       summary: Remove a model provider
-      tags: [providers]
+      tags: [Providers]
       responses:
         '204':
           description: Model removed
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /{modelId}/health:
+  /{id}/health:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
+        in: path
+        required: true
+        description: UUID of the model provider
+        schema:
+          type: string
+          format: uuid
     get:
       operationId: getModelHealth
       summary: Get health status of a model provider
-      tags: [health]
-      parameters:
-        - name: modelId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      tags: [Health]
       responses:
         '200':
           description: Health status
@@ -133,41 +232,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ModelHealth'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /calls:
     get:
       operationId: listModelCalls
       summary: List model API calls
-      tags: [calls]
+      tags: [Calls]
       parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/TenantIdParam'
         - name: model_id
           in: query
+          required: false
+          description: Filter by model ID
           schema:
             type: string
             format: uuid
         - name: provider
           in: query
+          required: false
+          description: Filter by provider
           schema:
             type: string
             enum: [openai, azure, google, aws, local, anthropic, ollama]
         - name: status
           in: query
+          required: false
+          description: Filter by call status
           schema:
             type: string
             enum: [success, failed]
         - name: agent_id
           in: query
+          required: false
+          description: Filter by agent ID
           schema:
             type: string
             format: uuid
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 20
-            maximum: 100
       responses:
         '200':
           description: Call list
@@ -175,30 +295,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ModelCallList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /cost:
     get:
       operationId: getModelCost
       summary: Get cost summary for model calls
-      tags: [cost]
+      tags: [Cost]
       parameters:
+        - $ref: '#/components/parameters/TenantIdParam'
         - name: provider
           in: query
+          required: false
+          description: Filter by provider
           schema:
             type: string
             enum: [openai, azure, google, aws, local, anthropic, ollama]
         - name: model_id
           in: query
+          required: false
+          description: Filter by model ID
           schema:
             type: string
             format: uuid
         - name: start
           in: query
+          required: false
+          description: Start of time period
           schema:
             type: string
             format: date-time
         - name: end
           in: query
+          required: false
+          description: End of time period
           schema:
             type: string
             format: date-time
@@ -209,15 +350,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CostSummary'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /capacity:
     get:
       operationId: getModelCapacity
       summary: Get current capacity across model providers
-      tags: [capacity]
+      tags: [Capacity]
       parameters:
+        - $ref: '#/components/parameters/TenantIdParam'
         - name: provider
           in: query
+          required: false
+          description: Filter by provider
           schema:
             type: string
             enum: [openai, azure, google, aws, local, anthropic, ollama]
@@ -228,12 +384,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CapacitySummary'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /route:
     post:
       operationId: getRoutingDecision
       summary: Get a routing decision for a request
-      tags: [routing]
+      tags: [Routing]
       requestBody:
         required: true
         content:
@@ -249,28 +417,45 @@ paths:
                 $ref: '#/components/schemas/RoutingDecision'
         '400':
           description: Invalid routing request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /routing-decisions:
     get:
       operationId: listRoutingDecisions
       summary: List historical routing decisions
-      tags: [routing]
+      tags: [Routing]
       parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/TenantIdParam'
         - name: selected_model_id
           in: query
+          required: false
+          description: Filter by selected model ID
           schema:
             type: string
             format: uuid
         - name: fallback_triggered
           in: query
+          required: false
+          description: Filter by whether fallback was triggered
           schema:
             type: boolean
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 20
-            maximum: 100
       responses:
         '200':
           description: Decision list
@@ -278,21 +463,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RoutingDecisionList'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /{modelId}/token-usage:
+  /{id}/token-usage:
+    parameters:
+      - $ref: '#/components/parameters/TenantIdPath'
+      - name: id
+        in: path
+        required: true
+        description: UUID of the model provider
+        schema:
+          type: string
+          format: uuid
     get:
       operationId: getModelTokenUsage
       summary: Get token usage for a model
-      tags: [usage]
+      tags: [Usage]
       parameters:
-        - name: modelId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
         - name: period
           in: query
+          required: false
+          description: Aggregation period
           schema:
             type: string
             enum: [hour, day, week, month]
@@ -304,10 +506,75 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenUsage'
+        '401':
+          description: Unauthorized — invalid or expired bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden — insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer token with tenant-scoped claims
+    TenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+      description: Tenant identifier header required on every request
+
+  parameters:
+    TenantIdPath:
+      name: id
+      in: path
+      required: true
+      description: UUID of the tenant
+      schema:
+        type: string
+        format: uuid
+    TenantIdParam:
+      name: tenant_id
+      in: query
+      required: true
+      description: UUID of the tenant
+      schema:
+        type: string
+        format: uuid
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
   schemas:
     ModelProvisionRequest:
       type: object
@@ -337,6 +604,7 @@ components:
         api_key_ref:
           type: string
           description: Reference to stored API credentials
+      additionalProperties: false
 
     ModelUpdateRequest:
       type: object
@@ -355,6 +623,7 @@ components:
           type: array
           items:
             type: string
+      additionalProperties: false
 
     ModelProvider:
       type: object
@@ -393,6 +662,7 @@ components:
         updated_at:
           type: string
           format: date-time
+      additionalProperties: false
 
     ModelProviderList:
       type: object
@@ -403,6 +673,19 @@ components:
             $ref: '#/components/schemas/ModelProvider'
         total:
           type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     ModelCall:
       type: object
@@ -438,12 +721,13 @@ components:
         cost:
           $ref: '#/components/schemas/CostPerCall'
         error_message:
-          type:
-            - string
-            - 'null'
+          oneOf:
+            - type: string
+            - type: 'null'
         timestamp:
           type: string
           format: date-time
+      additionalProperties: false
 
     ModelCallList:
       type: object
@@ -454,6 +738,19 @@ components:
             $ref: '#/components/schemas/ModelCall'
         total:
           type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     RoutingDecision:
       type: object
@@ -486,6 +783,7 @@ components:
           type: integer
         cost:
           $ref: '#/components/schemas/CostPerCall'
+      additionalProperties: false
 
     RoutingDecisionList:
       type: object
@@ -496,6 +794,19 @@ components:
             $ref: '#/components/schemas/RoutingDecision'
         total:
           type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      additionalProperties: false
 
     RoutingRequest:
       type: object
@@ -517,6 +828,7 @@ components:
         fallback_enabled:
           type: boolean
           default: true
+      additionalProperties: false
 
     ModelHealth:
       type: object
@@ -546,6 +858,7 @@ components:
           maximum: 1
         avg_latency_ms:
           type: integer
+      additionalProperties: false
 
     CostPerToken:
       type: object
@@ -556,6 +869,7 @@ components:
           type: number
         currency:
           type: string
+      additionalProperties: false
 
     CostPerCall:
       type: object
@@ -565,6 +879,7 @@ components:
           type: string
         amount:
           type: number
+      additionalProperties: false
 
     RateLimit:
       type: object
@@ -573,6 +888,7 @@ components:
           type: integer
         max_tokens_per_minute:
           type: integer
+      additionalProperties: false
 
     CostSummary:
       type: object
@@ -588,6 +904,7 @@ components:
               type: integer
             output_tokens:
               type: integer
+          additionalProperties: false
         period:
           type: object
           properties:
@@ -597,6 +914,8 @@ components:
             end:
               type: string
               format: date-time
+          additionalProperties: false
+      additionalProperties: false
 
     CapacitySummary:
       type: object
@@ -609,6 +928,7 @@ components:
           type: integer
         utilization_percent:
           type: number
+      additionalProperties: false
 
     TokenUsage:
       type: object
@@ -636,13 +956,32 @@ components:
                 type: integer
               output_tokens:
                 type: integer
+            additionalProperties: false
+      additionalProperties: false
 
-    ErrorResponse:
+    Error:
       type: object
       properties:
         code:
-          type: string
+          type: integer
         message:
           type: string
         details:
-          type: object
+          type: string
+        request_id:
+          type: string
+          format: uuid
+      required:
+        - code
+        - message
+        - request_id
+
+    ErrorList:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Error"
+      required:
+        - errors

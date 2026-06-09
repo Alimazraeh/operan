@@ -28,6 +28,32 @@ tags:
     description: Usage reporting and queries
 paths:
   /cost/budgets:
+    get:
+      operationId: listBudgets
+      summary: List cost budgets
+      description: Paginated list of cost budgets.
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      tags:
+        - budgets
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Budgets retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     post:
       operationId: createBudget
       summary: Create a new cost budget
@@ -230,6 +256,32 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
   /cost/throttles:
+    get:
+      operationId: listThrottles
+      summary: List cost throttles
+      description: Paginated list of cost throttles.
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      tags:
+        - throttles
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Throttles retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThrottleList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     post:
       operationId: createThrottle
       summary: Create a cost throttle
@@ -350,6 +402,32 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
   /cost/forecasts:
+    get:
+      operationId: listForecasts
+      summary: List cost forecasts
+      description: Paginated list of cost forecasts.
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      tags:
+        - forecasts
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Forecasts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForecastList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     post:
       operationId: createForecast
       summary: Generate a cost forecast
@@ -557,6 +635,32 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: JWT bearer token with tenant context
+    TenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
   responses:
     BadRequest:
       description: Bad request — invalid parameters or malformed payload
@@ -1252,3 +1356,69 @@ components:
                 type: string
               message:
                 type: string
+
+    BudgetList:
+      type: object
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Budget'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+
+    ThrottleList:
+      type: object
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Throttle'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+
+    ForecastList:
+      type: object
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_more
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Forecast'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean

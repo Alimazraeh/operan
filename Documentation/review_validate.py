@@ -4,7 +4,7 @@ from jsonschema import validate, ValidationError
 from pathlib import Path
 
 CONTRACTS_DIR = Path("contracts/v1")
-MODULE_DIR = Path(f"modules/{os.getenv('MODULE_ID', '09-supervision')}")
+MODULE_DIR = Path(f"modules/{os.getenv('MODULE_ID', '09-human-supervision')}")
 REPORT_DIR = Path("reports")
 REPORT_DIR.mkdir(exist_ok=True)
 
@@ -23,7 +23,6 @@ def validate_schemas():
     schema_files = list(CONTRACTS_DIR.glob("schema-*.json"))
     for s in schema_files:
         schema = json.loads(s.read_text())
-        # Mock validation against sample payloads in module/tests/fixtures/
         fixtures = MODULE_DIR / "tests" / "fixtures"
         if fixtures.exists():
             for fx in fixtures.glob("*.json"):
@@ -44,9 +43,9 @@ def smoke_test():
     return "healthy" in health.stdout, "Smoke test " + ("PASSED" if "healthy" in health.stdout else "FAILED")
 
 def generate_report(status, drift, smoke, coverage):
-    decision = "APPROVE" if all(status, not drift, smoke) else "REJECT"
+    decision = "APPROVE" if all([status, not drift, smoke]) else "REJECT"
     report = REPORT_DIR / f"{os.getenv('MODULE_ID')}-review.md"
-    report.write_text(f"""# Review Report: {os.getenv('MODULE_ID')}
+    report.write_text(f"""# Operan Review Report: {os.getenv('MODULE_ID')}
 | Check | Result |
 |-------|--------|
 | OpenAPI | {'✅ PASS' if status else '❌ FAIL'} |

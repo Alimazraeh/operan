@@ -14,7 +14,7 @@ servers:
 
 security:
   - BearerAuth: []
-  - TenantID: []
+  - TenantHeader: []
 
 tags:
   - name: agents
@@ -43,6 +43,9 @@ paths:
         - name: capability
           in: query
           schema: { type: string }
+        - name: department_id
+          in: query
+          schema: { type: string, format: uuid }
         - name: status
           in: query
           schema: { type: string, enum: [active, inactive, deprecated, archived] }
@@ -131,6 +134,8 @@ paths:
           in: path
           required: true
           schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
       responses:
         '200':
           description: Agent capabilities
@@ -154,6 +159,8 @@ paths:
         '200':
           description: Capabilities updated
           content: { application/json: { schema: { $ref: '#/components/schemas/CapabilityList' } } }
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '403': { $ref: '#/components/responses/ErrorResponse403' }
 
   /agents/{agent_id}/capabilities/index:
     post:
@@ -169,6 +176,7 @@ paths:
         '202':
           description: Indexing started
         '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '403': { $ref: '#/components/responses/ErrorResponse403' }
         '404': { $ref: '#/components/responses/ErrorResponse404' }
 
   /agents/{agent_id}/versions:
@@ -184,6 +192,8 @@ paths:
         - name: status
           in: query
           schema: { type: string, enum: [active, beta, deprecated, archived] }
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
       responses:
         '200':
           description: Version list
@@ -206,6 +216,9 @@ paths:
         '201':
           description: Version created
           content: { application/json: { schema: { $ref: '#/components/schemas/AgentVersion' } } }
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '403': { $ref: '#/components/responses/ErrorResponse403' }
+        '404': { $ref: '#/components/responses/ErrorResponse404' }
 
   /agents/{agent_id}/versions/{version_id}:
     get:
@@ -245,6 +258,10 @@ paths:
       responses:
         '200':
           description: Version updated
+          content: { application/json: { schema: { $ref: '#/components/schemas/AgentVersion' } } }
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '403': { $ref: '#/components/responses/ErrorResponse403' }
+        '404': { $ref: '#/components/responses/ErrorResponse404' }
 
   /agents/{agent_id}/versions/{version_id}/promote:
     post:
@@ -266,6 +283,10 @@ paths:
       responses:
         '200':
           description: Version promoted
+          content: { application/json: { schema: { $ref: '#/components/schemas/AgentVersion' } } }
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '403': { $ref: '#/components/responses/ErrorResponse403' }
+        '404': { $ref: '#/components/responses/ErrorResponse404' }
 
   /agents/{agent_id}/dependencies:
     get:
@@ -277,12 +298,15 @@ paths:
           in: path
           required: true
           schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
       responses:
         '200':
           description: Dependencies
           content: { application/json: { schema: { $ref: '#/components/schemas/DependencyList' } } }
-
-  /agents/{agent_id}/dependencies:
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '403': { $ref: '#/components/responses/ErrorResponse403' }
+        '404': { $ref: '#/components/responses/ErrorResponse404' }
     post:
       tags: [dependencies]
       operationId: addDependency
@@ -298,6 +322,10 @@ paths:
       responses:
         '201':
           description: Dependency added
+          content: { application/json: { schema: { $ref: '#/components/schemas/Dependency' } } }
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '403': { $ref: '#/components/responses/ErrorResponse403' }
+        '404': { $ref: '#/components/responses/ErrorResponse404' }
     delete:
       tags: [dependencies]
       operationId: removeDependency
@@ -307,12 +335,16 @@ paths:
           in: path
           required: true
           schema: { type: string, format: uuid }
-      requestBody:
-        required: true
-        content: { application/json: { schema: { $ref: '#/components/schemas/DependencyRequest' } } }
+        - name: dependency_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
       responses:
         '204':
           description: Dependency removed
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '403': { $ref: '#/components/responses/ErrorResponse403' }
+        '404': { $ref: '#/components/responses/ErrorResponse404' }
 
   /agents/search:
     post:
@@ -326,6 +358,8 @@ paths:
         '200':
           description: Search results
           content: { application/json: { schema: { $ref: '#/components/schemas/AgentSearchResponse' } } }
+        '401': { $ref: '#/components/responses/ErrorResponse401' }
+        '403': { $ref: '#/components/responses/ErrorResponse403' }
 
 components:
   securitySchemes:
@@ -333,7 +367,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-    TenantID:
+    TenantHeader:
       type: apiKey
       in: header
       name: X-Tenant-ID
@@ -341,19 +375,309 @@ components:
   schemas:
     AgentStatus:
       type: string
+      description: Lifecycle status of the agent. Enum values are harmonized across OpenAPI, JSON Schema, and AsyncAPI contracts.
       enum: [active, inactive, deprecated, archived]
+
+    VersionStatus:
+      type: string
+      description: Lifecycle status of an agent version. Enum values are harmonized across OpenAPI, JSON Schema, and AsyncAPI contracts.
+      enum: [active, beta, deprecated, archived]
+
+    DependencyType:
+      type: string
+      description: Nature of the dependency relationship. Enum values are harmonized across OpenAPI, JSON Schema, and AsyncAPI contracts.
+      enum: [hard, soft, optional]
+
+    Objective:
+      type: object
+      description: A specific objective for an agent, as defined in PRD Section 8 (Agent Object Model).
+      required: [description, metric, tier]
+      properties:
+        description:
+          type: string
+          description: Human-readable description of the objective.
+        metric:
+          type: string
+          description: Key performance indicator or measurable success criterion for this objective.
+        weight:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Relative importance weight (0.0 to 1.0). Defaults to 0.5 if omitted.
+        tier:
+          $ref: '#/components/schemas/CapabilityTier'
+          description: The autonomy tier this objective operates within.
+
+    CapabilityTier:
+      type: string
+      description: Agent capability autonomy tier per PRD Section 4.3 (Human-Governed Autonomy).
+      enum: [recommend, analyze, coordinate, draft, execute]
+
+    ExecutionBudget:
+      type: object
+      description: Execution budget constraints for the agent, as defined in PRD Section 8 (Agent Object Model).
+      properties:
+        daily_token_limit:
+          type: integer
+          minimum: 0
+          description: Maximum tokens the agent may consume per day.
+        max_run_seconds:
+          type: integer
+          minimum: 1
+          description: Maximum duration for a single execution run in seconds.
+        monthly_execution_cap:
+          type: integer
+          minimum: 0
+          description: Maximum number of executions per month.
+        monthly_budget_usd:
+          type: number
+          minimum: 0
+          description: Hard budget ceiling in USD per month.
+
+    MemoryAccess:
+      type: object
+      description: Configuration for the agent's memory access permissions. Unified structured type across all contracts.
+      properties:
+        scope:
+          type: string
+          enum: [read, write, read_write]
+          description: Access level for the agent's memory stores.
+        isolated_stores:
+          type: array
+          items: { type: string }
+          description: Memory stores isolated from other agents.
+        allowed_types:
+          type: array
+          items: { type: string, enum: [episodic, semantic, procedural, graph, institutional] }
+          description: Types of memory the agent may access.
+        isolation_level:
+          type: string
+          enum: [logical, data, cryptographic, execution]
+          description: Isolation level per PRD Section 9 (Multi-Tenant Isolation Model).
+
+    CostProfile:
+      type: object
+      description: Cost and budget parameters for an agent. Expanded to match PRD Module 17 (Cost Governance Engine).
+      properties:
+        cost_per_execution:
+          type: number
+          minimum: 0
+          description: Fixed cost incurred each time the agent is executed.
+        cost_per_token:
+          type: number
+          minimum: 0
+          description: Variable cost per token consumed.
+        estimated_monthly_cost:
+          type: number
+          minimum: 0
+          description: Estimated monthly cost based on projected usage.
+        budget_limit:
+          type: integer
+          minimum: 0
+          description: Maximum budget limit for the agent.
+        throttle_threshold:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Threshold (0.0 to 1.0) at which the agent should be throttled.
+        billing_tag:
+          type: string
+          description: Tag used for billing allocation.
+
+    RuntimeConstraints:
+      type: object
+      properties:
+        max_concurrent:
+          type: integer
+          minimum: 1
+          description: Maximum number of concurrent executions.
+        max_duration_seconds:
+          type: integer
+          minimum: 1
+          description: Maximum duration for a single execution run.
+        rate_limit_per_minute:
+          type: integer
+          minimum: 1
+          description: Maximum requests per minute.
+        resource_quota:
+          type: object
+          properties:
+            cpu_millicores:
+              type: integer
+              description: CPU allocation in millicores.
+            memory_mb:
+              type: integer
+              description: Memory allocation in megabytes.
+            gpu:
+              type: boolean
+              description: Whether GPU access is granted.
 
     Agent:
       type: object
-      required: [id, name, role, tenant_id, status, created_at]
+      description: A registered AI agent within the Operan platform. Fields objectives and execution_budget are PRD Section 8 Agent Object Model requirements.
+      required: [id, name, role, tenant_id, status, capabilities, tools, created_at]
       properties:
-        id: { type: string, format: uuid }
-        name: { type: string, maxLength: 200 }
-        role: { type: string }
-        description: { type: string }
-        tenant_id: { type: string, format: uuid }
-        status: { $ref: '#/components/schemas/AgentStatus' }
-        current_version_id: { type: string, format: uuid, nullable: true }
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the agent.
+        name:
+          type: string
+          maxLength: 200
+          description: Human-readable name of the agent.
+        role:
+          type: string
+          description: The functional role the agent fills within the platform.
+        description:
+          type: string
+          description: Additional description of the agent's purpose.
+        version:
+          type: string
+          description: Current agent version string.
+        created_by:
+          type: string
+          format: uuid
+          description: UUID of the user or system that created the agent.
+        dependencies:
+          type: array
+          description: List of agent UUIDs this agent depends on.
+          items: { type: string, format: uuid }
+        tenant_id:
+          type: string
+          format: uuid
+          description: UUID of the tenant that owns this agent.
+        department_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: UUID of the department this agent belongs to (Module 05). Optional.
+        status:
+          $ref: '#/components/schemas/AgentStatus'
+        current_version_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: UUID of the current active version.
+        objectives:
+          type: array
+          description: Agent objectives as defined in PRD Section 8 (Agent Object Model).
+          items:
+            $ref: '#/components/schemas/Objective'
+        capabilities:
+          type: array
+          description: List of capability identifiers the agent provides.
+          items: { type: string }
+        tools:
+          type: array
+          description: List of tool identifiers the agent can invoke.
+          items: { type: string }
+        memory_access:
+          $ref: '#/components/schemas/MemoryAccess'
+        escalation_rules:
+          type: array
+          description: Rules governing when and how the agent escalates tasks.
+          items: { type: string }
+        governance_policies:
+          type: array
+          description: Governance policies that apply to this agent.
+          items: { type: string }
+        supported_languages:
+          type: array
+          description: Languages the agent supports (Module 19 - Arabic Language Intelligence).
+          items: { type: string }
+        runtime_constraints:
+          $ref: '#/components/schemas/RuntimeConstraints'
+        cost_profile:
+          $ref: '#/components/schemas/CostProfile'
+        execution_budget:
+          $ref: '#/components/schemas/ExecutionBudget'
+        access_control:
+          type: object
+          description: Access control configuration for this agent.
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the agent was created.
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the agent was last updated.
+
+    CreateAgentRequest:
+      type: object
+      description: Request payload for creating a new agent.
+      required: [name, role, tenant_id]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          description: Human-readable name of the agent.
+        role:
+          type: string
+          description: The functional role the agent will fill.
+        description:
+          type: string
+          description: Additional description of the agent's purpose.
+        tenant_id:
+          type: string
+          format: uuid
+          description: UUID of the tenant that will own the agent.
+        department_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: UUID of the parent department (Module 05). Optional.
+        objectives:
+          type: array
+          description: Agent objectives as defined in PRD Section 8.
+          items:
+            $ref: '#/components/schemas/Objective'
+        capabilities:
+          type: array
+          description: List of capability identifiers the agent provides.
+          items: { type: string }
+        tools:
+          type: array
+          description: List of tool identifiers the agent can invoke.
+          items: { type: string }
+        memory_access:
+          $ref: '#/components/schemas/MemoryAccess'
+        escalation_rules:
+          type: array
+          items: { type: string }
+        governance_policies:
+          type: array
+          items: { type: string }
+        supported_languages:
+          type: array
+          description: Languages the agent supports (Module 19).
+          items: { type: string }
+        runtime_constraints:
+          $ref: '#/components/schemas/RuntimeConstraints'
+        cost_profile:
+          $ref: '#/components/schemas/CostProfile'
+        execution_budget:
+          $ref: '#/components/schemas/ExecutionBudget'
+
+    UpdateAgentRequest:
+      type: object
+      description: Request payload for updating an existing agent. All fields optional.
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        role:
+          type: string
+        description:
+          type: string
+        department_id:
+          type: string
+          format: uuid
+          nullable: true
+        objectives:
+          type: array
+          items:
+            $ref: '#/components/schemas/Objective'
         capabilities:
           type: array
           items: { type: string }
@@ -361,61 +685,56 @@ components:
           type: array
           items: { type: string }
         memory_access:
-          type: array
-          items: { type: string }
+          $ref: '#/components/schemas/MemoryAccess'
         escalation_rules:
           type: array
           items: { type: string }
         governance_policies:
           type: array
           items: { type: string }
+        supported_languages:
+          type: array
+          items: { type: string }
+        status:
+          $ref: '#/components/schemas/AgentStatus'
         runtime_constraints:
           $ref: '#/components/schemas/RuntimeConstraints'
         cost_profile:
           $ref: '#/components/schemas/CostProfile'
-        created_at: { type: string, format: date-time }
-        updated_at: { type: string, format: date-time }
-
-    CreateAgentRequest:
-      type: object
-      required: [name, role, tenant_id, capabilities]
-      properties:
-        name: { type: string, maxLength: 200 }
-        role: { type: string }
-        description: { type: string }
-        tenant_id: { type: string, format: uuid }
-        capabilities: { type: array, items: { type: string } }
-        tools: { type: array, items: { type: string } }
-        memory_access: { type: array, items: { type: string } }
-        escalation_rules: { type: array, items: { type: string } }
-        governance_policies: { type: array, items: { type: string } }
-        runtime_constraints: { $ref: '#/components/schemas/RuntimeConstraints' }
-        cost_profile: { $ref: '#/components/schemas/CostProfile' }
-
-    UpdateAgentRequest:
-      type: object
-      properties:
-        name: { type: string, maxLength: 200 }
-        role: { type: string }
-        description: { type: string }
-        capabilities: { type: array, items: { type: string } }
-        status: { $ref: '#/components/schemas/AgentStatus' }
-        runtime_constraints: { $ref: '#/components/schemas/RuntimeConstraints' }
+        execution_budget:
+          $ref: '#/components/schemas/ExecutionBudget'
 
     CapabilityEntry:
       type: object
       required: [capability, score]
       properties:
-        capability: { type: string }
-        score: { type: number, minimum: 0, maximum: 1 }
-        last_evaluated: { type: string, format: date-time }
+        capability:
+          type: string
+          description: Name of the capability.
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Capability proficiency score (0.0 to 1.0).
+        last_evaluated:
+          type: string
+          format: date-time
+          description: Timestamp of last capability evaluation.
+        tier:
+          $ref: '#/components/schemas/CapabilityTier'
+          description: Autonomy tier of this capability.
 
     CapabilityList:
       type: object
       required: [agent_id, capabilities]
       properties:
-        agent_id: { type: string, format: uuid }
-        capabilities: { type: array, items: { $ref: '#/components/schemas/CapabilityEntry' } }
+        agent_id:
+          type: string
+          format: uuid
+        capabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/CapabilityEntry'
 
     CapabilityUpdate:
       type: object
@@ -429,131 +748,233 @@ components:
             properties:
               capability: { type: string }
               score: { type: number, minimum: 0, maximum: 1 }
+              tier:
+                $ref: '#/components/schemas/CapabilityTier'
 
     AgentVersion:
       type: object
+      description: Versioned snapshot of an agent's configuration.
       required: [id, agent_id, version, created_at]
       properties:
-        id: { type: string, format: uuid }
-        agent_id: { type: string, format: uuid }
-        version: { type: string }
-        status: { type: string, enum: [active, beta, deprecated, archived] }
-        model_config: { type: object }
-        prompt_template_ref: { type: string }
-        description: { type: string }
-        created_by: { type: string, format: uuid }
+        id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        version:
+          type: string
+          pattern: '^\\d+\\.\\d+\\.\\d+$'
+          description: Semantic version of this agent configuration.
+        status:
+          $ref: '#/components/schemas/VersionStatus'
+        model_config:
+          type: object
+          description: Model configuration for this version.
+        prompt_template_ref:
+          type: string
+          description: Reference to the prompt template used.
+        description:
+          type: string
+          description: Human-readable description of this version.
+        change_summary:
+          type: string
+          description: Summary of changes in this version.
+        diff_from_previous:
+          type: string
+          description: Detailed diff or description of changes from the previous version.
+        created_by:
+          type: string
+          format: uuid
+          description: UUID of the user or system that created this version.
         promoted_to:
           type: object
-          additionalProperties: { type: string, format: date-time }
-        created_at: { type: string, format: date-time }
-        updated_at: { type: string, format: date-time }
+          additionalProperties:
+            type: string
+          description: Map of environment names to promoted version IDs. Matches Go AgentVersion.PromotedTo.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
 
     CreateVersionRequest:
       type: object
       required: [agent_id, version]
       properties:
-        agent_id: { type: string, format: uuid }
-        version: { type: string }
-        model_config: { type: object }
-        prompt_template_ref: { type: string }
-        description: { type: string }
+        agent_id:
+          type: string
+          format: uuid
+        version:
+          type: string
+          pattern: '^\\d+\\.\\d+\\.\\d+$'
+        model_config:
+          type: object
+        prompt_template_ref:
+          type: string
+        description:
+          type: string
+        change_summary:
+          type: string
+          description: Summary of changes in this version.
 
     UpdateVersionRequest:
       type: object
       properties:
-        status: { type: string, enum: [active, beta, deprecated, archived] }
-        description: { type: string }
+        status:
+          $ref: '#/components/schemas/VersionStatus'
+        description:
+          type: string
+        change_summary:
+          type: string
 
     PromoteVersionRequest:
       type: object
       required: [environment]
       properties:
-        environment: { type: string, enum: [dev, staging, production] }
-
-    DependencyType:
-      type: string
-      enum: [hard, soft, optional]
+        environment:
+          type: string
+          enum: [dev, staging, production]
 
     Dependency:
       type: object
-      required: [agent_id, dependency_type]
+      description: Describes a dependency relationship between two agents.
+      required: [agent_id, dependency_id, dependency_type]
       properties:
-        agent_id: { type: string, format: uuid }
-        dependency_type: { $ref: '#/components/schemas/DependencyType' }
-        version_constraint: { type: string }
+        agent_id:
+          type: string
+          format: uuid
+          description: UUID of the agent that has the dependency.
+        dependency_id:
+          type: string
+          format: uuid
+          description: UUID of the agent being depended upon.
+        dependency_type:
+          $ref: '#/components/schemas/DependencyType'
+        version_constraint:
+          type: string
+          description: Version constraint for the dependency.
+        description:
+          type: string
+          description: Description of this dependency.
+        active:
+          type: boolean
+          description: Whether this dependency is currently active.
+        created_at:
+          type: string
+          format: date-time
 
     DependencyList:
       type: object
       required: [dependencies]
       properties:
-        dependencies: { type: array, items: { $ref: '#/components/schemas/Dependency' } }
+        dependencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dependency'
 
     DependencyRequest:
       type: object
-      required: [agent_id]
+      required: [dependency_id]
       properties:
-        agent_id: { type: string, format: uuid }
-        dependency_type: { $ref: '#/components/schemas/DependencyType' }
-        version_constraint: { type: string }
-
-    RuntimeConstraints:
-      type: object
-      properties:
-        max_concurrent: { type: integer, minimum: 1 }
-        max_duration_seconds: { type: integer, minimum: 1 }
-        rate_limit_per_minute: { type: integer, minimum: 1 }
-        resource_quota:
-          type: object
-          properties:
-            cpu_millicores: { type: integer }
-            memory_mb: { type: integer }
-            gpu: { type: boolean }
-
-    CostProfile:
-      type: object
-      properties:
-        estimated_cost_per_run: { type: number, minimum: 0 }
-        currency: { type: string }
-        cost_unit: { type: string }
+        dependency_id:
+          type: string
+          format: uuid
+          description: UUID of the agent being depended upon.
+        dependency_type:
+          $ref: '#/components/schemas/DependencyType'
+        version_constraint:
+          type: string
+        description:
+          type: string
 
     AgentListResponse:
       type: object
       required: [items, total]
       properties:
-        items: { type: array, items: { $ref: '#/components/schemas/Agent' } }
-        total: { type: integer }
-        page: { type: integer }
-        page_size: { type: integer }
-        has_more: { type: boolean }
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Agent'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
 
     VersionList:
       type: object
       required: [agent_id, versions]
       properties:
-        agent_id: { type: string, format: uuid }
-        versions: { type: array, items: { $ref: '#/components/schemas/AgentVersion' } }
+        agent_id:
+          type: string
+          format: uuid
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentVersion'
 
     AgentSearchRequest:
       type: object
       required: [tenant_id]
       properties:
-        tenant_id: { type: string, format: uuid }
-        capabilities: { type: array, items: { type: string } }
-        tools: { type: array, items: { type: string } }
-        min_capability_score: { type: number, minimum: 0, maximum: 1 }
-        constraints: { $ref: '#/components/schemas/RuntimeConstraints' }
+        tenant_id:
+          type: string
+          format: uuid
+        capabilities:
+          type: array
+          items: { type: string }
+        tools:
+          type: array
+          items: { type: string }
+        min_capability_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        constraints:
+          $ref: '#/components/schemas/RuntimeConstraints'
         cost_range:
           type: object
           properties:
-            min: { type: number, minimum: 0 }
-            max: { type: number, minimum: 0 }
+            min:
+              type: number
+              minimum: 0
+            max:
+              type: number
+              minimum: 0
+        department_id:
+          type: string
+          format: uuid
+          description: Filter by department (Module 05).
+        status:
+          type: string
+          enum: [active, inactive, deprecated, archived]
+        supported_languages:
+          type: array
+          items: { type: string }
+          description: Filter by supported languages (Module 19).
 
     AgentSearchResponse:
       type: object
-      required: [results]
+      required: [results, total]
       properties:
-        results: { type: array, items: { $ref: '#/components/schemas/Agent' } }
-        total: { type: integer }
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Agent'
+        total:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        code: { type: integer }
+        message: { type: string }
+        request_id: { type: string, format: uuid }
 
   responses:
     ErrorResponse400:
@@ -578,10 +999,3 @@ components:
       name: page_size
       in: query
       schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
-
-  Error:
-    type: object
-    properties:
-      code: { type: integer }
-      message: { type: string }
-      request_id: { type: string, format: uuid }

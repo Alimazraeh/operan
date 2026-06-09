@@ -397,6 +397,874 @@ paths:
         '200':
           description: Agent availability status
 
+  /workflows/{id}/delegate:
+    post:
+      summary: Delegate a node's task to another agent
+      description: Delegate the execution of a specific node to a different agent.
+      operationId: delegateNodeTask
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DelegationRequest'
+      responses:
+        '201':
+          description: Task delegated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delegation'
+        '400':
+          description: Delegation request invalid
+
+  /workflows/{id}/escalations:
+    get:
+      summary: List workflow escalations
+      operationId: listWorkflowEscalations
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, acknowledged, resolved, expired]
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high, critical]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Escalation list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EscalationList'
+
+    post:
+      summary: Create an escalation for a workflow
+      operationId: createEscalation
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EscalationRequest'
+      responses:
+        '201':
+          description: Escalation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Escalation'
+
+  /workflows/{id}/escalations/{escalationId}/acknowledge:
+    patch:
+      summary: Acknowledge an escalation
+      description: Mark an escalation as acknowledged by the assigned user.
+      operationId: acknowledgeEscalation
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: escalationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Escalation acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Escalation'
+        '404':
+          description: Escalation not found
+
+  /workflows/{id}/retry-records:
+    get:
+      summary: List retry records for a workflow
+      operationId: listWorkflowRetryRecords
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, success, exhausted]
+        - name: node_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Retry records list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetryRecordList'
+
+  /workflows/{id}/retry:
+    post:
+      summary: Retry a failed node
+      description: Retry execution of a specific node in the workflow.
+      operationId: retryNode
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - node_id
+              properties:
+                node_id:
+                  type: string
+                  format: uuid
+                  description: Node ID to retry
+                max_attempts:
+                  type: integer
+                  description: Override max retry attempts
+                variables:
+                  type: object
+                  description: Override variables for retry
+      responses:
+        '201':
+          description: Retry started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetryRecord'
+        '400':
+          description: Retry not allowed in current state
+
+  /workflows/{id}/nodes:
+    get:
+      summary: List all nodes in a workflow with current states
+      operationId: listWorkflowNodes
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Node states list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nodes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NodeState'
+                  total:
+                    type: integer
+
+  /workflows/{id}/results:
+    get:
+      summary: Get node execution results
+      description: Get the results of node executions for a workflow.
+      operationId: listWorkflowResults
+      tags: [workflows]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [success, failed, skipped, cancelled]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Node execution results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeExecutionResultList'
+
+  /agents:
+    get:
+      summary: List all agents with their availability
+      operationId: listAgents
+      tags: [scheduling]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [online, idle, busy, offline]
+        - name: capability
+          in: query
+          schema:
+            type: string
+          description: Filter by agent capability
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Agent list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerInfoList'
+
+  /agents/{agentId}/workers:
+    get:
+      summary: Get worker details for an agent
+      operationId: getAgentWorkers
+      tags: [scheduling]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Worker details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerInfo'
+
+  /schedules/{id}/pause:
+    post:
+      summary: Pause a schedule
+      operationId: pauseSchedule
+      tags: [schedules]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Schedule paused
+
+  /schedules/{id}/resume:
+    post:
+      summary: Resume a paused schedule
+      operationId: resumeSchedule
+      tags: [schedules]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Schedule resumed
+
+  # ─── Stack Health & Management ───
+  /stack/health:
+    get:
+      summary: Get health status of all orchestration stacks
+      operationId: getStackHealth
+      tags: [stacks]
+      responses:
+        '200':
+          description: Stack health overview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StackHealthStatus'
+
+  /stack/langgraph/graphs:
+    get:
+      summary: List all LangGraph definitions
+      operationId: listLangGraphs
+      tags: [stacks, langgraph]
+      responses:
+        '200':
+          description: LangGraph definitions list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  graphs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LangGraphDefinition'
+                  total:
+                    type: integer
+    post:
+      summary: Register a new LangGraph definition
+      operationId: createLangGraph
+      tags: [stacks, langgraph]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLangGraphRequest'
+      responses:
+        '201':
+          description: Graph registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LangGraphDefinition'
+
+  /stack/langgraph/graphs/{id}:
+    get:
+      summary: Get a LangGraph definition by ID
+      operationId: getLangGraph
+      tags: [stacks, langgraph]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: LangGraph definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LangGraphDefinition'
+        '404':
+          description: Not found
+    put:
+      summary: Update a LangGraph definition
+      operationId: updateLangGraph
+      tags: [stacks, langgraph]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLangGraphRequest'
+      responses:
+        '200':
+          description: Graph updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LangGraphDefinition'
+    delete:
+      summary: Delete a LangGraph definition
+      operationId: deleteLangGraph
+      tags: [stacks, langgraph]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Graph deleted
+
+  /stack/temporal/workflows:
+    get:
+      summary: List all Temporal workflow definitions
+      operationId: listTemporalWorkflows
+      tags: [stacks, temporal]
+      responses:
+        '200':
+          description: Workflow definitions list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workflows:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TemporalWorkflowDefinition'
+                  total:
+                    type: integer
+    post:
+      summary: Register a new Temporal workflow
+      operationId: createTemporalWorkflow
+      tags: [stacks, temporal]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemporalWorkflowRequest'
+      responses:
+        '201':
+          description: Workflow registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemporalWorkflowDefinition'
+
+  /stack/temporal/workflows/{id}:
+    get:
+      summary: Get a Temporal workflow definition by ID
+      operationId: getTemporalWorkflow
+      tags: [stacks, temporal]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemporalWorkflowDefinition'
+    put:
+      summary: Update a Temporal workflow definition
+      operationId: updateTemporalWorkflow
+      tags: [stacks, temporal]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemporalWorkflowRequest'
+      responses:
+        '200':
+          description: Workflow updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemporalWorkflowDefinition'
+    delete:
+      summary: Delete a Temporal workflow definition
+      operationId: deleteTemporalWorkflow
+      tags: [stacks, temporal]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Workflow deleted
+
+  /stack/temporal/checkpoints:
+    get:
+      summary: List durable checkpoints for a workflow
+      operationId: listTemporalCheckpoints
+      tags: [stacks, temporal]
+      parameters:
+        - name: workflow_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Checkpoints list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checkpoints:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LangGraphCheckpoint'
+                  total:
+                    type: integer
+
+  /stack/ray/pools:
+    get:
+      summary: List Ray worker pools
+      operationId: listRayPools
+      tags: [stacks, ray]
+      responses:
+        '200':
+          description: Worker pools list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pools:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RayWorkerPool'
+                  total:
+                    type: integer
+    post:
+      summary: Create a Ray worker pool
+      operationId: createRayPool
+      tags: [stacks, ray]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRayPoolRequest'
+      responses:
+        '201':
+          description: Pool created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RayWorkerPool'
+
+  /stack/ray/pools/{id}:
+    get:
+      summary: Get a Ray worker pool by ID
+      operationId: getRayPool
+      tags: [stacks, ray]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Worker pool details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RayWorkerPool'
+    delete:
+      summary: Delete a Ray worker pool
+      operationId: deleteRayPool
+      tags: [stacks, ray]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Pool deleted
+
+  /stack/ray/pools/{id}/scale:
+    post:
+      summary: Scale a Ray worker pool
+      operationId: scaleRayPool
+      tags: [stacks, ray]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - num_workers
+              properties:
+                num_workers:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Pool scaled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RayWorkerPool'
+
+  /stack/celery/queues:
+    get:
+      summary: List Celery/Kafka task queues
+      operationId: listCeleryQueues
+      tags: [stacks, celery]
+      responses:
+        '200':
+          description: Queues list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  queues:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CeleryTaskQueue'
+                  total:
+                    type: integer
+    post:
+      summary: Create a Celery/Kafka task queue
+      operationId: createCeleryQueue
+      tags: [stacks, celery]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCeleryQueueRequest'
+      responses:
+        '201':
+          description: Queue created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CeleryTaskQueue'
+
+  /stack/celery/queues/{name}:
+    get:
+      summary: Get a Celery/Kafka task queue by name
+      operationId: getCeleryQueue
+      tags: [stacks, celery]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Queue details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CeleryTaskQueue'
+    put:
+      summary: Update a Celery/Kafka task queue
+      operationId: updateCeleryQueue
+      tags: [stacks, celery]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                max_concurrency:
+                  type: integer
+                task_time_limit_s:
+                  type: integer
+                task_soft_time_limit_s:
+                  type: integer
+      responses:
+        '200':
+          description: Queue updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CeleryTaskQueue'
+    delete:
+      summary: Delete a Celery/Kafka task queue
+      operationId: deleteCeleryQueue
+      tags: [stacks, celery]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Queue deleted
+
+  /stack/celery/queues/{name}/consumers:
+    get:
+      summary: List consumers for a queue
+      operationId: listCeleryConsumers
+      tags: [stacks, celery]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Consumers list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  consumers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CeleryConsumerConfig'
+
+  /stack/celery/queues/{name}/publish:
+    post:
+      summary: Publish a task to a Celery/Kafka queue
+      operationId: publishCeleryTask
+      tags: [stacks, celery]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - task_name
+              properties:
+                task_name:
+                  type: string
+                args:
+                  type: array
+                  items:
+                    type: object
+                kwargs:
+                  type: object
+                queue:
+                  type: string
+                priority:
+                  type: integer
+                time_limit:
+                  type: integer
+                soft_time_limit:
+                  type: integer
+      responses:
+        '202':
+          description: Task published
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_id:
+                    type: string
+                    format: uuid
+                  queue:
+                    type: string
+
 components:
   securitySchemes:
     BearerAuth:
@@ -411,6 +1279,198 @@ components:
         type: string
 
   schemas:
+    # ─── Stack Health & Management Schemas ───
+
+    StackHealthStatus:
+      type: object
+      description: Overall health status of all orchestration stacks.
+      required:
+        - timestamp
+        - stacks
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        stacks:
+          type: object
+          properties:
+            langgraph:
+              $ref: '#/components/schemas/StackHealthModule'
+            temporal:
+              $ref: '#/components/schemas/StackHealthModule'
+            ray:
+              $ref: '#/components/schemas/StackHealthModule'
+            celery:
+              $ref: '#/components/schemas/StackHealthModule'
+
+    StackHealthModule:
+      type: object
+      description: Health status of a single orchestration stack module.
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy, unknown]
+          default: unknown
+        version:
+          type: string
+          description: Stack component version.
+        details:
+          type: object
+          description: Module-specific health details.
+        uptime_seconds:
+          type: integer
+          minimum: 0
+          description: Uptime in seconds.
+        last_check:
+          type: string
+          format: date-time
+
+    # ─── Stack Management Request Schemas ───
+
+    CreateLangGraphRequest:
+      type: object
+      required:
+        - name
+        - graph_type
+        - nodes
+        - edges
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        graph_type:
+          type: string
+          enum: [dag, stateful, stateless]
+          default: dag
+        description:
+          type: string
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/LangGraphNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/LangGraphEdge'
+        state_schema:
+          type: string
+        entry_point:
+          type: string
+        checkpoint_after_nodes:
+          type: array
+          items:
+            type: string
+        error_strategy:
+          type: string
+          enum: [abort, continue, retry_all]
+          default: abort
+        metadata:
+          type: object
+
+    CreateTemporalWorkflowRequest:
+      type: object
+      required:
+        - name
+        - version
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        description:
+          type: string
+        task_queue:
+          type: string
+        execution_timeout_ms:
+          type: integer
+          minimum: 0
+        execution_timeout_unit:
+          type: string
+          enum: [ms, s, m, h]
+          default: h
+        run_timeout_ms:
+          type: integer
+          minimum: 0
+        task_timeout_ms:
+          type: integer
+          minimum: 0
+        retry_policy:
+          $ref: '#/components/schemas/RetryPolicy'
+        checkpoint_interval_ms:
+          type: integer
+          minimum: 0
+          default: 5000
+        durable:
+          type: boolean
+          default: true
+        replay_enabled:
+          type: boolean
+          default: true
+        search_attributes:
+          type: object
+
+    CreateRayPoolRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        min_workers:
+          type: integer
+          minimum: 0
+          default: 1
+        max_workers:
+          type: integer
+          minimum: 1
+          default: 10
+        resources:
+          $ref: '#/components/schemas/RayExecutionConfig'
+        scaling:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+            min_workers:
+              type: integer
+            max_workers:
+              type: integer
+            target_cpu_utilization:
+              type: number
+
+    CreateCeleryQueueRequest:
+      type: object
+      required:
+        - name
+        - broker
+      properties:
+        name:
+          type: string
+        broker:
+          type: string
+          enum: [kafka, redis, rabbitmq]
+          default: kafka
+        broker_url:
+          type: string
+        partitions:
+          type: integer
+          minimum: 1
+        max_concurrency:
+          type: integer
+          minimum: 1
+          default: 4
+        task_time_limit_s:
+          type: integer
+          minimum: 1
+        task_soft_time_limit_s:
+          type: integer
+          minimum: 1
+
     CreateWorkflowRequest:
       type: object
       required:
@@ -442,22 +1502,573 @@ components:
           type: string
 
     WorkflowGraph:
+      oneOf:
+        - $ref: '#/components/schemas/LangGraphDefinition'
+        - type: object
+          description: Legacy graph format (deprecated — use LangGraphDefinition)
+          required:
+            - nodes
+          properties:
+            nodes:
+              type: array
+              items:
+                $ref: '#/components/schemas/WorkflowNode'
+            edges:
+              type: array
+              items:
+                $ref: '#/components/schemas/WorkflowEdge'
+            error_strategy:
+              type: string
+              enum: [abort, continue, retry_all]
+              default: abort
+
+    # ─── LangGraph Schemas ───
+    # LangGraph provides DAG-based agent workflow graph definition and execution.
+    # See: https://langchain-ai.github.io/langgraph/
+
+    LangGraphDefinition:
       type: object
+      description: LangGraph-compatible workflow graph definition.
       required:
+        - name
+        - graph_type
         - nodes
+        - edges
       properties:
+        name:
+          type: string
+          description: Human-readable graph name.
+        version:
+          type: string
+          description: Semantic version of the graph definition.
+        graph_type:
+          type: string
+          enum: [dag, stateful, stateless]
+          default: dag
+          description: Graph execution model.
+        description:
+          type: string
+          description: Graph description.
         nodes:
           type: array
+          description: LangGraph nodes (state machines, agent steps, conditions).
           items:
-            $ref: '#/components/schemas/WorkflowNode'
+            $ref: '#/components/schemas/LangGraphNode'
         edges:
           type: array
+          description: LangGraph edges (transitions between nodes).
           items:
-            $ref: '#/components/schemas/WorkflowEdge'
+            $ref: '#/components/schemas/LangGraphEdge'
+        state_schema:
+          type: string
+          description: JSON Schema reference for shared state.
+        entry_point:
+          type: string
+          description: First node to execute.
+        checkpoint_after_nodes:
+          type: array
+          items:
+            type: string
+          description: Nodes after which to create durable checkpoints (Temporal integration).
         error_strategy:
           type: string
           enum: [abort, continue, retry_all]
           default: abort
+        metadata:
+          type: object
+          description: Arbitrary metadata for the graph.
+
+    LangGraphNode:
+      type: object
+      description: A LangGraph node representing a step in the workflow.
+      required:
+        - id
+        - type
+      properties:
+        id:
+          type: string
+          description: Unique node identifier.
+        type:
+          type: string
+          enum:
+            [
+              agent,
+              action,
+              human_gate,
+              condition,
+              parallel_branch,
+              delay,
+              tool_call,
+              state_update,
+              subgraph,
+            ]
+          description: Node execution type.
+        label:
+          type: string
+          description: Human-readable label.
+        description:
+          type: string
+          description: Node description.
+        # Agent node configuration
+        agent_id:
+          type: string
+          format: uuid
+          description: Agent ID to execute (for agent-type nodes).
+        # Action configuration
+        action:
+          type: string
+          description: Action name (for action-type nodes).
+        # Condition configuration
+        condition_expression:
+          type: string
+          description: Conditional expression (for condition nodes).
+        # Subgraph configuration
+        subgraph_ref:
+          type: string
+          description: Reference to a nested graph definition.
+        # Execution configuration
+        timeout_ms:
+          type: integer
+          minimum: 0
+          description: Node execution timeout in milliseconds.
+        max_retries:
+          type: integer
+          minimum: 0
+          default: 3
+          description: Maximum retry attempts.
+        retry_policy:
+          $ref: '#/components/schemas/RetryPolicy'
+        distributed:
+          type: boolean
+          default: false
+          description: Whether to distribute execution via Ray.
+        ray_config:
+          $ref: '#/components/schemas/RayExecutionConfig'
+        checkpoint_enabled:
+          type: boolean
+          default: true
+          description: Enable Temporal checkpointing for this node.
+        input_keys:
+          type: array
+          items:
+            type: string
+          description: State keys this node reads.
+        output_keys:
+          type: array
+          items:
+            type: string
+          description: State keys this node writes.
+        parameters:
+          type: object
+          description: Node-specific configuration parameters.
+
+    LangGraphEdge:
+      type: object
+      description: A LangGraph edge representing a transition between nodes.
+      required:
+        - from
+        - to
+      properties:
+        from:
+          type: string
+          description: Source node ID.
+        to:
+          type: string
+          description: Target node ID.
+        condition:
+          type: string
+          description: Conditional expression (if this edge is conditional).
+        label:
+          type: string
+          description: Edge label (e.g., condition branch name).
+        broadcast:
+          type: boolean
+          default: false
+          description: Whether to broadcast state to all downstream nodes.
+
+    LangGraphCheckpoint:
+      type: object
+      description: A durable checkpoint (Temporal integration).
+      required:
+        - id
+        - node_id
+        - timestamp
+        - state_snapshot
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Checkpoint unique identifier.
+        node_id:
+          type: string
+          description: Node ID at which checkpoint was taken.
+        timestamp:
+          type: string
+          format: date-time
+          description: Checkpoint creation timestamp.
+        state_snapshot:
+          type: object
+          description: Full state snapshot at checkpoint.
+        checksum:
+          type: string
+          format: byte
+          description: SHA-256 checksum for integrity verification.
+        workflow_version:
+          type: string
+          description: Workflow graph version at checkpoint time.
+        variables:
+          type: object
+          description: Workflow variables at checkpoint time.
+
+    # ─── Temporal Schemas ───
+    # Temporal provides durable, resumable workflow orchestration with checkpointing.
+    # See: https://temporal.io/
+
+    TemporalWorkflowDefinition:
+      type: object
+      description: Temporal workflow definition with durability and replay support.
+      required:
+        - name
+        - version
+      properties:
+        name:
+          type: string
+          description: Temporal workflow type name.
+        version:
+          type: string
+          description: Workflow type version for migration support.
+        description:
+          type: string
+        task_queue:
+          type: string
+          description: Temporal task queue name (Celery/Kafka integration).
+        execution_timeout_ms:
+          type: integer
+          minimum: 0
+          description: Maximum execution time for the workflow.
+        execution_timeout_unit:
+          type: string
+          enum: [ms, s, m, h]
+          default: h
+          description: Unit for execution timeout.
+        run_timeout_ms:
+          type: integer
+          minimum: 0
+          description: Maximum time including retries.
+        task_timeout_ms:
+          type: integer
+          minimum: 0
+          description: Task-level timeout.
+        retry_policy:
+          $ref: '#/components/schemas/RetryPolicy'
+        checkpoint_interval_ms:
+          type: integer
+          minimum: 0
+          default: 5000
+          description: Automatic checkpoint interval.
+        durable:
+          type: boolean
+          default: true
+          description: Enable durable execution via Temporal.
+        replay_enabled:
+          type: boolean
+          default: true
+          description: Enable workflow replay for deterministic correction.
+        search_attributes:
+          type: object
+          description: Temporal search attributes for workflow queries.
+
+    TemporalCheckpointConfig:
+      type: object
+      description: Temporal checkpoint configuration.
+      required:
+        - enabled
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        interval_ms:
+          type: integer
+          minimum: 0
+          description: Checkpoint interval in milliseconds.
+        on_node_complete:
+          type: boolean
+          default: true
+          description: Create checkpoint after each node completion.
+        on_failure:
+          type: boolean
+          default: true
+          description: Create checkpoint on node failure.
+        max_checkpoints:
+          type: integer
+          minimum: 0
+          default: 100
+          description: Maximum number of checkpoints to retain.
+
+    TemporalReplayConfig:
+      type: object
+      description: Workflow replay configuration for deterministic correction.
+      required:
+        - enabled
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        strategy:
+          type: string
+          enum: [full, partial, until_node]
+          default: full
+          description: Replay strategy.
+        target_checkpoint_id:
+          type: string
+          format: uuid
+          description: Replay from specific checkpoint.
+        target_node_id:
+          type: string
+          description: Replay until specific node.
+        correction_params:
+          type: object
+          description: Parameters to apply during replay.
+
+    # ─── Ray Schemas ───
+    # Ray provides distributed execution across worker nodes.
+    # See: https://docs.ray.io/
+
+    RayExecutionConfig:
+      type: object
+      description: Ray distributed execution configuration.
+      required:
+        - enabled
+      properties:
+        enabled:
+          type: boolean
+          default: false
+        worker_pool_id:
+          type: string
+          format: uuid
+          description: Ray worker pool ID.
+        num_workers:
+          type: integer
+          minimum: 1
+          default: 3
+          description: Number of Ray workers.
+        resources:
+          type: object
+          description: Ray resource requirements per worker.
+          properties:
+            cpu:
+              type: number
+              minimum: 0
+              description: CPU cores required.
+            memory_gb:
+              type: number
+              minimum: 0
+              description: Memory in GB required.
+            gpu:
+              type: number
+              minimum: 0
+              default: 0
+              description: GPU cores required.
+            custom:
+              type: object
+              description: Custom Ray resources.
+        scaling:
+          type: object
+          description: Auto-scaling configuration.
+          properties:
+            enabled:
+              type: boolean
+              default: false
+            min_workers:
+              type: integer
+              minimum: 0
+              default: 1
+            max_workers:
+              type: integer
+              minimum: 1
+              default: 10
+            target_cpu_utilization:
+              type: number
+              minimum: 0
+              maximum: 100
+              description: Target CPU utilization percentage for scaling.
+
+    RayDistributedTask:
+      type: object
+      description: A task distributed via Ray.
+      required:
+        - id
+        - type
+        - node_id
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Task unique identifier.
+        type:
+          type: string
+          enum: [remote_function, actor, generator]
+          description: Ray task type.
+        node_id:
+          type: string
+          description: Orchestrator node this task belongs to.
+        function_ref:
+          type: string
+          description: Reference to the function to execute remotely.
+        args:
+          type: array
+          items:
+            type: object
+          description: Function arguments.
+        kwargs:
+          type: object
+          description: Keyword arguments.
+        resources:
+          type: object
+          description: Ray resources required.
+        timeout_ms:
+          type: integer
+          minimum: 0
+        retry_count:
+          type: integer
+          minimum: 0
+          default: 0
+        num_returns:
+          type: integer
+          minimum: 0
+          default: 1
+          description: Number of object references returned.
+
+    RayWorkerPool:
+      type: object
+      description: A Ray worker pool for distributed execution.
+      required:
+        - id
+        - name
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Worker pool ID.
+        name:
+          type: string
+          description: Pool name.
+        status:
+          type: string
+          enum: [active, draining, stopped]
+          default: active
+        cluster_id:
+          type: string
+          format: uuid
+          description: Ray cluster ID.
+        min_workers:
+          type: integer
+          minimum: 0
+        max_workers:
+          type: integer
+          minimum: 0
+        current_workers:
+          type: integer
+          minimum: 0
+        available_resources:
+          type: object
+          description: Available resources in the pool.
+        scheduled_tasks:
+          type: integer
+          minimum: 0
+          description: Number of tasks queued.
+
+    # ─── Celery/Kafka Schemas ───
+    # Celery/Kafka provide async task queuing and event streaming.
+    # See: https://docs.celeryq.dev/ and https://kafka.apache.org/
+
+    CeleryTaskQueue:
+      type: object
+      description: Celery task queue backed by Kafka broker.
+      required:
+        - name
+        - broker
+        - status
+      properties:
+        name:
+          type: string
+          description: Queue name.
+        broker:
+          type: string
+          enum: [kafka, redis, rabbitmq]
+          default: kafka
+          description: Message broker type.
+        broker_url:
+          type: string
+          description: Broker connection URL (Kafka bootstrap servers).
+        status:
+          type: string
+          enum: [active, paused, error]
+          default: active
+        partitions:
+          type: integer
+          minimum: 1
+          description: Number of Kafka partitions.
+        consumers:
+          type: integer
+          minimum: 0
+          description: Number of active consumers.
+        priority:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Queue priority.
+        max_concurrency:
+          type: integer
+          minimum: 1
+          default: 4
+          description: Maximum concurrent workers.
+        task_time_limit_s:
+          type: integer
+          minimum: 1
+          description: Hard time limit for tasks in seconds.
+        task_soft_time_limit_s:
+          type: integer
+          minimum: 1
+          description: Soft time limit for tasks in seconds.
+
+    CeleryConsumerConfig:
+      type: object
+      description: Celery worker/consumer configuration.
+      required:
+        - worker_type
+      properties:
+        worker_type:
+          type: string
+          enum: [solo, pool, eventlet, gevent]
+          default: pool
+          description: Celery worker concurrency type.
+        concurrency:
+          type: integer
+          minimum: 1
+          default: 4
+          description: Number of worker processes/threads.
+        prefetch_multiplier:
+          type: integer
+          minimum: 1
+          default: 4
+          description: Message prefetch multiplier.
+        queue:
+          type: string
+          description: Queue to consume from.
+        exchange:
+          type: string
+          description: Kafka exchange/topic name.
+        serialization:
+          type: string
+          enum: [json, pickle, msgpack]
+          default: json
+          description: Task result serialization format.
+        auto_revoke:
+          type: boolean
+          default: false
+          description: Remove workers when they finish.
 
     WorkflowNode:
       type: object
@@ -743,6 +2354,429 @@ components:
         enabled:
           type: boolean
 
+    Escalation:
+      type: object
+      required:
+        - id
+        - workflow_id
+        - node_id
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the escalation
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow ID this escalation belongs to
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID that triggered the escalation
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant ID
+        department_id:
+          type: string
+          format: uuid
+          description: Department ID
+        status:
+          type: string
+          enum: [pending, acknowledged, resolved, expired]
+          description: Current status of the escalation
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+          default: medium
+          description: Escalation severity level
+        reason:
+          type: string
+          description: Reason for escalation
+        escalated_to:
+          type: string
+          format: uuid
+          description: User or role ID to escalate to
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when escalation was created
+        acknowledged_at:
+          type: string
+          format: date-time
+          description: Timestamp when escalation was acknowledged
+        resolved_at:
+          type: string
+          format: date-time
+          description: Timestamp when escalation was resolved
+
+    EscalationRequest:
+      type: object
+      required:
+        - severity
+        - reason
+      properties:
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+          description: Escalation severity level
+        reason:
+          type: string
+          description: Reason for escalation
+        escalated_to:
+          type: string
+          format: uuid
+          description: User or role ID to escalate to
+
+    EscalationList:
+      type: object
+      properties:
+        escalations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Escalation'
+        total:
+          type: integer
+        has_more:
+          type: boolean
+
+    Delegation:
+      type: object
+      required:
+        - id
+        - workflow_id
+        - original_agent_id
+        - delegated_agent_id
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the delegation
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow ID this delegation belongs to
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID being delegated
+        original_agent_id:
+          type: string
+          format: uuid
+          description: Original assigned agent ID
+        delegated_agent_id:
+          type: string
+          format: uuid
+          description: Agent delegated to
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant ID
+        department_id:
+          type: string
+          format: uuid
+          description: Department ID
+        status:
+          type: string
+          enum: [pending, accepted, rejected, completed]
+          description: Current status of the delegation
+        reason:
+          type: string
+          description: Reason for delegation
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when delegation was created
+
+    DelegationRequest:
+      type: object
+      required:
+        - node_id
+        - delegated_agent_id
+        - reason
+      properties:
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID to delegate
+        delegated_agent_id:
+          type: string
+          format: uuid
+          description: Agent to delegate to
+        reason:
+          type: string
+          description: Reason for delegation
+
+    DelegationList:
+      type: object
+      properties:
+        delegations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Delegation'
+        total:
+          type: integer
+        has_more:
+          type: boolean
+
+    RetryRecord:
+      type: object
+      required:
+        - id
+        - workflow_id
+        - node_id
+        - attempt_number
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the retry record
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow ID this retry belongs to
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID being retried
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant ID
+        attempt_number:
+          type: integer
+          description: Current retry attempt number
+        status:
+          type: string
+          enum: [pending, in_progress, success, exhausted]
+          description: Current status of the retry
+        error_code:
+          type: string
+          description: Error code if the attempt failed
+        error_message:
+          type: string
+          description: Error message if the attempt failed
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when retry was created
+        completed_at:
+          type: string
+          format: date-time
+          description: Timestamp when retry completed
+
+    RetryRecordList:
+      type: object
+      properties:
+        retry_records:
+          type: array
+          items:
+            $ref: '#/components/schemas/RetryRecord'
+        total:
+          type: integer
+        has_more:
+          type: boolean
+
+    TaskRoute:
+      type: object
+      required:
+        - id
+        - workflow_id
+        - node_id
+        - source_agent_id
+        - target_agent_id
+        - route_type
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the task route
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow ID this route belongs to
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID being routed
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant ID
+        department_id:
+          type: string
+          format: uuid
+          description: Department ID
+        source_agent_id:
+          type: string
+          format: uuid
+          description: Source agent ID
+        target_agent_id:
+          type: string
+          format: uuid
+          description: Target agent ID
+        route_type:
+          type: string
+          enum: [auto, manual]
+          description: How the route was initiated
+        condition:
+          type: string
+          description: Route condition expression
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when route was created
+
+    RouteTaskRequest:
+      type: object
+      required:
+        - node_id
+        - target_agent_id
+        - route_type
+      properties:
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID to route task from
+        target_agent_id:
+          type: string
+          format: uuid
+          description: Target agent ID to route to
+        route_type:
+          type: string
+          enum: [auto, manual]
+          description: How the route was initiated
+        condition:
+          type: string
+          description: Route condition expression
+
+    TaskRouteList:
+      type: object
+      properties:
+        task_routes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskRoute'
+        total:
+          type: integer
+        has_more:
+          type: boolean
+
+    WorkerInfo:
+      type: object
+      required:
+        - agent_id
+        - status
+        - available
+      properties:
+        agent_id:
+          type: string
+          format: uuid
+          description: Agent ID
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant ID
+        status:
+          type: string
+          enum: [online, idle, busy, offline]
+          description: Agent status
+        available:
+          type: boolean
+          description: Whether the agent can accept new tasks
+        current_tasks:
+          type: integer
+          default: 0
+          description: Number of currently executing tasks
+        max_concurrent_tasks:
+          type: integer
+          description: Maximum concurrent tasks for this agent
+        capabilities:
+          type: array
+          items:
+            type: string
+          description: Agent capabilities
+        last_seen_at:
+          type: string
+          format: date-time
+          description: Last seen timestamp
+
+    WorkerInfoList:
+      type: object
+      properties:
+        workers:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkerInfo'
+        total:
+          type: integer
+        has_more:
+          type: boolean
+
+    NodeExecutionResult:
+      type: object
+      required:
+        - workflow_id
+        - node_id
+        - status
+        - executed_at
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+          description: Workflow ID
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant ID
+        status:
+          type: string
+          enum: [success, failed, skipped, cancelled]
+          description: Node execution result status
+        agent_id:
+          type: string
+          format: uuid
+          description: Agent ID that executed the node
+        output:
+          type: object
+          description: Node execution output
+        error_code:
+          type: string
+          description: Error code if node failed
+        error_message:
+          type: string
+          description: Error message if node failed
+        duration_ms:
+          type: integer
+          minimum: 0
+          description: Execution duration in milliseconds
+        executed_at:
+          type: string
+          format: date-time
+          description: Timestamp when execution completed
+
+    NodeExecutionResultList:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeExecutionResult'
+        total:
+          type: integer
+        has_more:
+          type: boolean
+
     AssignAgentRequest:
       type: object
       required:
@@ -760,3 +2794,23 @@ components:
           format: uuid
         parameters:
           type: object
+
+tags:
+  - name: workflows
+    description: Workflow lifecycle management
+  - name: nodes
+    description: Workflow node operations
+  - name: scheduling
+    description: Workflow scheduling and time-based triggers
+  - name: agents
+    description: Agent assignment and delegation
+  - name: stacks
+    description: Orchestration stack health and management
+  - name: langgraph
+    description: LangGraph DAG workflow definitions
+  - name: temporal
+    description: Temporal durable workflow and checkpoint management
+  - name: ray
+    description: Ray distributed execution and worker pool management
+  - name: celery
+    description: Celery/Kafka async task queue management

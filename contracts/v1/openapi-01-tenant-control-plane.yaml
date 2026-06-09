@@ -933,6 +933,497 @@ components:
         - tokens_monthly_limit
         - utilization_percent
 
+    AgentCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Human-readable agent name
+          example: "Customer Support Agent"
+        description:
+          type: string
+          description: Brief description of the agent's purpose
+          example: "Handles customer inquiries via chat and email"
+        model_id:
+          type: string
+          format: uuid
+          description: UUID of the AI model to use
+          example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+        system_prompt:
+          type: string
+          description: System prompt defining agent behavior
+          example: "You are a helpful customer support agent."
+        memory_strategy:
+          type: string
+          description: Memory strategy for agent state management
+          enum: [short_term, long_term, hybrid]
+          example: "hybrid"
+        tools:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of tool IDs available to the agent
+          example: ["6ba7b810-9dad-11d1-80b4-00c04fd430c8"]
+        configuration:
+          type: object
+          description: Additional agent configuration parameters
+          properties:
+            temperature:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 2
+              description: Model temperature for generation
+              example: 0.7
+            max_tokens:
+              type: integer
+              minimum: 1
+              description: Maximum tokens per response
+              example: 2048
+            top_p:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+              description: Top-p sampling parameter
+              example: 0.9
+        status:
+          $ref: "#/components/schemas/AgentStatus"
+          default: active
+      required:
+        - name
+        - model_id
+
+    AgentStatus:
+      type: string
+      enum:
+        - active
+        - paused
+        - error
+        - deprovisioning
+
+    AgentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique agent identifier
+          example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+        tenant_id:
+          $ref: "#/components/schemas/TenantId"
+        name:
+          type: string
+          description: Agent name
+          example: "Customer Support Agent"
+        description:
+          type: string
+          description: Agent description
+          example: "Handles customer inquiries via chat and email"
+        model_id:
+          type: string
+          format: uuid
+          description: Associated model identifier
+          example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+        system_prompt:
+          type: string
+          description: Agent's system prompt
+          example: "You are a helpful customer support agent."
+        memory_strategy:
+          type: string
+          description: Memory strategy
+          example: "hybrid"
+        tools:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Available tools
+          example: ["6ba7b810-9dad-11d1-80b4-00c04fd430c8"]
+        configuration:
+          type: object
+          description: Agent configuration
+          properties:
+            temperature:
+              type: number
+              format: float
+            max_tokens:
+              type: integer
+            top_p:
+              type: number
+              format: float
+        status:
+          $ref: "#/components/schemas/AgentStatus"
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - tenant_id
+        - name
+        - model_id
+        - status
+        - created_at
+        - updated_at
+
+    AgentUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Updated agent name
+        description:
+          type: string
+          description: Updated description
+        model_id:
+          type: string
+          format: uuid
+          description: Updated model ID
+        system_prompt:
+          type: string
+          description: Updated system prompt
+        memory_strategy:
+          type: string
+          description: Updated memory strategy
+          enum: [short_term, long_term, hybrid]
+        tools:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Updated tool list
+        configuration:
+          type: object
+          description: Updated configuration
+        status:
+          $ref: "#/components/schemas/AgentStatus"
+
+    ResourceCreateRequest:
+      type: object
+      properties:
+        resource_type:
+          type: string
+          description: Type of resource to allocate
+          enum: [gpu, cpu, memory, storage]
+          example: "gpu"
+        configuration:
+          type: object
+          description: Resource-specific configuration
+          properties:
+            instance_type:
+              type: string
+              description: Instance type (e.g., A100, V100)
+              example: "A100-80GB"
+            count:
+              type: integer
+              minimum: 1
+              description: Number of instances
+              example: 2
+            auto_scaling:
+              type: boolean
+              description: Enable auto-scaling
+              example: false
+            limits:
+              type: object
+              description: Resource limits
+              properties:
+                min:
+                  type: integer
+                max:
+                  type: integer
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          description: Resource tags for organization
+          example:
+            team: "ml-engineering"
+            environment: "production"
+      required:
+        - resource_type
+
+    ResourceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Resource identifier
+          example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+        tenant_id:
+          $ref: "#/components/schemas/TenantId"
+        resource_type:
+          type: string
+          description: Resource type
+          example: "gpu"
+        configuration:
+          type: object
+          description: Resource configuration
+        state:
+          type: string
+          description: Current resource state
+          enum: [provisioning, active, error, deprovisioning]
+          example: "active"
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - resource_type
+        - state
+        - created_at
+        - updated_at
+
+    ResourceListResponse:
+      type: object
+      properties:
+        resources:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResourceResponse"
+        total:
+          type: integer
+          description: Total number of resources
+          example: 15
+        page:
+          type: integer
+          description: Current page number
+          example: 1
+        page_size:
+          type: integer
+          description: Number of items per page
+          example: 20
+        has_more:
+          type: boolean
+          description: Whether more pages exist
+          example: false
+      required:
+        - resources
+        - total
+        - page
+        - page_size
+        - has_more
+
+    PaymentMethodCreateRequest:
+      type: object
+      properties:
+        type:
+          $ref: "#/components/schemas/PaymentMethodType"
+          description: Payment method type
+          example: "credit_card"
+        details:
+          type: object
+          description: Payment method details (tokenized)
+          properties:
+            token:
+              type: string
+              description: Token from payment provider
+              example: "pm_1234567890"
+            billing_address:
+              $ref: "#/components/schemas/Address"
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          description: Additional metadata
+      required:
+        - type
+        - details
+
+    Address:
+      type: object
+      properties:
+        line1:
+          type: string
+          example: "123 Main St"
+        line2:
+          type: string
+          example: "Apt 4B"
+        city:
+          type: string
+          example: "Dubai"
+        state:
+          type: string
+          example: "Dubai"
+        postal_code:
+          type: string
+          example: "12345"
+        country:
+          type: string
+          description: ISO 3166-1 alpha-2 country code
+          example: "AE"
+      required:
+        - line1
+        - city
+        - postal_code
+        - country
+
+    PaymentMethod:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Payment method identifier
+          example: "pm_16ba7b810-9dad-11d1-80b4-00c04fd430c8"
+        tenant_id:
+          $ref: "#/components/schemas/TenantId"
+        type:
+          $ref: "#/components/schemas/PaymentMethodType"
+        is_default:
+          type: boolean
+          description: Whether this is the default payment method
+          example: true
+        last_four:
+          type: string
+          description: Last four digits (for cards)
+          example: "4242"
+        expiry_month:
+          type: integer
+          description: Expiry month (for cards)
+          example: 12
+        expiry_year:
+          type: integer
+          description: Expiry year (for cards)
+          example: 2026
+        billing_address:
+          $ref: "#/components/schemas/Address"
+        provider:
+          type: string
+          description: Payment provider name
+          example: "stripe"
+        provider_payment_method_id:
+          type: string
+          description: Provider's payment method ID
+          example: "pm_1234567890"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - type
+        - is_default
+        - created_at
+        - updated_at
+
+    PaymentMethodResponse:
+      description: Alias for PaymentMethod - represents a payment method response
+      allOf:
+        - $ref: "#/components/schemas/PaymentMethod"
+
+    PlanUpgradeRequest:
+      type: object
+      properties:
+        new_plan:
+          $ref: "#/components/schemas/TenantPlan"
+          description: Target plan to upgrade to
+          example: "enterprise"
+        billing_cycle:
+          $ref: "#/components/schemas/SubscriptionBillingCycle"
+          description: Billing cycle for the new plan
+          example: "annual"
+        start_date:
+          type: string
+          format: date-time
+          description: Optional start date for the new plan
+        payment_method_id:
+          type: string
+          format: uuid
+          description: Optional payment method ID for the upgrade
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          description: Additional metadata for the upgrade
+      required:
+        - new_plan
+
+    PlanUpgradeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Upgrade request ID
+          example: "upg_16ba7b810-9dad-11d1-80b4-00c04fd430c8"
+        tenant_id:
+          $ref: "#/components/schemas/TenantId"
+        old_plan:
+          $ref: "#/components/schemas/TenantPlan"
+          description: Previous plan
+          example: "saas"
+        new_plan:
+          $ref: "#/components/schemas/TenantPlan"
+          description: New plan
+          example: "enterprise"
+        proration_amount:
+          type: number
+          format: float
+          description: Prorated charge amount
+          example: 1250.00
+        proration_currency:
+          type: string
+          description: Currency code (ISO 4217)
+          example: "USD"
+        effective_date:
+          type: string
+          format: date-time
+          description: When the upgrade takes effect
+        billing_cycle:
+          $ref: "#/components/schemas/SubscriptionBillingCycle"
+        status:
+          type: string
+          description: Upgrade status
+          enum: [pending, completed, failed]
+          example: "completed"
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - old_plan
+        - new_plan
+        - status
+        - created_at
+        - updated_at
+
+    SetDefaultPaymentMethodRequest:
+      type: object
+      properties:
+        payment_method_id:
+          type: string
+          format: uuid
+          description: UUID of the payment method to set as default
+          example: "pm_16ba7b810-9dad-11d1-80b4-00c04fd430c8"
+      required:
+        - payment_method_id
+
     Error:
       type: object
       properties:
@@ -959,6 +1450,694 @@ components:
             $ref: "#/components/schemas/Error"
       required:
         - errors
+
+    # ─────────────────────────────────────────
+    # Namespace Schemas
+    # ─────────────────────────────────────────
+    NamespaceCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Human-readable namespace name
+          example: "finance-prod"
+        description:
+          type: string
+          description: Namespace description
+          example: "Finance department production namespace"
+        type:
+          type: string
+          description: Namespace isolation type
+          enum: [production, staging, development, isolated]
+          example: production
+        configuration:
+          type: object
+          description: Namespace-specific configuration
+          additionalProperties: true
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          description: Namespace tags
+      required:
+        - name
+        - type
+
+    NamespaceUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Updated namespace name
+        description:
+          type: string
+          description: Updated description
+        configuration:
+          type: object
+          description: Updated configuration
+          additionalProperties: true
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+
+    NamespaceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Namespace identifier
+        tenant_id:
+          $ref: "#/components/schemas/TenantId"
+        name:
+          type: string
+          description: Namespace name
+        description:
+          type: string
+          description: Namespace description
+        type:
+          type: string
+          description: Namespace isolation type
+          enum: [production, staging, development, isolated]
+        configuration:
+          type: object
+          description: Namespace configuration
+          additionalProperties: true
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+        status:
+          type: string
+          description: Namespace lifecycle status
+          enum: [creating, active, updating, deleting, error]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - name
+        - type
+        - status
+        - created_at
+        - updated_at
+
+    NamespaceListResponse:
+      type: object
+      properties:
+        namespaces:
+          type: array
+          items:
+            $ref: "#/components/schemas/NamespaceResponse"
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - namespaces
+        - total
+        - page
+        - page_size
+        - has_more
+
+    # ─────────────────────────────────────────
+    # Deployment Schemas
+    # ─────────────────────────────────────────
+    DeploymentCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Deployment name
+          example: "finance-dept-v1"
+        description:
+          type: string
+          description: Deployment description
+        namespace_id:
+          type: string
+          format: uuid
+          description: Target namespace
+        version:
+          type: string
+          description: Deployment version
+          example: "1.0.0"
+        configuration:
+          type: object
+          description: Deployment configuration
+          additionalProperties: true
+        replicas:
+          type: integer
+          minimum: 1
+          description: Number of replicas
+          example: 3
+        resource_limits:
+          type: object
+          description: Resource constraints
+          additionalProperties: true
+        environment_id:
+          type: string
+          format: uuid
+          description: Target environment
+        auto_scaling:
+          type: object
+          description: Auto-scaling configuration
+          additionalProperties: true
+        rollback_policy:
+          type: string
+          description: Default rollback strategy
+          enum: [automatic, manual, none]
+      required:
+        - name
+        - version
+
+    DeploymentUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Updated deployment name
+        description:
+          type: string
+          description: Updated description
+        version:
+          type: string
+          description: Updated version
+        configuration:
+          type: object
+          description: Updated configuration
+          additionalProperties: true
+        replicas:
+          type: integer
+          minimum: 1
+        resource_limits:
+          type: object
+          description: Updated resource constraints
+          additionalProperties: true
+        auto_scaling:
+          type: object
+          description: Updated auto-scaling config
+          additionalProperties: true
+
+    DeploymentRollbackRequest:
+      type: object
+      properties:
+        version:
+          type: string
+          description: Target version to rollback to
+        force:
+          type: boolean
+          description: Force rollback even if target is not previous version
+          default: false
+        reason:
+          type: string
+          description: Reason for rollback
+
+    DeploymentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Deployment identifier
+        tenant_id:
+          $ref: "#/components/schemas/TenantId"
+        name:
+          type: string
+          description: Deployment name
+        description:
+          type: string
+          description: Deployment description
+        namespace_id:
+          type: string
+          format: uuid
+          description: Parent namespace
+        version:
+          type: string
+          description: Current version
+        configuration:
+          type: object
+          description: Deployment configuration
+          additionalProperties: true
+        replicas:
+          type: integer
+        resource_limits:
+          type: object
+          description: Resource constraints
+          additionalProperties: true
+        status:
+          type: string
+          description: Deployment lifecycle status
+          enum: [pending, provisioning, active, degraded, error, shutting_down, terminated]
+        environment_id:
+          type: string
+          format: uuid
+          description: Target environment
+        auto_scaling:
+          type: object
+          description: Auto-scaling config
+          additionalProperties: true
+        health:
+          type: object
+          description: Deployment health metrics
+          additionalProperties: true
+        rollback_policy:
+          type: string
+          enum: [automatic, manual, none]
+        version_history:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeploymentVersion"
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - name
+        - version
+        - status
+        - created_at
+        - updated_at
+
+    DeploymentVersion:
+      type: object
+      properties:
+        version:
+          type: string
+        deployed_at:
+          type: string
+          format: date-time
+        committed_by:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [active, superseded, rolled_back]
+        rollback_target:
+          type: boolean
+      required:
+        - version
+        - deployed_at
+        - status
+
+    DeploymentListResponse:
+      type: object
+      properties:
+        deployments:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeploymentResponse"
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - deployments
+        - total
+        - page
+        - page_size
+        - has_more
+
+    # ─────────────────────────────────────────
+    # Policy Schemas (Tenant-Level)
+    # ─────────────────────────────────────────
+    PolicyCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Policy name
+          example: "Max agent cost per workflow"
+        description:
+          type: string
+          description: Policy description
+        category:
+          type: string
+          description: Policy category
+          enum: [security, compliance, cost, governance, operational]
+        rule:
+          type: object
+          description: Policy rule definition (Rego/JSON)
+          additionalProperties: true
+        severity:
+          type: string
+          description: Violation severity
+          enum: [low, medium, high, critical]
+        action_on_violation:
+          type: string
+          description: Action when policy is violated
+          enum: [allow, deny, warn, require_approval]
+        enabled:
+          type: boolean
+          description: Whether policy is currently active
+          default: true
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - name
+        - category
+        - rule
+
+    PolicyUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Updated policy name
+        description:
+          type: string
+          description: Updated description
+        category:
+          type: string
+          enum: [security, compliance, cost, governance, operational]
+        rule:
+          type: object
+          description: Updated rule definition
+          additionalProperties: true
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        action_on_violation:
+          type: string
+          enum: [allow, deny, warn, require_approval]
+        enabled:
+          type: boolean
+
+    PolicyEvaluationRequest:
+      type: object
+      properties:
+        inputs:
+          type: object
+          description: Test inputs to evaluate against policy
+          additionalProperties: true
+        context:
+          type: object
+          description: Evaluation context (tenant, user, etc.)
+          additionalProperties: true
+      required:
+        - inputs
+
+    PolicyEvaluationResponse:
+      type: object
+      properties:
+        policy_id:
+          type: string
+          format: uuid
+        policy_name:
+          type: string
+        result:
+          type: string
+          enum: [pass, fail, warn]
+        violations:
+          type: array
+          items:
+            $ref: "#/components/schemas/PolicyViolation"
+        evaluation_time_ms:
+          type: integer
+          description: Time taken to evaluate in milliseconds
+        context:
+          type: object
+          description: Evaluation context summary
+          additionalProperties: true
+      required:
+        - policy_id
+        - policy_name
+        - result
+        - evaluation_time_ms
+
+    PolicyViolation:
+      type: object
+      properties:
+        field:
+          type: string
+          description: Field that violated the policy
+        message:
+          type: string
+          description: Violation detail
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+      required:
+        - field
+        - message
+
+    PolicyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          $ref: "#/components/schemas/TenantId"
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [security, compliance, cost, governance, operational]
+        rule:
+          type: object
+          additionalProperties: true
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        action_on_violation:
+          type: string
+          enum: [allow, deny, warn, require_approval]
+        enabled:
+          type: boolean
+        state:
+          type: string
+          description: Policy lifecycle state
+          enum: [draft, active, deprecated]
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+        version:
+          type: integer
+          description: Policy version number
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - name
+        - category
+        - rule
+        - state
+        - version
+        - created_at
+        - updated_at
+
+    PolicyListResponse:
+      type: object
+      properties:
+        policies:
+          type: array
+          items:
+            $ref: "#/components/schemas/PolicyResponse"
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - policies
+        - total
+        - page
+        - page_size
+        - has_more
+
+    # ─────────────────────────────────────────
+    # Environment Schemas
+    # ─────────────────────────────────────────
+    EnvironmentCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Environment name
+          example: "sovereign-me-east-1"
+        description:
+          type: string
+          description: Environment description
+        region:
+          type: string
+          description: Deployment region
+          enum:
+            - me-east-1
+            - eu-west-1
+            - us-east-1
+            - ap-south-1
+            - on-prem
+        isolation_level:
+          type: string
+          description: Data and compute isolation
+          enum: [logical, physical, air_gapped]
+        configuration:
+          type: object
+          description: Environment configuration
+          additionalProperties: true
+        allowed_agents:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Allowed agent IDs (empty = all)
+        allowed_tools:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Allowed tool IDs (empty = all)
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - name
+        - region
+        - isolation_level
+
+    EnvironmentUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Updated environment name
+        description:
+          type: string
+          description: Updated description
+        configuration:
+          type: object
+          description: Updated configuration
+          additionalProperties: true
+        isolation_level:
+          type: string
+          enum: [logical, physical, air_gapped]
+        allowed_agents:
+          type: array
+          items:
+            type: string
+            format: uuid
+        allowed_tools:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    EnvironmentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          $ref: "#/components/schemas/TenantId"
+        name:
+          type: string
+        description:
+          type: string
+        region:
+          type: string
+          enum:
+            - me-east-1
+            - eu-west-1
+            - us-east-1
+            - ap-south-1
+            - on-prem
+        isolation_level:
+          type: string
+          enum: [logical, physical, air_gapped]
+        configuration:
+          type: object
+          additionalProperties: true
+        allowed_agents:
+          type: array
+          items:
+            type: string
+            format: uuid
+        allowed_tools:
+          type: array
+          items:
+            type: string
+            format: uuid
+        status:
+          type: string
+          description: Environment lifecycle status
+          enum: [creating, active, updating, deleting, error]
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - name
+        - region
+        - isolation_level
+        - status
+        - created_at
+        - updated_at
+
+    EnvironmentListResponse:
+      type: object
+      properties:
+        environments:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnvironmentResponse"
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+        - environments
+        - total
+        - page
+        - page_size
+        - has_more
 
   parameters:
     TenantIdPath:
@@ -1014,8 +2193,101 @@ components:
           - enterprise
           - sovereign
 
+    NamespaceIdPath:
+      name: namespaceId
+      in: path
+      required: true
+      description: UUID of the namespace
+      schema:
+        type: string
+        format: uuid
+
+    DeploymentIdPath:
+      name: deploymentId
+      in: path
+      required: true
+      description: UUID of the deployment
+      schema:
+        type: string
+        format: uuid
+
+    PolicyIdPath:
+      name: policyId
+      in: path
+      required: true
+      description: UUID of the policy
+      schema:
+        type: string
+        format: uuid
+
+    EnvironmentIdPath:
+      name: environmentId
+      in: path
+      required: true
+      description: UUID of the environment
+      schema:
+        type: string
+        format: uuid
+
+    Page:
+      name: page
+      in: query
+      required: false
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: page_size
+      in: query
+      required: false
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
 paths:
   /tenants:
+    get:
+      operationId: listTenants
+      summary: List all tenants
+      description: Retrieve paginated list of all tenants across the platform.
+      tags:
+        - Tenants
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: Tenant list retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
     post:
       operationId: createTenant
       summary: Create a new tenant
@@ -1064,6 +2336,607 @@ paths:
                 $ref: "#/components/schemas/Error"
         "422":
           description: Unprocessable entity — quota validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/agents:
+    get:
+      operationId: listTenantAgents
+      summary: List tenant agents
+      description: Retrieve paginated list of agents configured for the tenant.
+      tags:
+        - Tenant Agents
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: false
+          description: Filter by agent status (active, paused, errored)
+          schema:
+            type: string
+            enum: [active, paused, errored]
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: Agent list retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: createTenantAgent
+      summary: Create tenant agent
+      description: Register a new agent for the tenant with specified model and configuration.
+      tags:
+        - Tenant Agents
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentCreateRequest"
+      responses:
+        "201":
+          description: Agent created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Conflict — agent name already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/agents/{agent_id}:
+    get:
+      operationId: getTenantAgent
+      summary: Get agent details
+      description: Retrieve full details of a specific tenant agent.
+      tags:
+        - Tenant Agents
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
+        - name: agent_id
+          in: path
+          required: true
+          description: UUID of the agent
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Agent details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Agent or tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      operationId: updateTenantAgent
+      summary: Update agent configuration
+      description: Update model, memory strategy, or configuration of an agent.
+      tags:
+        - Tenant Agents
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
+        - name: agent_id
+          in: path
+          required: true
+          description: UUID of the agent
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentUpdateRequest"
+      responses:
+        "200":
+          description: Agent updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Agent or tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteTenantAgent
+      summary: Delete agent
+      description: Permanently delete an agent and its runtime resources.
+      tags:
+        - Tenant Agents
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
+        - name: agent_id
+          in: path
+          required: true
+          description: UUID of the agent
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Agent deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Agent or tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/resources:
+    get:
+      operationId: listTenantResources
+      summary: List tenant resources
+      description: Retrieve paginated list of resources allocated to the tenant.
+      tags:
+        - Tenant Resources
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
+        - name: resource_type
+          in: query
+          required: false
+          description: Filter by resource type (gpu, cpu, memory, storage)
+          schema:
+            type: string
+            enum: [gpu, cpu, memory, storage]
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: Resource list retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: createTenantResource
+      summary: Allocate resource
+      description: Allocate a new resource for the tenant.
+      tags:
+        - Tenant Resources
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceCreateRequest"
+      responses:
+        "201":
+          description: Resource allocated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Conflict — resource already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/resources/{resource_id}:
+    get:
+      operationId: getTenantResource
+      summary: Get resource details
+      description: Retrieve details of a specific tenant resource.
+      tags:
+        - Tenant Resources
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
+        - name: resource_id
+          in: path
+          required: true
+          description: UUID of the resource
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Resource details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Resource or tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteTenantResource
+      summary: Release resource
+      description: Release and deallocate a tenant resource.
+      tags:
+        - Tenant Resources
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
+        - name: resource_id
+          in: path
+          required: true
+          description: UUID of the resource
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Resource released
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Resource or tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/billing/upgrade-plan:
+    post:
+      operationId: upgradePlan
+      summary: Upgrade tenant plan
+      description: Upgrade the tenant's subscription plan with prorated billing.
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanUpgradeRequest"
+      responses:
+        "200":
+          description: Plan upgraded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanUpgradeResponse"
+        "400":
+          description: Invalid plan or upgrade path
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Conflict — upgrade not allowed in current state
           content:
             application/json:
               schema:
@@ -1404,65 +3277,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /tenants/{id}/agents:
+  /tenants/{id}/resources/usage:
     get:
-      operationId: listTenantAgents
-      summary: List agents belonging to a tenant
-      tags:
-        - Tenants
-        - Agents
-      security:
-        - BearerAuth: []
-        - TenantHeader: []
-      parameters:
-        - $ref: "#/components/parameters/TenantIdPath"
-        - $ref: "#/components/parameters/PageParam"
-        - $ref: "#/components/parameters/PageSizeParam"
-      responses:
-        "200":
-          description: Agent list retrieved
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AgentListResponse"
-        "400":
-          description: Invalid tenant ID
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "404":
-          description: Tenant not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /tenants/{id}/resources:
-    get:
-      operationId: getTenantResources
+      operationId: getTenantResourcesUsage
       summary: Get tenant resource usage and limits
+      description: Retrieve current resource utilization and limits for the tenant.
       tags:
-        - Tenants
-        - Resources
+        - Tenant Resources
       security:
         - BearerAuth: []
         - TenantHeader: []
@@ -1506,7 +3327,935 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /billing/invoices:
+  # ─────────────────────────────────────────
+  # Namespace Management
+  # ─────────────────────────────────────────
+  /tenants/{id}/namespaces:
+    get:
+      operationId: listTenantNamespaces
+      summary: List tenant namespaces
+      tags:
+        - Tenant Namespaces
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [production, staging, development, isolated]
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Paginated namespace list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NamespaceListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: createTenantNamespace
+      summary: Create namespace for tenant
+      tags:
+        - Tenant Namespaces
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NamespaceCreateRequest"
+      responses:
+        "201":
+          description: Namespace created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NamespaceResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/namespaces/{namespaceId}:
+    get:
+      operationId: getTenantNamespace
+      summary: Get namespace details
+      tags:
+        - Tenant Namespaces
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/NamespaceIdPath"
+      responses:
+        "200":
+          description: Namespace details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NamespaceResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Namespace not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      operationId: updateTenantNamespace
+      summary: Update namespace
+      tags:
+        - Tenant Namespaces
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/NamespaceIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NamespaceUpdateRequest"
+      responses:
+        "200":
+          description: Namespace updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NamespaceResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Namespace not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteTenantNamespace
+      summary: Delete namespace
+      tags:
+        - Tenant Namespaces
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/NamespaceIdPath"
+      responses:
+        "204":
+          description: Namespace deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Namespace not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ─────────────────────────────────────────
+  # Deployment Lifecycle
+  # ─────────────────────────────────────────
+  /tenants/{id}/deployments:
+    get:
+      operationId: listTenantDeployments
+      summary: List tenant deployments
+      tags:
+        - Tenant Deployments
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, provisioning, active, degraded, error, shutting_down, terminated]
+        - name: namespace_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Paginated deployment list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeploymentListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: createTenantDeployment
+      summary: Create deployment for tenant
+      tags:
+        - Tenant Deployments
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeploymentCreateRequest"
+      responses:
+        "201":
+          description: Deployment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeploymentResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/deployments/{deploymentId}:
+    get:
+      operationId: getTenantDeployment
+      summary: Get deployment details
+      tags:
+        - Tenant Deployments
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/DeploymentIdPath"
+      responses:
+        "200":
+          description: Deployment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeploymentResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      operationId: updateTenantDeployment
+      summary: Update deployment configuration
+      tags:
+        - Tenant Deployments
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/DeploymentIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeploymentUpdateRequest"
+      responses:
+        "200":
+          description: Deployment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeploymentResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteTenantDeployment
+      summary: Delete deployment
+      tags:
+        - Tenant Deployments
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/DeploymentIdPath"
+      responses:
+        "204":
+          description: Deployment deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/deployments/{deploymentId}/rollback:
+    post:
+      operationId: rollbackTenantDeployment
+      summary: Rollback deployment to previous version
+      tags:
+        - Tenant Deployments
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/DeploymentIdPath"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeploymentRollbackRequest"
+      responses:
+        "200":
+          description: Rollback initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeploymentResponse"
+        "400":
+          description: Invalid rollback request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ─────────────────────────────────────────
+  # Policy Management (Tenant-Level)
+  # ─────────────────────────────────────────
+  /tenants/{id}/policies:
+    get:
+      operationId: listTenantPolicies
+      summary: List tenant policies
+      tags:
+        - Tenant Policies
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [security, compliance, cost, governance, operational]
+        - name: state
+          in: query
+          schema:
+            type: string
+            enum: [draft, active, deprecated]
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Paginated policy list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: createTenantPolicy
+      summary: Create tenant policy
+      tags:
+        - Tenant Policies
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PolicyCreateRequest"
+      responses:
+        "201":
+          description: Policy created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/policies/{policyId}:
+    get:
+      operationId: getTenantPolicy
+      summary: Get policy details
+      tags:
+        - Tenant Policies
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/PolicyIdPath"
+      responses:
+        "200":
+          description: Policy details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      operationId: updateTenantPolicy
+      summary: Update policy
+      tags:
+        - Tenant Policies
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/PolicyIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PolicyUpdateRequest"
+      responses:
+        "200":
+          description: Policy updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteTenantPolicy
+      summary: Delete policy
+      tags:
+        - Tenant Policies
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/PolicyIdPath"
+      responses:
+        "204":
+          description: Policy deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/policies/{policyId}/evaluate:
+    post:
+      operationId: evaluateTenantPolicy
+      summary: Evaluate a policy against test inputs
+      tags:
+        - Tenant Policies
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/PolicyIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PolicyEvaluationRequest"
+      responses:
+        "200":
+          description: Policy evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyEvaluationResponse"
+        "400":
+          description: Invalid evaluation request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ─────────────────────────────────────────
+  # Environment Management
+  # ─────────────────────────────────────────
+  /tenants/{id}/environments:
+    get:
+      operationId: listTenantEnvironments
+      summary: List tenant environments
+      tags:
+        - Tenant Environments
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Paginated environment list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: createTenantEnvironment
+      summary: Create environment for tenant
+      tags:
+        - Tenant Environments
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnvironmentCreateRequest"
+      responses:
+        "201":
+          description: Environment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/environments/{environmentId}:
+    get:
+      operationId: getTenantEnvironment
+      summary: Get environment details
+      tags:
+        - Tenant Environments
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/EnvironmentIdPath"
+      responses:
+        "200":
+          description: Environment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Environment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      operationId: updateTenantEnvironment
+      summary: Update environment
+      tags:
+        - Tenant Environments
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/EnvironmentIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnvironmentUpdateRequest"
+      responses:
+        "200":
+          description: Environment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Environment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteTenantEnvironment
+      summary: Delete environment
+      tags:
+        - Tenant Environments
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - $ref: "#/components/parameters/TenantIdPath"
+        - $ref: "#/components/parameters/EnvironmentIdPath"
+      responses:
+        "204":
+          description: Environment deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Environment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/billing/invoices:
     get:
       operationId: listBillingInvoices
       summary: List tenant billing invoices
@@ -1517,7 +4266,13 @@ paths:
         - BearerAuth: []
         - TenantHeader: []
       parameters:
-        - $ref: "#/components/parameters/TenantIdPath"
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
         - name: status
           in: query
           required: false
@@ -1573,7 +4328,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /billing/invoices/{invoice_id}:
+  /tenants/{id}/billing/invoices/{invoice_id}:
     get:
       operationId: getBillingInvoice
       summary: Get invoice details
@@ -1584,7 +4339,13 @@ paths:
         - BearerAuth: []
         - TenantHeader: []
       parameters:
-        - $ref: "#/components/parameters/TenantIdPath"
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
         - name: invoice_id
           in: path
           required: true
@@ -1624,7 +4385,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /billing/invoices/{invoice_id}/download:
+  /tenants/{id}/billing/invoices/{invoice_id}/download:
     get:
       operationId: downloadBillingInvoice
       summary: Download invoice PDF
@@ -1673,7 +4434,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /billing/usage:
+  /tenants/{id}/billing/usage:
     get:
       operationId: getBillingUsage
       summary: Get tenant billing usage
@@ -1684,7 +4445,13 @@ paths:
         - BearerAuth: []
         - TenantHeader: []
       parameters:
-        - $ref: "#/components/parameters/TenantIdPath"
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
         - name: period
           in: query
           required: false
@@ -1731,17 +4498,24 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /billing/methods:
+  /tenants/{id}/billing/payment-methods:
     get:
       operationId: listBillingMethods
       summary: List payment methods
+      description: Retrieve list of payment methods for the tenant.
       tags:
         - Billing
       security:
         - BearerAuth: []
         - TenantHeader: []
       parameters:
-        - $ref: "#/components/parameters/TenantIdPath"
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: Payment methods list
@@ -1773,8 +4547,182 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+    post:
+      operationId: createBillingMethod
+      summary: Register payment method
+      description: Add a new payment method to the tenant's account.
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentMethodCreateRequest"
+      responses:
+        "201":
+          description: Payment method created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMethodResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Conflict — payment method already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
-  /secrets:
+  /tenants/{id}/billing/payment-methods/{method_id}:
+    get:
+      operationId: getBillingMethod
+      summary: Get payment method details
+      description: Retrieve details of a specific payment method.
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
+        - name: method_id
+          in: path
+          required: true
+          description: UUID of the payment method
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Payment method details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMethodResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Payment method not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/billing/payment-methods/{method_id}/set-default:
+    patch:
+      operationId: setDefaultBillingMethod
+      summary: Set default payment method
+      description: Set a payment method as the default for the tenant.
+      tags:
+        - Billing
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
+        - name: method_id
+          in: path
+          required: true
+          description: UUID of the payment method
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Default payment method set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMethodResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Payment method not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tenants/{id}/secrets:
     post:
       operationId: createSecret
       summary: Create a new tenant secret
@@ -1881,7 +4829,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /secrets/{secret_id}:
+  /tenants/{id}/secrets/{secret_id}:
     get:
       operationId: getSecret
       summary: Get secret value
@@ -1892,7 +4840,13 @@ paths:
         - BearerAuth: []
         - TenantHeader: []
       parameters:
-        - $ref: "#/components/parameters/TenantIdPath"
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
         - name: secret_id
           in: path
           required: true
@@ -1942,7 +4896,13 @@ paths:
         - BearerAuth: []
         - TenantHeader: []
       parameters:
-        - $ref: "#/components/parameters/TenantIdPath"
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
         - name: secret_id
           in: path
           required: true
@@ -2004,7 +4964,13 @@ paths:
         - BearerAuth: []
         - TenantHeader: []
       parameters:
-        - $ref: "#/components/parameters/TenantIdPath"
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
         - name: secret_id
           in: path
           required: true
@@ -2040,7 +5006,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /secrets/{secret_id}/rotate:
+  /tenants/{id}/secrets/{secret_id}/rotate:
     post:
       operationId: rotateSecret
       summary: Rotate secret value
@@ -2051,7 +5017,13 @@ paths:
         - BearerAuth: []
         - TenantHeader: []
       parameters:
-        - $ref: "#/components/parameters/TenantIdPath"
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
         - name: secret_id
           in: path
           required: true
@@ -2097,17 +5069,24 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /subscriptions:
+  /tenants/{id}/subscriptions:
     get:
       operationId: listSubscriptions
       summary: List tenant subscriptions
+      description: Retrieve paginated list of subscriptions for the tenant.
       tags:
         - Subscriptions
       security:
         - BearerAuth: []
         - TenantHeader: []
       parameters:
-        - $ref: "#/components/parameters/TenantIdPath"
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: Subscription list
@@ -2140,17 +5119,24 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /subscriptions/{subscription_id}:
+  /tenants/{id}/subscriptions/{subscription_id}:
     get:
       operationId: getSubscription
       summary: Get subscription details
+      description: Retrieve full details of a specific subscription.
       tags:
         - Subscriptions
       security:
         - BearerAuth: []
         - TenantHeader: []
       parameters:
-        - $ref: "#/components/parameters/TenantIdPath"
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
         - name: subscription_id
           in: path
           required: true
@@ -2200,7 +5186,13 @@ paths:
         - BearerAuth: []
         - TenantHeader: []
       parameters:
-        - $ref: "#/components/parameters/TenantIdPath"
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
         - name: subscription_id
           in: path
           required: true
@@ -2258,7 +5250,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /subscriptions/{subscription_id}/cancel:
+  /tenants/{id}/subscriptions/{subscription_id}/cancel:
     post:
       operationId: cancelSubscription
       summary: Cancel subscription
@@ -2269,7 +5261,13 @@ paths:
         - BearerAuth: []
         - TenantHeader: []
       parameters:
-        - $ref: "#/components/parameters/TenantIdPath"
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
         - name: subscription_id
           in: path
           required: true
@@ -2321,7 +5319,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /subscriptions/{subscription_id}/upgrade:
+  /tenants/{id}/subscriptions/{subscription_id}/upgrade:
     post:
       operationId: upgradeSubscription
       summary: Upgrade subscription plan
@@ -2332,7 +5330,13 @@ paths:
         - BearerAuth: []
         - TenantHeader: []
       parameters:
-        - $ref: "#/components/parameters/TenantIdPath"
+        - name: id
+          in: path
+          required: true
+          description: UUID of the tenant
+          schema:
+            type: string
+            format: uuid
         - name: subscription_id
           in: path
           required: true

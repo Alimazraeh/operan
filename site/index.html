@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operan — The Operating System for Digital Departments</title>
+  <meta name="description" content="Operan enables organizations to deploy fully operational digital departments that work alongside human teams, preserve institutional knowledge, and execute organizational processes at enterprise scale.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">
+        <svg><use href="assets/svg/logo.svg#icon-logo"/></svg>
+        OPERAN
+      </a>
+      <div class="nav__links" id="navLinks">
+        <a href="index.html" class="nav__link nav__link--active">Home</a>
+        <a href="platform.html" class="nav__link">Platform</a>
+        <a href="departments.html" class="nav__link">Departments</a>
+        <a href="industries.html" class="nav__link">Industries</a>
+        <a href="security.html" class="nav__link">Security</a>
+        <a href="about.html" class="nav__link">About</a>
+        <a href="private-cloud.html" class="nav__link">Private Cloud</a>
+        <a href="briefing.html" class="btn btn--primary nav__cta">Request Executive Briefing</a>
+      </div>
+      <div class="nav__toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero" id="hero">
+    <canvas class="hero__canvas" id="heroCanvas"></canvas>
+
+    <div class="hero__inner">
+      <div class="hero__content reveal">
+        <p class="section-label">Enterprise Agentic Workforce Infrastructure</p>
+        <h1 class="hero__title">
+          Build Departments.
+          <span class="highlight">Without Adding Layers.</span>
+        </h1>
+        <p class="hero__subtitle">
+          Deploy fully operational digital departments powered by specialized digital workers, institutional memory, and enterprise governance. Transform organizational knowledge into scalable operational capacity.
+        </p>
+        <div class="hero__actions">
+          <a href="briefing.html" class="btn btn--primary btn--lg">
+            Request Executive Briefing
+            <svg><use href="assets/svg/icons.svg#icon-arrow-right"/></svg>
+          </a>
+          <a href="departments.html" class="btn btn--outline btn--lg">
+            Explore Digital Departments
+          </a>
+        </div>
+      </div>
+
+      <!-- Hero Feature Strip — right column -->
+      <div class="hero-strip reveal">
+        <div class="hero-strip__item">
+          <div class="hero-strip__icon">
+            <svg viewBox="0 0 24 24"><use href="assets/svg/icons.svg#icon-users"/></svg>
+          </div>
+          <p class="hero-strip__label">Digital Departments<br>On Demand</p>
+        </div>
+        <div class="hero-strip__item">
+          <div class="hero-strip__icon">
+            <svg viewBox="0 0 24 24"><use href="assets/svg/icons.svg#icon-brain"/></svg>
+          </div>
+          <p class="hero-strip__label">Institutional Memory<br>That Compounds</p>
+        </div>
+        <div class="hero-strip__item">
+          <div class="hero-strip__icon">
+            <svg viewBox="0 0 24 24"><use href="assets/svg/icons.svg#icon-shield"/></svg>
+          </div>
+          <p class="hero-strip__label">Governed Autonomy<br>Human in Control</p>
+        </div>
+        <div class="hero-strip__item">
+          <div class="hero-strip__icon">
+            <svg viewBox="0 0 24 24"><use href="assets/svg/icons.svg#icon-building"/></svg>
+          </div>
+          <p class="hero-strip__label">Operational Capacity<br>At Enterprise Scale</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Executive Metrics -->
+  <section class="section section--darker">
+    <div class="container">
+      <div class="section-header reveal">
+        <p class="section-label">Operational Impact</p>
+        <h2>Measurable Results</h2>
+        <p>Operan delivers quantifiable improvements across every operational dimension.</p>
+      </div>
+
+      <div class="grid grid--3" style="margin-top:var(--space-2xl);">
+        <div class="card reveal">
+          <div style="font-size:var(--text-4xl);font-weight:700;color:var(--color-cyan);margin-bottom:var(--space-sm);">40%</div>
+          <h4 style="margin-bottom:var(--space-sm);">Operational Efficiency Gains</h4>
+          <p style="color:var(--color-gray-400);font-size:var(--text-sm);">Deliver more with the same workforce — less administrative burden, same quality</p>
+        </div>
+        <div class="card reveal" style="transition-delay:100ms;">
+          <div style="font-size:var(--text-4xl);font-weight:700;color:var(--color-cyan);margin-bottom:var(--space-sm);">3x</div>
+          <h4 style="margin-bottom:var(--space-sm);">Process Throughput</h4>
+          <p style="color:var(--color-gray-400);font-size:var(--text-sm);">Process three times the volume with the same organizational footprint</p>
+        </div>
+        <div class="card reveal" style="transition-delay:200ms;">
+          <div style="font-size:var(--text-4xl);font-weight:700;color:var(--color-cyan);margin-bottom:var(--space-sm);">99.7%</div>
+          <h4 style="margin-bottom:var(--space-sm);">Compliance Coverage</h4>
+          <p style="color:var(--color-gray-400);font-size:var(--text-sm);">Automated compliance monitoring across all regulated processes</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- The Workforce Challenge -->
+  <section class="section section--darker">
+    <div class="container">
+      <div class="reveal" style="max-width:720px;margin:0 auto;">
+        <p class="section-label">The Challenge</p>
+        <h2 class="text-gradient">The Workforce Gap Is Widening</h2>
+        <p style="color:var(--color-gray-400);font-size:var(--text-lg);margin-top:var(--space-xl);line-height:1.8;">
+          Today's organizations face a growing imbalance. Operational demand continues to grow. Skilled capacity is limited. Knowledge leaves when employees leave. Administrative complexity expands faster than workforce capacity.
+        </p>
+        <div class="grid grid--4" style="margin-top:var(--space-3xl);">
+          <div class="stat">
+            <div class="stat__value" data-target="300000">+</div>
+            <div class="stat__label">Daily Requests Per Agency</div>
+          </div>
+          <div class="stat">
+            <div class="stat__value" data-target="40">%</div>
+            <div class="stat__label">Workforce Growth Needed</div>
+          </div>
+          <div class="stat">
+            <div class="stat__value" data-target="65">%</div>
+            <div class="stat__label">Knowledge Loss in 5 Years</div>
+          </div>
+          <div class="stat">
+            <div class="stat__value" data-target="3">x</div>
+            <div class="stat__label">Admin Complexity Increase</div>
+          </div>
+        </div>
+        <p style="color:var(--color-gray-400);font-size:var(--text-base);margin-top:var(--space-3xl);text-align:center;">
+          Traditional scaling adds hiring, training, management, and overhead. <strong style="color:var(--color-white);">Operan empowers your existing teams to do more with less burden.</strong>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Meet the Digital Department -->
+  <section class="section section--grid-bg">
+    <div class="container">
+      <div class="section-header reveal">
+        <p class="section-label">The Solution</p>
+        <h2>Meet the Digital Department</h2>
+        <p>Traditional organizations add headcount for every new initiative. Operan empowers your teams with specialized digital department capabilities — enhancing productivity, quality, and capacity without expanding organizational layers.</p>
+      </div>
+
+      <div class="grid grid--3" style="margin-top:var(--space-2xl);">
+        <div class="card reveal" style="border-left:2px solid var(--color-cyan);">
+          <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-lg);">
+            <svg style="width:32px;height:32px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-brain"/></svg>
+            <h3 style="font-size:var(--text-xl);">Specialized Workers</h3>
+          </div>
+          <p style="color:var(--color-gray-400);font-size:var(--text-sm);line-height:1.7;">
+            Each digital worker is purpose-built for a specific domain. They understand policy, procedure, terminology, and compliance requirements of their function.
+          </p>
+        </div>
+
+        <div class="card reveal" style="border-left:2px solid var(--color-blue-accent);transition-delay:100ms;">
+          <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-lg);">
+            <svg style="width:32px;height:32px;color:var(--color-blue-accent);"><use href="assets/svg/icons.svg#icon-globe"/></svg>
+            <h3 style="font-size:var(--text-xl);">Connected Systems</h3>
+          </div>
+          <p style="color:var(--color-gray-400);font-size:var(--text-sm);line-height:1.7;">
+            Digital workers are interconnected through the enterprise connector fabric, enabling cross-departmental coordination and seamless process handoff.
+          </p>
+        </div>
+
+        <div class="card reveal" style="border-left:2px solid #8B5CF6;transition-delay:200ms;">
+          <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-lg);">
+            <svg style="width:32px;height:32px;color:#8B5CF6;"><use href="assets/svg/icons.svg#icon-hand"/></svg>
+            <h3 style="font-size:var(--text-xl);">Governed Autonomy</h3>
+          </div>
+          <p style="color:var(--color-gray-400);font-size:var(--text-sm);line-height:1.7;">
+            Every action is governed by policy. Every decision has oversight. Every output is explainable. Human authority remains central to all operations.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Department Templates -->
+  <section class="section section--darker">
+    <div class="container">
+      <div class="section-header reveal">
+        <p class="section-label">Digital Departments</p>
+        <h2>Deploy Ready-Made Departments</h2>
+        <p>Start from proven department templates and customize them to your organization's needs. Each template includes structure, roles, and operational workflows.</p>
+      </div>
+
+      <div class="grid grid--3">
+        <a href="departments.html#hr" class="card dept-card reveal" style="display:block;text-decoration:none;">
+          <div class="dept-card__header">
+            <svg class="dept-card__icon"><use href="assets/svg/icons.svg#icon-users"/></svg>
+            <h3 class="dept-card__title">Human Resources</h3>
+          </div>
+          <div class="dept-card__body">
+            <div class="dept-card__capabilities">
+              <span class="dept-card__capability">Policy Support</span>
+              <span class="dept-card__capability">Candidate Screening</span>
+              <span class="dept-card__capability">Onboarding Automation</span>
+              <span class="dept-card__capability">Compliance Monitoring</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="departments.html#finance" class="card dept-card reveal" style="display:block;text-decoration:none;transition-delay:100ms;">
+          <div class="dept-card__header">
+            <svg class="dept-card__icon"><use href="assets/svg/icons.svg#icon-briefcase"/></svg>
+            <h3 class="dept-card__title">Finance</h3>
+          </div>
+          <div class="dept-card__body">
+            <div class="dept-card__capabilities">
+              <span class="dept-card__capability">Invoice Processing</span>
+              <span class="dept-card__capability">Budget Monitoring</span>
+              <span class="dept-card__capability">Financial Reporting</span>
+              <span class="dept-card__capability">Forecasting</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="departments.html#legal" class="card dept-card reveal" style="display:block;text-decoration:none;transition-delay:200ms;">
+          <div class="dept-card__header">
+            <svg class="dept-card__icon"><use href="assets/svg/icons.svg#icon-scale"/></svg>
+            <h3 class="dept-card__title">Legal</h3>
+          </div>
+          <div class="dept-card__body">
+            <div class="dept-card__capabilities">
+              <span class="dept-card__capability">Contract Analysis</span>
+              <span class="dept-card__capability">Clause Extraction</span>
+              <span class="dept-card__capability">Risk Identification</span>
+              <span class="dept-card__capability">Policy Review</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="departments.html#engineering" class="card dept-card reveal" style="display:block;text-decoration:none;transition-delay:300ms;">
+          <div class="dept-card__header">
+            <svg class="dept-card__icon"><use href="assets/svg/icons.svg#icon-factory"/></svg>
+            <h3 class="dept-card__title">Engineering</h3>
+          </div>
+          <div class="dept-card__body">
+            <div class="dept-card__capabilities">
+              <span class="dept-card__capability">Documentation</span>
+              <span class="dept-card__capability">Quality Review</span>
+              <span class="dept-card__capability">Knowledge Retrieval</span>
+              <span class="dept-card__capability">Sprint Planning</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="departments.html#research" class="card dept-card reveal" style="display:block;text-decoration:none;transition-delay:400ms;">
+          <div class="dept-card__header">
+            <svg class="dept-card__icon"><use href="assets/svg/icons.svg#icon-microscope"/></svg>
+            <h3 class="dept-card__title">Research</h3>
+          </div>
+          <div class="dept-card__body">
+            <div class="dept-card__capabilities">
+              <span class="dept-card__capability">Literature Analysis</span>
+              <span class="dept-card__capability">Knowledge Synthesis</span>
+              <span class="dept-card__capability">Reporting</span>
+              <span class="dept-card__capability">Citation Validation</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="departments.html#compliance" class="card dept-card reveal" style="display:block;text-decoration:none;transition-delay:500ms;">
+          <div class="dept-card__header">
+            <svg class="dept-card__icon"><use href="assets/svg/icons.svg#icon-shield"/></svg>
+            <h3 class="dept-card__title">Compliance</h3>
+          </div>
+          <div class="dept-card__body">
+            <div class="dept-card__capabilities">
+              <span class="dept-card__capability">Regulatory Monitoring</span>
+              <span class="dept-card__capability">Audit Preparation</span>
+              <span class="dept-card__capability">Risk Assessment</span>
+              <span class="dept-card__capability">Policy Enforcement</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Institutional Memory -->
+  <section class="section section--grid-bg">
+    <div class="container">
+      <div class="reveal" style="max-width:720px;margin:0 auto;text-align:center;">
+        <p class="section-label" style="justify-content:center;">Institutional Memory</p>
+        <h2 class="text-gradient">Your Most Valuable Employee Never Leaves</h2>
+        <p style="color:var(--color-gray-400);font-size:var(--text-lg);margin-top:var(--space-xl);line-height:1.8;">
+          Most organizations lose knowledge every day. Retirements. Resignations. Consultant turnover. Departmental silos. Operan captures, structures, and operationalizes institutional knowledge so organizational intelligence compounds over time.
+        </p>
+
+        <div style="margin-top:var(--space-3xl);display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-xl);text-align:center;">
+          <div>
+            <div style="font-size:var(--text-4xl);font-weight:700;color:var(--color-cyan);margin-bottom:var(--space-sm);">100%</div>
+            <div style="font-size:var(--text-sm);color:var(--color-gray-500);">Knowledge Retention</div>
+          </div>
+          <div>
+            <div style="font-size:var(--text-4xl);font-weight:700;color:var(--color-cyan);margin-bottom:var(--space-sm);">24/7</div>
+            <div style="font-size:var(--text-sm);color:var(--color-gray-500);">Availability</div>
+          </div>
+          <div>
+            <div style="font-size:var(--text-4xl);font-weight:700;color:var(--color-cyan);margin-bottom:var(--space-sm);">∞</div>
+            <div style="font-size:var(--text-sm);color:var(--color-gray-500);">Knowledge Compound</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Human-Governed Autonomy -->
+  <section class="section section--darker">
+    <div class="container">
+      <div class="reveal" style="max-width:800px;margin:0 auto;">
+        <p class="section-label">Governance Model</p>
+        <h2>Human-Governed Autonomy</h2>
+        <p style="color:var(--color-gray-400);font-size:var(--text-lg);margin-top:var(--space-xl);line-height:1.8;">
+          Operan amplifies leadership impact and organizational capacity. Critical decisions remain under human authority while routine operational work is supported by governed digital workers.
+        </p>
+
+        <div class="feature-list" style="margin-top:var(--space-3xl);">
+          <div class="feature-list__item">
+            <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+            <span><strong style="color:var(--color-white);">Policy-first design</strong> — Every digital worker operates within strictly defined policy boundaries</span>
+          </div>
+          <div class="feature-list__item">
+            <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+            <span><strong style="color:var(--color-white);">Explainable actions</strong> — Every output includes the rationale, sources, and confidence level</span>
+          </div>
+          <div class="feature-list__item">
+            <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+            <span><strong style="color:var(--color-white);">Escalation workflows</strong> — When a situation exceeds automated boundaries, it escalates to human authority</span>
+          </div>
+          <div class="feature-list__item">
+            <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
+            <span><strong style="color:var(--color-white);">Complete audit trails</strong> — Every action is logged, timestamped, and immutable</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="section" style="text-align:center;">
+    <div class="container">
+      <div class="reveal">
+        <div class="quote-block" style="display:inline-block;text-align:left;max-width:600px;width:100%;">
+          <p class="quote-block__text">
+            The future workforce is not larger.<br>It is <span class="highlight">smarter</span>.
+          </p>
+        </div>
+        <a href="briefing.html" class="btn btn--primary btn--lg" style="margin-top:var(--space-3xl);">
+          Request Executive Briefing
+          <svg><use href="assets/svg/icons.svg#icon-arrow-right"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div>
+          <div class="footer__brand-name">OPERAN</div>
+          <p class="footer__brand-tagline">The Operating System for Digital Departments.<br>Enterprise Agentic Workforce Infrastructure.</p>
+        </div>
+        <div>
+          <h4 class="footer__heading">Platform</h4>
+          <div class="footer__links">
+            <a href="platform.html" class="footer__link">Architecture</a>
+            <a href="platform.html#modules" class="footer__link">Modules</a>
+            <a href="platform.html#compliance" class="footer__link">Compliance</a>
+          </div>
+        </div>
+        <div>
+          <h4 class="footer__heading">Solutions</h4>
+          <div class="footer__links">
+            <a href="departments.html" class="footer__link">Digital Departments</a>
+            <a href="industries.html" class="footer__link">Industries</a>
+            <a href="security.html" class="footer__link">Security & Governance</a>
+            <a href="private-cloud.html" class="footer__link">Private Cloud</a>
+          </div>
+        </div>
+        <div>
+          <h4 class="footer__heading">Company</h4>
+          <div class="footer__links">
+            <a href="about.html" class="footer__link">About</a>
+            <a href="briefing.html" class="footer__link">Request Briefing</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span>© 2026 Operan. All rights reserved.</span>
+        <span>Enterprise Agentic Workforce Infrastructure</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

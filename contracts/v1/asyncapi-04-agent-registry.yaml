@@ -322,8 +322,8 @@ components:
 
     DependencyTypeEnum:
       type: string
-      description: "Dependency relationship type. Harmonized: soft, optional."
-      enum: [soft, optional]
+      description: "Dependency relationship type. Harmonized across OpenAPI, JSON Schema, and AsyncAPI: hard, soft, optional."
+      enum: [hard, soft, optional]
 
     CapabilityTier:
       type: string
@@ -560,10 +560,16 @@ components:
           $ref: '#/components/schemas/DateTime'
         from_environment:
           type: string
+          enum:
+            - none
+            - dev
+            - staging
+            - production
           description: Source environment of the promotion.
         to_environment:
           type: string
           enum:
+            - dev
             - staging
             - production
           description: Target environment of the promotion.
