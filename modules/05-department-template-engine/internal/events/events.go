@@ -1,12 +1,12 @@
 // Package events publishes AsyncAPI events for Module 05 template lifecycle operations.
-// Events use the topic format: operan/events/template.{event}
-// Topics: operan/events/template.created, operan/events/template.updated,
-//         operan/events/template.deployed, operan/events/template.deployment_failed,
-//         operan/events/template.undeployed, operan/events/template.deleted,
-//         operan/events/template.versioned, operan/events/template.cloned
-// Custom template topics: operan/events/custom_template.created,
-//         operan/events/custom_template.updated, operan/events/custom_template.deleted,
-//         operan/events/custom_template.cloned
+// Events use the topic format: operan.templates.template.{event}
+// Topics: operan.templates.template.created, operan.templates.template.updated,
+//         operan.templates.template.deployed, operan.templates.template.deployment_failed,
+//         operan.templates.template.undeployed, operan.templates.template.deleted,
+//         operan.templates.template.versioned, operan.templates.template.cloned
+// Custom template topics: operan.templates.custom_template.created,
+//         operan.templates.custom_template.updated, operan.templates.custom_template.deleted,
+//         operan.templates.custom_template.cloned
 package events
 
 import (
@@ -241,10 +241,10 @@ type CustomTemplateClonedPayload struct {
 
 // ─── Publish methods ─────────────────────────────────────────────────────────
 
-const templateTopic = "operan/events/template"
-const customTemplateTopic = "operan/events/custom_template"
+const templateTopic = "operan.templates.template"
+const customTemplateTopic = "operan.templates.custom_template"
 
-// PublishTemplateCreated emits operan/events/template.created.
+// PublishTemplateCreated emits operan.templates.template.created.
 func (p *Publisher) PublishTemplateCreated(payload TemplateCreatedPayload) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -253,7 +253,7 @@ func (p *Publisher) PublishTemplateCreated(payload TemplateCreatedPayload) error
 	return p.publish(templateTopic+".created", data)
 }
 
-// PublishTemplateUpdated emits operan/events/template.updated.
+// PublishTemplateUpdated emits operan.templates.template.updated.
 func (p *Publisher) PublishTemplateUpdated(payload TemplateUpdatedPayload) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -262,7 +262,7 @@ func (p *Publisher) PublishTemplateUpdated(payload TemplateUpdatedPayload) error
 	return p.publish(templateTopic+".updated", data)
 }
 
-// PublishTemplateDeployed emits operan/events/template.deployed.
+// PublishTemplateDeployed emits operan.templates.template.deployed.
 func (p *Publisher) PublishTemplateDeployed(payload TemplateDeployedPayload) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -271,7 +271,7 @@ func (p *Publisher) PublishTemplateDeployed(payload TemplateDeployedPayload) err
 	return p.publish(templateTopic+".deployed", data)
 }
 
-// PublishTemplateDeploymentFailed emits operan/events/template.deployment_failed.
+// PublishTemplateDeploymentFailed emits operan.templates.template.deployment_failed.
 func (p *Publisher) PublishTemplateDeploymentFailed(payload TemplateDeploymentFailedPayload) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -280,7 +280,7 @@ func (p *Publisher) PublishTemplateDeploymentFailed(payload TemplateDeploymentFa
 	return p.publish(templateTopic+".deployment_failed", data)
 }
 
-// PublishTemplateUndeployed emits operan/events/template.undeployed.
+// PublishTemplateUndeployed emits operan.templates.template.undeployed.
 func (p *Publisher) PublishTemplateUndeployed(payload TemplateUndeployedPayload) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -289,7 +289,7 @@ func (p *Publisher) PublishTemplateUndeployed(payload TemplateUndeployedPayload)
 	return p.publish(templateTopic+".undeployed", data)
 }
 
-// PublishTemplateDeleted emits operan/events/template.deleted.
+// PublishTemplateDeleted emits operan.templates.template.deleted.
 func (p *Publisher) PublishTemplateDeleted(payload TemplateDeletedPayload) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -298,7 +298,7 @@ func (p *Publisher) PublishTemplateDeleted(payload TemplateDeletedPayload) error
 	return p.publish(templateTopic+".deleted", data)
 }
 
-// PublishTemplateVersioned emits operan/events/template.versioned.
+// PublishTemplateVersioned emits operan.templates.template.versioned.
 func (p *Publisher) PublishTemplateVersioned(payload TemplateVersionedPayload) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -307,7 +307,7 @@ func (p *Publisher) PublishTemplateVersioned(payload TemplateVersionedPayload) e
 	return p.publish(templateTopic+".versioned", data)
 }
 
-// PublishTemplateCloned emits operan/events/template.cloned.
+// PublishTemplateCloned emits operan.templates.template.cloned.
 func (p *Publisher) PublishTemplateCloned(payload TemplateClonedPayload) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -316,7 +316,7 @@ func (p *Publisher) PublishTemplateCloned(payload TemplateClonedPayload) error {
 	return p.publish(templateTopic+".cloned", data)
 }
 
-// PublishCustomTemplateCreated emits operan/events/custom_template.created.
+// PublishCustomTemplateCreated emits operan.templates.custom_template.created.
 func (p *Publisher) PublishCustomTemplateCreated(payload CustomTemplateCreatedPayload) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -325,7 +325,7 @@ func (p *Publisher) PublishCustomTemplateCreated(payload CustomTemplateCreatedPa
 	return p.publish(customTemplateTopic+".created", data)
 }
 
-// PublishCustomTemplateUpdated emits operan/events/custom_template.updated.
+// PublishCustomTemplateUpdated emits operan.templates.custom_template.updated.
 func (p *Publisher) PublishCustomTemplateUpdated(payload CustomTemplateUpdatedPayload) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -334,7 +334,7 @@ func (p *Publisher) PublishCustomTemplateUpdated(payload CustomTemplateUpdatedPa
 	return p.publish(customTemplateTopic+".updated", data)
 }
 
-// PublishCustomTemplateDeleted emits operan/events/custom_template.deleted.
+// PublishCustomTemplateDeleted emits operan.templates.custom_template.deleted.
 func (p *Publisher) PublishCustomTemplateDeleted(payload CustomTemplateDeletedPayload) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
@@ -343,7 +343,7 @@ func (p *Publisher) PublishCustomTemplateDeleted(payload CustomTemplateDeletedPa
 	return p.publish(customTemplateTopic+".deleted", data)
 }
 
-// PublishCustomTemplateCloned emits operan/events/custom_template.cloned.
+// PublishCustomTemplateCloned emits operan.templates.custom_template.cloned.
 func (p *Publisher) PublishCustomTemplateCloned(payload CustomTemplateClonedPayload) error {
 	data, err := json.Marshal(payload)
 	if err != nil {

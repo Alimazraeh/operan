@@ -109,7 +109,7 @@ func (p *Publisher) PublishTenantProvisioned(evt TenantProvisionedEvent) error {
 		return fmt.Errorf("marshal tenant.provisioned event: %w", err)
 	}
 
-	p.publish("tenant.provisioned", data)
+	p.publish("operan.tenant.provisioned", data)
 	return nil
 }
 
@@ -123,7 +123,7 @@ func (p *Publisher) PublishTenantSuspended(evt TenantSuspendedEvent) error {
 		return fmt.Errorf("marshal tenant.suspended event: %w", err)
 	}
 
-	p.publish("tenant.suspended", data)
+	p.publish("operan.tenant.suspended", data)
 	return nil
 }
 
@@ -137,7 +137,7 @@ func (p *Publisher) PublishTenantDeprovisioned(evt TenantDeprovisionedEvent) err
 		return fmt.Errorf("marshal tenant.deprovisioned event: %w", err)
 	}
 
-	p.publish("tenant.deprovisioned", data)
+	p.publish("operan.tenant.deprovisioned", data)
 	return nil
 }
 
@@ -151,7 +151,7 @@ func (p *Publisher) PublishTenantQuotaExceeded(evt TenantQuotaExceededEvent) err
 		return fmt.Errorf("marshal tenant.quota_exceeded event: %w", err)
 	}
 
-	p.publish("tenant.quota_exceeded", data)
+	p.publish("operan.tenant.quota_exceeded", data)
 	return nil
 }
 

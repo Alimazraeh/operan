@@ -40,12 +40,12 @@ func TestPublisher_AllEvents(t *testing.T) {
 	}
 
 	want := []string{
-		"operan/events/tools/tool_registered",
-		"operan/events/tools/tool_version_changed",
-		"operan/events/tools/execution/requested",
-		"operan/events/tools/execution/started",
-		"operan/events/tools/execution/completed",
-		"operan/events/tools/execution/failed",
+		"operan.tools.tool_registered",
+		"operan.tools.tool_version_changed",
+		"operan.tools.execution.requested",
+		"operan.tools.execution.started",
+		"operan.tools.execution.completed",
+		"operan.tools.execution.failed",
 	}
 	if len(b.topics) != len(want) {
 		t.Fatalf("published %d topics, want %d: %v", len(b.topics), len(want), b.topics)
