@@ -1,7 +1,25 @@
 # Operan: Master Contract Index
-Last Updated: 2026-05-30 (Module 05 implementation completed)
+Last Updated: 2026-06-10 (JWT fail-fast guards platform-wide; Kafka event bus standardized; Module 02 migrated off AMQP)
 Owner: You (Human Orchestrator)
 Project: Operan — Agentic Department Operating System (ADOS)
+
+## Platform Event Bus & Security Hardening (2026-06-10)
+
+All six implemented modules (01–05, 08) now share one event-publishing standard:
+- **Kafka only** via `segmentio/kafka-go` v0.4.51 — Module 02 was migrated off AMQP/RabbitMQ
+  (topics `operan.iam.{event}` keyed by tenant ID; `streadway/amqp` removed; AsyncAPI 02
+  servers updated to Kafka)
+- **Log-only fallback** in every module when no broker is configured — a down broker
+  degrades to warnings, never breaks API responses
+- **JWT fail-fast**: every module refuses to start when its JWT secret is unset or the
+  known default value
+- Module 02 startup fixes: removed duplicate `/health` registration (boot panic) and
+  exempted `/health` + `/ready` from the auth/tenant middleware chain
+- Module 04 Helm chart fixed: it set `EVENT_BROKER_URL`, which the service never read;
+  now sets `EVENT_BUS_HOST`/`EVENT_BUS_PORT`/`EVENT_BUS_PROTO`
+
+Outstanding: live end-to-end publish verification against a real Kafka broker
+(Docker unavailable at fix time) — fold into demo-environment setup.
 
 ## Platform Standards Refactoring (In Progress)
 Goal: Refactor all v1 OpenAPI contracts to adhere to strict Operan platform standards:
@@ -128,7 +146,7 @@ AsyncAPI events: 4/9 covered (provisioned, suspended, deprovisioned, quota_excee
 
 | # | Issue | Location | Severity |
 |---|-------|----------|----------|
-| 1 | Event publisher is a stub — events logged but never published to AMQP | `events/events.go` | P0 |
+| 1 | ~~Event publisher is a stub~~ — RESOLVED: real Kafka broker (segmentio/kafka-go) with SASL/TLS support and log-only fallback | `events/kafka_broker.go` | ~~P0~~ Done |
 | 2 | No database backend — all stores are in-memory | All `store/` files | P1 |
 | 3 | JWT auth uses local secret (MVP) — should delegate to Module 02 IAM | `middleware/middleware.go` | P1 |
 | 4 | AgentStore manages availability/assignment only — actual Agent definitions belong to Module 04 | `store/agents.go` | Info |
@@ -157,7 +175,7 @@ AsyncAPI events: 4/9 covered (provisioned, suspended, deprovisioned, quota_excee
 - Middleware: `JWTAuth` (HMAC-S256 with JWT_SECRET env var), `ChainJWTAuth` for Chain compatibility, `ExtractTenant` (checks JWT context first, then header), `TraceID`, `RequestID`, `Logger`, `RequireRole`, `RequireAdmin`
 - Events: Publisher with 8 typed publish methods using `operan.agent-registry.{entity}.{event}` topic format; wired to Kafka broker via `events.NewPublisherWithConfig()`
 - Cache: `internal/cache/` — thread-safe LRU cache (1000 items max) with eviction callbacks
-- Broker: `internal/broker/` — KafkaProducer stub + MockProducer
+- Broker: `internal/broker/` — real async KafkaProducer (segmentio/kafka-go; delivery failures logged via completion callback) + MockProducer for tests
 - Context keys: `internal/ctxkeys/` — TenantID, UserID, UserRole, TraceID, RequestID (Get/Set functions)
 - Test coverage: 148 tests, 72.6% overall (handlers 58.5%, middleware 83.8%, cache 98.2%, broker 97.8%, config 100.0%, ctxkeys 100.0%, events 96.0%, store 77.7%)
 
@@ -267,7 +285,7 @@ AsyncAPI events: 4/9 covered (provisioned, suspended, deprovisioned, quota_excee
 | # | Issue | Severity |
 |---|-------|----------|
 | 1 | No database backend — all stores are in-memory | P1 |
-| 2 | Event publishing uses LogBroker — no production AMQP broker integration | P1 |
+| 2 | ~~Event publishing uses LogBroker~~ — RESOLVED 2026-06-10: Kafka broker wired via `MODULE05_EVENT_BROKER_URL` (LogBroker remains the dev default) | ~~P1~~ Done |
 | 3 | Handler coverage at 42.3% — some edge cases untested (concurrent requests, large payloads, malformed UUIDs) | Medium |
 | 4 | No rate limiting middleware | Medium |
 
@@ -457,7 +475,7 @@ Use these as the gold standard for OpenAPI contract structure:
 - Handlers: 13 handler files (users, roles, audit_rbac, sso, ldap, ad, delegations, mfa, abac, identity)
 - Stores: 9 in-memory stores with tenant isolation (`sync.RWMutex` + per-tenant maps)
 - Middleware: `AuthValidator` (RSA via JWKS + HMAC fallback), `TenantInjector`, `TraceInjector`, `SessionReplayCapture`, `JWKSCache`
-- Events: Publisher with 15+ typed publish methods — **STUB**: logs to stdout, no AMQP broker
+- Events: Publisher with 15+ typed publish methods — Kafka via `segmentio/kafka-go` (topics `operan.iam.{event}`, tenant-keyed; log-only when `IAM_EVENT_BROKER_URL` unset)
 - Authentik client: Full REST v3 API wrapper (Users, Groups, Applications, Tokens, OAuth2, SAML, LDAP, SCIM, RBAC, Tenants)
 - Provisioner: Helm and Docker Compose per-tenant Authentik instances
 
@@ -467,7 +485,7 @@ Use these as the gold standard for OpenAPI contract structure:
 
 | # | Issue | Location | Severity |
 |---|-------|----------|----------|
-| 1 | Event publisher is a stub — events logged but never published to AMQP | `events/events.go` | P0 |
+| 1 | ~~Event publisher is a stub~~ — RESOLVED 2026-06-10: migrated to Kafka (topics `operan.iam.{event}`, tenant-keyed, retry+backoff; AMQP removed) | `events/events.go`, `events/kafka.go` | ~~P0~~ Done |
 | 2 | `generateSecureToken` / `generateSecurePassword` not cryptographically secure | `authentik/provisioner.go` | P0 |
 | 3 | Query string sanitization defined but not wired into session replay capture | `middleware/session_replay.go` | P0 |
 | 4 | Possible compilation errors — missing accessor methods (`OAuth2API`, `SAMLAPI`, `Groups`, `Users`, `Call`) | Multiple handlers | P1 |
@@ -479,7 +497,7 @@ Use these as the gold standard for OpenAPI contract structure:
 
 **Module 02 as style reference:** Module 02's OpenAPI contract (`openapi-02-identity-access.yaml`) is used as a gold standard for IAM patterns. It is NOT a platform-standards-refactored contract (it predates the refactoring initiative). Modules 05–16 were refactored to use the standards, but Module 02 was kept as-is for backward compatibility since it defines the IAM patterns.
 
-Use these as reference for AMQP/RabbitMQ event naming (`operan/events/{module}.{event}`):
+Use these as reference for Kafka event/topic naming (platform standard since 2026-06-10; dotted topics, e.g. `operan.iam.user.created`):
 - **Module 03** (`asyncapi-03-agent-orchestration.yaml`) — 37 events; multi-stack format: `operan.orchestration.{stack}.{entity}.{event}`
 - **Module 04** (`asyncapi-04-agent-registry.yaml`) — 8 events
 - **Module 06** (`asyncapi-06-knowledge-ingestion.yaml`) — 7 events

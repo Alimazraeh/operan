@@ -22,8 +22,10 @@ All configuration is read from environment variables:
 | `OTLP_ENDPOINT` | `http://localhost:4318` | OpenTelemetry collector endpoint |
 | `LOG_ENV` | `production` | Log environment (`debug`/`production`) |
 | `MODULE_VERSION` | `1.0.0` | Module version string |
-| `EVENT_BROKER_URL` | `amqp://localhost:5672` | Event broker URL |
-| `JWT_SECRET` | `change-me-in-production` | JWT signing secret (HMAC-S256). Must be ≥32 bytes |
+| `EVENT_BUS_HOST` | `events.operan.internal` | Kafka broker host |
+| `EVENT_BUS_PORT` | `9092` | Kafka broker port |
+| `EVENT_BUS_PROTO` | `kafka` | Event bus protocol |
+| `JWT_SECRET` | _(required)_ | JWT signing secret (HMAC-S256). Must be ≥32 bytes; startup fails on the default value |
 | `JWT_ISSUER` | `operan-agent-registry` | JWT issuer claim value |
 | `DB_HOST` | _(not set)_ | PostgreSQL host (optional) |
 | `DB_PORT` | `5432` | PostgreSQL port |
@@ -93,7 +95,8 @@ Deploy to Kubernetes:
 ```bash
 helm install operan-agent-registry modules/04-agent-registry/helm/ \
   --set jwtSecret="your-32-byte-minimum-secret-string-here!!" \
-  --set eventBrokerURL="amqp://mq.operan.internal:5672"
+  --set eventBusHost="events.operan.internal" \
+  --set eventBusPort="9092"
 ```
 
 ## Testing
