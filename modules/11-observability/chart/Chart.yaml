@@ -1,0 +1,15 @@
+apiVersion: v2
+name: module11-observability
+description: A Helm chart for Operan Module 11 - Observability
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - operan
+  - observability
+  - template
+  - engine
+  - agents
+maintainers:
+  - name: Operan Platform Team
+    email: platform@operan.io

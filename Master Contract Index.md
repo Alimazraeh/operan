@@ -55,7 +55,7 @@ Goal: Refactor all v1 OpenAPI contracts to adhere to strict Operan platform stan
 | 08-tool-execution | ✅ | ✅ | ✅ | ✅ | RECONCILED | OpenAPI now created; 10 endpoints |
 | 09-human-supervision | ✅ | ✅ | ✅ | ✅ | RECONCILED | |
 | 10-policy-governance | ✅ | ✅ | ✅ | ✅ | RECONCILED | Full spec; style reference |
-| 11-observability | ✅ | ✅ | ✅ | ✅ | RECONCILED | OpenAPI now created; 8 endpoints |
+| 11-observability | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation 2026-06-10: 8 ops, 5 Kafka events published, platform-wide event consumer, 92% store / 81.6% handler coverage, Dockerfile, Helm chart |
 | 12-model-abstraction | ✅ | ✅ | ✅ | ✅ | RECONCILED | OpenAPI now created; 11 endpoints |
 | 13-workflow-orchestration | ✅ | ✅ | ✅ | ✅ | RECONCILED | Added openapi-13-workflow-orchestration.yaml from orphan |
 | 13-multi-model-routing-engine | ✅ | ✅ | ✅ | ✅ | RECONCILED | Both 13 contracts coexist; routing + workflow |
@@ -341,6 +341,23 @@ AsyncAPI events: 4/9 covered (provisioned, suspended, deprovisioned, quota_excee
 **Search semantics:** cosine similarity when the request carries `query_vector` and stored vectors have embeddings; otherwise deterministic token-overlap with ≥4-char prefix tolerance ("demo" matches "demos"). Real embedding generation is a Module 12 dependency.
 
 **Known limitations:** in-memory stores (P1); text search is a placeholder until Module 12 (P1); JWT secret local, not delegated to Module 02 (P1); retention policies stored but not auto-enforced — GC is manual via `POST /gc` (Medium). AsyncAPI 07 servers updated from RabbitMQ to Kafka as part of the platform event-bus standardization.
+
+### Module 11 — Observability: Implementation Notes (2026-06-10)
+
+**Contract counts:** 8 OpenAPI operations · 5 AsyncAPI channels published (`operan.observability.{metric.recorded, trace.span, trace.flush, alert.fired, health.status_change}`) · consumes all platform topics from modules 01–08
+
+| PRD Requirement (Phase 1 MVP) | Status | Notes |
+|------------------------------|--------|-------|
+| View workflow execution traces (US-501) | ✅ | Kafka consumer groups platform events into traces by correlationId; GET /spans + GET /traces/{id} |
+| Token/cost metrics per tenant (US-502) | ✅ | POST/GET /metrics with type/name/source/time-range filters, tenant-isolated; `operan.events.consumed` counter auto-recorded |
+
+**Implementation:** structure mirrors Modules 07/08. The differentiator is `internal/consumer`: one Kafka reader per platform topic (consumer group `module11-observability`) ingests every event into a span (trace = correlationId), a counter metric, a component-health upsert, and — for `.failed` events — a warning alert. Envelope per the AsyncAPI contract is carried in message **headers** (unlike module 07, whose contract embeds it in payloads). Coverage: store 92%, config 82.6%, handlers 81.6%, consumer 67.4% (uncovered = live-Kafka paths) — all `-race` clean. Smoke-tested: auth, metric record/query, tenant health, fail-fast.
+
+**Route note:** the contract's `GET /health` is *tenant system health* (auth-required). Service liveness is `GET /healthz` (no auth) — probes and the Helm chart point there.
+
+**Platform fix shipped with this module:** topic names in modules 01, 05, 08 contained characters invalid in Kafka (`operan/events/...` slashes) or lacked the platform prefix (`tenant.*`). All renamed to dotted form: `operan.tenant.*`, `operan.templates.template.*`, `operan.templates.custom_template.*`, `operan.tools.*`. Without this, those modules' publishes would have been rejected by a real broker.
+
+**Known limitations:** in-memory stores (P1); JWT secret local (P1); no alert rules engine — alerts only from `.failed` events (Medium); health derives from event flow only — silence ≠ unhealthy (Medium); consumed-event spans have duration 0; `trace.flush` not wired (Low).
 
 ### Orphan Files (Drafts — unnumbered) — ✅ Cleaned up
 

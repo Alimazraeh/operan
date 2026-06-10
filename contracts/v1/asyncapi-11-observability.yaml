@@ -13,13 +13,13 @@ info:
 
 servers:
   production:
-    url: rabbitmq-operan.prod.internal:5672
-    protocol: amqp
-    description: Production RabbitMQ broker
+    url: events.operan.internal:9092
+    protocol: kafka
+    description: Production Kafka broker
   staging:
-    url: rabbitmq-operan.staging.internal:5672
-    protocol: amqp
-    description: Staging RabbitMQ broker
+    url: events-staging.operan.internal:9092
+    protocol: kafka
+    description: Staging Kafka broker
 
 defaultContentType: application/json
 

@@ -1,0 +1,33 @@
+{
+  "module_id": "11",
+  "module_name": "Observability",
+  "version": "0.1.0",
+  "app_version": "1.0.0",
+  "description": "Platform telemetry: ingests events from all Operan modules into trace spans, metrics, alerts, and component health, served through the observability API.",
+  "repository": "https://github.com/operan/operan/tree/main/modules/11-observability",
+  "contracts": {
+    "openapi": "contracts/v1/openapi-11-observability.yaml",
+    "asyncapi": "contracts/v1/asyncapi-11-observability.yaml",
+    "json_schema": "contracts/v1/schema-11-observability.json"
+  },
+  "health_endpoint": "/healthz",
+  "port": 8011,
+  "image": {
+    "repository": "operan/module11-observability",
+    "tag": "latest",
+    "pull_policy": "IfNotPresent"
+  },
+  "helm_chart": "chart",
+  "dependencies": [
+    "01-tenant-control-plane",
+    "02-identity-access"
+  ],
+  "events": [
+    { "name": "MetricRecorded", "topic": "operan.observability.metric.recorded" },
+    { "name": "TraceSpan", "topic": "operan.observability.trace.span" },
+    { "name": "TraceFlush", "topic": "operan.observability.trace.flush" },
+    { "name": "AlertFired", "topic": "operan.observability.alert.fired" },
+    { "name": "HealthStatusChange", "topic": "operan.observability.health.status_change" }
+  ],
+  "consumes": "All platform topics (modules 01-08) — see internal/config DefaultConsumeTopics; override via MODULE11_CONSUME_TOPICS"
+}
