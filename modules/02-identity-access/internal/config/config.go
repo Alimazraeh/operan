@@ -33,7 +33,7 @@ func Load() *Config {
 		Port:             getEnvInt("IAM_PORT", 8002),
 		TokenSecret:      getEnvString("IAM_TOKEN_SECRET", ""),
 		TokenExpiry:      getEnvInt("IAM_TOKEN_EXPIRY_MIN", 60),
-		EventBrokerURL:   getEnvString("IAM_EVENT_BROKER_URL", "amqp://mq.operan.internal:5672"),
+		EventBrokerURL:   getEnvString("IAM_EVENT_BROKER_URL", ""),
 		TracerEnabled:    getEnvBool("IAM_OTEL_ENABLED", true),
 		OtelCollectorURL: getEnvString("IAM_OTEL_COLLECTOR_URL", "http://otel-collector:4317"),
 

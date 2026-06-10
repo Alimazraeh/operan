@@ -11,13 +11,13 @@ info:
 
 servers:
   production:
-    url: mq.operan.internal
-    protocol: amqp
-    description: Production message broker for Operan IAM events
+    url: events.operan.internal:9092
+    protocol: kafka
+    description: Production Kafka broker for Operan IAM events
   staging:
-    url: mq-staging.operan.internal
-    protocol: amqp
-    description: Staging message broker for Operan IAM events
+    url: events-staging.operan.internal:9092
+    protocol: kafka
+    description: Staging Kafka broker for Operan IAM events
 
 defaultContentType: application/json
 

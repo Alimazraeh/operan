@@ -45,7 +45,7 @@ All configuration is via environment variables:
 | `IAM_PORT` | `8002` | No | HTTP listen port |
 | `IAM_TOKEN_SECRET` | *(none)* | **Yes** | HMAC signing secret for internal service/agent tokens. Must be a strong random string. |
 | `IAM_TOKEN_EXPIRY_MIN` | `60` | No | JWT token expiry in minutes |
-| `IAM_EVENT_BROKER_URL` | `amqp://mq.operan.internal:5672` | No | AMQP broker URL for event publishing |
+| `IAM_EVENT_BROKER_URL` | *(empty — log-only)* | No | Kafka broker address (`host:port`) for event publishing; empty = log-only |
 | `IAM_OTEL_ENABLED` | `true` | No | Enable OpenTelemetry tracing |
 | `IAM_OTEL_COLLECTOR_URL` | `http://otel-collector:4317` | No | OTLP collector endpoint |
 | `AUTHENTIK_SERVER_URL` | *(none)* | **Yes** | Base URL of Authentik API |
