@@ -5,28 +5,34 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"sync"
+	"strings"
 	"time"
-
-	amqp "github.com/streadway/amqp"
 )
+
+// topicPrefix maps event types to platform Kafka topics. The AsyncAPI channel
+// operan/events/iam/user/created becomes topic operan.iam.user.created.
+const topicPrefix = "operan.iam."
+
+// Broker is the interface for event publishing (Kafka in production).
+type Broker interface {
+	Publish(ctx context.Context, topic string, key []byte, value []byte, headers map[string]string) error
+	Close() error
+}
+
+// logBroker is the default broker that logs events instead of publishing.
+type logBroker struct{}
+
+func (l *logBroker) Publish(_ context.Context, topic string, _, value []byte, _ map[string]string) error {
+	log.Printf("[EVENT] %s: %s", topic, string(value))
+	return nil
+}
+
+func (l *logBroker) Close() error { return nil }
 
 // Publisher abstracts the async event broker for IAM events.
 type Publisher struct {
-	brokerURL string
-	logger    *log.Logger
-
-	// amqpConn is an injectable interface for testability.
-	// nil in production (uses real AMQP dial); set in tests to a mock.
-	amqpConn AMQPInterface
-	// mu guards conn and ch in production mode
-	mu   sync.Mutex
-	conn *amqp.Connection
-	ch   *amqp.Channel
-
-	// once ensures the real connection/channel is initialized exactly once
-	once    sync.Once
-	initErr error
+	broker Broker
+	logger *log.Logger
 }
 
 // Event represents a common IAM event envelope.
@@ -38,70 +44,33 @@ type Event struct {
 	Payload       map[string]interface{} `json:"payload"`
 }
 
-// NewPublisher creates a new event publisher.
+// NewPublisher creates a new event publisher. An empty broker URL selects
+// log-only mode; otherwise the URL is treated as a Kafka broker address
+// ("host:port[,host:port...]").
 func NewPublisher(brokerURL string) *Publisher {
-	return &Publisher{
-		brokerURL: brokerURL,
-		logger:    log.Default(),
+	if brokerURL == "" {
+		return &Publisher{broker: &logBroker{}, logger: log.Default()}
 	}
+	if strings.HasPrefix(brokerURL, "amqp://") {
+		log.Printf("[WARN] AMQP broker URLs are no longer supported (%s); set IAM_EVENT_BROKER_URL to a Kafka address — falling back to log-only", brokerURL)
+		return &Publisher{broker: &logBroker{}, logger: log.Default()}
+	}
+	broker, err := NewKafkaBroker(brokerURL)
+	if err != nil {
+		log.Printf("[WARN] event broker unavailable (%s): %v — falling back to log-only", brokerURL, err)
+		return &Publisher{broker: &logBroker{}, logger: log.Default()}
+	}
+	log.Printf("event publisher configured for kafka broker %s", brokerURL)
+	return &Publisher{broker: broker, logger: log.Default()}
 }
 
-// NewPublisherWithDeps creates a new event publisher with an injectable
-// AMQP interface for testing purposes.
-func NewPublisherWithDeps(brokerURL string, amqpConn AMQPInterface) *Publisher {
-	return &Publisher{
-		brokerURL: brokerURL,
-		logger:    log.Default(),
-		amqpConn:  amqpConn,
-	}
-}
-
-// initConnection establishes the AMQP connection and channel lazily
-// on first use, using sync.Once for thread safety.
-func (p *Publisher) initConnection() error {
-	// Test mode: the mock AMQPInterface handles queue declaration directly
-	if p.amqpConn != nil {
-		_, err := p.amqpConn.QueueDeclare("iam.events", true, false, false, false, nil)
-		return err
-	}
-
-	// Production mode: dial and create channel once
-	p.once.Do(func() {
-		rawConn, dialErr := amqp.Dial(p.brokerURL)
-		if dialErr != nil {
-			p.initErr = fmt.Errorf("dial AMQP: %w", dialErr)
-			return
-		}
-		p.conn = rawConn
-
-		ch, chErr := rawConn.Channel()
-		if chErr != nil {
-			p.initErr = fmt.Errorf("create AMQP channel: %w", chErr)
-			return
-		}
-		p.ch = ch
-
-		_, declareErr := ch.QueueDeclare(
-			"iam.events", // name
-			true,         // durable
-			false,        // autoDelete
-			false,        // exclusive
-			false,        // noWait
-			nil,          // args
-		)
-		if declareErr != nil {
-			p.initErr = fmt.Errorf("declare queue %s: %w", "iam.events", declareErr)
-		}
-	})
-	return p.initErr
+// NewPublisherWithBroker creates a publisher backed by the given broker.
+func NewPublisherWithBroker(broker Broker) *Publisher {
+	return &Publisher{broker: broker, logger: log.Default()}
 }
 
 // Publish sends an event to the broker.
 func (p *Publisher) Publish(ctx context.Context, eventType string, tenantID, correlationID, timestamp string, payload map[string]interface{}) error {
-	if err := p.initConnection(); err != nil {
-		return err
-	}
-
 	event := Event{
 		EventType:     eventType,
 		CorrelationID: correlationID,
@@ -115,33 +84,23 @@ func (p *Publisher) Publish(ctx context.Context, eventType string, tenantID, cor
 		return fmt.Errorf("marshal event: %w", err)
 	}
 
-	msg := amqp.Publishing{
-		ContentType: "application/json",
-		Body:        data,
-		Headers: amqp.Table{
-			"event_type":     eventType,
-			"tenant_id":      tenantID,
-			"correlation_id": correlationID,
-		},
+	headers := map[string]string{
+		"event_type":     eventType,
+		"tenant_id":      tenantID,
+		"correlation_id": correlationID,
+		"content-type":   "application/json",
 	}
 
-	return p.publishWithRetry(msg)
+	// Key by tenant so events for one tenant stay ordered within a partition.
+	return p.publishWithRetry(ctx, topicPrefix+eventType, []byte(tenantID), data, headers)
 }
 
 // publishWithRetry retries publishing up to 3 times with exponential backoff.
-func (p *Publisher) publishWithRetry(msg amqp.Publishing) error {
+func (p *Publisher) publishWithRetry(ctx context.Context, topic string, key, value []byte, headers map[string]string) error {
 	backoffs := []time.Duration{100 * time.Millisecond, 200 * time.Millisecond, 400 * time.Millisecond}
 
 	for attempt := 0; attempt < 4; attempt++ {
-		var err error
-		if p.amqpConn != nil {
-			// Test mode: publish through mock interface
-			err = p.amqpConn.Publish("", "iam.events", true, false, msg)
-		} else {
-			// Production mode: publish through real channel
-			err = p.ch.Publish("", "iam.events", true, false, msg)
-		}
-
+		err := p.broker.Publish(ctx, topic, key, value, headers)
 		if err == nil {
 			return nil
 		}
@@ -151,7 +110,8 @@ func (p *Publisher) publishWithRetry(msg amqp.Publishing) error {
 		if attempt < len(backoffs) {
 			select {
 			case <-time.After(backoffs[attempt]):
-			case <-time.After(time.Second * 2): // safety cap
+			case <-ctx.Done():
+				return ctx.Err()
 			}
 		}
 	}
@@ -159,32 +119,12 @@ func (p *Publisher) publishWithRetry(msg amqp.Publishing) error {
 	return fmt.Errorf("publish failed after 3 retries")
 }
 
-// Close cleanly shuts down the AMQP connection and channel.
+// Close cleanly shuts down the broker.
 func (p *Publisher) Close() error {
-	// Test mode: use mock close
-	if p.amqpConn != nil {
-		return p.amqpConn.Close()
+	if p.broker != nil {
+		return p.broker.Close()
 	}
-
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	var err error
-	if p.ch != nil {
-		chErr := p.ch.Close()
-		if chErr != nil {
-			err = chErr
-		}
-		p.ch = nil
-	}
-	if p.conn != nil {
-		connErr := p.conn.Close()
-		if connErr != nil {
-			err = connErr
-		}
-		p.conn = nil
-	}
-	return err
+	return nil
 }
 
 // UserCreated publishes the user.created event.

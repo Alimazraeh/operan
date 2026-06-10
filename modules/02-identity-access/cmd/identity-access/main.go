@@ -20,7 +20,7 @@ import (
 	"github.com/operan/modules/02-identity-access/internal/middleware"
 	"github.com/operan/modules/02-identity-access/internal/store"
 
-	"github.com/streadway/amqp"
+	"github.com/segmentio/kafka-go"
 )
 
 func main() {
@@ -52,12 +52,7 @@ func main() {
 	// Setup routes — base path: /api/v1/iam
 	mux := http.NewServeMux()
 
-	// Health check
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{"status":"healthy"}`)
-	})
+	// Health check is registered later alongside the readiness probe.
 
 	// POST /api/v1/iam/users
 	mux.HandleFunc("/api/v1/iam/users", func(w http.ResponseWriter, r *http.Request) {
@@ -562,8 +557,14 @@ func main() {
 			if cfg.EventBrokerURL == "" {
 				return true // No broker configured — always pass
 			}
-			// AMQP connection health check
-			conn, err := amqp.Dial(cfg.EventBrokerURL)
+			// Kafka connection health check against the first broker address
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+			addr := strings.TrimPrefix(cfg.EventBrokerURL, "kafka://")
+			if i := strings.IndexByte(addr, ','); i >= 0 {
+				addr = addr[:i]
+			}
+			conn, err := kafka.DialContext(ctx, "tcp", addr)
 			if err != nil {
 				return false
 			}
@@ -626,6 +627,17 @@ func main() {
 		BurstSize:         cfg.RateLimitBurst,
 	})
 	chain = rateLimiter.Chain(chain)
+
+	// Liveness/readiness probes bypass auth and tenant middleware so
+	// orchestrator health checks succeed without credentials.
+	protected := chain
+	chain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/health" || r.URL.Path == "/ready" {
+			mux.ServeHTTP(w, r)
+			return
+		}
+		protected.ServeHTTP(w, r)
+	})
 
 	// Start server
 	addr := fmt.Sprintf(":%d", cfg.Port)

@@ -7,60 +7,42 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	amqp "github.com/streadway/amqp"
 )
 
-// mockAMQP implements AMQPInterface for testing.
-type mockAMQP struct {
+// publishedMessage records a message captured by mockBroker.
+type publishedMessage struct {
+	Topic   string
+	Key     []byte
+	Body    []byte
+	Headers map[string]string
+}
+
+// mockBroker implements Broker for testing.
+type mockBroker struct {
 	mu               sync.Mutex
-	declareName      string
-	declareDurable   bool
-	published        []amqp.Publishing
+	published        []publishedMessage
 	publishCount     int
-	declareErr       error
 	publishErr       error
 	publishFailUntil int
 	closeCalled      bool
 	closeErr         error
 }
 
-func newMockAMQP() *mockAMQP {
-	return &mockAMQP{}
+func newMockBroker() *mockBroker {
+	return &mockBroker{}
 }
 
-func (m *mockAMQP) Close() error {
+func (m *mockBroker) Close() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.closeCalled = true
 	return m.closeErr
 }
 
-func (m *mockAMQP) QueueDeclare(
-	name string,
-	durable bool,
-	autoDelete bool,
-	exclusive bool,
-	noWait bool,
-	args amqp.Table,
-) (amqp.Queue, error) {
+func (m *mockBroker) Publish(_ context.Context, topic string, key []byte, value []byte, headers map[string]string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.declareName = name
-	m.declareDurable = durable
-	return amqp.Queue{Name: name, Messages: 0, Consumers: 0}, m.declareErr
-}
-
-func (m *mockAMQP) Publish(
-	exchange string,
-	key string,
-	mandatory bool,
-	immediate bool,
-	msg amqp.Publishing,
-) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.published = append(m.published, msg)
+	m.published = append(m.published, publishedMessage{Topic: topic, Key: key, Body: value, Headers: headers})
 	m.publishCount++
 
 	// If publishFailUntil is set, fail only on the first N publishes
@@ -69,7 +51,7 @@ func (m *mockAMQP) Publish(
 			return m.publishErr
 		}
 		// Fail with a default error even if publishErr is nil
-		return fmt.Errorf("mock AMQP failure on attempt %d", m.publishCount)
+		return fmt.Errorf("mock broker failure on attempt %d", m.publishCount)
 	}
 	// After failUntil count, always succeed (return nil)
 	// If publishFailUntil is 0 (not set), use publishErr for all attempts
@@ -81,59 +63,71 @@ func (m *mockAMQP) Publish(
 }
 
 // publishedCount returns the number of messages published.
-func (m *mockAMQP) publishedCount() int {
+func (m *mockBroker) publishedCount() int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return len(m.published)
 }
 
 // lastPublished returns the last published message.
-func (m *mockAMQP) lastPublished() amqp.Publishing {
+func (m *mockBroker) lastPublished() publishedMessage {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if len(m.published) == 0 {
-		return amqp.Publishing{}
+		return publishedMessage{}
 	}
 	return m.published[len(m.published)-1]
 }
 
 // isCloseCalled returns whether Close was called.
-func (m *mockAMQP) isCloseCalled() bool {
+func (m *mockBroker) isCloseCalled() bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.closeCalled
 }
 
-func TestPublisher_NewPublisher(t *testing.T) {
-	p := NewPublisher("amqp://localhost:5672")
+func TestPublisher_NewPublisher_LogOnlyDefault(t *testing.T) {
+	p := NewPublisher("")
 	if p == nil {
 		t.Fatal("NewPublisher returned nil")
 	}
-	if p.brokerURL != "amqp://localhost:5672" {
-		t.Errorf("brokerURL = %q, want %q", p.brokerURL, "amqp://localhost:5672")
+	if _, ok := p.broker.(*logBroker); !ok {
+		t.Errorf("empty broker URL should select log-only mode, got %T", p.broker)
 	}
 	if p.logger == nil {
 		t.Error("logger should not be nil")
 	}
-	if p.amqpConn != nil {
-		t.Error("amqpConn should be nil for default NewPublisher")
+}
+
+func TestPublisher_NewPublisher_RejectsAMQPURL(t *testing.T) {
+	p := NewPublisher("amqp://localhost:5672")
+	if _, ok := p.broker.(*logBroker); !ok {
+		t.Errorf("amqp:// URL should fall back to log-only mode, got %T", p.broker)
 	}
 }
 
-func TestPublisher_NewPublisherWithDeps(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
-	if p == nil {
-		t.Fatal("NewPublisherWithDeps returned nil")
+func TestPublisher_NewPublisher_KafkaURL(t *testing.T) {
+	p := NewPublisher("localhost:9092")
+	if _, ok := p.broker.(*KafkaBroker); !ok {
+		t.Errorf("host:port URL should select the Kafka broker, got %T", p.broker)
 	}
-	if p.amqpConn != mock {
-		t.Error("amqpConn should be the injected mock")
+	p.Close()
+}
+
+func TestPublisher_NewPublisherWithBroker(t *testing.T) {
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
+	if p == nil {
+		t.Fatal("NewPublisherWithBroker returned nil")
+	}
+	if p.broker != Broker(mock) {
+		t.Error("broker should be the injected mock")
 	}
 }
 
 func TestPublisher_Publish_QueueDeclarationAndMessage(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.Publish(context.Background(), "user.created", "tenant-1", "corr-1", time.Now().UTC().Format(time.RFC3339), map[string]interface{}{
 		"user_id": "u-123",
@@ -142,21 +136,20 @@ func TestPublisher_Publish_QueueDeclarationAndMessage(t *testing.T) {
 		t.Fatalf("Publish unexpected error: %v", err)
 	}
 
-	if mock.declareName != "iam.events" {
-		t.Errorf("QueueDeclare name = %q, want %q", mock.declareName, "iam.events")
-	}
-	if !mock.declareDurable {
-		t.Error("QueueDeclare durable should be true")
-	}
-
 	count := mock.publishedCount()
 	if count != 1 {
 		t.Fatalf("expected 1 published message, got %d", count)
 	}
 
 	msg := mock.lastPublished()
-	if msg.ContentType != "application/json" {
-		t.Errorf("ContentType = %q, want %q", msg.ContentType, "application/json")
+	if msg.Topic != "operan.iam.user.created" {
+		t.Errorf("Topic = %q, want %q", msg.Topic, "operan.iam.user.created")
+	}
+	if string(msg.Key) != "tenant-1" {
+		t.Errorf("Key = %q, want %q", string(msg.Key), "tenant-1")
+	}
+	if msg.Headers["content-type"] != "application/json" {
+		t.Errorf("content-type header = %q, want %q", msg.Headers["content-type"], "application/json")
 	}
 
 	// Check headers
@@ -194,8 +187,8 @@ func TestPublisher_Publish_QueueDeclarationAndMessage(t *testing.T) {
 }
 
 func TestPublisher_Publish_InvalidEventMarshaling(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	// payload with a non-marshallable type won't actually fail since map[string]interface{}
 	// with common types always marshals. Let's test with a nil payload which should still work.
@@ -206,30 +199,29 @@ func TestPublisher_Publish_InvalidEventMarshaling(t *testing.T) {
 	}
 }
 
-func TestPublisher_Publish_AMQPConnectionError(t *testing.T) {
-	// Publisher without deps tries to dial a non-existent RabbitMQ.
-	// In practice, this will fail with a network error.
-	// We test the error path by using a mock that fails on QueueDeclare.
-	mock := newMockAMQP()
-	mock.declareErr = fmt.Errorf("queue declare failed")
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
-
-	err := p.Publish(context.Background(), "user.created", "t-1", "c-1", time.Now().UTC().Format(time.RFC3339), nil)
-	if err == nil {
-		t.Fatal("expected error when QueueDeclare fails, got nil")
+func TestNewKafkaBroker_EmptyURL(t *testing.T) {
+	if _, err := NewKafkaBroker(""); err == nil {
+		t.Fatal("expected error for empty broker URL, got nil")
 	}
-	if err.Error() != "queue declare failed" {
-		t.Errorf("error = %q, want %q", err.Error(), "queue declare failed")
+	if _, err := NewKafkaBroker("kafka://"); err == nil {
+		t.Fatal("expected error for kafka:// URL with no address, got nil")
+	}
+}
+
+func TestParseBrokerAddresses(t *testing.T) {
+	got := parseBrokerAddresses("kafka://b1:9092, b2:9092,")
+	if len(got) != 2 || got[0] != "b1:9092" || got[1] != "b2:9092" {
+		t.Errorf("parseBrokerAddresses = %v, want [b1:9092 b2:9092]", got)
 	}
 }
 
 func TestPublisher_PublishWithRetry_SuccessAfterFailures(t *testing.T) {
-	mock := newMockAMQP()
+	mock := newMockBroker()
 	// Fail the first 2 publish attempts, succeed on the 3rd
 	mock.publishErr = fmt.Errorf("connection reset")
 	mock.publishFailUntil = 2
 
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	p := NewPublisherWithBroker(mock)
 
 	err := p.Publish(context.Background(), "test.event", "t-1", "c-1", time.Now().UTC().Format(time.RFC3339), nil)
 	if err != nil {
@@ -243,10 +235,10 @@ func TestPublisher_PublishWithRetry_SuccessAfterFailures(t *testing.T) {
 }
 
 func TestPublisher_PublishWithRetry_AllFailures(t *testing.T) {
-	mock := newMockAMQP()
+	mock := newMockBroker()
 	mock.publishErr = fmt.Errorf("connection refused")
 
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	p := NewPublisherWithBroker(mock)
 
 	err := p.Publish(context.Background(), "test.event", "t-1", "c-1", time.Now().UTC().Format(time.RFC3339), nil)
 	if err == nil {
@@ -267,22 +259,22 @@ func TestPublisher_PublishWithRetry_AllFailures(t *testing.T) {
 }
 
 func TestPublisher_Close(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.Close()
 	if err != nil {
 		t.Fatalf("Close unexpected error: %v", err)
 	}
 	if !mock.isCloseCalled() {
-		t.Error("Close was not called on the mock AMQP interface")
+		t.Error("Close was not called on the mock broker")
 	}
 }
 
 func TestPublisher_CloseWithError(t *testing.T) {
-	mock := newMockAMQP()
+	mock := newMockBroker()
 	mock.closeErr = fmt.Errorf("connection already closed")
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	p := NewPublisherWithBroker(mock)
 
 	err := p.Close()
 	if err == nil {
@@ -294,8 +286,8 @@ func TestPublisher_CloseWithError(t *testing.T) {
 }
 
 func TestPublisher_UserCreated(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.UserCreated(
 		context.Background(), "u-1", "t-1", "alice@example.com",
@@ -337,8 +329,8 @@ func TestPublisher_UserCreated(t *testing.T) {
 }
 
 func TestPublisher_UserUpdated(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.UserUpdated(
 		context.Background(), "u-1", "t-1", "bob@example.com",
@@ -362,8 +354,8 @@ func TestPublisher_UserUpdated(t *testing.T) {
 }
 
 func TestPublisher_UserSuspended(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.UserSuspended(
 		context.Background(), "u-1", "t-1", "violation", "admin",
@@ -387,8 +379,8 @@ func TestPublisher_UserSuspended(t *testing.T) {
 }
 
 func TestPublisher_IdentityRotated(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.IdentityRotated(
 		context.Background(), "id-1", "t-1", "api_key", "key-123",
@@ -412,8 +404,8 @@ func TestPublisher_IdentityRotated(t *testing.T) {
 }
 
 func TestPublisher_PermissionGranted(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.PermissionGranted(
 		context.Background(), "t-1", "u-1", "user",
@@ -437,8 +429,8 @@ func TestPublisher_PermissionGranted(t *testing.T) {
 }
 
 func TestPublisher_PermissionRevoked(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.PermissionRevoked(
 		context.Background(), "t-1", "u-1", "user",
@@ -462,8 +454,8 @@ func TestPublisher_PermissionRevoked(t *testing.T) {
 }
 
 func TestPublisher_SessionCreated(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.SessionCreated(
 		context.Background(), "s-1", "u-1", "t-1",
@@ -487,8 +479,8 @@ func TestPublisher_SessionCreated(t *testing.T) {
 }
 
 func TestPublisher_SessionExpired(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.SessionExpired(
 		context.Background(), "s-1", "u-1", "t-1",
@@ -512,8 +504,8 @@ func TestPublisher_SessionExpired(t *testing.T) {
 }
 
 func TestPublisher_SessionEnded(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.SessionEnded(
 		context.Background(), "s-1", "u-1", "t-1",
@@ -534,8 +526,8 @@ func TestPublisher_SessionEnded(t *testing.T) {
 }
 
 func TestPublisher_MfaEnrolled(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.MfaEnrolled(
 		context.Background(), "u-1", "t-1", "totp", "admin", "corr-1", time.Now().UTC().Format(time.RFC3339),
@@ -558,8 +550,8 @@ func TestPublisher_MfaEnrolled(t *testing.T) {
 }
 
 func TestPublisher_SsoLogin(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.SsoLogin(
 		context.Background(), "u-1", "t-1", "okta",
@@ -583,8 +575,8 @@ func TestPublisher_SsoLogin(t *testing.T) {
 }
 
 func TestPublisher_SessionActive(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.SessionActive(
 		context.Background(), "s-1", "u-1", "t-1",
@@ -608,8 +600,8 @@ func TestPublisher_SessionActive(t *testing.T) {
 }
 
 func TestPublisher_SessionReplayCaptured(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.SessionReplayCaptured(
 		context.Background(), "s-1", "u-1", "t-1",
@@ -639,8 +631,8 @@ func TestPublisher_SessionReplayCaptured(t *testing.T) {
 }
 
 func TestPublisher_SessionReplayRetrieved(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.SessionReplayRetrieved(
 		context.Background(), "s-1", "admin", "t-1", "corr-1", time.Now().UTC().Format(time.RFC3339),
@@ -663,8 +655,8 @@ func TestPublisher_SessionReplayRetrieved(t *testing.T) {
 }
 
 func TestPublisher_SessionReplayDeleted(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	err := p.SessionReplayDeleted(
 		context.Background(), "s-1", "admin", "t-1", "corr-1", time.Now().UTC().Format(time.RFC3339),
@@ -684,8 +676,8 @@ func TestPublisher_SessionReplayDeleted(t *testing.T) {
 }
 
 func TestPublisher_HeadersContainCorrectInfo(t *testing.T) {
-	mock := newMockAMQP()
-	p := NewPublisherWithDeps("amqp://localhost:5672", mock)
+	mock := newMockBroker()
+	p := NewPublisherWithBroker(mock)
 
 	testCases := []struct {
 		eventType     string
