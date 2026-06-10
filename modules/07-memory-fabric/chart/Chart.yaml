@@ -1,0 +1,15 @@
+apiVersion: v2
+name: module07-memory-fabric
+description: A Helm chart for Operan Module 07 - Memory Fabric
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - operan
+  - memory
+  - template
+  - engine
+  - agents
+maintainers:
+  - name: Operan Platform Team
+    email: platform@operan.io

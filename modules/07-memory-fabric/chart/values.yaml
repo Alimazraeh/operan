@@ -1,0 +1,127 @@
+# Default values for module07-memory-fabric.
+# This is a YAML-formatted file.
+
+replicaCount: 1
+
+image:
+  repository: operan/module07-memory-fabric
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1001
+
+service:
+  type: ClusterIP
+  port: 8007
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: module07-operan.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 500m
+  #   memory: 512Mi
+  # requests:
+  #   cpu: 250m
+  #   memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+volumes: []
+  # - name: config
+  #   configMap:
+  #     name: module07-config
+
+volumeMounts: []
+  # - name: config
+  #   mountPath: /etc/config
+  #   readOnly: true
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8007
+  initialDelaySeconds: 15
+  periodSeconds: 20
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8007
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Environment variables for Module 07
+env:
+  MODULE07_PORT: "8007"
+  MODULE07_JWT_SECRET: ""  # Must be set via secrets
+  MODULE07_DB_URL: ""
+  MODULE07_REDIS_URL: ""
+  MODULE07_EVENT_BROKER_URL: ""
+  MODULE07_OTLP_ENDPOINT: "http://jaeger-operan:4318"
+  MODULE07_GC_BATCH_SIZE: "1000"
+  MODULE07_MAX_PAGE_SIZE: "100"
+
+# Pod topology spread constraints
+topologySpreadConstraints: []
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: DoNotSchedule
+  #   labelSelector:
+  #     matchLabels:
+  #       app: module07-memory-fabric
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}

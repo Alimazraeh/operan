@@ -51,7 +51,7 @@ Goal: Refactor all v1 OpenAPI contracts to adhere to strict Operan platform stan
 | 04-agent-registry | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation: JWT auth, Kafka broker, RBAC, cache, ArchiveAgent, 148 tests, 72.6% coverage |
 | 05-department-template-engine | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation: 15 ops, 8 AsyncAPI channels, 70 tests, 4557 lines Go, Dockerfile, Helm chart, HANDOVER.md |
 | 06-knowledge-ingestion | ✅ | ✅ | ✅ | ✅ | RECONCILED | OpenAPI now created; 10 endpoints |
-| 07-memory-fabric | ✅ | ✅ | ✅ | ✅ | RECONCILED | OpenAPI now created; 12 endpoints |
+| 07-memory-fabric | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation 2026-06-10: 10 ops, 5 Kafka events, 90.5% store / 85.5% handler coverage, Dockerfile, Helm chart |
 | 08-tool-execution | ✅ | ✅ | ✅ | ✅ | RECONCILED | OpenAPI now created; 10 endpoints |
 | 09-human-supervision | ✅ | ✅ | ✅ | ✅ | RECONCILED | |
 | 10-policy-governance | ✅ | ✅ | ✅ | ✅ | RECONCILED | Full spec; style reference |
@@ -325,6 +325,22 @@ AsyncAPI events: 4/9 covered (provisioned, suspended, deprovisioned, quota_excee
 | has_more Pagination | ✅ | Cursor-based pagination with has_more flag |
 
 ---
+
+### Module 07 — Memory Fabric: Implementation Notes (2026-06-10)
+
+**Contract counts:** 10 OpenAPI operations · 5 AsyncAPI channels (Kafka: `operan.memory.vector.{ingested,searched,updated,deleted,garbage_collected}`)
+
+| PRD Requirement (Phase 1 MVP) | Status | Notes |
+|------------------------------|--------|-------|
+| Store/retrieve semantic embeddings (US-301) | ✅ | Batch ingest, CRUD, cosine similarity when embeddings supplied |
+| Tenant-specific vector isolation (US-302) | ✅ | All stores tenant-scoped; verified by tests |
+| Episodic execution history (US-303) | ✅ | All 5 lifecycle events publish to Kafka with platform envelope |
+
+**Implementation:** structure mirrors Module 08 (config / ctxkeys / events / handlers / middleware / store). JWT fail-fast at startup; Kafka via `MODULE07_EVENT_BROKER_URL` (log-only default); tenant-keyed event partitioning. Test coverage: config 100%, store 90.5%, handlers 85.5%, middleware 80%, events 72% — all passing with `-race`. Deployment: Dockerfile (multi-stage, non-root, port 8007), Helm chart, manifest.json.
+
+**Search semantics:** cosine similarity when the request carries `query_vector` and stored vectors have embeddings; otherwise deterministic token-overlap with ≥4-char prefix tolerance ("demo" matches "demos"). Real embedding generation is a Module 12 dependency.
+
+**Known limitations:** in-memory stores (P1); text search is a placeholder until Module 12 (P1); JWT secret local, not delegated to Module 02 (P1); retention policies stored but not auto-enforced — GC is manual via `POST /gc` (Medium). AsyncAPI 07 servers updated from RabbitMQ to Kafka as part of the platform event-bus standardization.
 
 ### Orphan Files (Drafts — unnumbered) — ✅ Cleaned up
 
