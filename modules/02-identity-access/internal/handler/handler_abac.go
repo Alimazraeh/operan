@@ -47,13 +47,13 @@ type ABACEvaluateRequest struct {
 // Validate checks that the evaluate request is valid.
 func (r *ABACEvaluateRequest) Validate() error {
 	if r.ActorID == "" {
-		return &models.ValidationError{"actor_id is required"}
+		return &models.ValidationError{Message: "actor_id is required"}
 	}
 	if r.Action == "" {
-		return &models.ValidationError{"action is required"}
+		return &models.ValidationError{Message: "action is required"}
 	}
 	if r.Resource == "" {
-		return &models.ValidationError{"resource is required"}
+		return &models.ValidationError{Message: "resource is required"}
 	}
 	return nil
 }
@@ -88,19 +88,19 @@ type ABACPolicyCreateRequest struct {
 // Validate checks the create request.
 func (r *ABACPolicyCreateRequest) Validate() error {
 	if r.Name == "" {
-		return &models.ValidationError{"policy name is required"}
+		return &models.ValidationError{Message: "policy name is required"}
 	}
 	if r.Resource == "" {
-		return &models.ValidationError{"resource is required"}
+		return &models.ValidationError{Message: "resource is required"}
 	}
 	if r.Action == "" {
-		return &models.ValidationError{"action is required"}
+		return &models.ValidationError{Message: "action is required"}
 	}
 	if r.Rule == "" {
-		return &models.ValidationError{"rule type is required"}
+		return &models.ValidationError{Message: "rule type is required"}
 	}
 	if r.Conditions == nil {
-		return &models.ValidationError{"conditions are required"}
+		return &models.ValidationError{Message: "conditions are required"}
 	}
 	if r.Effect == "" {
 		r.Effect = "allow"
