@@ -1,11 +1,11 @@
 // Package events publishes AsyncAPI events for Module 08 (Tool Execution).
 // Topics:
-//   operan/events/tools/tool_registered
-//   operan/events/tools/tool_version_changed
-//   operan/events/tools/execution/requested
-//   operan/events/tools/execution/started
-//   operan/events/tools/execution/completed
-//   operan/events/tools/execution/failed
+//   operan.tools.tool_registered
+//   operan.tools.tool_version_changed
+//   operan.tools.execution.requested
+//   operan.tools.execution.started
+//   operan.tools.execution.completed
+//   operan.tools.execution.failed
 package events
 
 import (
@@ -65,7 +65,7 @@ func (p *Publisher) publish(topic string, payload interface{}) error {
 	return p.broker.Publish(context.Background(), topic, nil, data, nil)
 }
 
-const base = "operan/events/tools"
+const base = "operan.tools"
 
 // ─── Payloads ────────────────────────────────────────────────────────────────
 
@@ -115,30 +115,30 @@ type ExecutionPayload struct {
 
 func (p *Publisher) PublishToolRegistered(payload ToolRegisteredPayload) error {
 	payload.Event = "tool_registered"
-	return p.publish(base+"/tool_registered", payload)
+	return p.publish(base+".tool_registered", payload)
 }
 
 func (p *Publisher) PublishToolVersionChanged(payload ToolVersionChangedPayload) error {
 	payload.Event = "tool_version_changed"
-	return p.publish(base+"/tool_version_changed", payload)
+	return p.publish(base+".tool_version_changed", payload)
 }
 
 func (p *Publisher) PublishExecutionRequested(payload ExecutionPayload) error {
 	payload.Event = "execution_requested"
-	return p.publish(base+"/execution/requested", payload)
+	return p.publish(base+".execution.requested", payload)
 }
 
 func (p *Publisher) PublishExecutionStarted(payload ExecutionPayload) error {
 	payload.Event = "execution_started"
-	return p.publish(base+"/execution/started", payload)
+	return p.publish(base+".execution.started", payload)
 }
 
 func (p *Publisher) PublishExecutionCompleted(payload ExecutionPayload) error {
 	payload.Event = "execution_completed"
-	return p.publish(base+"/execution/completed", payload)
+	return p.publish(base+".execution.completed", payload)
 }
 
 func (p *Publisher) PublishExecutionFailed(payload ExecutionPayload) error {
 	payload.Event = "execution_failed"
-	return p.publish(base+"/execution/failed", payload)
+	return p.publish(base+".execution.failed", payload)
 }
