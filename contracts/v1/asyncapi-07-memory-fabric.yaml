@@ -5,21 +5,13 @@ info:
   description: Events published by Module 07 — Memory Fabric for vector store lifecycle operations.
 servers:
   production:
-    url: rabbitmq-operan.prod.internal:5672
-    protocol: amqp
-    description: Production AMQP broker for Memory Fabric events
-    variables:
-      vhost:
-        default: /operan
-        description: RabbitMQ virtual host
+    url: events.operan.internal:9092
+    protocol: kafka
+    description: Production Kafka broker for Memory Fabric events
   staging:
-    url: rabbitmq-operan.staging.internal:5672
-    protocol: amqp
-    description: Staging AMQP broker for Memory Fabric events
-    variables:
-      vhost:
-        default: /operan-staging
-        description: RabbitMQ virtual host for staging
+    url: events-staging.operan.internal:9092
+    protocol: kafka
+    description: Staging Kafka broker for Memory Fabric events
 channels:
   operan/events/memory/vector/ingested:
     publish:

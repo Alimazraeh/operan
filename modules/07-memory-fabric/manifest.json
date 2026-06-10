@@ -1,0 +1,36 @@
+{
+  "module_id": "07",
+  "module_name": "Memory Fabric",
+  "version": "0.1.0",
+  "app_version": "1.0.0",
+  "description": "Vector memory storage, semantic search, agent memory state, retention policies, and garbage collection for Operan agents.",
+  "repository": "https://github.com/operan/operan/tree/main/modules/07-memory-fabric",
+  "contracts": {
+    "openapi": "contracts/v1/openapi-07-memory-fabric.yaml",
+    "asyncapi": "contracts/v1/asyncapi-07-memory-fabric.yaml",
+    "json_schema": "contracts/v1/schema-07-memory-fabric.json"
+  },
+  "health_endpoint": "/health",
+  "port": 8007,
+  "image": {
+    "repository": "operan/module07-memory-fabric",
+    "tag": "latest",
+    "pull_policy": "IfNotPresent"
+  },
+  "helm_chart": "chart",
+  "dependencies": [
+    "01-tenant-control-plane",
+    "03-agent-orchestration",
+    "04-agent-registry",
+    "06-knowledge-ingestion",
+    "10-policy-governance",
+    "11-observability"
+  ],
+  "events": [
+    { "name": "MemoryVectorIngested", "topic": "operan.memory.vector.ingested" },
+    { "name": "MemoryVectorSearched", "topic": "operan.memory.vector.searched" },
+    { "name": "MemoryVectorUpdated", "topic": "operan.memory.vector.updated" },
+    { "name": "MemoryVectorDeleted", "topic": "operan.memory.vector.deleted" },
+    { "name": "MemoryVectorGarbageCollected", "topic": "operan.memory.vector.garbage_collected" }
+  ]
+}

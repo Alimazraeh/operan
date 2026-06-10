@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "module07.fullname" . }}
+  labels:
+    {{- include "module07.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 8007
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: module07-memory-fabric
+    app.kubernetes.io/instance: {{ .Release.Name }}
