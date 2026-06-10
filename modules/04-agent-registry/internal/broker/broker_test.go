@@ -11,9 +11,11 @@ func TestKafkaProducer_Produce(t *testing.T) {
 	producer := NewKafkaProducer(DefaultConfig())
 	defer producer.Close()
 
+	// No broker is running in unit tests; a real write must surface the
+	// failure rather than silently succeed like the old stub did.
 	err := producer.Produce("test-topic", "test-key", []byte(`{"test":true}`))
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
+	if err == nil {
+		t.Error("expected error producing with no reachable broker, got nil")
 	}
 }
 

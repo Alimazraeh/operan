@@ -2,9 +2,12 @@
 package broker
 
 import (
+	"context"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/segmentio/kafka-go"
 )
 
 // Producer is the interface for producing messages to a message broker.
@@ -34,11 +37,13 @@ func DefaultConfig() Config {
 	}
 }
 
-// KafkaProducer is a stub implementation of the Producer interface.
-// In production, this would wire to Apache Kafka or similar message broker.
-// The Wave 2 integration requires wiring to a real Kafka cluster.
+// KafkaProducer produces messages to Apache Kafka via segmentio/kafka-go.
+// Writes are asynchronous: Produce enqueues immediately and delivery failures
+// are logged via the writer's completion callback, so event publishing never
+// blocks or fails API request handling.
 type KafkaProducer struct {
 	config Config
+	writer *kafka.Writer
 	mu     sync.Mutex
 	closed bool
 	logger *log.Logger
@@ -46,15 +51,33 @@ type KafkaProducer struct {
 
 // NewKafkaProducer creates a new KafkaProducer with the given configuration.
 func NewKafkaProducer(config Config) *KafkaProducer {
+	logger := log.New(log.Writer(), "[kafka] ", log.LstdFlags)
+	timeout := config.Timeout
+	if timeout <= 0 {
+		timeout = DefaultConfig().Timeout
+	}
+	writer := &kafka.Writer{
+		Addr:                   kafka.TCP(config.Host + ":" + config.Port),
+		Balancer:               &kafka.LeastBytes{},
+		Compression:            kafka.Snappy,
+		RequiredAcks:           kafka.RequireOne,
+		WriteTimeout:           timeout,
+		AllowAutoTopicCreation: true,
+		Async:                  true,
+		Completion: func(messages []kafka.Message, err error) {
+			if err != nil {
+				logger.Printf("async publish failed (%d message(s)): %v", len(messages), err)
+			}
+		},
+	}
 	return &KafkaProducer{
 		config: config,
-		logger: log.New(log.Writer(), "[kafka] ", log.LstdFlags),
+		writer: writer,
+		logger: logger,
 	}
 }
 
-// Produce sends a message to the Kafka topic.
-// This is a stub implementation for Wave 2 integration.
-// Production code should wire to a real Kafka client (e.g.,IBM/sarama).
+// Produce enqueues a message for asynchronous delivery to the Kafka topic.
 func (k *KafkaProducer) Produce(topic, key string, value []byte) error {
 	k.mu.Lock()
 	defer k.mu.Unlock()
@@ -63,8 +86,13 @@ func (k *KafkaProducer) Produce(topic, key string, value []byte) error {
 		return nil
 	}
 
-	k.logger.Printf("produce topic=%s key=%s payload=%s", topic, key, string(value))
-	return nil
+	ctx, cancel := context.WithTimeout(context.Background(), k.writer.WriteTimeout)
+	defer cancel()
+	return k.writer.WriteMessages(ctx, kafka.Message{
+		Topic: topic,
+		Key:   []byte(key),
+		Value: value,
+	})
 }
 
 // Close flushes pending messages and closes the Kafka connection.
@@ -72,9 +100,11 @@ func (k *KafkaProducer) Close() error {
 	k.mu.Lock()
 	defer k.mu.Unlock()
 
+	if k.closed {
+		return nil
+	}
 	k.closed = true
-	k.logger.Println("kafka producer closed")
-	return nil
+	return k.writer.Close()
 }
 
 // MockProducer is a test implementation that captures messages for verification.
