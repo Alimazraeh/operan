@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 )
 
@@ -51,6 +52,15 @@ func ParseConfig() Config {
 		JWTSecret: getEnvOrDefault("JWT_SECRET", DefaultJWTSecret),
 		Issuer:    getEnvOrDefault("JWT_ISSUER", DefaultIssuer),
 	}
+}
+
+// Validate checks that required configuration values are set to safe values.
+// Returns an error if JWT_SECRET is empty or still set to the default value.
+func (c *Config) Validate() error {
+	if c.JWTSecret == "" || c.JWTSecret == DefaultJWTSecret {
+		return fmt.Errorf("JWT_SECRET is empty or set to default value; set a secure value via JWT_SECRET env var")
+	}
+	return nil
 }
 
 func getEnvOrDefault(key, fallback string) string {

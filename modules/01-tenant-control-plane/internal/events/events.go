@@ -1,30 +1,53 @@
 // Package events publishes AsyncAPI events for tenant lifecycle operations.
-// Events are published to the configured event bus (Kafka/Pulsar) via
-// the Publisher abstraction. This is a reference implementation that
-// logs events; production should use a real message broker.
+// Events are published to the configured event bus via the Broker
+// abstraction: Kafka in production, log-only when no broker is configured.
 package events
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"time"
 )
 
-// Publisher handles publishing tenant lifecycle events.
-type Publisher struct {
-	host     string
-	port     string
-	protocol string
+// Broker is the interface for event publishing.
+type Broker interface {
+	Publish(ctx context.Context, topic string, key []byte, value []byte, headers map[string]string) error
+	Close() error
 }
 
-// NewPublisher creates a new event publisher.
+// logBroker is the default no-op broker that logs events instead of publishing.
+type logBroker struct{}
+
+func (l *logBroker) Publish(_ context.Context, topic string, _, value []byte, _ map[string]string) error {
+	log.Printf("[EVENT] %s: %s", topic, string(value))
+	return nil
+}
+
+func (l *logBroker) Close() error { return nil }
+
+// Publisher handles publishing tenant lifecycle events.
+type Publisher struct {
+	broker Broker
+}
+
+// NewPublisher creates a new event publisher with a log-only broker.
 func NewPublisher() *Publisher {
-	return &Publisher{
-		host:     "events.operan.internal",
-		port:     "9092",
-		protocol: "kafka",
+	return &Publisher{broker: &logBroker{}}
+}
+
+// NewPublisherWithBroker creates a publisher backed by a real broker.
+func NewPublisherWithBroker(broker Broker) *Publisher {
+	return &Publisher{broker: broker}
+}
+
+// Close gracefully shuts down the broker.
+func (p *Publisher) Close() error {
+	if p.broker != nil {
+		return p.broker.Close()
 	}
+	return nil
 }
 
 // ─── Event types ─────────────────────────────────────────────────────────────
@@ -134,7 +157,7 @@ func (p *Publisher) PublishTenantQuotaExceeded(evt TenantQuotaExceededEvent) err
 
 // publish sends raw event data to the configured event bus.
 func (p *Publisher) publish(topic string, data []byte) {
-	log.Printf("[EVENT] %s: %s", topic, string(data))
-	// TODO: Implement real Kafka/Pulsar publishing
-	// In production: broker.Publish(topic, data)
+	if err := p.broker.Publish(context.Background(), topic, nil, data, nil); err != nil {
+		log.Printf("[WARN] publish %s failed: %v", topic, err)
+	}
 }

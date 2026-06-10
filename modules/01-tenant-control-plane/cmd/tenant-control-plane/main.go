@@ -11,6 +11,7 @@ import (
 
 	"github.com/operan/modules/01-tenant-control-plane/internal/handler"
 	"github.com/operan/modules/01-tenant-control-plane/internal/config"
+	"github.com/operan/modules/01-tenant-control-plane/internal/events"
 	"github.com/operan/modules/01-tenant-control-plane/internal/middleware"
 	"github.com/operan/modules/01-tenant-control-plane/internal/store"
 )
@@ -20,6 +21,9 @@ func main() {
 	os.Setenv("MODULE_VERSION", "1.0.0")
 
 	cfg := config.ParseConfig()
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("config error: %v", err)
+	}
 
 	if cfg.LogLevel == "debug" {
 		log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
@@ -36,6 +40,21 @@ func main() {
 	mux := http.NewServeMux()
 
 	h := middleware.NewHandler(tenantStore, secretStore, subscriptionStore, billingStore)
+
+	// Wire the event publisher to Kafka when configured; log-only otherwise.
+	if cfg.EventBusProto == "kafka" {
+		broker, err := events.NewKafkaBroker(cfg.EventBusHost + ":" + cfg.EventBusPort)
+		if err != nil {
+			log.Printf("[WARN] event broker unavailable (%s:%s): %v — falling back to log-only", cfg.EventBusHost, cfg.EventBusPort, err)
+		} else {
+			h.EventPublisher = events.NewPublisherWithBroker(broker)
+			defer h.EventPublisher.Close()
+			log.Printf("event publisher configured for kafka broker %s:%s", cfg.EventBusHost, cfg.EventBusPort)
+		}
+	} else {
+		log.Printf("event publisher in log-only mode (EVENT_BUS_PROTO=%s)", cfg.EventBusProto)
+	}
+
 	handler.RegisterRoutes(h, mux)
 
 	server := &http.Server{
