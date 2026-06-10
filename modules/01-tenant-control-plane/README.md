@@ -24,8 +24,8 @@ All configuration is read from environment variables:
 | `MODULE_VERSION` | `1.0.0` | Module version string |
 | `EVENT_BUS_HOST` | `events.operan.internal` | Event bus host |
 | `EVENT_BUS_PORT` | `9092` | Event bus port |
-| `EVENT_BUS_PROTO` | `kafka` | Event bus protocol (`kafka`/`amqp`) |
-| `JWT_SECRET` | _(random default)_ | JWT signing secret (HMAC-S256). Must be ≥32 bytes |
+| `EVENT_BUS_PROTO` | `kafka` | Event bus protocol; `kafka` enables publishing, any other value = log-only |
+| `JWT_SECRET` | _(required)_ | JWT signing secret (HMAC-S256). Must be ≥32 bytes; startup fails if unset or default |
 | `JWT_ISSUER` | `operan-tenant-control-plane` | JWT issuer claim value |
 
 ## Docker
@@ -101,7 +101,7 @@ See the OpenAPI contract at [`contracts/v1/openapi-01-tenant-control-plane.yaml`
 cmd/tenant-control-plane/   # Entry point
 internal/
 ├── config/                  # Configuration parsing
-├── events/                  # Event publishing (Kafka/AMQP)
+├── events/                  # Event publishing (Kafka; log-only fallback)
 ├── handler/                 # HTTP handlers & response types
 ├── middleware/              # JWT auth, request ID, tenant context
 └── store/                   # In-memory data stores (12 stores)

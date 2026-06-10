@@ -43,7 +43,7 @@ The Department Template Engine provides a comprehensive system for defining, ver
                     │
 ┌───────────────────▼─────────────────────────────────────┐
 │              Event Publisher                            │
-│  (8 AsyncAPI channels, logBroker for dev)              │
+│  (8 AsyncAPI channels, Kafka; logBroker for dev)       │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -165,7 +165,7 @@ All configuration is through environment variables:
 | `MODULE05_JWT_SECRET` | *(required)* | HMAC-S256 shared secret |
 | `MODULE05_DB_URL` | *(empty)* | PostgreSQL connection URL |
 | `MODULE05_REDIS_URL` | *(empty)* | Redis connection URL |
-| `MODULE05_EVENT_BROKER_URL` | *(empty)* | Event broker URL (AMQP) |
+| `MODULE05_EVENT_BROKER_URL` | *(empty)* | Kafka broker `host:port`; empty = log-only |
 | `MODULE05_OTLP_ENDPOINT` | `http://localhost:4318` | OpenTelemetry endpoint |
 | `MODULE05_TEMPLATE_CACHE_TTL` | `300` | Template cache TTL in seconds |
 | `MODULE05_MAX_PAGE_SIZE` | `100` | Maximum page size |

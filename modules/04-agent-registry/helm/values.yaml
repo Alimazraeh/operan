@@ -32,8 +32,10 @@ dbName: "agent_registry"   # DB_NAME
 dbUser: ""                 # DB_USER — set in production
 dbPassword: ""             # DB_PASSWORD — set in production
 
-# Event broker configuration
-eventBrokerURL: "amqp://mq.operan.internal:5672"  # EVENT_BROKER_URL
+# Event broker configuration (Kafka)
+eventBusHost: "events.operan.internal"  # EVENT_BUS_HOST
+eventBusPort: "9092"                    # EVENT_BUS_PORT
+eventBusProto: "kafka"                  # EVENT_BUS_PROTO
 
 # OTEL configuration
 otelEnabled: true          # OTEL_ENABLED

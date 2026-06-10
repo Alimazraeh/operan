@@ -48,8 +48,12 @@ spec:
                   name: {{ include "operan-agent-registry.fullname" . }}-db-credentials
                   key: password
             {{- end }}
-            - name: EVENT_BROKER_URL
-              value: {{ .Values.eventBrokerURL | quote }}
+            - name: EVENT_BUS_HOST
+              value: {{ .Values.eventBusHost | quote }}
+            - name: EVENT_BUS_PORT
+              value: {{ .Values.eventBusPort | quote }}
+            - name: EVENT_BUS_PROTO
+              value: {{ .Values.eventBusProto | quote }}
             - name: OTEL_ENABLED
               value: "{{ .Values.otelEnabled }}"
             - name: OTEL_COLLECTOR_URL

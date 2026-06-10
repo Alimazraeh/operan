@@ -92,7 +92,7 @@ orchestra-manual/
 - [ ] Align tests to use valid `DependencyType` enum values (`hard`, `soft`, `optional`)
 - [ ] Add missing Agent fields: `objectives`, `supported_languages`, `current_version_id`, `access_control`
 - [ ] Set up PostgreSQL + Redis connection in config
-- [ ] Implement real AMQP/Kafka event publisher (not stub)
+- [x] Implement real Kafka event publisher (done 2026-06-10 — all six implemented modules publish via segmentio/kafka-go; module 02 migrated off AMQP)
 
 **Key anti-patterns to avoid:**
 - ❌ Storing `tenant_id` in request body — always use `tenant.TenantID()` from context
