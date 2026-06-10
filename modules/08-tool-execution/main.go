@@ -32,6 +32,15 @@ func main() {
 
 	// ─── Events ───────────────────────────────────────────────────────────
 	publisher := events.NewPublisher()
+	if cfg.EventBrokerURL != "" {
+		broker, err := events.NewKafkaBroker(cfg.EventBrokerURL)
+		if err != nil {
+			log.Printf("[WARN] event broker unavailable (%s): %v — falling back to log-only", cfg.EventBrokerURL, err)
+		} else {
+			publisher = events.NewPublisherWithBroker(broker)
+			log.Printf("event publisher configured for kafka broker %s", cfg.EventBrokerURL)
+		}
+	}
 	defer publisher.Close()
 
 	// ─── API routes (auth-protected) ──────────────────────────────────────
