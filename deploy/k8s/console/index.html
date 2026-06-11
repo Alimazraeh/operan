@@ -248,11 +248,24 @@ function newTenant() {
 
 async function connect() {
   const secret = $("secret").value.trim();
-  if (!secret) { $("connmsg").textContent = "Enter the JWT secret first."; return; }
+  const msg = $("connmsg");
+  if (!secret) { msg.textContent = "Enter the JWT secret first."; return; }
+  if (/^[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/.test(secret)) {
+    msg.innerHTML = '<b style="color:var(--bad)">That looks like a JWT token.</b> Paste the <b>signing secret</b> instead — the output of:<br><code>kubectl -n operan get secret operan-jwt -o jsonpath="{.data.secret}" | base64 -d</code>';
+    return;
+  }
   if (!$("tenant").value.trim()) newTenant();
   TENANT = $("tenant").value.trim();
   JWT = await mintJWT(secret);
   localStorage.setItem("operan.tenant", TENANT);
+
+  // Validate the credential with one authenticated call before doing anything.
+  const probe = await api("GET", SVC.supervision + "/queue?page_size=1");
+  if (probe.status === 401) {
+    timers.forEach(clearInterval); timers = []; JWT = "";
+    msg.innerHTML = '<b style="color:var(--bad)">Secret rejected (401).</b> Paste the exact signing secret — the output of:<br><code>kubectl -n operan get secret operan-jwt -o jsonpath="{.data.secret}" | base64 -d</code>';
+    return;
+  }
 
   $("dots").innerHTML = PROBES.map(([n]) =>
     `<span class="dot" id="dot-${n}"><i></i>${n}</span>`).join("");
@@ -264,7 +277,7 @@ async function connect() {
       if (r.ok) up++;
     } catch (_) { $("dot-" + n).className = "dot bad"; }
   }));
-  $("connmsg").textContent = `Connected — ${up}/${PROBES.length} services healthy · tenant ${TENANT}`;
+  msg.textContent = `Connected & authenticated — ${up}/${PROBES.length} services healthy · tenant ${TENANT}`;
 
   timers.forEach(clearInterval);
   timers = [setInterval(refreshQueue, 4000), setInterval(refreshHealth, 6000)];
