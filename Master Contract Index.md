@@ -53,7 +53,7 @@ Goal: Refactor all v1 OpenAPI contracts to adhere to strict Operan platform stan
 | 06-knowledge-ingestion | ✅ | ✅ | ✅ | ✅ | RECONCILED | OpenAPI now created; 10 endpoints |
 | 07-memory-fabric | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation 2026-06-10: 10 ops, 5 Kafka events, 90.5% store / 85.5% handler coverage, Dockerfile, Helm chart |
 | 08-tool-execution | ✅ | ✅ | ✅ | ✅ | RECONCILED | OpenAPI now created; 10 endpoints |
-| 09-human-supervision | ✅ | ✅ | ✅ | ✅ | RECONCILED | |
+| 09-human-supervision | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation 2026-06-11: 20 ops, 5 Kafka events, approval gates + escalations + interventions + queue + risk dashboard, Dockerfile, Helm chart |
 | 10-policy-governance | ✅ | ✅ | ✅ | ✅ | RECONCILED | Full spec; style reference |
 | 11-observability | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation 2026-06-10: 8 ops, 5 Kafka events published, platform-wide event consumer, 92% store / 81.6% handler coverage, Dockerfile, Helm chart |
 | 12-model-abstraction | ✅ | ✅ | ✅ | ✅ | RECONCILED | OpenAPI now created; 11 endpoints |
@@ -358,6 +358,19 @@ AsyncAPI events: 4/9 covered (provisioned, suspended, deprovisioned, quota_excee
 **Platform fix shipped with this module:** topic names in modules 01, 05, 08 contained characters invalid in Kafka (`operan/events/...` slashes) or lacked the platform prefix (`tenant.*`). All renamed to dotted form: `operan.tenant.*`, `operan.templates.template.*`, `operan.templates.custom_template.*`, `operan.tools.*`. Without this, those modules' publishes would have been rejected by a real broker.
 
 **Known limitations:** in-memory stores (P1); JWT secret local (P1); no alert rules engine — alerts only from `.failed` events (Medium); health derives from event flow only — silence ≠ unhealthy (Medium); consumed-event spans have duration 0; `trace.flush` not wired (Low).
+
+### Module 09 — Human Supervision: Implementation Notes (2026-06-11)
+
+**Contract counts:** 20 OpenAPI operations · 5 AsyncAPI channels (`operan.supervision.gate.{raised,responded,escalated,timeout}`, `operan.supervision.policy.violation_detected`)
+
+| PRD Requirement (Phase 1 MVP) | Status | Notes |
+|------------------------------|--------|-------|
+| Approve/reject agent actions (US-401) | ✅ | Full gate lifecycle: create → queue → approve/reject/delegate, with threshold rules and lazy expiry; HITL answers can decide gates |
+| Approval gates before execution (US-402) | ⚠️ Partial | Gates + events implemented; Module 03 must consume gate/intervention events to actually block execution (integration pending) |
+
+**Implementation:** structure mirrors Modules 07/11. Decision rules: first approval approves / first rejection rejects by default; `threshold` type honors `min_approvals`/`max_rejections`; expiry is lazy (read/action transitions to `expired` + publishes `gate.timeout`); terminal states return 409. Merged review queue (approvals + escalations + interventions, type/user filters) and severity-weighted risk dashboard (0–100). Module 09's contract error schema (`{error:{code:string,...}}`) differs from 07/11 and is honored. Coverage: config 100%, handlers 76.5%, store 79.9% — all `-race` clean. Smoke-tested end-to-end: gate raised → queue → approved with `gate.raised`/`gate.responded`/`policy.violation_detected` all publishing.
+
+**Known limitations:** in-memory stores (P1); JWT secret local (P1); no background expiry timer — timeout only fires on touch (Medium); interventions recorded but not enforced until Module 03 consumes them (Medium); `conditional` approval type has no expression engine (Medium). AsyncAPI 09 servers updated AMQP → Kafka.
 
 ### Orphan Files (Drafts — unnumbered) — ✅ Cleaned up
 
