@@ -1,5 +1,5 @@
 # Operan: Master Contract Index
-Last Updated: 2026-06-11 (LiteLLM embeddings in 07; gate enforcement in 03; persistence in 07/09/11; platform live on k8s)
+Last Updated: 2026-06-12 (Module 21 Experience Portal — the platform Web UI — added and deployed)
 Owner: You (Human Orchestrator)
 Project: Operan — Agentic Department Operating System (ADOS)
 
@@ -107,6 +107,7 @@ Goal: Refactor all v1 OpenAPI contracts to adhere to strict Operan platform stan
 | 18-enterprise-connector-fabric | ✅ | ✅ | ✅ | ✅ | RECONCILED | |
 | 19-arabic-language-core | ✅ | ✅ | ✅ | ✅ | RECONCILED | Confirmed as correct module 19 |
 | 20-sovereign-deployment-fabric | ✅ | ✅ | ✅ | ✅ | RECONCILED | |
+| 21-experience-portal | n/a | n/a | n/a | n/a | IMPLEMENTED | New module 2026-06-12: the PRD Experience Layer Web UI — Go server + embedded SPA, same-origin proxies to all services, department-first (catalog → real Module 05 deploy pipeline → staff/governance/KPIs), supervision inbox, guided scenario. No REST/event contract of its own (pure consumer). NodePort 30088 |
 
 ### PRD Compliance Audit (Modules 01–03)
 
