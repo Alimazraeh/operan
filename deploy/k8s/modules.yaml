@@ -26,6 +26,7 @@ spec:
         app.kubernetes.io/name: tenant-control-plane
         app.kubernetes.io/part-of: operan
     spec:
+      enableServiceLinks: false
       containers:
         - name: tenant-control-plane
           image: alimazraeh/operan-01-tenant-control-plane:latest
@@ -97,6 +98,7 @@ spec:
         app.kubernetes.io/name: identity-access
         app.kubernetes.io/part-of: operan
     spec:
+      enableServiceLinks: false
       containers:
         - name: identity-access
           image: alimazraeh/operan-02-identity-access:latest
@@ -168,6 +170,7 @@ spec:
         app.kubernetes.io/name: agent-orchestration
         app.kubernetes.io/part-of: operan
     spec:
+      enableServiceLinks: false
       containers:
         - name: agent-orchestration
           image: alimazraeh/operan-03-agent-orchestration:latest
@@ -239,6 +242,7 @@ spec:
         app.kubernetes.io/name: agent-registry
         app.kubernetes.io/part-of: operan
     spec:
+      enableServiceLinks: false
       containers:
         - name: agent-registry
           image: alimazraeh/operan-04-agent-registry:latest
@@ -246,6 +250,8 @@ spec:
           ports:
             - containerPort: 8083
           env:
+            - name: AGENT_REGISTRY_PORT
+              value: ":8083"
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
@@ -312,6 +318,7 @@ spec:
         app.kubernetes.io/name: department-templates
         app.kubernetes.io/part-of: operan
     spec:
+      enableServiceLinks: false
       containers:
         - name: department-templates
           image: alimazraeh/operan-05-department-template-engine:latest
@@ -379,6 +386,7 @@ spec:
         app.kubernetes.io/name: memory-fabric
         app.kubernetes.io/part-of: operan
     spec:
+      enableServiceLinks: false
       containers:
         - name: memory-fabric
           image: alimazraeh/operan-07-memory-fabric:latest
@@ -446,6 +454,7 @@ spec:
         app.kubernetes.io/name: tool-execution
         app.kubernetes.io/part-of: operan
     spec:
+      enableServiceLinks: false
       containers:
         - name: tool-execution
           image: alimazraeh/operan-08-tool-execution:latest
@@ -513,6 +522,7 @@ spec:
         app.kubernetes.io/name: human-supervision
         app.kubernetes.io/part-of: operan
     spec:
+      enableServiceLinks: false
       containers:
         - name: human-supervision
           image: alimazraeh/operan-09-human-supervision:latest
@@ -580,6 +590,7 @@ spec:
         app.kubernetes.io/name: observability
         app.kubernetes.io/part-of: operan
     spec:
+      enableServiceLinks: false
       containers:
         - name: observability
           image: alimazraeh/operan-11-observability:latest

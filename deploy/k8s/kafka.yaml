@@ -19,6 +19,7 @@ spec:
         app.kubernetes.io/name: kafka
         app.kubernetes.io/part-of: operan
     spec:
+      enableServiceLinks: false
       containers:
         - name: kafka
           image: apache/kafka:3.7.0
