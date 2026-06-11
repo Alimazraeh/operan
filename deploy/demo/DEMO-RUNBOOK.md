@@ -9,10 +9,16 @@ Acts 3 and 4 are the wow moments — give them room to breathe.
 
 ## Console demo (browser, no terminal on screen)
 
-```bash
-kubectl -n operan port-forward svc/operan-console 8088:8080
-# open http://localhost:8088
+The console is a NodePort service — open it from any machine on the LAN,
+no port-forward involved:
+
 ```
+http://192.168.8.228:30088
+```
+
+(If the node IP ever changes:
+`kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}'` —
+the port is pinned to 30088.)
 
 1. **Connect** — paste the JWT secret
    (`kubectl -n operan get secret operan-jwt -o jsonpath='{.data.secret}' | base64 -d`),

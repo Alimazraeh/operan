@@ -65,8 +65,12 @@ metadata:
     app.kubernetes.io/name: operan-console
     app.kubernetes.io/part-of: operan
 spec:
+  # NodePort so the console is reachable over the LAN without kubectl
+  # port-forward: http://<node-ip>:30088
+  type: NodePort
   selector:
     app.kubernetes.io/name: operan-console
   ports:
     - port: 8080
       targetPort: 8080
+      nodePort: 30088
