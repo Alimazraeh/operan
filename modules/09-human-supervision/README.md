@@ -58,6 +58,7 @@ and `X-Tenant-ID`. Errors use the module 09 contract schema:
 | `MODULE09_JWT_SECRET` | _(required)_ | HMAC-S256 secret; startup fails if unset or default |
 | `MODULE09_EVENT_BROKER_URL` | *(empty)* | Kafka `host:port`; empty = log-only events |
 | `MODULE09_MAX_PAGE_SIZE` | `100` | Pagination clamp |
+| `MODULE09_DATA_DIR` | *(empty)* | Snapshot dir for restart persistence (k8s: hostPath at `/data`) |
 
 ## Build & run
 
@@ -73,9 +74,9 @@ Docker: multi-stage build, non-root user, port 8009. Helm: `chart/`.
 
 | # | Limitation | Severity |
 |---|-----------|----------|
-| 1 | No database backend — all stores are in-memory | P1 |
+| 1 | No database backend — stores are in-memory with JSON snapshot persistence (`MODULE09_DATA_DIR`) | Medium |
 | 2 | JWT auth uses local secret (MVP) — should delegate to Module 02 IAM | P1 |
 | 3 | Expiry is lazy (on read/action); no background timer publishes `gate.timeout` for untouched approvals | Medium |
-| 4 | Interventions are recorded but not enforced — Module 03 must consume them to actually pause agents | Medium |
+| 4 | ~~Gate decisions not enforced~~ — RESOLVED: Module 03 consumes gate.raised/responded and applies decisions to human tasks (US-402). Interventions still informational (no AsyncAPI channel) | Partial |
 | 5 | `conditional` approval type accepts config but evaluates like `parallel` (no expression engine) | Medium |
 | 6 | Approval list endpoint not in contract; queue is the discovery surface | Info |
