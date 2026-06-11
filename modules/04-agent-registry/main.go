@@ -53,11 +53,20 @@ func main() {
 		middleware.Logger,
 	)
 
+	// Liveness probe bypasses the auth/tenant middleware chain.
+	root := http.NewServeMux()
+	root.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"healthy","module":"agent-registry","version":"1.0.0"}`))
+	})
+	root.Handle("/", http.HandlerFunc(handler))
+
 	// ─── Start server ───────────────────────────────────────────────────────
 	addr := cfg.ListenAddr
 	srv := &http.Server{
 		Addr:         addr,
-		Handler:      http.HandlerFunc(handler),
+		Handler:      root,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,

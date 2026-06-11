@@ -21,6 +21,28 @@ All six implemented modules (01–05, 08) now share one event-publishing standar
 Outstanding: live end-to-end publish verification against a real Kafka broker
 (Docker unavailable at fix time) — fold into demo-environment setup.
 
+## Demo Environment (2026-06-11)
+
+`deploy/demo/` holds the customer-demo stack: docker-compose with all nine
+implemented services + single-node Kafka (KRaft, auto-create topics), one
+shared `DEMO_JWT_SECRET`, and `demo.sh` — a scripted end-to-end flow
+(tenant → agent → template → memory search → approval gate → tool →
+observability) with PASS/FAIL per step.
+
+The script was validated at 24/24 against all nine services running locally
+in log-only mode; the Kafka-fed observability counts populate once the
+compose stack runs with a real broker. Validation surfaced and fixed four
+more probe/packaging bugs:
+- Modules 01, 03, 04, 05 served `/health` behind the auth middleware (or
+  not at all) — all four now expose an unauthenticated liveness probe
+- Module 03's Dockerfile HEALTHCHECK invoked a nonexistent `healthcheck`
+  subcommand and its `scratch` runtime had no wget — runtime moved to
+  alpine with a real probe (module 01's `scratch` image likewise)
+
+JWT claim requirements for cross-module tokens (demo.sh mints these):
+`iss=operan-tenant-control-plane` (module 01 validates issuer),
+`role` singular (module 04 RBAC), `roles` array (modules 08/09/11), `sub`, `exp`.
+
 ## Platform Standards Refactoring (In Progress)
 Goal: Refactor all v1 OpenAPI contracts to adhere to strict Operan platform standards:
 - Security: `BearerAuth` (JWT) + `X-Tenant-ID` (apiKey header)

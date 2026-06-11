@@ -24,17 +24,20 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -o /orchestration-engine ./cmd/orchestration-engine
 
 # Runtime image
-FROM scratch
+FROM alpine:3.19
 
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+RUN apk add --no-cache ca-certificates wget \
+    && addgroup -g 1001 operan \
+    && adduser -u 1001 -G operan -s /bin/sh -D operan
+
 COPY --from=builder /orchestration-engine /orchestration-engine
 
-USER 65534:65534
+USER operan
 
 EXPOSE 8080
 EXPOSE 9090
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD ["/orchestration-engine", "healthcheck"]
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
 ENTRYPOINT ["/orchestration-engine"]
