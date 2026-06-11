@@ -1,0 +1,15 @@
+apiVersion: v2
+name: module09-human-supervision
+description: A Helm chart for Operan Module 09 - Human Supervision
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - operan
+  - supervision
+  - template
+  - engine
+  - agents
+maintainers:
+  - name: Operan Platform Team
+    email: platform@operan.io

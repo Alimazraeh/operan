@@ -12,16 +12,16 @@ info:
 
 servers:
   production:
-    url: 'amqp://rabbitmq-prod.operan.internal:5672'
-    protocol: amqp
-    description: Production AMQP broker
+    url: 'events.operan.internal:9092'
+    protocol: kafka
+    description: Production Kafka broker
     security:
       - bearerAuth: []
       - tenantContext: []
   staging:
-    url: 'amqp://rabbitmq-staging.operan.internal:5672'
-    protocol: amqp
-    description: Staging AMQP broker for integration testing
+    url: 'events-staging.operan.internal:9092'
+    protocol: kafka
+    description: Staging Kafka broker for integration testing
     security:
       - bearerAuth: []
       - tenantContext: []

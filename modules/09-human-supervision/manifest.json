@@ -1,0 +1,37 @@
+{
+  "module_id": "09",
+  "module_name": "Human Supervision",
+  "version": "0.1.0",
+  "app_version": "1.0.0",
+  "description": "Human-in-the-loop layer: approval gates that pause agent workflows for human decisions, escalations, interventions (pause/stop/restrict agents), a merged review queue, and a risk dashboard.",
+  "repository": "https://github.com/operan/operan/tree/main/modules/09-human-supervision",
+  "contracts": {
+    "openapi": "contracts/v1/openapi-09-human-supervision.yaml",
+    "asyncapi": "contracts/v1/asyncapi-09-human-supervision.yaml",
+    "json_schema": "contracts/v1/schema-09-human-supervision.json"
+  },
+  "health_endpoint": "/health",
+  "port": 8009,
+  "image": {
+    "repository": "operan/module09-human-supervision",
+    "tag": "latest",
+    "pull_policy": "IfNotPresent"
+  },
+  "helm_chart": "chart",
+  "dependencies": [
+    "01-tenant-control-plane",
+    "02-identity-access",
+    "03-agent-orchestration",
+    "04-agent-registry",
+    "05-department-template-engine",
+    "10-policy-governance",
+    "15-agent-marketplace"
+  ],
+  "events": [
+    { "name": "GateRaised", "topic": "operan.supervision.gate.raised" },
+    { "name": "GateResponded", "topic": "operan.supervision.gate.responded" },
+    { "name": "GateEscalated", "topic": "operan.supervision.gate.escalated" },
+    { "name": "GateTimeout", "topic": "operan.supervision.gate.timeout" },
+    { "name": "PolicyViolationDetected", "topic": "operan.supervision.policy.violation_detected" }
+  ]
+}
