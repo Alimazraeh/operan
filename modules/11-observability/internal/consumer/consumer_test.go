@@ -155,3 +155,12 @@ func TestHandleMessagePublishesObservabilityEvents(t *testing.T) {
 		}
 	}
 }
+
+func TestSupervisionTopicMapping(t *testing.T) {
+	if got := SpanTypeForTopic("operan.supervision.gate.raised"); got != store.SpanHumanGate {
+		t.Errorf("SpanTypeForTopic = %s, want human_gate", got)
+	}
+	if got := ComponentTypeForTopic("operan.supervision.gate.responded"); got != "gateway" {
+		t.Errorf("ComponentTypeForTopic = %s, want gateway", got)
+	}
+}

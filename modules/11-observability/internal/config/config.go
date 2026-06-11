@@ -48,6 +48,10 @@ var DefaultConsumeTopics = []string{
 	"operan.tools.tool_registered", "operan.tools.tool_version_changed",
 	"operan.tools.execution.requested", "operan.tools.execution.started",
 	"operan.tools.execution.completed", "operan.tools.execution.failed",
+	// Module 09 — human supervision
+	"operan.supervision.gate.raised", "operan.supervision.gate.responded",
+	"operan.supervision.gate.escalated", "operan.supervision.gate.timeout",
+	"operan.supervision.policy.violation_detected",
 }
 
 // ParseConfig reads configuration from the environment, applying defaults.

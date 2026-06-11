@@ -170,6 +170,8 @@ func SpanTypeForTopic(topic string) store.SpanType {
 		return store.SpanTool
 	case strings.HasPrefix(topic, "operan.iam."):
 		return store.SpanPolicy
+	case strings.HasPrefix(topic, "operan.supervision."):
+		return store.SpanHumanGate
 	case strings.HasPrefix(topic, "operan.orchestration."):
 		return store.SpanOrchestration
 	default: // tenant, registry, templates, unknown
@@ -196,6 +198,8 @@ func ComponentTypeForTopic(topic string) string {
 		return "tool"
 	case "iam":
 		return "policy"
+	case "supervision":
+		return "gateway"
 	case "registry":
 		return "agent"
 	case "orchestration", "templates":
