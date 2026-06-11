@@ -12,3 +12,4 @@ cover.out
 .vscode/
 *.swp
 deploy/demo/.env
+modules/21-experience-portal/21-experience-portal
