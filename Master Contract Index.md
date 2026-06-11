@@ -1,5 +1,5 @@
 # Operan: Master Contract Index
-Last Updated: 2026-06-10 (JWT fail-fast guards platform-wide; Kafka event bus standardized; Module 02 migrated off AMQP)
+Last Updated: 2026-06-11 (LiteLLM embeddings in 07; gate enforcement in 03; persistence in 07/09/11; platform live on k8s)
 Owner: You (Human Orchestrator)
 Project: Operan — Agentic Department Operating System (ADOS)
 
@@ -18,8 +18,27 @@ All six implemented modules (01–05, 08) now share one event-publishing standar
 - Module 04 Helm chart fixed: it set `EVENT_BROKER_URL`, which the service never read;
   now sets `EVENT_BUS_HOST`/`EVENT_BUS_PORT`/`EVENT_BUS_PROTO`
 
-Outstanding: live end-to-end publish verification against a real Kafka broker
-(Docker unavailable at fix time) — fold into demo-environment setup.
+~~Outstanding: live end-to-end publish verification~~ — DONE 2026-06-11 on the
+single-node microk8s cluster (namespace `operan`): demo.sh 24/24 with real
+Kafka feeding Module 11.
+
+## Platform Integrations (2026-06-11)
+
+- **Real embeddings (Module 07)**: search now vectorizes through the cluster
+  LiteLLM gateway (`litellm.deep-research.svc:4000`, model
+  `qwen3-embedding-4b`, 2560 dims); cosine ranking over real embeddings,
+  token overlap only as no-gateway fallback. Qwen LLM
+  (`Qwen/Qwen3.6-35B-A3B`) is available on the same gateway for Module 12.
+- **Gate enforcement (Module 03, US-402)**: `internal/gates` consumes
+  `operan.supervision.gate.raised/responded`; approve resumes and reject
+  fails the originating human task (correlation: approval `request_id` =
+  orchestrator task ID). Interventions remain informational — Module 09's
+  contract defines no intervention AsyncAPI channel.
+- **Restart persistence (Modules 07/09/11)**: JSON snapshots every 10s plus
+  on shutdown to `MODULE0X_DATA_DIR`; in k8s this is a hostPath
+  (`/var/lib/operan/<service>`) with an init-chown for the non-root runtime.
+  Modules 01/02/04/05/08 still hold state purely in memory — same pattern
+  applies if needed; demo.sh repopulates them in seconds.
 
 ## Demo Environment (2026-06-11)
 
@@ -69,12 +88,12 @@ Goal: Refactor all v1 OpenAPI contracts to adhere to strict Operan platform stan
 |--------|---------|--------|----------|------|--------|-------|
 | 01-tenant-control-plane | ✅ | ✅ | ✅ | ✅ | RECONCILED | Full spec; style reference |
 | 02-identity-access | ✅ | ✅ | ✅ | ✅ | RECONCILED | IAM patterns; style reference; 33 ops, 9 AsyncAPI events |
-| 03-agent-orchestration | ✅ | ✅ | ✅ | ✅ | RECONCILED | 54 ops, 37 AsyncAPI channels, multi-stack (LangGraph/Temporal/Ray/Celery), 100% handler/store coverage, full test suite |
+| 03-agent-orchestration | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | 54 ops, 37 AsyncAPI channels, multi-stack; consumes supervision gate events (US-402) since 2026-06-11 |
 | 04-agent-registry | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation: JWT auth, Kafka broker, RBAC, cache, ArchiveAgent, 148 tests, 72.6% coverage |
 | 05-department-template-engine | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation: 15 ops, 8 AsyncAPI channels, 70 tests, 4557 lines Go, Dockerfile, Helm chart, HANDOVER.md |
 | 06-knowledge-ingestion | ✅ | ✅ | ✅ | ✅ | RECONCILED | OpenAPI now created; 10 endpoints |
 | 07-memory-fabric | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation 2026-06-10: 10 ops, 5 Kafka events, 90.5% store / 85.5% handler coverage, Dockerfile, Helm chart |
-| 08-tool-execution | ✅ | ✅ | ✅ | ✅ | RECONCILED | OpenAPI now created; 10 endpoints |
+| 08-tool-execution | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation: 10 ops, 6 Kafka events, Dockerfile |
 | 09-human-supervision | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation 2026-06-11: 20 ops, 5 Kafka events, approval gates + escalations + interventions + queue + risk dashboard, Dockerfile, Helm chart |
 | 10-policy-governance | ✅ | ✅ | ✅ | ✅ | RECONCILED | Full spec; style reference |
 | 11-observability | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation 2026-06-10: 8 ops, 5 Kafka events published, platform-wide event consumer, 92% store / 81.6% handler coverage, Dockerfile, Helm chart |

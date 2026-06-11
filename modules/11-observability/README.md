@@ -52,6 +52,7 @@ Default subscription covers every topic modules 01–08 publish
 | `MODULE11_CONSUMER_GROUP` | `module11-observability` | Kafka consumer group |
 | `MODULE11_CONSUME_TOPICS` | *(all platform topics)* | Comma-separated override |
 | `MODULE11_MAX_PAGE_SIZE` | `100` | Pagination clamp |
+| `MODULE11_DATA_DIR` | *(empty)* | Snapshot dir for restart persistence (k8s: hostPath at `/data`) |
 
 ## Events published (Kafka, 5 AsyncAPI channels)
 
@@ -73,7 +74,7 @@ curl localhost:8011/healthz
 
 | # | Limitation | Severity |
 |---|-----------|----------|
-| 1 | No database backend — all stores are in-memory; telemetry is lost on restart | P1 |
+| 1 | No database backend — stores are in-memory with JSON snapshot persistence (`MODULE11_DATA_DIR`) | Medium |
 | 2 | JWT auth uses local secret (MVP) — should delegate to Module 02 IAM | P1 |
 | 3 | Consumed-event spans have `duration_ms: 0` (events are points in time, not intervals) | Medium |
 | 4 | `trace.flush` event defined but not wired (no batch persistence yet) | Low |
