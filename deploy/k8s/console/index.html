@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Operan — Demo Console</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d; --text: #e6edf3;
+    --muted: #8b949e; --accent: #2f81f7; --ok: #3fb950; --warn: #d29922;
+    --bad: #f85149; --chip: #21262d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; padding: 14px 22px;
+           border-bottom: 1px solid var(--border); background: var(--panel); }
+  header h1 { font-size: 17px; margin: 0; font-weight: 600; }
+  header .sub { color: var(--muted); font-size: 12px; }
+  .dots { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  .dot { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .dot i { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); display: inline-block; }
+  .dot.ok i { background: var(--ok); } .dot.bad i { background: var(--bad); }
+  main { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+         gap: 16px; padding: 18px 22px; max-width: 1700px; margin: 0 auto; }
+  section { background: var(--panel); border: 1px solid var(--border);
+            border-radius: 8px; padding: 16px 18px; }
+  section h2 { margin: 0 0 4px; font-size: 14px; font-weight: 600; }
+  section .hint { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+  input, textarea, select { width: 100%; background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px;
+    font: inherit; margin-bottom: 8px; }
+  textarea { resize: vertical; min-height: 54px; }
+  button { background: var(--accent); color: #fff; border: 0; border-radius: 6px;
+           padding: 7px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.secondary { background: var(--chip); color: var(--text); border: 1px solid var(--border); }
+  button.ok { background: var(--ok); } button.bad { background: var(--bad); }
+  button:disabled { opacity: .45; cursor: default; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row > * { margin-bottom: 8px; }
+  .out { background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+         padding: 10px 12px; font: 12px/1.55 ui-monospace, monospace; white-space: pre-wrap;
+         max-height: 260px; overflow: auto; margin-top: 6px; }
+  .item { border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px;
+          margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .item .grow { flex: 1; min-width: 0; }
+  .item .title { font-weight: 600; font-size: 13px; }
+  .item .meta { color: var(--muted); font-size: 11px; }
+  .badge { background: var(--chip); border: 1px solid var(--border); border-radius: 999px;
+           padding: 2px 9px; font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .badge.approved, .badge.healthy, .badge.ok { color: var(--ok); border-color: var(--ok); }
+  .badge.pending, .badge.degraded { color: var(--warn); border-color: var(--warn); }
+  .badge.rejected, .badge.unhealthy, .badge.error { color: var(--bad); border-color: var(--bad); }
+  .score { font: 600 12px ui-monospace, monospace; color: var(--accent); }
+  .stat { display: inline-block; margin-right: 18px; }
+  .stat b { font-size: 22px; display: block; }
+  .stat span { color: var(--muted); font-size: 11px; }
+  .full { grid-column: 1 / -1; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; }
+  td.mono { font-family: ui-monospace, monospace; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Operan</h1>
+  <span class="sub">Agentic Department Operating System — demo console</span>
+  <div class="dots" id="dots"></div>
+</header>
+
+<main>
+  <section class="full">
+    <h2>Connect</h2>
+    <div class="hint">The signing secret never leaves this page — the JWT is minted in your browser (WebCrypto HMAC-SHA256).</div>
+    <div class="row">
+      <input id="secret" type="password" placeholder="JWT secret (kubectl -n operan get secret operan-jwt ...)" style="flex:2">
+      <input id="tenant" placeholder="tenant id" style="flex:2">
+      <button class="secondary" onclick="newTenant()">New tenant</button>
+      <button onclick="connect()">Connect</button>
+    </div>
+    <div class="hint" id="connmsg"></div>
+  </section>
+
+  <section>
+    <h2>1 · Agent memory <span class="badge">Module 07 · qwen3 embeddings</span></h2>
+    <div class="hint">Store memories, then search with words that don't appear in them — semantic, not keyword.</div>
+    <textarea id="memContent">Customer Acme prefers Arabic-first UI and quarterly billing</textarea>
+    <div class="row">
+      <button class="secondary" onclick="ingest()">Store memory</button>
+      <button class="secondary" onclick="ingestNoise()">Store noise memory</button>
+    </div>
+    <div class="row">
+      <input id="memQuery" value="which interface language does the client like">
+      <button onclick="search()">Search</button>
+    </div>
+    <div id="memOut"></div>
+  </section>
+
+  <section>
+    <h2>2 · Human supervision <span class="badge">Modules 03 + 09 · Kafka</span></h2>
+    <div class="hint">Start a workflow that pauses on a human gate, then decide. The orchestrator obeys the event — nobody calls it.</div>
+    <div class="row">
+      <input id="gateTitle" value="Send contract to Acme ($250k)">
+      <button onclick="startGatedWorkflow()">Start gated workflow</button>
+    </div>
+    <div id="queue"></div>
+  </section>
+
+  <section>
+    <h2>3 · System health <span class="badge">Module 11</span></h2>
+    <div class="hint">Component health and risk, derived from the live event stream.</div>
+    <div id="healthStats"></div>
+    <div id="healthList"></div>
+  </section>
+
+  <section class="full">
+    <h2>4 · Trace — everything above, observed <span class="badge">Module 11 · consumer</span></h2>
+    <div class="hint">Every click on this page became Kafka events; Module 11 turned them into spans. <button class="secondary" style="padding:3px 10px" onclick="refreshSpans()">Refresh</button></div>
+    <div id="spans"></div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const SVC = {
+  tenant: "/svc/tenant", orchestration: "/svc/orchestration/api/v1/orchestration",
+  registry: "/svc/registry", memory: "/svc/memory",
+  supervision: "/svc/supervision", observability: "/svc/observability",
+};
+let JWT = "", TENANT = "", timers = [];
+
+// ─── JWT minting (HS256 via WebCrypto) ───────────────────────────────────────
+const b64url = buf => btoa(String.fromCharCode(...new Uint8Array(buf)))
+  .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const b64urlStr = s => b64url(new TextEncoder().encode(s));
+
+async function mintJWT(secret) {
+  const header = b64urlStr(JSON.stringify({alg: "HS256", typ: "JWT"}));
+  const payload = b64urlStr(JSON.stringify({
+    sub: "demo-console", iss: "operan-tenant-control-plane",
+    role: "admin", roles: ["admin"],
+    exp: Math.floor(Date.now() / 1000) + 14400,
+  }));
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret),
+    {name: "HMAC", hash: "SHA-256"}, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key,
+    new TextEncoder().encode(`${header}.${payload}`));
+  return `${header}.${payload}.${b64url(sig)}`;
+}
+
+async function api(method, url, body) {
+  const res = await fetch(url, {
+    method,
+    headers: {"Authorization": "Bearer " + JWT, "X-Tenant-ID": TENANT,
+              "Content-Type": "application/json"},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  let data = null;
+  try { data = await res.json(); } catch (_) {}
+  return {ok: res.ok, status: res.status, data};
+}
+
+// ─── Connect ─────────────────────────────────────────────────────────────────
+const PROBES = [
+  ["tenant", "/svc/tenant/health"], ["orchestr.", "/svc/orchestration/health"],
+  ["registry", "/svc/registry/health"], ["templates", "/svc/templates/health"],
+  ["memory", "/svc/memory/health"], ["tools", "/svc/tools/health"],
+  ["supervision", "/svc/supervision/health"], ["observab.", "/svc/observability/healthz"],
+];
+
+function newTenant() {
+  $("tenant").value = crypto.randomUUID();
+}
+
+async function connect() {
+  const secret = $("secret").value.trim();
+  if (!secret) { $("connmsg").textContent = "Enter the JWT secret first."; return; }
+  if (!$("tenant").value.trim()) newTenant();
+  TENANT = $("tenant").value.trim();
+  JWT = await mintJWT(secret);
+  localStorage.setItem("operan.tenant", TENANT);
+
+  $("dots").innerHTML = PROBES.map(([n]) =>
+    `<span class="dot" id="dot-${n}"><i></i>${n}</span>`).join("");
+  let up = 0;
+  await Promise.all(PROBES.map(async ([n, path]) => {
+    try {
+      const r = await fetch(path);
+      $("dot-" + n).className = "dot " + (r.ok ? "ok" : "bad");
+      if (r.ok) up++;
+    } catch (_) { $("dot-" + n).className = "dot bad"; }
+  }));
+  $("connmsg").textContent = `Connected — ${up}/${PROBES.length} services healthy · tenant ${TENANT}`;
+
+  timers.forEach(clearInterval);
+  timers = [setInterval(refreshQueue, 4000), setInterval(refreshHealth, 6000)];
+  refreshQueue(); refreshHealth(); refreshSpans();
+}
+
+// ─── Memory ──────────────────────────────────────────────────────────────────
+async function ingest(content) {
+  const text = content || $("memContent").value.trim();
+  if (!text) return;
+  const r = await api("POST", SVC.memory + "/vectors", {items: [{
+    document_id: crypto.randomUUID(), embedding_type: "agent_personal",
+    semantic_content: text, metadata: {agent_id: "demo-agent"},
+  }]});
+  $("memOut").innerHTML = r.ok
+    ? `<div class="hint">Stored ✓ (embedded server-side via the LiteLLM gateway)</div>`
+    : `<div class="out">${JSON.stringify(r.data)}</div>`;
+}
+
+function ingestNoise() { ingest("Unrelated note about office plants and watering schedules"); }
+
+async function search() {
+  const r = await api("POST", SVC.memory + "/search", {
+    query: $("memQuery").value, embedding_type: "agent_personal",
+    relevance_threshold: 0.3,
+  });
+  if (!r.ok) { $("memOut").innerHTML = `<div class="out">${JSON.stringify(r.data)}</div>`; return; }
+  $("memOut").innerHTML = r.data.items.length === 0
+    ? `<div class="hint">No memory above the relevance threshold.</div>`
+    : r.data.items.map(i => `
+      <div class="item"><div class="grow">
+        <div class="title">${i.content}</div>
+        <div class="meta">${i.embedding_model || "token-overlap fallback"}</div>
+      </div><span class="score">${i.score.toFixed(2)}</span></div>`).join("");
+}
+
+// ─── Supervision ─────────────────────────────────────────────────────────────
+const gateTasks = {};  // approvalID -> orchestrator task id
+
+async function startGatedWorkflow() {
+  const title = $("gateTitle").value || "Gated action";
+  const pipe = await api("POST", SVC.orchestration + "/pipeline", {
+    name: "console-flow", steps: [
+      {id: "s1", name: "agent-work", type: "agent"},
+      {id: "s2", name: "human-signoff", type: "human_gate"}]});
+  const exec = await api("POST", SVC.orchestration + "/executions",
+    {pipeline_id: pipe.data.id});
+  const task = await api("POST", SVC.orchestration + "/human-tasks", {
+    pipeline_execution_id: exec.data.id, step_id: "s2",
+    assignee_id: "supervisor-1", instructions: title});
+  const gate = await api("POST", SVC.supervision + "/approvals", {
+    request_id: task.data.id, requester_id: "demo-agent",
+    type: "parallel", title});
+  gateTasks[gate.data.id] = task.data.id;
+  refreshQueue();
+}
+
+async function decide(id, action) {
+  const body = action === "approve"
+    ? {approver_id: crypto.randomUUID(), comment: "Approved from the console"}
+    : {rejector_id: crypto.randomUUID(), reason: "Rejected from the console"};
+  await api("POST", `${SVC.supervision}/approvals/${id}/${action}`, body);
+  refreshQueue();
+}
+
+async function refreshQueue() {
+  if (!JWT) return;
+  const q = await api("GET", SVC.supervision + "/queue?page_size=10");
+  if (!q.ok) return;
+  const rows = await Promise.all(q.data.items.map(async it => {
+    let enforcement = "";
+    if (it.item_type === "approval" && gateTasks[it.item_id]) {
+      const t = await api("GET", `${SVC.orchestration}/human-tasks/${gateTasks[it.item_id]}`);
+      if (t.ok) enforcement = `<span class="badge ${t.data.status}">orchestrator: ${t.data.status}</span>`;
+    }
+    const buttons = it.item_type === "approval" && (it.status === "pending" || it.status === "in_progress")
+      ? `<button class="ok" onclick="decide('${it.item_id}','approve')">Approve</button>
+         <button class="bad" onclick="decide('${it.item_id}','reject')">Reject</button>` : "";
+    return `<div class="item"><div class="grow">
+        <div class="title">${it.title || it.item_type}</div>
+        <div class="meta">${it.item_type} · ${new Date(it.created_at).toLocaleTimeString()}</div>
+      </div>${enforcement}<span class="badge ${it.status}">${it.status}</span>${buttons}</div>`;
+  }));
+  // Decided gates leave the queue; keep showing enforcement for recent ones.
+  const decided = await Promise.all(Object.entries(gateTasks).map(async ([gid, tid]) => {
+    if (q.data.items.some(it => it.item_id === gid)) return "";
+    const t = await api("GET", `${SVC.orchestration}/human-tasks/${tid}`);
+    if (!t.ok || t.data.status === "pending") return "";
+    return `<div class="item"><div class="grow">
+        <div class="title">${t.data.instructions}</div>
+        <div class="meta">gate decided → enforced over Kafka${t.data.responded_by ? " · by " + t.data.responded_by.slice(0, 8) : ""}</div>
+      </div><span class="badge ${t.data.status}">orchestrator: ${t.data.status}</span></div>`;
+  }));
+  $("queue").innerHTML = (rows.join("") + decided.join("")) ||
+    `<div class="hint">Queue is empty — start a gated workflow.</div>`;
+}
+
+// ─── Observability ───────────────────────────────────────────────────────────
+async function refreshHealth() {
+  if (!JWT) return;
+  const h = await api("GET", SVC.observability + "/health");
+  const m = await api("GET", SVC.observability + "/metrics?metric_name=operan.events.consumed&page_size=1");
+  const s = await api("GET", SVC.observability + "/spans?page_size=1");
+  if (!h.ok) return;
+  $("healthStats").innerHTML = `
+    <span class="stat"><b><span class="badge ${h.data.overall_status}">${h.data.overall_status}</span></b><span>overall</span></span>
+    <span class="stat"><b>${h.data.components.length}</b><span>components</span></span>
+    <span class="stat"><b>${m.ok ? m.data.total : "–"}</b><span>events consumed</span></span>
+    <span class="stat"><b>${s.ok ? s.data.total : "–"}</b><span>spans</span></span>`;
+  $("healthList").innerHTML = h.data.components.map(c =>
+    `<span class="badge ${c.new_status}" style="margin:0 6px 6px 0; display:inline-block">${c.component_id}: ${c.new_status}</span>`).join("");
+}
+
+async function refreshSpans() {
+  if (!JWT) return;
+  const r = await api("GET", SVC.observability + "/spans?page_size=15");
+  if (!r.ok) return;
+  $("spans").innerHTML = `<table><tr><th>time</th><th>span</th><th>type</th><th>status</th><th>trace</th></tr>` +
+    r.data.items.map(s => `<tr>
+      <td>${new Date(s.start_time).toLocaleTimeString()}</td>
+      <td class="mono">${s.span_name}</td>
+      <td><span class="badge">${s.span_type}</span></td>
+      <td><span class="badge ${s.status}">${s.status}</span></td>
+      <td class="mono">${(s.trace_id || "").slice(0, 8)}</td></tr>`).join("") + `</table>`;
+}
+
+// Restore last tenant for convenience.
+$("tenant").value = localStorage.getItem("operan.tenant") || "";
+</script>
+</body>
+</html>

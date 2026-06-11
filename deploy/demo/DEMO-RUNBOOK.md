@@ -1,8 +1,41 @@
 # Operan — Customer Demo Runbook
 
-A six-act, ~15-minute live demo on the k8s cluster. Every command is
-copy-paste; expected output is noted under each step. Acts 3 and 4 are the
-wow moments — give them room to breathe.
+A six-act, ~15-minute live demo on the k8s cluster. Two ways to drive it:
+
+- **Web console (recommended for customers)** — see "Console demo" below.
+- **Terminal** — every command below is copy-paste with expected output.
+
+Acts 3 and 4 are the wow moments — give them room to breathe.
+
+## Console demo (browser, no terminal on screen)
+
+```bash
+kubectl -n operan port-forward svc/operan-console 8088:8080
+# open http://localhost:8088
+```
+
+1. **Connect** — paste the JWT secret
+   (`kubectl -n operan get secret operan-jwt -o jsonpath='{.data.secret}' | base64 -d`),
+   click **New tenant**, then **Connect**. Eight green service dots appear.
+   The secret never leaves the page — the JWT is minted in-browser.
+2. **Memory** — click *Store memory* and *Store noise memory*, then *Search*
+   with the pre-filled zero-overlap query. One result, the right one, with
+   its cosine score and the qwen3 model name.
+3. **Supervision** — click *Start gated workflow*. It appears in the queue
+   with an `orchestrator: pending` badge. Click **Approve** — within a few
+   seconds the badge flips to `orchestrator: approved`. That flip traveled
+   through Kafka; the console never told the orchestrator anything.
+4. **Health & trace panels** — every click above is already there as spans,
+   metrics, and component health, refreshed live.
+5. (Optional, from a terminal) `kubectl -n operan delete pod -l app.kubernetes.io/name=memory-fabric`,
+   wait for Ready, hit *Search* again — the memory survived.
+
+Content changes to the console: edit `deploy/k8s/console/index.html`, then
+re-create the configmap and `kubectl -n operan rollout restart deployment operan-console`
+(commands in `deploy/k8s/console/console.yaml`).
+
+---
+
 
 ## Before the customer arrives (5 min)
 
