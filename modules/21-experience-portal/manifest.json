@@ -1,0 +1,21 @@
+{
+  "module_id": "21",
+  "module_name": "Experience Portal",
+  "version": "0.1.0",
+  "app_version": "1.0.0",
+  "description": "The Web UI of the PRD's Experience Layer: department catalog and deployment, agent workforce and memory, workflows, manager supervision inbox, tools, observability, and a guided end-to-end scenario — served as an embedded SPA with same-origin proxies to every platform service.",
+  "repository": "https://github.com/operan/operan/tree/main/modules/21-experience-portal",
+  "health_endpoint": "/healthz",
+  "port": 8021,
+  "image": {
+    "repository": "operan/module21-experience-portal",
+    "tag": "latest",
+    "pull_policy": "IfNotPresent"
+  },
+  "dependencies": [
+    "01-tenant-control-plane", "03-agent-orchestration", "04-agent-registry",
+    "05-department-template-engine", "07-memory-fabric", "08-tool-execution",
+    "09-human-supervision", "11-observability"
+  ],
+  "events": []
+}

@@ -1,0 +1,56 @@
+# Operan Experience Portal (Module 21) — the platform Web UI.
+# NodePort 30088: http://<node-ip>:30088
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: experience-portal
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: experience-portal
+    app.kubernetes.io/part-of: operan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: experience-portal
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: experience-portal
+        app.kubernetes.io/part-of: operan
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: experience-portal
+          image: alimazraeh/operan-21-experience-portal:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8021
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8021 }
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8021 }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 25m, memory: 32Mi }
+            limits: { memory: 128Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: experience-portal
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: experience-portal
+    app.kubernetes.io/part-of: operan
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: experience-portal
+  ports:
+    - port: 8021
+      targetPort: 8021
+      nodePort: 30088

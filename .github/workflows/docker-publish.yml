@@ -51,6 +51,7 @@ jobs:
           - 08-tool-execution
           - 09-human-supervision
           - 11-observability
+          - 21-experience-portal
     steps:
       - uses: actions/checkout@v4
 
