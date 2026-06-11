@@ -7,41 +7,37 @@ A six-act, ~15-minute live demo on the k8s cluster. Two ways to drive it:
 
 Acts 3 and 4 are the wow moments — give them room to breathe.
 
-## Console demo (browser, no terminal on screen)
+## Portal demo (browser — this is the customer demo)
 
-The console is a NodePort service — open it from any machine on the LAN,
-no port-forward involved:
+The **Experience Portal (Module 21)** is the platform Web UI, on the LAN:
 
 ```
 http://192.168.8.228:30088
 ```
 
-(If the node IP ever changes:
-`kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}'` —
-the port is pinned to 30088.)
+Sign in with the signing secret
+(`kubectl -n operan get secret operan-jwt -o jsonpath='{.data.secret}' | base64 -d`),
+click **New** for a fresh tenant, then **Enter the platform**.
 
-1. **Connect** — paste the JWT secret
-   (`kubectl -n operan get secret operan-jwt -o jsonpath='{.data.secret}' | base64 -d`),
-   click **New tenant**, then **Connect**. Eight green service dots appear.
-   The secret never leaves the page — the JWT is minted in-browser.
-2. **Memory** — click *Store memory* and *Store noise memory*, then *Search*
-   with the pre-filled zero-overlap query. One result, the right one, with
-   its cosine score and the qwen3 model name.
-3. **Supervision** — click *Start gated workflow*. It appears in the queue
-   with an `orchestrator: pending` badge. Click **Approve** — within a few
-   seconds the badge flips to `orchestrator: approved`. That flip traveled
-   through Kafka; the console never told the orchestrator anything.
-4. **Health & trace panels** — every click above is already there as spans,
-   metrics, and component health, refreshed live.
-5. (Optional, from a terminal) `kubectl -n operan delete pod -l app.kubernetes.io/name=memory-fabric`,
-   wait for Ready, hit *Search* again — the memory survived.
+The demo is the portal itself:
+1. **Departments** → pick *Sales Department* from the catalog → **Deploy
+   department** — watch the real Module 05 pipeline walk select →
+   configure → connect data → provision memory → deploy swarm →
+   operational, hiring the department's agents into the registry live.
+2. Open the department → its **staff**, governance rules, and KPIs.
+3. Click an agent → **teach it** about a customer, then **ask** with a
+   zero-overlap question — semantic recall with the relevance score.
+4. **Supervision** → the manager inbox. Approve the pending gate; the
+   orchestrator obeys over Kafka (check Workflows → human tasks).
+5. **Observability** → the whole session as traces, health, and a live
+   activity stream.
+6. Or just open **▶ Run the story** — a guided 8-step end-to-end scenario
+   that does all of the above against the live platform, narrated.
 
-Content changes to the console: edit `deploy/k8s/console/index.html`, then
-re-create the configmap and `kubectl -n operan rollout restart deployment operan-console`
-(commands in `deploy/k8s/console/console.yaml`).
+Portal changes ship like any module: edit `modules/21-experience-portal/`,
+push (CI builds the image), `kubectl -n operan rollout restart deployment experience-portal`.
 
 ---
-
 
 ## Before the customer arrives (5 min)
 
