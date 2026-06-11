@@ -254,9 +254,18 @@ func main() {
 	chain = middleware.RequestID(chain)
 	chain = middleware.JWTAuth(cfg.JWTSecret, chain)
 
+	// ─── Root mux: liveness probe bypasses auth ────────────────────────────────
+	root := http.NewServeMux()
+	root.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"healthy","module":"agent-orchestration","version":"1.0.0"}`))
+	})
+	root.Handle("/", chain)
+
 	// ─── Start server ──────────────────────────────────────────────────────────
 	log.Printf("Listening on %s (PID %d)", cfg.ListenAddr, os.Getpid())
-	if err := http.ListenAndServe(cfg.ListenAddr, chain); err != nil {
+	if err := http.ListenAndServe(cfg.ListenAddr, root); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
 

@@ -11,3 +11,4 @@ cover.out
 .idea/
 .vscode/
 *.swp
+deploy/demo/.env

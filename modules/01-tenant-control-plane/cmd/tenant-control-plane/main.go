@@ -57,9 +57,19 @@ func main() {
 
 	handler.RegisterRoutes(h, mux)
 
+	// Liveness probe bypasses the auth/tenant middleware chain.
+	chain := middleware.JWTValidator(cfg.JWTSecret, cfg.Issuer)(middleware.TenantContext(middleware.TraceID(middleware.RequestID(mux))))
+	root := http.NewServeMux()
+	root.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"healthy","module":"tenant-control-plane","version":"1.0.0"}`))
+	})
+	root.Handle("/", chain)
+
 	server := &http.Server{
 		Addr:         cfg.ListenAddr,
-		Handler:      middleware.JWTValidator(cfg.JWTSecret, cfg.Issuer)(middleware.TenantContext(middleware.TraceID(middleware.RequestID(mux)))),
+		Handler:      root,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,

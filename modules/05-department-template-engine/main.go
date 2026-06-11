@@ -68,15 +68,17 @@ func main() {
 	chain = middleware.TenantContext(chain)
 	chain = middleware.RateLimit(100, 1*time.Minute)(chain)
 
-	// ─── Health check ─────────────────────────────────────────────────────
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+	// Liveness probe bypasses the auth/tenant middleware chain.
+	root := http.NewServeMux()
+	root.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"healthy","module":"department-template-engine","version":"1.0.0"}`))
 	})
+	root.Handle("/", chain)
 
 	log.Printf("Module 05 — Department Template Engine starting on :%d", cfg.Port)
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), chain); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), root); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
 }
