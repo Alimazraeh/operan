@@ -7,15 +7,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/operan/modules/09-human-supervision/internal/config"
 	"github.com/operan/modules/09-human-supervision/internal/events"
 	"github.com/operan/modules/09-human-supervision/internal/handlers"
 	"github.com/operan/modules/09-human-supervision/internal/middleware"
+	"github.com/operan/modules/09-human-supervision/internal/persist"
 	"github.com/operan/modules/09-human-supervision/internal/store"
 )
 
@@ -30,6 +34,21 @@ func main() {
 	escalationStore := store.NewEscalationStore()
 	interventionStore := store.NewInterventionStore()
 	hitlStore := store.NewHitlStore()
+
+	// ─── Persistence (file snapshots on a mounted volume) ─────────────────
+	shutdownCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
+	if cfg.DataDir != "" {
+		snapshots := []persist.File{
+			{Name: "approvals.json", Store: approvalStore},
+			{Name: "escalations.json", Store: escalationStore},
+			{Name: "interventions.json", Store: interventionStore},
+			{Name: "hitl.json", Store: hitlStore},
+		}
+		persist.Load(cfg.DataDir, snapshots)
+		go persist.Run(shutdownCtx, cfg.DataDir, 10*time.Second, snapshots)
+		log.Printf("persistence enabled: %s", cfg.DataDir)
+	}
 
 	// ─── Events ───────────────────────────────────────────────────────────
 	publisher := events.NewPublisher()
@@ -68,8 +87,18 @@ func main() {
 	})
 	root.Handle("/", api)
 
+	srv := &http.Server{Addr: fmt.Sprintf(":%d", cfg.Port), Handler: root}
+	go func() {
+		<-shutdownCtx.Done()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		srv.Shutdown(ctx)
+	}()
+
 	log.Printf("Module 09 — Human Supervision starting on :%d", cfg.Port)
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), root); err != nil {
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Server failed: %v", err)
 	}
+	time.Sleep(200 * time.Millisecond) // final snapshot
+	log.Printf("Module 09 stopped")
 }

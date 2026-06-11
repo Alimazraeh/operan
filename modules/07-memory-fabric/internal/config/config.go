@@ -16,19 +16,32 @@ type Config struct {
 	OTLPEndpoint   string
 	MaxPageSize    int
 	GCBatchSize    int // max vectors removed per garbage-collection run
+
+	// Embeddings gateway (OpenAI-compatible, e.g. LiteLLM). Empty URL
+	// disables real embeddings; search falls back to token overlap.
+	EmbeddingsURL    string
+	EmbeddingsAPIKey string
+	EmbeddingsModel  string
+
+	// DataDir enables file-backed persistence when set (snapshot/restore).
+	DataDir string
 }
 
 // ParseConfig reads configuration from the environment, applying defaults.
 func ParseConfig() Config {
 	return Config{
-		Port:           envInt("MODULE07_PORT", 8007),
-		DBURL:          env("MODULE07_DB_URL", ""),
-		RedisURL:       env("MODULE07_REDIS_URL", ""),
-		JWTSecret:      env("MODULE07_JWT_SECRET", "change-me-in-production"),
-		EventBrokerURL: env("MODULE07_EVENT_BROKER_URL", ""),
-		OTLPEndpoint:   env("MODULE07_OTLP_ENDPOINT", "http://localhost:4318"),
-		MaxPageSize:    envInt("MODULE07_MAX_PAGE_SIZE", 100),
-		GCBatchSize:    envInt("MODULE07_GC_BATCH_SIZE", 1000),
+		Port:             envInt("MODULE07_PORT", 8007),
+		DBURL:            env("MODULE07_DB_URL", ""),
+		RedisURL:         env("MODULE07_REDIS_URL", ""),
+		JWTSecret:        env("MODULE07_JWT_SECRET", "change-me-in-production"),
+		EventBrokerURL:   env("MODULE07_EVENT_BROKER_URL", ""),
+		OTLPEndpoint:     env("MODULE07_OTLP_ENDPOINT", "http://localhost:4318"),
+		MaxPageSize:      envInt("MODULE07_MAX_PAGE_SIZE", 100),
+		GCBatchSize:      envInt("MODULE07_GC_BATCH_SIZE", 1000),
+		EmbeddingsURL:    env("MODULE07_EMBEDDINGS_URL", ""),
+		EmbeddingsAPIKey: env("MODULE07_EMBEDDINGS_API_KEY", ""),
+		EmbeddingsModel:  env("MODULE07_EMBEDDINGS_MODEL", "qwen3-embedding-4b"),
+		DataDir:          env("MODULE07_DATA_DIR", ""),
 	}
 }
 

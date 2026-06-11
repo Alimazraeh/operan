@@ -13,6 +13,9 @@ type Config struct {
 	EventBrokerURL string
 	OTLPEndpoint   string
 	MaxPageSize    int
+
+	// DataDir enables file-backed persistence when set (snapshot/restore).
+	DataDir string
 }
 
 // ParseConfig reads configuration from the environment, applying defaults.
@@ -23,6 +26,7 @@ func ParseConfig() Config {
 		EventBrokerURL: env("MODULE09_EVENT_BROKER_URL", ""),
 		OTLPEndpoint:   env("MODULE09_OTLP_ENDPOINT", "http://localhost:4318"),
 		MaxPageSize:    envInt("MODULE09_MAX_PAGE_SIZE", 100),
+		DataDir:        env("MODULE09_DATA_DIR", ""),
 	}
 }
 

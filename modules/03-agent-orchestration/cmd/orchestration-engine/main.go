@@ -11,6 +11,7 @@ import (
 
 	"github.com/operan/modules/03-agent-orchestration/internal/config"
 	"github.com/operan/modules/03-agent-orchestration/internal/events"
+	"github.com/operan/modules/03-agent-orchestration/internal/gates"
 	"github.com/operan/modules/03-agent-orchestration/internal/execution"
 	"github.com/operan/modules/03-agent-orchestration/internal/handler"
 	"github.com/operan/modules/03-agent-orchestration/internal/middleware"
@@ -57,6 +58,20 @@ func main() {
 		pub = events.NewPublisher()
 	} else {
 		pub = events.NewPublisherWithBroker(broker)
+
+		// ─── Supervision gate enforcement (US-402) ───────────────────────────
+		// A dedicated subscriber broker with a pass-through prefix ("operan")
+		// so Module 09's topics are not re-prefixed with operan.orchestration.
+		subCfg := brokerCfg
+		subCfg.TopicPrefix = "operan"
+		if subBroker, subErr := brokerFactory.CreateBroker(brokerType, subCfg); subErr == nil {
+			enforcer := gates.NewEnforcer(store.HumanTaskStore())
+			if startErr := enforcer.Start(context.Background(), gateSubscriber{subBroker}, "module03-orchestration"); startErr != nil {
+				log.Printf("[WARN] gate enforcement unavailable: %v", startErr)
+			}
+		} else {
+			log.Printf("[WARN] gate enforcement subscriber unavailable: %v", subErr)
+		}
 	}
 
 	// ─── Initialize DAG engine (LangGraph stack) ──────────────────────────────
@@ -442,4 +457,13 @@ func writeError(w http.ResponseWriter, status, code int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	fmt.Fprintf(w, `{"error":{"code":%d,"message":"%s"}}`, code, message)
+}
+
+// gateSubscriber adapts events.Broker to the gates.Subscriber interface.
+type gateSubscriber struct{ b events.Broker }
+
+func (g gateSubscriber) Subscribe(ctx context.Context, topic, group string, on func(context.Context, gates.Message)) error {
+	return g.b.Subscribe(ctx, topic, group, func(ctx context.Context, m events.Message) {
+		on(ctx, gates.Message{Topic: m.Topic, Value: m.Value})
+	})
 }

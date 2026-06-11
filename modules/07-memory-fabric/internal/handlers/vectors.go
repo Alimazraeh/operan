@@ -47,9 +47,36 @@ func (h *MemoryHandlers) IngestVectors(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Vectorize items that arrived without embeddings (best effort: an
+	// embeddings outage degrades search to token overlap, never fails ingest).
+	var computed [][]float64
+	embeddingModel := ""
+	if h.Embedder != nil {
+		var texts []string
+		for _, item := range req.Items {
+			if len(item.EmbeddingVector) == 0 && item.SemanticContent != "" {
+				texts = append(texts, item.SemanticContent)
+			}
+		}
+		if len(texts) > 0 {
+			if vecs, err := h.Embedder.Embed(r.Context(), texts); err == nil {
+				computed = vecs
+				embeddingModel = h.Embedder.Model()
+			}
+		}
+	}
+
 	ingested, failed := 0, 0
+	nextComputed := 0
 	var errs []string
 	for i, item := range req.Items {
+		vector := item.EmbeddingVector
+		model := ""
+		if len(vector) == 0 && item.SemanticContent != "" && nextComputed < len(computed) {
+			vector = computed[nextComputed]
+			model = embeddingModel
+			nextComputed++
+		}
 		v := &store.MemoryVector{
 			TenantID:        tenantID,
 			DocumentID:      item.DocumentID,
@@ -58,7 +85,8 @@ func (h *MemoryHandlers) IngestVectors(w http.ResponseWriter, r *http.Request) {
 			Metadata:        item.Metadata,
 			ChunkID:         item.ChunkID,
 			SegmentType:     store.SegmentType(item.SegmentType),
-			EmbeddingVector: item.EmbeddingVector,
+			EmbeddingVector: vector,
+			EmbeddingModel:  model,
 			TTL:             item.TTL,
 		}
 		created, err := h.Vectors.Create(v)

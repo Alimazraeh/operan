@@ -7,15 +7,20 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/operan/modules/07-memory-fabric/internal/config"
+	"github.com/operan/modules/07-memory-fabric/internal/embeddings"
 	"github.com/operan/modules/07-memory-fabric/internal/events"
 	"github.com/operan/modules/07-memory-fabric/internal/handlers"
 	"github.com/operan/modules/07-memory-fabric/internal/middleware"
+	"github.com/operan/modules/07-memory-fabric/internal/persist"
 	"github.com/operan/modules/07-memory-fabric/internal/store"
 )
 
@@ -29,6 +34,20 @@ func main() {
 	vectorStore := store.NewVectorStore()
 	policyStore := store.NewPolicyStore()
 	operationStore := store.NewOperationStore()
+
+	// ─── Persistence (file snapshots on a mounted volume) ─────────────────
+	shutdownCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
+	if cfg.DataDir != "" {
+		snapshots := []persist.File{
+			{Name: "vectors.json", Store: vectorStore},
+			{Name: "policies.json", Store: policyStore},
+			{Name: "operations.json", Store: operationStore},
+		}
+		persist.Load(cfg.DataDir, snapshots)
+		go persist.Run(shutdownCtx, cfg.DataDir, 10*time.Second, snapshots)
+		log.Printf("persistence enabled: %s", cfg.DataDir)
+	}
 
 	// ─── Events ───────────────────────────────────────────────────────────
 	publisher := events.NewPublisher()
@@ -45,6 +64,12 @@ func main() {
 
 	// ─── API routes (auth-protected) ──────────────────────────────────────
 	h := handlers.NewMemoryHandlers(vectorStore, policyStore, operationStore, publisher, cfg.MaxPageSize, cfg.GCBatchSize)
+	if cfg.EmbeddingsURL != "" {
+		h.Embedder = embeddings.New(cfg.EmbeddingsURL, cfg.EmbeddingsAPIKey, cfg.EmbeddingsModel)
+		log.Printf("embeddings gateway configured: %s (model %s)", cfg.EmbeddingsURL, cfg.EmbeddingsModel)
+	} else {
+		log.Printf("no embeddings gateway configured; search uses token-overlap fallback")
+	}
 	apiMux := http.NewServeMux()
 	handlers.RegisterRoutes(apiMux, h)
 
@@ -67,8 +92,19 @@ func main() {
 	})
 	root.Handle("/", api)
 
+	srv := &http.Server{Addr: fmt.Sprintf(":%d", cfg.Port), Handler: root}
+	go func() {
+		<-shutdownCtx.Done()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		srv.Shutdown(ctx)
+	}()
+
 	log.Printf("Module 07 — Memory Fabric starting on :%d", cfg.Port)
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), root); err != nil {
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Server failed: %v", err)
 	}
+	// Give the persistence loop a beat to take its final snapshot.
+	time.Sleep(200 * time.Millisecond)
+	log.Printf("Module 07 stopped")
 }

@@ -16,6 +16,9 @@ type Config struct {
 	MaxPageSize    int
 	ConsumerGroup  string
 	ConsumeTopics  []string
+
+	// DataDir enables file-backed persistence when set (snapshot/restore).
+	DataDir string
 }
 
 // DefaultConsumeTopics is the platform topic set Module 11 ingests into
@@ -64,6 +67,7 @@ func ParseConfig() Config {
 		MaxPageSize:    envInt("MODULE11_MAX_PAGE_SIZE", 100),
 		ConsumerGroup:  env("MODULE11_CONSUMER_GROUP", "module11-observability"),
 		ConsumeTopics:  envList("MODULE11_CONSUME_TOPICS", DefaultConsumeTopics),
+		DataDir:        env("MODULE11_DATA_DIR", ""),
 	}
 }
 

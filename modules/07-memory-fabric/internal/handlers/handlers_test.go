@@ -388,3 +388,65 @@ func (c *captureBroker) Publish(_ context.Context, topic string, _, _ []byte, _ 
 }
 
 func (c *captureBroker) Close() error { return nil }
+
+// fakeEmbedder maps known texts to fixed vectors so cosine ranking is exact.
+type fakeEmbedder struct{ vectors map[string][]float64 }
+
+func (f *fakeEmbedder) Embed(_ context.Context, texts []string) ([][]float64, error) {
+	out := make([][]float64, len(texts))
+	for i, t := range texts {
+		v, ok := f.vectors[t]
+		if !ok {
+			v = []float64{0, 0, 1}
+		}
+		out[i] = v
+	}
+	return out, nil
+}
+
+func (f *fakeEmbedder) Model() string { return "fake-embedder" }
+
+func TestSearchUsesEmbedderForRanking(t *testing.T) {
+	h, mux := testHandlers()
+	h.Embedder = &fakeEmbedder{vectors: map[string][]float64{
+		"billing preferences for Acme": {1, 0, 0}, // query
+		"Acme wants quarterly billing": {0.9, 0.1, 0},
+		"The office plant needs water": {0, 1, 0},
+	}}
+
+	// Ingest two memories without vectors — the embedder vectorizes them.
+	ingestOne(t, mux, "Acme wants quarterly billing", "department", nil)
+	ingestOne(t, mux, "The office plant needs water", "department", nil)
+
+	// Stored vectors carry the embedder's model name.
+	lw := do(mux, "GET", "/vectors?page_size=10", nil)
+	var list struct {
+		Items []store.MemoryVector `json:"items"`
+	}
+	json.Unmarshal(lw.Body.Bytes(), &list)
+	for _, v := range list.Items {
+		if v.EmbeddingModel != "fake-embedder" || len(v.EmbeddingVector) != 3 {
+			t.Errorf("vector not embedded: model=%q dims=%d", v.EmbeddingModel, len(v.EmbeddingVector))
+		}
+	}
+
+	// Token overlap would score ~0 here ("billing" is the only shared token
+	// with one memory) — cosine on embeddings must rank the billing memory
+	// on top with a high score.
+	w := do(mux, "POST", "/search", map[string]interface{}{
+		"query":               "billing preferences for Acme",
+		"embedding_type":      "department",
+		"relevance_threshold": 0.8,
+	})
+	var res struct {
+		Items []map[string]interface{} `json:"items"`
+		Total int                      `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &res)
+	if res.Total != 1 {
+		t.Fatalf("search total = %d, want 1 (cosine above 0.8)", res.Total)
+	}
+	if res.Items[0]["content"] != "Acme wants quarterly billing" {
+		t.Errorf("top hit = %v", res.Items[0]["content"])
+	}
+}

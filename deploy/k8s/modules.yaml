@@ -5,8 +5,12 @@
 # Create the JWT secret first:
 #   kubectl -n operan create secret generic operan-jwt \
 #     --from-literal=secret="$(openssl rand -base64 32)"
-
----
+#
+# memory-fabric needs the LiteLLM key for real embeddings:
+#   kubectl -n operan create secret generic operan-litellm \
+#     --from-literal=api-key="<LITELLM_MASTER_KEY>"
+#
+# Modules 07/09/11 persist snapshots to hostPath /var/lib/operan/<name>.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,41 +32,41 @@ spec:
     spec:
       enableServiceLinks: false
       containers:
-        - name: tenant-control-plane
-          image: alimazraeh/operan-01-tenant-control-plane:latest
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8080
-          env:
-            - name: JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: operan-jwt
-                  key: secret
-            - name: EVENT_BUS_HOST
-              value: "kafka.operan.svc.cluster.local"
-            - name: EVENT_BUS_PORT
-              value: "9092"
-            - name: EVENT_BUS_PROTO
-              value: "kafka"
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8080
-            initialDelaySeconds: 3
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 8080
-            initialDelaySeconds: 10
-            periodSeconds: 20
-          resources:
-            requests:
-              cpu: 25m
-              memory: 32Mi
-            limits:
-              memory: 256Mi
+      - name: tenant-control-plane
+        image: alimazraeh/operan-01-tenant-control-plane:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: EVENT_BUS_HOST
+          value: kafka.operan.svc.cluster.local
+        - name: EVENT_BUS_PORT
+          value: '9092'
+        - name: EVENT_BUS_PROTO
+          value: kafka
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            memory: 256Mi
 ---
 apiVersion: v1
 kind: Service
@@ -76,8 +80,8 @@ spec:
   selector:
     app.kubernetes.io/name: tenant-control-plane
   ports:
-    - port: 8080
-      targetPort: 8080
+  - port: 8080
+    targetPort: 8080
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -100,41 +104,41 @@ spec:
     spec:
       enableServiceLinks: false
       containers:
-        - name: identity-access
-          image: alimazraeh/operan-02-identity-access:latest
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8002
-          env:
-            - name: IAM_TOKEN_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: operan-jwt
-                  key: secret
-            - name: IAM_EVENT_BROKER_URL
-              value: "kafka.operan.svc.cluster.local:9092"
-            - name: AUTHENTIK_SERVER_URL
-              value: "http://authentik-not-deployed.local"
-            - name: AUTHENTIK_ADMIN_API_TOKEN
-              value: "demo-placeholder"
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8002
-            initialDelaySeconds: 3
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 8002
-            initialDelaySeconds: 10
-            periodSeconds: 20
-          resources:
-            requests:
-              cpu: 25m
-              memory: 32Mi
-            limits:
-              memory: 256Mi
+      - name: identity-access
+        image: alimazraeh/operan-02-identity-access:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8002
+        env:
+        - name: IAM_TOKEN_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: IAM_EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        - name: AUTHENTIK_SERVER_URL
+          value: http://authentik-not-deployed.local
+        - name: AUTHENTIK_ADMIN_API_TOKEN
+          value: demo-placeholder
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            memory: 256Mi
 ---
 apiVersion: v1
 kind: Service
@@ -148,8 +152,8 @@ spec:
   selector:
     app.kubernetes.io/name: identity-access
   ports:
-    - port: 8002
-      targetPort: 8002
+  - port: 8002
+    targetPort: 8002
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -172,41 +176,41 @@ spec:
     spec:
       enableServiceLinks: false
       containers:
-        - name: agent-orchestration
-          image: alimazraeh/operan-03-agent-orchestration:latest
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8080
-          env:
-            - name: JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: operan-jwt
-                  key: secret
-            - name: EVENT_BUS_HOST
-              value: "kafka.operan.svc.cluster.local"
-            - name: EVENT_BUS_PORT
-              value: "9092"
-            - name: EVENT_BUS_PROTO
-              value: "kafka"
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8080
-            initialDelaySeconds: 3
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 8080
-            initialDelaySeconds: 10
-            periodSeconds: 20
-          resources:
-            requests:
-              cpu: 25m
-              memory: 32Mi
-            limits:
-              memory: 256Mi
+      - name: agent-orchestration
+        image: alimazraeh/operan-03-agent-orchestration:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: EVENT_BUS_HOST
+          value: kafka.operan.svc.cluster.local
+        - name: EVENT_BUS_PORT
+          value: '9092'
+        - name: EVENT_BUS_PROTO
+          value: kafka
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            memory: 256Mi
 ---
 apiVersion: v1
 kind: Service
@@ -220,8 +224,8 @@ spec:
   selector:
     app.kubernetes.io/name: agent-orchestration
   ports:
-    - port: 8080
-      targetPort: 8080
+  - port: 8080
+    targetPort: 8080
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -244,45 +248,45 @@ spec:
     spec:
       enableServiceLinks: false
       containers:
-        - name: agent-registry
-          image: alimazraeh/operan-04-agent-registry:latest
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8083
-          env:
-            - name: AGENT_REGISTRY_PORT
-              value: ":8083"
-            - name: JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: operan-jwt
-                  key: secret
-            - name: EVENT_BUS_HOST
-              value: "kafka.operan.svc.cluster.local"
-            - name: EVENT_BUS_PORT
-              value: "9092"
-            - name: EVENT_BUS_PROTO
-              value: "kafka"
-            - name: DB_PASSWORD
-              value: "demo-in-memory-stores-no-db"
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8083
-            initialDelaySeconds: 3
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 8083
-            initialDelaySeconds: 10
-            periodSeconds: 20
-          resources:
-            requests:
-              cpu: 25m
-              memory: 32Mi
-            limits:
-              memory: 256Mi
+      - name: agent-registry
+        image: alimazraeh/operan-04-agent-registry:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8083
+        env:
+        - name: AGENT_REGISTRY_PORT
+          value: :8083
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: EVENT_BUS_HOST
+          value: kafka.operan.svc.cluster.local
+        - name: EVENT_BUS_PORT
+          value: '9092'
+        - name: EVENT_BUS_PROTO
+          value: kafka
+        - name: DB_PASSWORD
+          value: demo-in-memory-stores-no-db
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8083
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8083
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            memory: 256Mi
 ---
 apiVersion: v1
 kind: Service
@@ -296,8 +300,8 @@ spec:
   selector:
     app.kubernetes.io/name: agent-registry
   ports:
-    - port: 8083
-      targetPort: 8083
+  - port: 8083
+    targetPort: 8083
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -320,37 +324,37 @@ spec:
     spec:
       enableServiceLinks: false
       containers:
-        - name: department-templates
-          image: alimazraeh/operan-05-department-template-engine:latest
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8005
-          env:
-            - name: MODULE05_JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: operan-jwt
-                  key: secret
-            - name: MODULE05_EVENT_BROKER_URL
-              value: "kafka.operan.svc.cluster.local:9092"
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8005
-            initialDelaySeconds: 3
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 8005
-            initialDelaySeconds: 10
-            periodSeconds: 20
-          resources:
-            requests:
-              cpu: 25m
-              memory: 32Mi
-            limits:
-              memory: 256Mi
+      - name: department-templates
+        image: alimazraeh/operan-05-department-template-engine:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8005
+        env:
+        - name: MODULE05_JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: MODULE05_EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8005
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8005
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            memory: 256Mi
 ---
 apiVersion: v1
 kind: Service
@@ -364,8 +368,8 @@ spec:
   selector:
     app.kubernetes.io/name: department-templates
   ports:
-    - port: 8005
-      targetPort: 8005
+  - port: 8005
+    targetPort: 8005
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -388,37 +392,66 @@ spec:
     spec:
       enableServiceLinks: false
       containers:
-        - name: memory-fabric
-          image: alimazraeh/operan-07-memory-fabric:latest
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8007
-          env:
-            - name: MODULE07_JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: operan-jwt
-                  key: secret
-            - name: MODULE07_EVENT_BROKER_URL
-              value: "kafka.operan.svc.cluster.local:9092"
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8007
-            initialDelaySeconds: 3
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 8007
-            initialDelaySeconds: 10
-            periodSeconds: 20
-          resources:
-            requests:
-              cpu: 25m
-              memory: 32Mi
-            limits:
-              memory: 256Mi
+      - name: memory-fabric
+        image: alimazraeh/operan-07-memory-fabric:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8007
+        env:
+        - name: MODULE07_JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: MODULE07_EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        - name: MODULE07_DATA_DIR
+          value: /data
+        - name: MODULE07_EMBEDDINGS_URL
+          value: http://litellm.deep-research.svc.cluster.local:4000
+        - name: MODULE07_EMBEDDINGS_MODEL
+          value: qwen3-embedding-4b
+        - name: MODULE07_EMBEDDINGS_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: operan-litellm
+              key: api-key
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8007
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8007
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            memory: 256Mi
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      initContainers:
+      - name: fix-data-perms
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - chown -R 1001:1001 /data
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        hostPath:
+          path: /var/lib/operan/memory-fabric
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
@@ -432,8 +465,8 @@ spec:
   selector:
     app.kubernetes.io/name: memory-fabric
   ports:
-    - port: 8007
-      targetPort: 8007
+  - port: 8007
+    targetPort: 8007
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -456,37 +489,37 @@ spec:
     spec:
       enableServiceLinks: false
       containers:
-        - name: tool-execution
-          image: alimazraeh/operan-08-tool-execution:latest
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8008
-          env:
-            - name: MODULE08_JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: operan-jwt
-                  key: secret
-            - name: MODULE08_EVENT_BROKER_URL
-              value: "kafka.operan.svc.cluster.local:9092"
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8008
-            initialDelaySeconds: 3
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 8008
-            initialDelaySeconds: 10
-            periodSeconds: 20
-          resources:
-            requests:
-              cpu: 25m
-              memory: 32Mi
-            limits:
-              memory: 256Mi
+      - name: tool-execution
+        image: alimazraeh/operan-08-tool-execution:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8008
+        env:
+        - name: MODULE08_JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: MODULE08_EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8008
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8008
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            memory: 256Mi
 ---
 apiVersion: v1
 kind: Service
@@ -500,8 +533,8 @@ spec:
   selector:
     app.kubernetes.io/name: tool-execution
   ports:
-    - port: 8008
-      targetPort: 8008
+  - port: 8008
+    targetPort: 8008
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -524,37 +557,57 @@ spec:
     spec:
       enableServiceLinks: false
       containers:
-        - name: human-supervision
-          image: alimazraeh/operan-09-human-supervision:latest
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8009
-          env:
-            - name: MODULE09_JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: operan-jwt
-                  key: secret
-            - name: MODULE09_EVENT_BROKER_URL
-              value: "kafka.operan.svc.cluster.local:9092"
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8009
-            initialDelaySeconds: 3
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 8009
-            initialDelaySeconds: 10
-            periodSeconds: 20
-          resources:
-            requests:
-              cpu: 25m
-              memory: 32Mi
-            limits:
-              memory: 256Mi
+      - name: human-supervision
+        image: alimazraeh/operan-09-human-supervision:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8009
+        env:
+        - name: MODULE09_JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: MODULE09_EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        - name: MODULE09_DATA_DIR
+          value: /data
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8009
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8009
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            memory: 256Mi
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      initContainers:
+      - name: fix-data-perms
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - chown -R 1001:1001 /data
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        hostPath:
+          path: /var/lib/operan/human-supervision
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
@@ -568,8 +621,8 @@ spec:
   selector:
     app.kubernetes.io/name: human-supervision
   ports:
-    - port: 8009
-      targetPort: 8009
+  - port: 8009
+    targetPort: 8009
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -592,37 +645,57 @@ spec:
     spec:
       enableServiceLinks: false
       containers:
-        - name: observability
-          image: alimazraeh/operan-11-observability:latest
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8011
-          env:
-            - name: MODULE11_JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: operan-jwt
-                  key: secret
-            - name: MODULE11_EVENT_BROKER_URL
-              value: "kafka.operan.svc.cluster.local:9092"
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: 8011
-            initialDelaySeconds: 3
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8011
-            initialDelaySeconds: 10
-            periodSeconds: 20
-          resources:
-            requests:
-              cpu: 25m
-              memory: 32Mi
-            limits:
-              memory: 256Mi
+      - name: observability
+        image: alimazraeh/operan-11-observability:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8011
+        env:
+        - name: MODULE11_JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: MODULE11_EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        - name: MODULE11_DATA_DIR
+          value: /data
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8011
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8011
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            memory: 256Mi
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      initContainers:
+      - name: fix-data-perms
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - chown -R 1001:1001 /data
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        hostPath:
+          path: /var/lib/operan/observability
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
@@ -636,5 +709,5 @@ spec:
   selector:
     app.kubernetes.io/name: observability
   ports:
-    - port: 8011
-      targetPort: 8011
+  - port: 8011
+    targetPort: 8011
