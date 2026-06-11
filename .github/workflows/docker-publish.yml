@@ -47,7 +47,10 @@ jobs:
           - 03-agent-orchestration
           - 04-agent-registry
           - 05-department-template-engine
+          - 07-memory-fabric
           - 08-tool-execution
+          - 09-human-supervision
+          - 11-observability
     steps:
       - uses: actions/checkout@v4
 
