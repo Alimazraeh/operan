@@ -54,7 +54,16 @@ func (h *MemoryHandlers) SearchMemory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	scored := h.Vectors.Search(tenantID, req.Query, req.QueryVector, req.EmbeddingType, req.TopN, req.RelevanceThreshold, req.VectorIDs)
+	// Vectorize the query through the embeddings gateway when the caller
+	// didn't supply a vector; failures fall back to token-overlap scoring.
+	queryVector := req.QueryVector
+	if len(queryVector) == 0 && h.Embedder != nil {
+		if vecs, err := h.Embedder.Embed(r.Context(), []string{req.Query}); err == nil && len(vecs) == 1 {
+			queryVector = vecs[0]
+		}
+	}
+
+	scored := h.Vectors.Search(tenantID, req.Query, queryVector, req.EmbeddingType, req.TopN, req.RelevanceThreshold, req.VectorIDs)
 
 	items := make([]map[string]interface{}, 0, len(scored))
 	for i, sv := range scored {

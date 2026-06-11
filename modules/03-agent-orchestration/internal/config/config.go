@@ -7,47 +7,47 @@ import (
 )
 
 const (
-	DefaultListenAddr     = ":8080"
-	DefaultOTLPEndpoint   = "http://localhost:4318"
-	DefaultLogEnv         = "production"
-	DefaultVersion        = "1.0.0"
-	DefaultEventBusHost   = "events.operan.internal"
-	DefaultEventBusPort   = "9092"
-	DefaultEventBusProto  = "kafka"
-	DefaultEventBusTLS    = false
-	DefaultEventBusSASL   = false
-	DefaultJWTSecret      = "change-me-in-production"
-	DefaultDBHost         = "localhost"
-	DefaultDBPort         = "5432"
-	DefaultDBUser         = "postgres"
-	DefaultDBPassword     = "postgres"
-	DefaultDBName         = "orchestration"
-	DefaultDBMaxOpen      = 25
-	DefaultDBMaxIdle      = 5
+	DefaultListenAddr    = ":8080"
+	DefaultOTLPEndpoint  = "http://localhost:4318"
+	DefaultLogEnv        = "production"
+	DefaultVersion       = "1.0.0"
+	DefaultEventBusHost  = "events.operan.internal"
+	DefaultEventBusPort  = "9092"
+	DefaultEventBusProto = "kafka"
+	DefaultEventBusTLS   = false
+	DefaultEventBusSASL  = false
+	DefaultJWTSecret     = "change-me-in-production"
+	DefaultDBHost        = "localhost"
+	DefaultDBPort        = "5432"
+	DefaultDBUser        = "postgres"
+	DefaultDBPassword    = "postgres"
+	DefaultDBName        = "orchestration"
+	DefaultDBMaxOpen     = 25
+	DefaultDBMaxIdle     = 5
 )
 
 // Config holds the runtime configuration for the orchestration engine.
 type Config struct {
-	ListenAddr     string
-	OTLPEndpoint   string
-	LogEnv         string
-	Version        string
-	EventBusHost   string
-	EventBusPort   string
-	EventBusProto  string
-	EventBusTLS    bool
-	EventBusSASL   bool
-	EventBusUser   string
-	EventBusPass   string
-	LogLevel       string
-	JWTSecret      string
-	DBHost         string
-	DBPort         string
-	DBUser         string
-	DBPassword     string
-	DBName         string
-	DBMaxOpen      int
-	DBMaxIdle      int
+	ListenAddr    string
+	OTLPEndpoint  string
+	LogEnv        string
+	Version       string
+	EventBusHost  string
+	EventBusPort  string
+	EventBusProto string
+	EventBusTLS   bool
+	EventBusSASL  bool
+	EventBusUser  string
+	EventBusPass  string
+	LogLevel      string
+	JWTSecret     string
+	DBHost        string
+	DBPort        string
+	DBUser        string
+	DBPassword    string
+	DBName        string
+	DBMaxOpen     int
+	DBMaxIdle     int
 }
 
 // ParseConfig reads configuration from environment variables with defaults.
@@ -73,11 +73,11 @@ func ParseConfig() Config {
 				return "info"
 			}
 		}(),
-		DBHost:   getEnvOrDefault("DB_HOST", DefaultDBHost),
-		DBPort:   getEnvOrDefault("DB_PORT", DefaultDBPort),
-		DBUser:   getEnvOrDefault("DB_USER", DefaultDBUser),
+		DBHost:     getEnvOrDefault("DB_HOST", DefaultDBHost),
+		DBPort:     getEnvOrDefault("DB_PORT", DefaultDBPort),
+		DBUser:     getEnvOrDefault("DB_USER", DefaultDBUser),
 		DBPassword: getEnvOrDefault("DB_PASSWORD", DefaultDBPassword),
-		DBName:   getEnvOrDefault("DB_NAME", DefaultDBName),
+		DBName:     getEnvOrDefault("DB_NAME", DefaultDBName),
 		DBMaxOpen: func() int {
 			v := getEnvOrDefault("DB_MAX_OPEN", "")
 			if v == "" {

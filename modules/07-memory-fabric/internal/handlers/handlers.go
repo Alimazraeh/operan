@@ -2,6 +2,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -11,12 +12,20 @@ import (
 	"github.com/operan/modules/07-memory-fabric/internal/store"
 )
 
+// Embedder vectorizes text through the platform embeddings gateway.
+// Nil disables real embeddings (search falls back to token overlap).
+type Embedder interface {
+	Embed(ctx context.Context, texts []string) ([][]float64, error)
+	Model() string
+}
+
 // MemoryHandlers bundles the stores and publisher used by all endpoints.
 type MemoryHandlers struct {
 	Vectors     *store.VectorStore
 	Policies    *store.PolicyStore
 	Operations  *store.OperationStore
 	Publisher   *events.Publisher
+	Embedder    Embedder
 	MaxPageSize int
 	GCBatchSize int
 }
