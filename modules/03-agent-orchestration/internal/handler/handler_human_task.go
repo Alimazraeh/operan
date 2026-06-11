@@ -134,7 +134,7 @@ func (h *HumanTaskHandler) ListHumanTasks(w http.ResponseWriter, r *http.Request
 
 // GetHumanTask handles GET /human-tasks/{id}
 func (h *HumanTaskHandler) GetHumanTask(w http.ResponseWriter, r *http.Request) {
-	id := extractIDFromPath(r.URL.Path, "/human-tasks/")
+	id := extractIDAfter(r.URL.Path, "/human-tasks/")
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "human task id is required")
 		return
@@ -155,7 +155,7 @@ func (h *HumanTaskHandler) GetHumanTask(w http.ResponseWriter, r *http.Request) 
 
 // RespondToHumanTask handles POST /human-tasks/{id}/respond
 func (h *HumanTaskHandler) RespondToHumanTask(w http.ResponseWriter, r *http.Request) {
-	id := extractIDFromPath(r.URL.Path, "/human-tasks/")
+	id := extractIDAfter(r.URL.Path, "/human-tasks/")
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "human task id is required")
 		return
@@ -213,7 +213,7 @@ func (h *HumanTaskHandler) GetPendingTasks(w http.ResponseWriter, r *http.Reques
 
 // GetTasksByExecution handles GET /human-tasks/execution/{executionId}
 func (h *HumanTaskHandler) GetTasksByExecution(w http.ResponseWriter, r *http.Request) {
-	executionID := extractIDFromPath(r.URL.Path, "/human-tasks/execution/")
+	executionID := extractIDAfter(r.URL.Path, "/human-tasks/execution/")
 	if executionID == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "execution id is required")
 		return
@@ -248,7 +248,7 @@ func (h *HumanTaskHandler) GetTasksByExecution(w http.ResponseWriter, r *http.Re
 
 // CancelHumanTask handles POST /human-tasks/{id}/cancel
 func (h *HumanTaskHandler) CancelHumanTask(w http.ResponseWriter, r *http.Request) {
-	id := extractIDFromPath(r.URL.Path, "/human-tasks/")
+	id := extractIDAfter(r.URL.Path, "/human-tasks/")
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "human task id is required")
 		return

@@ -369,3 +369,29 @@ func TestHumanTaskHandler_CancelHumanTask(t *testing.T) {
 		// (only "reject" or "request_info" map to rejected)
 	})
 }
+
+// Regression: detail endpoints must work under the production base path
+// (/api/v1/orchestration/...), not only the bare /human-tasks/ prefix.
+func TestHumanTaskDetailUnderBasePath(t *testing.T) {
+	taskStore := store.NewHumanTaskStore()
+	execStore := store.NewExecutionStore()
+	exec, _ := execStore.Create(&store.PipelineExecution{PipelineID: "p1", TenantID: "tenant-1", Status: store.PipelineExecutionRunning})
+	task, _ := taskStore.Create(&store.HumanTask{TenantID: "tenant-1", PipelineExecutionID: exec.ID, AssigneeID: "u1", Instructions: "check"})
+
+	h := NewHumanTaskHandler(taskStore, execStore)
+	req := setTenant(httptest.NewRequest("GET", "/api/v1/orchestration/human-tasks/"+task.ID, nil))
+	w := httptest.NewRecorder()
+	h.GetHumanTask(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("GET under base path: status %d: %s", w.Code, w.Body.String())
+	}
+
+	// Respond under base path too.
+	req = setTenant(httptest.NewRequest("POST", "/api/v1/orchestration/human-tasks/"+task.ID+"/respond",
+		strings.NewReader(`{"action":"approve","responded_by":"u1"}`)))
+	w = httptest.NewRecorder()
+	h.RespondToHumanTask(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("respond under base path: status %d: %s", w.Code, w.Body.String())
+	}
+}

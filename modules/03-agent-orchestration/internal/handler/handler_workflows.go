@@ -586,6 +586,21 @@ func extractIDFromPath(path, prefix string) string {
 	return s[:idx]
 }
 
+// extractIDAfter returns the path segment following the first occurrence of
+// marker anywhere in the path (unlike extractIDFromPath, which requires the
+// path to start with the prefix and silently fails under a base path).
+func extractIDAfter(path, marker string) string {
+	idx := strings.Index(path, marker)
+	if idx == -1 {
+		return ""
+	}
+	s := path[idx+len(marker):]
+	if j := strings.Index(s, "/"); j != -1 {
+		return s[:j]
+	}
+	return s
+}
+
 func generateID() string {
 	b := make([]byte, 16)
 	rand.Read(b)
