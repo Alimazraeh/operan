@@ -114,6 +114,45 @@ export async function viewDepartments() {
     </div>`;
 }
 
+// ─── Give an agent real work: Qwen drafts grounded in memory, then a gate ────
+window.agentDoWork = async function (agentId, agentName, role, deploymentId) {
+  const instruction = $("taskInstr").value.trim();
+  if (!instruction) return;
+  $("workOut").innerHTML = `<div class="hint" style="margin-top:10px"><span class="pulse"></span>${esc(agentName)} is reasoning over its memory…</div>`;
+
+  const draft = await post(SVC.orchestration + "/agent/draft", {
+    agent_id: agentId, role, instruction, memory_query: "customer preferences",
+  });
+  if (!draft.ok || !draft.data || !draft.data.output) {
+    const m = (draft.data && draft.data.error && draft.data.error.message) || ("status " + draft.status);
+    $("workOut").innerHTML = `<div class="empty">Agent reasoning unavailable: ${esc(m)}</div>`;
+    toast("Agent reasoning failed", "bad");
+    return;
+  }
+  const text = draft.data.output;
+
+  // Route the real draft into a gated workflow for human sign-off.
+  const pipe = await post(SVC.orchestration + "/pipeline", {
+    name: "agent-work", steps: [
+      {id: "s1", name: "agent-work", type: "agent"},
+      {id: "s2", name: "human-signoff", type: "human_gate"}]});
+  const exec = await post(SVC.orchestration + "/executions", {pipeline_id: pipe.data.id});
+  const task = await post(SVC.orchestration + "/human-tasks", {
+    pipeline_execution_id: exec.data.id, step_id: "s2",
+    assignee_id: "manager", instructions: text});
+  await post(SVC.supervision + "/approvals", {
+    request_id: task.data.id, requester_id: agentId, type: "parallel",
+    title: instruction.slice(0, 70)});
+
+  $("workOut").innerHTML = `
+    <div class="result" style="margin-top:10px">
+      <div class="q">${esc(agentName)} · drafted by ${esc(draft.data.model)} · grounded in ${draft.data.memory_used.length} memor${draft.data.memory_used.length === 1 ? "y" : "ies"}</div>
+      <div class="a" style="white-space:pre-wrap;font-weight:500">${esc(text)}</div>
+      <div class="meta"><span>${draft.data.tokens} tokens</span><span>now awaiting your sign-off in Supervision →</span></div>
+    </div>`;
+  toast("Agent produced real work — sign off in Supervision", "ok");
+};
+
 // ─── Deploy: drive the REAL Module 05 pipeline with real side-effects ────────
 window.deployDept = async function (templateId) {
   const t = templates.find(x => x.id === templateId);
@@ -218,6 +257,20 @@ export async function viewDepartment(templateId, deploymentId) {
         click: `window.go('agent','${a.id}')`,
       })).join("");
 
+  // First agent of the department is the one we hand work to.
+  const lead = deptAgents[0];
+  const taskCard = !lead ? "" : `
+      <div class="card" style="margin-bottom:14px">
+        <h3>Give the department real work <span class="tag">Module 03 + 12 · Qwen reasoning</span></h3>
+        <div class="hint">Hand <b>${esc(lead.name)}</b> a task. It pulls what it remembers about the customer
+          and actually drafts the work with the LLM — then it goes to you for sign-off.</div>
+        <textarea id="taskInstr" rows="2">Draft a concise contract opening (4 sentences max) for customer Acme for a $250,000 platform subscription, reflecting their known preferences.</textarea>
+        <div class="frow" style="margin-top:8px">
+          <button class="sm" onclick="window.agentDoWork('${esc(lead.id)}','${esc(lead.name)}','${esc(lead.role || "agent")}','${esc(deploymentId)}')">Let the agent work</button>
+        </div>
+        <div id="workOut"></div>
+      </div>`;
+
   return `
     <span class="back" onclick="window.go('departments')">← All departments</span>
     <div class="card" style="margin-bottom:14px">
@@ -230,6 +283,7 @@ export async function viewDepartment(templateId, deploymentId) {
         <dt>Deployed</dt><dd>${rel(d.created_at)}</dd>
       </div>
     </div>
+    ${taskCard}
     <div class="grid g2">
       <div class="card">
         <h3>Staff <span class="tag">Module 04 · agent registry</span></h3>

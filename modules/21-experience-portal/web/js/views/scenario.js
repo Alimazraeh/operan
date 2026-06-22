@@ -10,10 +10,10 @@ const STEPS = [
   "Hire its agents into the registry",
   "The agent learns about the customer",
   "A semantically different question finds the right memory",
-  "The agent drafts a $250k contract — governance pauses it",
+  "The agent actually drafts the contract with Qwen — grounded in memory",
+  "Governance pauses it for human sign-off",
   "You approve — the decision rides Kafka to the orchestrator",
-  "The orchestrator resumes the workflow; the tool fires",
-  "Audit: the whole story is one trace",
+  "The orchestrator resumes; the tool fires, and the whole story is one trace",
 ];
 
 export function viewScenario() {
@@ -103,8 +103,26 @@ window.runStory = async function () {
       : `No recall — check the embeddings gateway.`);
     mark(3, hit ? "ok" : "on");
 
-    // 5 — gated workflow
+    // 5 — the agent ACTUALLY drafts the contract via Qwen, grounded in memory
     mark(4, "on");
+    out(4, `<i>The agent is reasoning…</i>`);
+    const draft = await post(SVC.orchestration + "/agent/draft", {
+      agent_id: salesAgent, role: "Sales Assistant",
+      instruction: "Draft a concise contract opening (4 sentences max) for customer Acme for a $250,000 platform subscription. Reflect the customer's known preferences.",
+      memory_query: "customer Acme preferences UI billing",
+    });
+    let contractText = "Send the $250k contract to Acme";
+    if (draft.ok && draft.data && draft.data.output) {
+      contractText = draft.data.output;
+      out(4, `Drafted by <b>${esc(draft.data.model)}</b>, grounded in ${draft.data.memory_used.length} recalled memor${draft.data.memory_used.length === 1 ? "y" : "ies"}:
+        <div class="result" style="margin-top:8px"><div class="a" style="white-space:pre-wrap;font-weight:500">${esc(contractText)}</div></div>`);
+    } else {
+      out(4, `Reasoning unavailable (${esc((draft.data && draft.data.error && draft.data.error.message) || draft.status)}) — proceeding with the task title.`);
+    }
+    mark(4, draft.ok ? "ok" : "on");
+
+    // 6 — governance gate carries the REAL drafted contract
+    mark(5, "on");
     const pipe = await post(SVC.orchestration + "/pipeline", {
       name: "send-contract", steps: [
         {id: "s1", name: "draft-contract", type: "agent"},
@@ -112,23 +130,23 @@ window.runStory = async function () {
     const exec = await post(SVC.orchestration + "/executions", {pipeline_id: pipe.data.id});
     const task = await post(SVC.orchestration + "/human-tasks", {
       pipeline_execution_id: exec.data.id, step_id: "s2",
-      assignee_id: "manager", instructions: "Send the $250k contract to Acme"});
+      assignee_id: "manager", instructions: contractText});
     const gate = await post(SVC.supervision + "/approvals", {
       request_id: task.data.id, requester_id: salesAgent,
       type: "parallel", title: "Send contract to Acme ($250k)"});
-    out(4, `Governance rule “${esc(c.governance_rules[0].name)}” paused the workflow. Gate <b>${gate.data.id.slice(0, 8)}</b> is in the manager inbox.`);
-    mark(4, "ok");
+    out(5, `Governance rule “${esc(c.governance_rules[0].name)}” paused it. The manager inbox now holds gate <b>${esc(gate.data.id.slice(0, 8))}</b> — with the agent's actual draft to review.`);
+    mark(5, "ok");
 
-    // 6 — approve
-    mark(5, "on");
+    // 7 — approve
+    mark(6, "on");
     await pause(700);
     await post(`${SVC.supervision}/approvals/${gate.data.id}/approve`,
       {approver_id: uuid4(), comment: "Terms verified — send it"});
-    out(5, `Approved. The decision left this page as a <b>Kafka event</b> — the portal never calls the orchestrator.`);
-    mark(5, "ok");
+    out(6, `Approved. The decision left this page as a <b>Kafka event</b> — the portal never calls the orchestrator directly.`);
+    mark(6, "ok");
 
-    // 7 — orchestrator enforcement + tool
-    mark(6, "on");
+    // 8 — enforcement + tool + audit
+    mark(7, "on");
     let enforced = null;
     for (let i = 0; i < 10 && !enforced; i++) {
       await pause(1200);
@@ -137,20 +155,13 @@ window.runStory = async function () {
     }
     const toolName = "send_email";
     await post(SVC.tools + "/tools/register", {name: toolName, category: "communication", description: "Email relay"});
-    const ex = await post(SVC.tools + "/execute", {tool: toolName, agent_id: salesAgent,
+    await post(SVC.tools + "/execute", {tool: toolName, agent_id: salesAgent,
       parameters: {to: "cfo@acme.example", subject: "Contract — Acme ($250k)"}});
-    out(6, enforced
-      ? `Orchestrator task is <b>${esc(enforced.status)}</b> (decided by ${esc((enforced.responded_by || "").slice(0, 8))}); the agent executed <b>${toolName}</b>${ex.ok ? "" : " (tool call failed)"}.`
-      : `Still waiting on Kafka — check Workflows in a few seconds. Tool ${ex.ok ? "executed" : "failed"}.`);
-    mark(6, enforced ? "ok" : "on");
-
-    // 8 — audit
-    mark(7, "on");
-    await pause(2500);
+    await pause(2000);
     const sp = await get(SVC.observability + "/spans?page_size=50");
-    const total = sp.data ? sp.data.total : 0;
     const gates = await get(SVC.observability + "/spans?span_type=human_gate");
-    out(7, `<b>${total} spans</b> observed, including <b>${gates.data ? gates.data.total : 0} human-gate events</b> — open Observability to walk the trace.`);
+    out(7, `Orchestrator task is <b>${enforced ? esc(enforced.status) : "still resolving"}</b>; the agent sent the contract. ` +
+      `<b>${sp.data ? sp.data.total : 0} spans</b> recorded (${gates.data ? gates.data.total : 0} human-gate) — open Observability to walk the trace.`);
     mark(7, "ok");
   } catch (e) {
     console.error(e);

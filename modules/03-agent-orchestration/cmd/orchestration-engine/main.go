@@ -11,9 +11,10 @@ import (
 
 	"github.com/operan/modules/03-agent-orchestration/internal/config"
 	"github.com/operan/modules/03-agent-orchestration/internal/events"
-	"github.com/operan/modules/03-agent-orchestration/internal/gates"
 	"github.com/operan/modules/03-agent-orchestration/internal/execution"
+	"github.com/operan/modules/03-agent-orchestration/internal/gates"
 	"github.com/operan/modules/03-agent-orchestration/internal/handler"
+	"github.com/operan/modules/03-agent-orchestration/internal/llm"
 	"github.com/operan/modules/03-agent-orchestration/internal/middleware"
 	"github.com/operan/modules/03-agent-orchestration/internal/repository"
 )
@@ -90,6 +91,15 @@ func main() {
 	exHandler.WithEvents(pub)
 	htHandler := handler.NewHumanTaskHandler(store.HumanTaskStore(), store.ExecutionStore())
 	htHandler.WithEvents(pub)
+	var llmClient *llm.Client
+	if cfg.LLMBaseURL != "" {
+		llmClient = llm.New(cfg.LLMBaseURL, cfg.LLMAPIKey, cfg.LLMModel)
+		log.Printf("agent reasoning enabled: %s (model %s)", cfg.LLMBaseURL, cfg.LLMModel)
+	} else {
+		log.Printf("agent reasoning disabled (set LLM_BASE_URL); /agent/draft will report 503")
+	}
+	agentHandler := handler.NewAgentHandler(llmClient, cfg.MemoryURL)
+
 	escHandler := handler.NewEscalationHandler(store.EscalationStore(), store.WorkflowStore())
 	escHandler.Events = pub
 	retryHdlr := handler.NewRetryHandler(store.RetryRecordStore(), store.WorkflowStore(), store.ExecutionStore())
@@ -133,6 +143,7 @@ func main() {
 	// ═══ Human Tasks ═══
 	mux.HandleFunc("GET "+base+"/human-tasks", htHandler.ListHumanTasks)
 	mux.HandleFunc("POST "+base+"/human-tasks", htHandler.CreateHumanTask)
+	mux.HandleFunc("POST "+base+"/agent/draft", agentHandler.Draft)
 	mux.HandleFunc("GET "+base+"/human-tasks/pending", htHandler.GetPendingTasks)
 	mux.HandleFunc(base+"/human-tasks/", handleHumanTaskDetail(htHandler))
 
@@ -291,10 +302,10 @@ func main() {
 // ─── Route path parameters ──────────────────────────────────────────────────
 
 const (
-	idPath       = "{id}"
+	idPath         = "{id}"
 	workflowIDPath = "{workflowId}"
-	nodeIDPath   = "{nodeId}"
-	agentIDPath  = "{agentId}"
+	nodeIDPath     = "{nodeId}"
+	agentIDPath    = "{agentId}"
 )
 
 // ─── Dynamic route handlers ──────────────────────────────────────────────────
