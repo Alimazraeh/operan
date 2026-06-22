@@ -48,6 +48,13 @@ type Config struct {
 	DBName        string
 	DBMaxOpen     int
 	DBMaxIdle     int
+
+	// LLM gateway (OpenAI-compatible chat, e.g. LiteLLM) — gives agent_task
+	// real reasoning. Empty LLMBaseURL leaves /agent/draft disabled.
+	LLMBaseURL string
+	LLMAPIKey  string
+	LLMModel   string
+	MemoryURL  string
 }
 
 // ParseConfig reads configuration from environment variables with defaults.
@@ -65,6 +72,10 @@ func ParseConfig() Config {
 		EventBusUser:  getEnvOrDefault("EVENT_BUS_USER", ""),
 		EventBusPass:  getEnvOrDefault("EVENT_BUS_PASS", ""),
 		JWTSecret:     getEnvOrDefault("JWT_SECRET", DefaultJWTSecret),
+		LLMBaseURL:    getEnvOrDefault("LLM_BASE_URL", ""),
+		LLMAPIKey:     getEnvOrDefault("LLM_API_KEY", ""),
+		LLMModel:      getEnvOrDefault("LLM_MODEL", "Qwen/Qwen3.6-35B-A3B"),
+		MemoryURL:     getEnvOrDefault("MEMORY_URL", "http://memory-fabric.operan.svc.cluster.local:8007"),
 		LogLevel: func() string {
 			switch getEnvOrDefault("LOG_ENV", DefaultLogEnv) {
 			case "debug":
