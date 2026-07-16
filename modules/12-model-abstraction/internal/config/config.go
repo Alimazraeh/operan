@@ -28,7 +28,7 @@ type Config struct {
 //	[{"name":"openai","key":"sk-..."},{"name":"anthropic","key":"sk-ant-..."}]
 func Load() (*Config, error) {
 	port := parsePort()
-	jwtSecret := os.Getenv("IAM_TOKEN_SECRET")
+	jwtSecret := os.Getenv("JWT_SECRET")
 	eventBroker := os.Getenv("EVENT_BROKER_URL")
 	dbDSN := os.Getenv("DB_DSN")
 
@@ -54,7 +54,7 @@ func Load() (*Config, error) {
 
 	// Fail-closed: JWT secret must not be the default
 	if cfg.JWTSecret == "" || cfg.JWTSecret == "change-me-in-production" {
-		return nil, errors.New("IAM_TOKEN_SECRET is not set or is the default value — fail-closed")
+		return nil, errors.New("JWT_SECRET is not set or is the default value — fail-closed")
 	}
 
 	return cfg, nil

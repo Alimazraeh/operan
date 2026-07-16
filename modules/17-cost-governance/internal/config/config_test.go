@@ -7,7 +7,7 @@ import (
 
 func TestLoad_DefaultPort(t *testing.T) {
 	os.Unsetenv("HTTP_PORT")
-	os.Unsetenv("IAM_TOKEN_SECRET")
+	os.Unsetenv("JWT_SECRET")
 	os.Unsetenv("M12_BASE_URL")
 	os.Unsetenv("DB_DSN")
 	os.Unsetenv("EVENT_BROKER_URL")
@@ -15,14 +15,14 @@ func TestLoad_DefaultPort(t *testing.T) {
 	_, err := Load()
 	// Expect error on missing JWT secret (fail-closed)
 	if err == nil {
-		t.Fatal("expected error for missing IAM_TOKEN_SECRET")
+		t.Fatal("expected error for missing JWT_SECRET")
 	}
 }
 
 func TestLoad_CustomPort(t *testing.T) {
 	os.Setenv("HTTP_PORT", "9999")
 	defer os.Unsetenv("HTTP_PORT")
-	os.Setenv("IAM_TOKEN_SECRET", "test-secret")
+	os.Setenv("JWT_SECRET", "test-secret")
 
 	cfg, err := Load()
 	if err != nil {
@@ -36,7 +36,7 @@ func TestLoad_CustomPort(t *testing.T) {
 func TestLoad_DefaultPortRange(t *testing.T) {
 	os.Setenv("HTTP_PORT", "0")
 	defer os.Unsetenv("HTTP_PORT")
-	os.Setenv("IAM_TOKEN_SECRET", "test-secret")
+	os.Setenv("JWT_SECRET", "test-secret")
 
 	cfg, err := Load()
 	if err != nil {
@@ -49,7 +49,7 @@ func TestLoad_DefaultPortRange(t *testing.T) {
 }
 
 func TestLoad_AllEnvVars(t *testing.T) {
-	os.Setenv("IAM_TOKEN_SECRET", "my-secret")
+	os.Setenv("JWT_SECRET", "my-secret")
 	os.Setenv("M12_BASE_URL", "http://m12:8012")
 	os.Setenv("DB_DSN", "postgres://localhost/costgov")
 	os.Setenv("EVENT_BROKER_URL", "kafka://localhost:9092")
@@ -71,19 +71,19 @@ func TestLoad_AllEnvVars(t *testing.T) {
 		t.Errorf("EventBrokerURL = %q, want %q", cfg.EventBrokerURL, "kafka://localhost:9092")
 	}
 
-	os.Unsetenv("IAM_TOKEN_SECRET")
+	os.Unsetenv("JWT_SECRET")
 	os.Unsetenv("M12_BASE_URL")
 	os.Unsetenv("DB_DSN")
 	os.Unsetenv("EVENT_BROKER_URL")
 }
 
 func TestLoad_DefaultTokenRejected(t *testing.T) {
-	os.Setenv("IAM_TOKEN_SECRET", "change-me-in-production")
+	os.Setenv("JWT_SECRET", "change-me-in-production")
 
 	_, err := Load()
 	if err == nil {
 		t.Fatal("expected error for default JWT secret")
 	}
 
-	os.Unsetenv("IAM_TOKEN_SECRET")
+	os.Unsetenv("JWT_SECRET")
 }
