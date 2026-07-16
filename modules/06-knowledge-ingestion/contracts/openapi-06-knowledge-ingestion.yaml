@@ -1,0 +1,487 @@
+openapi: "3.0.3"
+info:
+  title: Operan Module 06 — Knowledge Ingestion API
+  description: Document ingestion pipeline — ingest, extract, chunk, embed, and store enterprise documents.
+  version: 1.0.0
+  contact:
+    name: Operan Platform
+servers:
+  - url: http://localhost:8006
+
+security:
+  - BearerAuth: []
+  - TenantHeader: []
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      tags:
+        - system
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /v1/sources:
+    get:
+      summary: List sources
+      operationId: listSources
+      tags:
+        - sources
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: source_type
+          in: query
+          schema:
+            type: string
+            enum:
+              - file
+              - url
+              - sharepoint
+              - email
+              - web_crawl
+              - s3
+      responses:
+        "200":
+          description: Paginated source list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceList"
+    post:
+      summary: Create source
+      operationId: createSource
+      tags:
+        - sources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSourceRequest"
+      responses:
+        "201":
+          description: Source created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestionSource"
+        "400":
+          description: Invalid request
+        "401":
+          description: Unauthorized
+
+  /v1/sources/{id}:
+    get:
+      summary: Get source
+      operationId: getSource
+      tags:
+        - sources
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Source detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestionSource"
+        "404":
+          description: Source not found
+        "401":
+          description: Unauthorized
+    patch:
+      summary: Update source
+      operationId: updateSource
+      tags:
+        - sources
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSourceRequest"
+      responses:
+        "200":
+          description: Source updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestionSource"
+        "404":
+          description: Source not found
+    delete:
+      summary: Delete source
+      operationId: deleteSource
+      tags:
+        - sources
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Source deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+        "404":
+          description: Source not found
+
+  /v1/ingest:
+    post:
+      summary: Trigger ingestion
+      operationId: ingestSource
+      tags:
+        - ingest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestRequest"
+      responses:
+        "200":
+          description: Ingestion job created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestResponse"
+        "400":
+          description: Invalid request
+
+  /v1/jobs:
+    get:
+      summary: List jobs
+      operationId: listJobs
+      tags:
+        - jobs
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - pending
+              - extracting
+              - chunking
+              - embedding
+              - storing
+              - completed
+              - failed
+              - cancelled
+        - name: source_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Paginated job list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobList"
+
+  /v1/jobs/{id}:
+    get:
+      summary: Get job status
+      operationId: getJob
+      tags:
+        - jobs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Job detail with progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestionJob"
+        "404":
+          description: Job not found
+
+  /v1/jobs/{id}/cancel:
+    post:
+      summary: Cancel job
+      operationId: cancelJob
+      tags:
+        - jobs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Job cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CancelResponse"
+        "404":
+          description: Job not found
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    TenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+
+    SourceList:
+      type: object
+      properties:
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngestionSource"
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+
+    IngestionSource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        name:
+          type: string
+        source_type:
+          type: string
+        source_url:
+          type: string
+        file_type:
+          type: string
+        file_size_bytes:
+          type: integer
+        file_hash:
+          type: string
+        normalize_arabic:
+          type: boolean
+        chunk_strategy:
+          type: string
+        chunk_size:
+          type: integer
+        chunk_overlap:
+          type: integer
+        status:
+          type: string
+        last_ingested:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateSourceRequest:
+      type: object
+      required:
+        - name
+        - source_type
+        - source_url
+      properties:
+        name:
+          type: string
+          maxLength: 500
+        source_type:
+          type: string
+          enum:
+            - file
+            - url
+            - sharepoint
+            - email
+            - web_crawl
+            - s3
+        source_url:
+          type: string
+        file_type:
+          type: string
+        normalize_arabic:
+          type: boolean
+        chunk_strategy:
+          type: string
+          enum:
+            - adaptive
+            - fixed
+            - by_heading
+            - by_paragraph
+        chunk_size:
+          type: integer
+          default: 512
+        chunk_overlap:
+          type: integer
+          default: 50
+        metadata:
+          type: object
+
+    UpdateSourceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        source_type:
+          type: string
+        source_url:
+          type: string
+        file_type:
+          type: string
+        normalize_arabic:
+          type: boolean
+        chunk_strategy:
+          type: string
+        chunk_size:
+          type: integer
+        chunk_overlap:
+          type: integer
+        status:
+          type: string
+
+    IngestRequest:
+      type: object
+      required:
+        - source_id
+      properties:
+        source_id:
+          type: string
+          format: uuid
+
+    IngestResponse:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        total_chunks:
+          type: integer
+
+    JobList:
+      type: object
+      properties:
+        jobs:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngestionJob"
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+
+    IngestionJob:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        source_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        total_chunks:
+          type: integer
+        processed_chunks:
+          type: integer
+        progress_pct:
+          type: number
+          format: float
+        error_message:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    CancelResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        message:
+          type: string

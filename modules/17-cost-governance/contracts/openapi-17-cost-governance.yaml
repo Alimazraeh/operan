@@ -1,0 +1,688 @@
+openapi: 3.0.3
+info:
+  title: Operan Cost Governance Engine
+  description: >-
+    Module 17 — Cost Governance Engine. Tracks, budgets, and throttles AI inference costs.
+    Subscribes to cost events from M12 (model calls) and M08 (tool execution),
+    enforces per-tenant/per-agent budgets, and can throttle or hard-block spending.
+  version: 1.0.0
+  contact:
+    name: Operan Platform
+    url: https://operan.dev
+
+servers:
+  - url: http://localhost:8017
+    description: Local development
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      tags:
+        - System
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /v1/budgets:
+    post:
+      summary: Create a new budget
+      operationId: createBudget
+      tags:
+        - Budgets
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBudgetRequest"
+      responses:
+        "201":
+          description: Budget created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  budget:
+                    $ref: "#/components/schemas/CostBudget"
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+    get:
+      summary: List budgets (paginated)
+      operationId: listBudgets
+      tags:
+        - Budgets
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Paginated budget list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetListResponse"
+        "401":
+          description: Unauthorized
+
+  /v1/budgets/{id}:
+    get:
+      summary: Get budget by ID
+      operationId: getBudget
+      tags:
+        - Budgets
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Budget detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  budget:
+                    $ref: "#/components/schemas/CostBudget"
+        "404":
+          description: Budget not found
+        "401":
+          description: Unauthorized
+    patch:
+      summary: Update budget
+      operationId: updateBudget
+      tags:
+        - Budgets
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBudgetRequest"
+      responses:
+        "200":
+          description: Budget updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  budget:
+                    $ref: "#/components/schemas/CostBudget"
+        "404":
+          description: Budget not found
+        "401":
+          description: Unauthorized
+    delete:
+      summary: Delete budget
+      operationId: deleteBudget
+      tags:
+        - Budgets
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Budget deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+        "404":
+          description: Budget not found
+        "401":
+          description: Unauthorized
+
+  /v1/cost-events:
+    post:
+      summary: Manually ingest a cost event
+      operationId: ingestCostEvent
+      tags:
+        - Cost Events
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestCostEventRequest"
+      responses:
+        "201":
+          description: Cost event recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CostEventResponse"
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+    get:
+      summary: List cost events (paginated)
+      operationId: listCostEvents
+      tags:
+        - Cost Events
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+        - name: source_module
+          in: query
+          schema:
+            type: string
+            enum: [m12, m08, manual]
+      responses:
+        "200":
+          description: Paginated cost events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CostEvent"
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+                  total:
+                    type: integer
+        "401":
+          description: Unauthorized
+
+  /v1/summary:
+    get:
+      summary: Get current period cost summary
+      operationId: costSummary
+      tags:
+        - Summary
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, quarterly]
+            default: monthly
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cost summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CostSummaryResponse"
+        "401":
+          description: Unauthorized
+
+  /v1/alerts:
+    get:
+      summary: List alerts (paginated)
+      operationId: listAlerts
+      tags:
+        - Alerts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [info, warning, critical, fatal]
+        - name: alert_type
+          in: query
+          schema:
+            type: string
+            enum: [soft_limit, hard_limit, budget_exceeded, budget_reset]
+        - name: is_resolved
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Paginated alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CostAlert"
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+                  total:
+                    type: integer
+        "401":
+          description: Unauthorized
+
+  /v1/throttle:
+    get:
+      summary: Get current throttle status
+      operationId: getThrottle
+      tags:
+        - Throttle
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current throttle state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ThrottleResponse"
+        "401":
+          description: Unauthorized
+
+  /v1/throttle/{status}:
+    patch:
+      summary: Manually override throttle state
+      operationId: setThrottle
+      tags:
+        - Throttle
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [none, soft, hard]
+      responses:
+        "200":
+          description: Throttle state updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ThrottleResponse"
+        "400":
+          description: Invalid status
+        "401":
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+
+    CreateBudgetRequest:
+      type: object
+      required:
+        - description
+        - budget_amount
+        - period
+      properties:
+        agent_id:
+          type: string
+          description: "Omit for tenant-wide budget"
+        description:
+          type: string
+          maxLength: 500
+        budget_amount:
+          type: number
+          minimum: 0.01
+          example: 500.00
+        period:
+          type: string
+          enum: [daily, weekly, monthly, quarterly]
+        soft_limit_pct:
+          type: integer
+          minimum: 0
+          maximum: 100
+          default: 80
+        hard_limit_pct:
+          type: integer
+          minimum: 0
+          maximum: 100
+          default: 95
+
+    UpdateBudgetRequest:
+      type: object
+      properties:
+        agent_id:
+          type: string
+        description:
+          type: string
+        budget_amount:
+          type: number
+          minimum: 0.01
+        soft_limit_pct:
+          type: integer
+          minimum: 0
+          maximum: 100
+        hard_limit_pct:
+          type: integer
+          minimum: 0
+          maximum: 100
+        is_active:
+          type: boolean
+
+    CostBudget:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        agent_id:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        budget_amount:
+          type: number
+        currency:
+          type: string
+          example: USD
+        period:
+          type: string
+          enum: [daily, weekly, monthly, quarterly]
+        soft_limit_pct:
+          type: integer
+        hard_limit_pct:
+          type: integer
+        is_active:
+          type: boolean
+        spent_this_period:
+          type: number
+          nullable: true
+        percentage_used:
+          type: number
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    BudgetListResponse:
+      type: object
+      properties:
+        budgets:
+          type: array
+          items:
+            $ref: "#/components/schemas/CostBudget"
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+
+    IngestCostEventRequest:
+      type: object
+      required:
+        - source_module
+        - cost_usd
+      properties:
+        source_module:
+          type: string
+          enum: [m12, m08, manual]
+        agent_id:
+          type: string
+        model_name:
+          type: string
+        cost_usd:
+          type: number
+          minimum: 0.01
+        prompt_tokens:
+          type: integer
+          minimum: 0
+        completion_tokens:
+          type: integer
+          minimum: 0
+        event_type:
+          type: string
+          default: model_call
+        billing_tag:
+          type: string
+        source_id:
+          type: string
+        event_timestamp:
+          type: string
+          format: date-time
+
+    CostEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        agent_id:
+          type: string
+          nullable: true
+        source_module:
+          type: string
+        source_id:
+          type: string
+          nullable: true
+        model_name:
+          type: string
+          nullable: true
+        cost_usd:
+          type: number
+        prompt_tokens:
+          type: integer
+        completion_tokens:
+          type: integer
+        event_type:
+          type: string
+        billing_tag:
+          type: string
+          nullable: true
+        event_timestamp:
+          type: string
+          format: date-time
+        recorded_at:
+          type: string
+          format: date-time
+
+    CostEventResponse:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        accepted:
+          type: boolean
+        throttle_level:
+          type: string
+          enum: [none, soft, hard]
+
+    CostSummaryResponse:
+      type: object
+      properties:
+        total_spent:
+          type: number
+        period:
+          type: string
+        from:
+          type: string
+          format: date-time
+        budgets:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                nullable: true
+              amount:
+                type: number
+              spent:
+                type: number
+              remaining:
+                type: number
+              percentage:
+                type: number
+              period:
+                type: string
+              soft_limit:
+                type: integer
+              hard_limit:
+                type: integer
+        throttle_state:
+          type: string
+          enum: [none, soft, hard]
+        alerts:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              severity:
+                type: string
+              message:
+                type: string
+
+    CostAlert:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        budget_id:
+          type: string
+          format: uuid
+          nullable: true
+        agent_id:
+          type: string
+          nullable: true
+        alert_type:
+          type: string
+          enum: [soft_limit, hard_limit, budget_exceeded, budget_reset]
+        current_spend:
+          type: number
+        budget_amount:
+          type: number
+        percentage_used:
+          type: number
+        severity:
+          type: string
+          enum: [info, warning, critical, fatal]
+        is_resolved:
+          type: boolean
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    ThrottleResponse:
+      type: object
+      properties:
+        throttle_state:
+          type: string
+          enum: [none, soft, hard]
+        updated_at:
+          type: string
+          format: date-time

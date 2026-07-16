@@ -5,8 +5,17 @@
       "Bash(git init)",
       "Bash(git branch *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Read(//Users/alimazraeh/.claude/projects/-Users-alimazraeh-ADRI-Operan/**)",
+      "Bash(go *)",
+      "Bash(grep *)",
+      "Bash(true)",
+      "Bash(ls *)",
+      "Bash(find *)"
     ]
   },
-  "$version": 4
+  "$version": 4,
+  "memory": {
+    "enableAutoSkill": false
+  }
 }

@@ -17,6 +17,7 @@ type M04Client struct {
 
 // M04Agent represents an agent in the M04 Agent Registry.
 type M04Agent struct {
+	ID           string   `json:"id,omitempty"`
 	Name         string   `json:"name"`
 	Role         string   `json:"role"`
 	Capabilities []string `json:"capabilities"`
@@ -94,7 +95,7 @@ func (c *M04Client) RegisterAgent(ctx context.Context, tenantID, bearerToken str
 		TenantID:     tenantID,
 	}
 	if id, ok := agentData["id"].(string); ok {
-		out.Name = id // Store the returned ID
+		out.ID = id
 	}
 	return out, nil
 }

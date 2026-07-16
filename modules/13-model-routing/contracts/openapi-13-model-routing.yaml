@@ -1,0 +1,460 @@
+openapi: "3.0.3"
+info:
+  title: Module 13 — Multi-Model Routing Engine
+  description: >
+    Routes each request to the best model based on task type, cost, latency,
+    and performance history. Falls back to backup models when primary fails.
+  version: 0.1.0
+
+servers:
+  - url: http://localhost:8013
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /v1/resolve:
+    post:
+      summary: Resolve the best model for a task
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveRequest"
+      responses:
+        "200":
+          description: Routing decision
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingDecision"
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal error
+
+  /v1/rules:
+    get:
+      summary: List routing rules (paginated)
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - in: query
+          name: task_type
+          schema:
+            $ref: "#/components/schemas/TaskType"
+        - in: query
+          name: is_active
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Paginated rules
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListRulesResponse"
+        "401":
+          description: Unauthorized
+    post:
+      summary: Create a routing rule
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRuleRequest"
+      responses:
+        "201":
+          description: Rule created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingRule"
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+
+  /v1/rules/{id}:
+    get:
+      summary: Get a routing rule by ID
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Rule found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingRule"
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+    patch:
+      summary: Update a routing rule
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRuleRequest"
+      responses:
+        "200":
+          description: Rule updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingRule"
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+    delete:
+      summary: Delete a routing rule
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Rule deleted
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+
+  /v1/performance:
+    get:
+      summary: Get model performance metrics
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      parameters:
+        - in: query
+          name: model_id
+          schema:
+            type: string
+        - in: query
+          name: task_type
+          schema:
+            $ref: "#/components/schemas/TaskType"
+      responses:
+        "200":
+          description: Performance data
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/RoutingPerformance"
+                  - $ref: "#/components/schemas/PerformanceList"
+        "401":
+          description: Unauthorized
+
+  /v1/models:
+    get:
+      summary: List available models for tenant
+      security:
+        - BearerAuth: []
+        - TenantHeader: []
+      responses:
+        "200":
+          description: Model list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        "401":
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+    TenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+
+    TaskType:
+      type: string
+      enum:
+        - summarize
+        - classify
+        - generate
+        - extract
+        - chat
+        - embed
+        - general
+
+    ResolveRequest:
+      type: object
+      required:
+        - task_type
+      properties:
+        task_type:
+          $ref: "#/components/schemas/TaskType"
+        context_length:
+          type: integer
+        max_tokens:
+          type: integer
+        cost_target:
+          type: number
+          format: float
+        constraints:
+          type: object
+          properties:
+            max_latency_ms:
+              type: integer
+            min_quality:
+              type: number
+              format: float
+
+    RoutingDecision:
+      type: object
+      properties:
+        model_id:
+          type: string
+        score:
+          type: number
+          format: float
+        rationale:
+          type: string
+        fallback_model:
+          type: string
+        cost_estimate:
+          type: number
+          format: float
+        latency_estimate:
+          type: integer
+
+    RoutingRule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        rule_name:
+          type: string
+        description:
+          type: string
+        task_type:
+          $ref: "#/components/schemas/TaskType"
+        priority:
+          type: integer
+        min_cost_threshold:
+          type: number
+          format: float
+        max_latency_ms:
+          type: integer
+        max_tokens:
+          type: integer
+        failover_enabled:
+          type: boolean
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateRuleRequest:
+      type: object
+      required:
+        - rule_name
+        - task_type
+      properties:
+        rule_name:
+          type: string
+        description:
+          type: string
+        task_type:
+          $ref: "#/components/schemas/TaskType"
+        priority:
+          type: integer
+          default: 50
+        min_cost_threshold:
+          type: number
+          format: float
+        max_latency_ms:
+          type: integer
+          default: 5000
+        max_tokens:
+          type: integer
+          default: 4096
+        failover_enabled:
+          type: boolean
+        models:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateRuleModel"
+
+    CreateRuleModel:
+      type: object
+      required:
+        - model_id
+        - capability_score
+      properties:
+        model_id:
+          type: string
+        capability_score:
+          type: number
+          format: float
+        cost_weight:
+          type: number
+          format: float
+          default: 50
+        latency_weight:
+          type: number
+          format: float
+          default: 50
+        reliability_weight:
+          type: number
+          format: float
+          default: 50
+
+    UpdateRuleRequest:
+      type: object
+      properties:
+        rule_name:
+          type: string
+        description:
+          type: string
+        task_type:
+          $ref: "#/components/schemas/TaskType"
+        priority:
+          type: integer
+        max_latency_ms:
+          type: integer
+        max_tokens:
+          type: integer
+        failover_enabled:
+          type: boolean
+        is_active:
+          type: boolean
+
+    ListRulesResponse:
+      type: object
+      properties:
+        rules:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoutingRule"
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+
+    RoutingPerformance:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        model_id:
+          type: string
+        task_type:
+          $ref: "#/components/schemas/TaskType"
+        avg_latency_ms:
+          type: number
+          format: float
+        p99_latency_ms:
+          type: number
+          format: float
+        error_rate:
+          type: number
+          format: float
+        calls_count:
+          type: integer
+        avg_cost_usd:
+          type: number
+          format: float
+        quality_score:
+          type: number
+          format: float
+        last_call_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PerformanceList:
+      type: object
+      properties:
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoutingPerformance"

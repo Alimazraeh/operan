@@ -1,0 +1,487 @@
+openapi: 3.0.3
+info:
+  title: Enterprise Connector Fabric API
+  description: |-
+    Module 18 — Enterprise Connector Fabric for the Operan platform.
+    Provides standardized connectors to enterprise systems (CRM, ERP, email, calendar, document management).
+  version: 1.0.0
+  contact:
+    name: Operan Platform Team
+
+servers:
+  - url: http://localhost:8018
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Unauthenticated health endpoint
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /v1/connectors:
+    get:
+      summary: List connectors
+      description: Paginated list of connectors with optional filters
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          description: Filter by connector type
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated connector list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListConnectorsResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Tenant mismatch
+
+    post:
+      summary: Create connector
+      description: Register a new connector
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateConnectorRequest"
+      responses:
+        "201":
+          description: Connector created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateConnectorResponse"
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal error
+
+  /v1/connectors/{id}:
+    get:
+      summary: Get connector
+      description: Get connector detail
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Connector detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetConnectorResponse"
+        "404":
+          description: Connector not found
+        "401":
+          description: Unauthorized
+
+    delete:
+      summary: Delete connector
+      description: Delete a connector
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Connector deleted
+        "404":
+          description: Connector not found
+        "401":
+          description: Unauthorized
+
+  /v1/connectors/{id}/sync:
+    post:
+      summary: Trigger sync
+      description: Start a sync operation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          description: Sync type (full, incremental)
+          schema:
+            type: string
+            default: full
+      responses:
+        "200":
+          description: Sync completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncResponse"
+        "404":
+          description: Connector not found
+        "401":
+          description: Unauthorized
+
+  /v1/connectors/{id}/health:
+    get:
+      summary: Health check
+      description: Perform a health check for a connector
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Health check result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthCheckResponse"
+        "404":
+          description: Connector not found
+
+  /v1/connectors/{id}/tools:
+    get:
+      summary: List connector tools
+      description: List tools registered by a connector
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Connector tools
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListToolsResponse"
+
+  /v1/tools:
+    get:
+      summary: List all tools
+      description: All registered connector tools
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: All tools
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListToolsResponse"
+
+  /v1/sync-history:
+    get:
+      summary: List sync history
+      description: Paginated sync history with filters
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: connector_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, running, completed, error, cancelled]
+      responses:
+        "200":
+          description: Paginated sync history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListSyncHistoryResponse"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+
+    HealthCheckResponse:
+      type: object
+      properties:
+        healthy:
+          type: boolean
+        message:
+          type: string
+
+    Connector:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        connector_type:
+          type: string
+          enum: [smtp, salesforce, hubspot, m365, sap, generic_rest, sharepoint, slack, custom]
+        status:
+          type: string
+          enum: [inactive, active, syncing, error, disconnected]
+        auth_method:
+          type: string
+          enum: [api_key, oauth2, basic, custom]
+        config:
+          type: object
+        credentials:
+          type: object
+        sync_frequency:
+          type: string
+          enum: [manual, hourly, daily, realtime]
+        last_sync_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_sync_status:
+          type: string
+          nullable: true
+        last_error:
+          type: string
+          nullable: true
+        tools_registered:
+          type: boolean
+        metadata:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateConnectorRequest:
+      type: object
+      required:
+        - name
+        - connector_type
+      properties:
+        name:
+          type: string
+        connector_type:
+          type: string
+        description:
+          type: string
+        auth_method:
+          type: string
+          default: api_key
+        config:
+          type: object
+        credentials:
+          type: object
+        sync_frequency:
+          type: string
+          default: manual
+
+    CreateConnectorResponse:
+      type: object
+      properties:
+        connector:
+          $ref: "#/components/schemas/Connector"
+
+    GetConnectorResponse:
+      type: object
+      properties:
+        connector:
+          $ref: "#/components/schemas/Connector"
+
+    ListConnectorsResponse:
+      type: object
+      properties:
+        connectors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Connector"
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+        has_more:
+          type: boolean
+
+    SyncResult:
+      type: object
+      properties:
+        objects_fetched:
+          type: integer
+        objects_updated:
+          type: integer
+        objects_failed:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+
+    SyncResponse:
+      type: object
+      properties:
+        sync_id:
+          type: string
+        status:
+          type: string
+        result:
+          $ref: "#/components/schemas/SyncResult"
+        started_at:
+          type: string
+          format: date-time
+
+    ToolDefinition:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        parameters:
+          type: object
+        returns:
+          type: object
+
+    ListToolsResponse:
+      type: object
+      properties:
+        connector_type:
+          type: string
+        tools:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolDefinition"
+        total:
+          type: integer
+
+    SyncHistory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        connector_id:
+          type: string
+          format: uuid
+        sync_type:
+          type: string
+          enum: [full, incremental, initial]
+        status:
+          type: string
+          enum: [pending, running, completed, error, cancelled]
+        objects_fetched:
+          type: integer
+        objects_updated:
+          type: integer
+        objects_failed:
+          type: integer
+        error_message:
+          type: string
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        duration_ms:
+          type: integer
+          nullable: true
+
+    ListSyncHistoryResponse:
+      type: object
+      properties:
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncHistory"
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+        has_more:
+          type: boolean

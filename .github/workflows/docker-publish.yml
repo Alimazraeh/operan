@@ -47,10 +47,20 @@ jobs:
           - 03-agent-orchestration
           - 04-agent-registry
           - 05-department-template-engine
+          - 06-knowledge-ingestion
           - 07-memory-fabric
           - 08-tool-execution
           - 09-human-supervision
+          - 10-policy-governance
           - 11-observability
+          - 12-model-abstraction
+          - 13-model-routing
+          - 14-agent-collaboration
+          - 15-agent-marketplace
+          - 16-execution-sandbox
+          - 17-cost-governance
+          - 18-enterprise-connectors
+          - 19-arabic-language-core
           - 21-experience-portal
     steps:
       - uses: actions/checkout@v4

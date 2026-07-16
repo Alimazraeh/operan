@@ -1,0 +1,647 @@
+openapi: 3.0.3
+info:
+  title: Operan Execution Sandbox API
+  description: Isolated execution environments for agent tool calls and code execution
+  version: 1.0.0
+servers:
+  - url: /api/v1
+security:
+  - BearerAuth: []
+  - TenantHeader: []
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: getHealth
+      tags:
+        - System
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                required:
+                  - status
+
+  /sandboxes/execute:
+    post:
+      summary: Execute a tool in a sandbox
+      operationId: executeTool
+      tags:
+        - Execution
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - profile_id
+                - tool_name
+              properties:
+                profile_id:
+                  type: string
+                  format: uuid
+                tool_name:
+                  type: string
+                input_data:
+                  type: string
+                tool_config:
+                  type: object
+                agent_id:
+                  type: string
+              additionalProperties: false
+      responses:
+        "200":
+          description: Execution result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecutionResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /sandboxes/instances:
+    get:
+      summary: List sandbox instances
+      operationId: listInstances
+      tags:
+        - Instances
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - pending
+              - running
+              - completed
+              - timeout
+              - failed
+              - policy_denied
+      responses:
+        "200":
+          description: Paginated instance list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instances:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/InstanceSummary"
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+                  total:
+                    type: integer
+                  has_more:
+                    type: boolean
+                required:
+                  - instances
+                  - page
+                  - page_size
+                  - total
+                  - has_more
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /sandboxes/instances/{id}:
+    get:
+      summary: Get sandbox instance by ID
+      operationId: getInstance
+      tags:
+        - Instances
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Instance details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstanceDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /sandboxes/instances/{id}/cancel:
+    post:
+      summary: Cancel a running sandbox instance
+      operationId: cancelInstance
+      tags:
+        - Instances
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Cancel acknowledged
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instance_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  message:
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /sandbox-profiles:
+    get:
+      summary: List sandbox profiles
+      operationId: listProfiles
+      tags:
+        - Profiles
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: Paginated profile list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profiles:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Profile"
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+                  total:
+                    type: integer
+                  has_more:
+                    type: boolean
+                required:
+                  - profiles
+                  - page
+                  - page_size
+                  - total
+                  - has_more
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      summary: Create a sandbox execution profile
+      operationId: createProfile
+      tags:
+        - Profiles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  maxLength: 200
+                description:
+                  type: string
+                cpu_cores:
+                  type: number
+                  default: 0.5
+                memory_mb:
+                  type: integer
+                  default: 256
+                timeout_seconds:
+                  type: integer
+                  default: 60
+                network_access:
+                  type: boolean
+                  default: false
+                allowed_tools:
+                  type: array
+                  items:
+                    type: string
+                filesystem_access:
+                  type: boolean
+                  default: true
+                max_file_size_mb:
+                  type: integer
+                  default: 50
+                max_output_size_kb:
+                  type: integer
+                  default: 1024
+              additionalProperties: false
+      responses:
+        "201":
+          description: Profile created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /sandbox-profiles/{id}:
+    get:
+      summary: Get sandbox profile by ID
+      operationId: getProfile
+      tags:
+        - Profiles
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Profile details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      summary: Update a sandbox profile
+      operationId: updateProfile
+      tags:
+        - Profiles
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                cpu_cores:
+                  type: number
+                memory_mb:
+                  type: integer
+                timeout_seconds:
+                  type: integer
+                network_access:
+                  type: boolean
+                allowed_tools:
+                  type: array
+                  items:
+                    type: string
+                filesystem_access:
+                  type: boolean
+                max_file_size_mb:
+                  type: integer
+                max_output_size_kb:
+                  type: integer
+                is_active:
+                  type: boolean
+              additionalProperties: false
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      summary: Delete a sandbox profile
+      operationId: deleteProfile
+      tags:
+        - Profiles
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Profile deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    TenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+      description: Page number
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        default: 20
+        maximum: 100
+      description: Items per page
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+    UnprocessableEntity:
+      description: Unprocessable entity
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+
+  schemas:
+    ProblemDetail:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+        request_id:
+          type: string
+          format: uuid
+      additionalProperties: false
+
+    Profile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        cpu_cores:
+          type: number
+        memory_mb:
+          type: integer
+        timeout_seconds:
+          type: integer
+        network_access:
+          type: boolean
+        allowed_tools:
+          type: array
+          items:
+            type: string
+        filesystem_access:
+          type: boolean
+        max_file_size_mb:
+          type: integer
+        max_output_size_kb:
+          type: integer
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - name
+        - cpu_cores
+        - memory_mb
+        - timeout_seconds
+        - network_access
+        - allowed_tools
+        - filesystem_access
+        - is_active
+        - created_at
+        - updated_at
+      additionalProperties: false
+
+    ExecutionResult:
+      type: object
+      properties:
+        instance_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - pending
+            - running
+            - completed
+            - timeout
+            - failed
+            - policy_denied
+        exit_code:
+          type: integer
+        stdout:
+          type: string
+        stderr:
+          type: string
+      required:
+        - instance_id
+        - status
+      additionalProperties: false
+
+    InstanceSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+        profile_id:
+          type: string
+          format: uuid
+        tool_name:
+          type: string
+        status:
+          type: string
+        exit_code:
+          type: integer
+        cpu_time_ms:
+          type: integer
+        memory_peak_mb:
+          type: integer
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+
+    InstanceDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        agent_id:
+          type: string
+        profile_id:
+          type: string
+          format: uuid
+        tool_name:
+          type: string
+        input_data:
+          type: string
+        exit_code:
+          type: integer
+        stdout:
+          type: string
+        stderr:
+          type: string
+        status:
+          type: string
+        cpu_time_ms:
+          type: integer
+        memory_peak_mb:
+          type: integer
+        error_message:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - tool_name
+        - status
+        - created_at
+      additionalProperties: false

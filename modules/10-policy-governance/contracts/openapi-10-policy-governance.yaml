@@ -1,0 +1,476 @@
+openapi: "3.0.3"
+info:
+  title: Operan Policy Governance Engine API
+  description: Centralized policy engine for enterprise agent governance
+  version: 1.0.0
+  contact:
+    name: Platform Architecture
+    email: arch@operan.io
+
+servers:
+  - url: https://api.operan.io/v1
+  - url: https://api-staging.operan.io/v1
+
+security:
+  - BearerAuth: []
+  - TenantHeader: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    TenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+
+  schemas:
+    # --- Request/Response Models ---
+    Policy:
+      type: object
+      required: [id, name, action, scope, resource_type, effect]
+      properties:
+        id: { type: string, format: uuid }
+        tenant_id: { type: string }
+        group_id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        action:
+          type: string
+          enum: [allow, deny, proxy]
+        scope:
+          type: string
+          enum: [agent, department, tenant, global]
+        resource_type:
+          type: string
+          enum: [tool, model, workflow, data, all]
+        resource_target: { type: string, nullable: true }
+        condition_expression:
+          type: object
+          nullable: true
+        effect:
+          type: string
+          enum: [enforce, warn, log]
+        priority: { type: integer, default: 50 }
+        is_active: { type: boolean, default: true }
+        created_by: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    PolicyGroup:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        tenant_id: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        priority: { type: integer, default: 50 }
+        is_active: { type: boolean, default: true }
+        metadata:
+          type: object
+          nullable: true
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    EvaluationRequest:
+      type: object
+      required: [resource, action_type]
+      properties:
+        agent_id: { type: string }
+        agent_role: { type: string }
+        department_id: { type: string }
+        resource: { type: string }
+        action_type: { type: string }
+        data_class:
+          type: string
+          enum: [public, internal, confidential, restricted]
+        cost: { type: number }
+        metadata:
+          type: object
+
+    EvaluationResult:
+      type: object
+      properties:
+        allowed: { type: boolean }
+        action:
+          type: string
+          enum: [allow, deny, proxy, warning]
+        policy_name: { type: string }
+        reason: { type: string }
+        warnings:
+          type: array
+          items:
+            type: object
+            properties:
+              message: { type: string }
+        rules:
+          type: array
+          items:
+            type: object
+            properties:
+              policy_id: { type: string }
+              policy_name: { type: string }
+              effect: { type: string }
+              description: { type: string }
+
+    PolicyAudit:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenant_id: { type: string }
+        policy_id: { type: string, format: uuid, nullable: true }
+        group_id: { type: string, format: uuid, nullable: true }
+        request_id: { type: string, nullable: true }
+        agent_id: { type: string, nullable: true }
+        resource_type: { type: string }
+        resource_target: { type: string, nullable: true }
+        requested_action: { type: string }
+        result:
+          type: string
+          enum: [allowed, denied, proxied, warning]
+        matched_policy_name: { type: string, nullable: true }
+        matched_rule_index: { type: integer, nullable: true }
+        evaluation_ms: { type: integer }
+        request_data:
+          type: object
+          nullable: true
+        created_at: { type: string, format: date-time }
+
+    PaginatedResponse:
+      type: object
+      properties:
+        page: { type: integer }
+        page_size: { type: integer }
+        total: { type: integer }
+        has_more: { type: boolean }
+
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error: { type: string }
+        message: { type: string }
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+
+  /policies:
+    post:
+      summary: Create a policy rule
+      security: [{ BearerAuth: [], TenantHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [group_id, name, action, scope, resource_type, effect]
+              properties:
+                group_id: { type: string, format: uuid }
+                name: { type: string }
+                description: { type: string }
+                action: { type: string, enum: [allow, deny, proxy] }
+                scope: { type: string, enum: [agent, department, tenant, global] }
+                resource_type: { type: string, enum: [tool, model, workflow, data, all] }
+                resource_target: { type: string }
+                condition_expression:
+                  type: object
+                effect: { type: string, enum: [enforce, warn, log] }
+                priority: { type: integer }
+      responses:
+        "201":
+          description: Policy created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+                  name: { type: string }
+                  action: { type: string }
+                  scope: { type: string }
+                  resource_type: { type: string }
+                  effect: { type: string }
+                  priority: { type: integer }
+                  is_active: { type: boolean }
+                  created_at: { type: string, format: date-time }
+                  updated_at: { type: string, format: date-time }
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+    get:
+      summary: List policies
+      security: [{ BearerAuth: [], TenantHeader: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: page_size
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: scope
+          schema: { type: string }
+        - in: query
+          name: resource_type
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated policy list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  policies:
+                    type: array
+                    items: { $ref: "#/components/schemas/Policy" }
+                  page: { type: integer }
+                  page_size: { type: integer }
+                  total: { type: integer }
+                  has_more: { type: boolean }
+
+  /policies/{id}:
+    get:
+      summary: Get policy detail
+      security: [{ BearerAuth: [], TenantHeader: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Policy detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Policy" }
+        "404":
+          description: Not found
+    patch:
+      summary: Update policy
+      security: [{ BearerAuth: [], TenantHeader: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                action: { type: string }
+                scope: { type: string }
+                resource_type: { type: string }
+                resource_target: { type: string }
+                condition_expression: { type: object }
+                effect: { type: string }
+                priority: { type: integer }
+                is_active: { type: boolean }
+      responses:
+        "200":
+          description: Policy updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Policy" }
+        "404":
+          description: Not found
+
+    delete:
+      summary: Delete policy (soft)
+      security: [{ BearerAuth: [], TenantHeader: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Policy deleted
+        "404":
+          description: Not found
+
+  /policies/evaluate:
+    post:
+      summary: Evaluate policies for a request
+      security: [{ BearerAuth: [], TenantHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EvaluationRequest" }
+      responses:
+        "200":
+          description: Evaluation result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvaluationResult" }
+
+  /policy-groups:
+    get:
+      summary: List policy groups
+      security: [{ BearerAuth: [], TenantHeader: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: page_size
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Paginated group list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  groups:
+                    type: array
+                    items: { $ref: "#/components/schemas/PolicyGroup" }
+                  page: { type: integer }
+                  page_size: { type: integer }
+                  total: { type: integer }
+                  has_more: { type: boolean }
+
+    post:
+      summary: Create policy group
+      security: [{ BearerAuth: [], TenantHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                priority: { type: integer }
+                metadata: { type: object }
+      responses:
+        "201":
+          description: Group created
+
+  /policy-groups/{id}:
+    get:
+      summary: Get policy group detail
+      security: [{ BearerAuth: [], TenantHeader: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Group detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PolicyGroup" }
+        "404":
+          description: Not found
+
+    patch:
+      summary: Update policy group
+      security: [{ BearerAuth: [], TenantHeader: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                priority: { type: integer }
+                is_active: { type: boolean }
+                metadata: { type: object }
+      responses:
+        "200":
+          description: Group updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PolicyGroup" }
+
+    delete:
+      summary: Delete policy group (soft)
+      security: [{ BearerAuth: [], TenantHeader: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Group deleted
+        "404":
+          description: Not found
+
+  /audit:
+    get:
+      summary: List policy evaluation audit log
+      security: [{ BearerAuth: [], TenantHeader: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: page_size
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: agent_id
+          schema: { type: string }
+        - in: query
+          name: result
+          schema: { type: string, enum: [allowed, denied, proxied, warning] }
+        - in: query
+          name: from
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Paginated audit log
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  audits:
+                    type: array
+                    items: { $ref: "#/components/schemas/PolicyAudit" }
+                  page: { type: integer }
+                  page_size: { type: integer }
+                  total: { type: integer }
+                  has_more: { type: boolean }

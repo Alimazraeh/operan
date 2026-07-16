@@ -1,0 +1,13 @@
+apiVersion: v2
+name: enterprise-connectors
+description: Enterprise Connector Fabric - M18 for the Operan platform
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - enterprise
+  - connectors
+  - operan
+  - m18
+maintainers:
+  - name: Operan Platform Team

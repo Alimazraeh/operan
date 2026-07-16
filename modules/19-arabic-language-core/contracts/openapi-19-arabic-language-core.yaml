@@ -1,0 +1,581 @@
+openapi: 3.0.3
+info:
+  title: Arabic Language Core API
+  description: >
+    Operan Module 19 — Arabic Language Core provides Arabic-native language processing
+    including text normalization, dialect detection, terminology governance, and
+    Arabic embeddings. Every agent in the platform that handles Arabic content
+    goes through M19.
+  version: 1.0.0
+  contact:
+    name: Operan Platform
+    url: https://operan.dev
+
+servers:
+  - url: http://localhost:8019
+    description: Local development server
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Unauthenticated health check endpoint
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /v1/stats:
+    get:
+      summary: Module statistics
+      description: Returns module metadata and endpoint count
+      operationId: moduleStats
+      responses:
+        "200":
+          description: Module statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsResponse"
+
+  /v1/normalize:
+    post:
+      summary: Normalize Arabic text
+      description: >
+        Normalize Arabic text to a consistent canonical form:
+        tashkeel removal, alef/hamza standardization, whitespace normalization, etc.
+      operationId: normalizeText
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NormalizeRequest"
+      responses:
+        "200":
+          description: Normalized text with audit trail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizeResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/detect-dialect:
+    post:
+      summary: Detect Arabic dialect
+      description: >
+        Determine whether text is Modern Standard Arabic (MSA) or which specific
+        dialect (Saudi, Emirati, Kuwaiti, Bahraini, Qatari, Omani, Egyptian,
+        Levantine, Moroccan, etc.).
+      operationId: detectDialect
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DetectDialectRequest"
+      responses:
+        "200":
+          description: Dialect detection result with confidence scores
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DetectDialectResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/terminology/check:
+    post:
+      summary: Check text against terminology glossary
+      description: >
+        Check Arabic text against the tenant's approved terminology glossary.
+        Returns matched terms and flagged (unapproved/deprecated) terms.
+      operationId: checkTerminology
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TerminologyCheckRequest"
+      responses:
+        "200":
+          description: Terminology check results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TerminologyCheckResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/terminology/glossary:
+    get:
+      summary: List glossary entries
+      description: Paginated list of terminology glossary entries with filters.
+      operationId: listGlossary
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [government, legal, financial, technical, medical, general]
+        - name: domain
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, deprecated, rejected]
+      responses:
+        "200":
+          description: Paginated glossary entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlossaryResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    post:
+      summary: Create glossary entry
+      description: Add a new approved term to the terminology glossary.
+      operationId: createGlossaryEntry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GlossaryEntryRequest"
+      responses:
+        "201":
+          description: Term created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlossaryEntry"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/terminology/glossary/{id}:
+    patch:
+      summary: Update glossary entry
+      description: Update an existing terminology glossary entry.
+      operationId: updateGlossaryEntry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GlossaryEntryUpdateRequest"
+      responses:
+        "200":
+          description: Term updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlossaryEntry"
+        "404":
+          description: Term not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    delete:
+      summary: Delete glossary entry
+      description: Remove a term from the terminology glossary.
+      operationId: deleteGlossaryEntry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Term deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        "404":
+          description: Term not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/embeddings:
+    post:
+      summary: Get Arabic embeddings
+      description: Delegate to M12 with Arabic-optimized embedding model.
+      operationId: embedArabic
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmbedArabicRequest"
+      responses:
+        "200":
+          description: Embedding vector with metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmbedArabicResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: M12 service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    tenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+
+    StatsResponse:
+      type: object
+      properties:
+        module:
+          type: string
+          example: arabic-language-core
+        version:
+          type: string
+          example: "1.0.0"
+        endpoints:
+          type: integer
+          example: 8
+        description:
+          type: string
+          example: "Arabic Language Core — normalization, dialect detection, terminology governance, embeddings"
+
+    NormalizeRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: The Arabic text to normalize
+        remove_tashkeel:
+          type: boolean
+          description: Remove diacritical marks (tashkeel)
+        normalize_alef:
+          type: boolean
+          description: Unify alef variants to standard alef
+        convert_numerals:
+          type: boolean
+          description: Convert Latin numerals to Arabic-Indic numerals
+
+    NormalizeResponse:
+      type: object
+      properties:
+        normalized:
+          type: string
+        actions:
+          type: array
+          items:
+            $ref: "#/components/schemas/NormalizationAction"
+        original_length:
+          type: integer
+        normalized_length:
+          type: integer
+
+    NormalizationAction:
+      type: object
+      properties:
+        type:
+          type: string
+          example: remove_tashkeel
+        description:
+          type: string
+          example: "removed diacritic mark"
+        position:
+          type: integer
+          nullable: true
+
+    DetectDialectRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: The Arabic text to analyze
+
+    DetectDialectResponse:
+      type: object
+      properties:
+        dialect:
+          type: string
+          description: Detected dialect (msa, saudi, emirati, kuwaiti, bahraini, qatari, omani, egyptian, levant, moroccan)
+          example: saudi
+        confidence:
+          type: number
+          format: float
+          description: Confidence score between 0 and 1
+          example: 0.87
+        all_scores:
+          type: array
+          items:
+            $ref: "#/components/schemas/KeywordResult"
+        is_msa:
+          type: boolean
+          description: Whether the text is Modern Standard Arabic
+
+    KeywordResult:
+      type: object
+      properties:
+        dialect:
+          type: string
+        score:
+          type: number
+          format: float
+
+    TerminologyCheckRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+        category:
+          type: string
+          enum: [government, legal, financial, technical, medical, general]
+        domain:
+          type: string
+
+    TerminologyCheckResponse:
+      type: object
+      properties:
+        matched_terms:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchedTerm"
+        flagged_terms:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlaggedTerm"
+        check_count:
+          type: integer
+        flagged_count:
+          type: integer
+
+    MatchedTerm:
+      type: object
+      properties:
+        term:
+          type: string
+        category:
+          type: string
+        is_approved:
+          type: boolean
+
+    FlaggedTerm:
+      type: object
+      properties:
+        term:
+          type: string
+        reason:
+          type: string
+          example: unapproved
+        suggestion:
+          type: string
+
+    GlossaryResponse:
+      type: object
+      properties:
+        terms:
+          type: array
+          items:
+            $ref: "#/components/schemas/GlossaryEntry"
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+
+    GlossaryEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        term_arabic:
+          type: string
+        term_english:
+          type: string
+        term_transliterated:
+          type: string
+        category:
+          type: string
+        domain:
+          type: string
+        status:
+          type: string
+          enum: [active, deprecated, rejected]
+        approved_by:
+          type: string
+        preferred_form:
+          type: string
+        alternatives:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    GlossaryEntryRequest:
+      type: object
+      required:
+        - term_arabic
+        - category
+      properties:
+        term_arabic:
+          type: string
+        term_english:
+          type: string
+        category:
+          type: string
+          enum: [government, legal, financial, technical, medical, general]
+        domain:
+          type: string
+        preferred_form:
+          type: string
+        alternatives:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+
+    GlossaryEntryUpdateRequest:
+      type: object
+      properties:
+        term_english:
+          type: string
+        category:
+          type: string
+        domain:
+          type: string
+        status:
+          type: string
+        preferred_form:
+          type: string
+        alternatives:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+
+    EmbedArabicRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+        model:
+          type: string
+          description: M12 embedding model name (defaults to arabic-embedding-v1)
+
+    EmbedArabicResponse:
+      type: object
+      properties:
+        embedding:
+          type: array
+          items:
+            type: number
+            format: float
+        model:
+          type: string
+        tokens:
+          type: integer
+        duration_ms:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string

@@ -1,0 +1,12 @@
+apiVersion: v2
+name: model-abstraction
+description: Operan Module 12 — Model Abstraction Layer
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - operan
+  - m12
+  - model-abstraction
+  - llm
+home: https://operan.dev

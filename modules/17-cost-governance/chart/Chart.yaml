@@ -1,0 +1,12 @@
+apiVersion: v2
+name: cost-governance
+description: Operan Module 17 — Cost Governance Engine
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - operan
+  - m17
+  - cost-governance
+  - budgeting
+home: https://operan.dev

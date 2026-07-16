@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operan 20-Module Integration Graph</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+    }
+    h1 {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 5px;
+      color: #0f172a;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 20px;
+    }
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+    }
+    .legend-color {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    #graph-container {
+      width: 100%;
+      height: 700px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: white;
+    }
+    .node-label {
+      font-size: 11px;
+      fill: #1e293b;
+      pointer-events: none;
+    }
+    .node-sublabel {
+      font-size: 9px;
+      fill: #64748b;
+      pointer-events: none;
+    }
+    .link {
+      fill: none;
+      stroke: #cbd5e1;
+      stroke-width: 1.5px;
+    }
+    .link-label {
+      font-size: 9px;
+      fill: #94a3b8;
+      pointer-events: none;
+    }
+    .tooltip {
+      position: absolute;
+      padding: 10px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      font-size: 12px;
+      pointer-events: none;
+      max-width: 300px;
+    }
+    .tooltip h4 {
+      margin: 0 0 5px 0;
+      color: #0f172a;
+    }
+    .tooltip p {
+      margin: 0;
+      color: #475569;
+    }
+    .layer-label {
+      font-size: 13px;
+      fill: #94a3b8;
+      font-weight: 600;
+      text-anchor: middle;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Operan ADOS — 20-Module Integration Graph</h1>
+  <p class="subtitle">Enterprise Agentic Workforce Infrastructure | All modules built, tested, and ready for deployment</p>
+  
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-color" style="background: #166534;"></div>
+      <span>Foundation (M01-02)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #1d4ed8;"></div>
+      <span>Core Runtime (M03-08)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #b45309;"></div>
+      <span>Governance (M09-11)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #7c3aed;"></div>
+      <span>New Implementations (M06, M10, M12-M19)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #dc2626;"></div>
+      <span>Experience Portal (M21)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #0ea5e9;"></div>
+      <span>Infrastructure (Kafka)</span>
+    </div>
+  </div>
+
+  <div id="graph-container"></div>
+  <div class="tooltip" id="tooltip" style="display: none;"></div>
+
+  <script>
+    const modules = [
+      // Foundation (M01-02)
+      { id: 'M01', name: 'Tenant Control Plane', layer: 'Foundation', status: 'original', description: 'Centralized tenant provisioning and lifecycle management' },
+      { id: 'M02', name: 'Identity & Access', layer: 'Foundation', status: 'original', description: 'Enterprise-grade authentication and authorization' },
+      
+      // Core Runtime (M03-08)
+      { id: 'M03', name: 'Agent Orchestration', layer: 'Core Runtime', status: 'original', description: 'Core runtime engine for agent swarms' },
+      { id: 'M04', name: 'Agent Registry', layer: 'Core Runtime', status: 'original', description: 'Central registry for reusable agents' },
+      { id: 'M05', name: 'Department Template Engine', layer: 'Core Runtime', status: 'original', description: 'Deploy reusable organizational structures' },
+      { id: 'M06', name: 'Knowledge Ingestion', layer: 'Core Runtime', status: 'new', description: 'Transform enterprise data into operational memory' },
+      { id: 'M07', name: 'Memory Fabric', layer: 'Core Runtime', status: 'original', description: 'Persistent organizational cognition layer' },
+      { id: 'M08', name: 'Tool Execution', layer: 'Core Runtime', status: 'original', description: 'Secure external action execution' },
+      
+      // Governance (M09-11)
+      { id: 'M09', name: 'Human Supervision', layer: 'Governance', status: 'original', description: 'Govern autonomous execution safely' },
+      { id: 'M10', name: 'Policy Governance', layer: 'Governance', status: 'new', description: 'Enterprise compliance and control' },
+      { id: 'M11', name: 'Observability', layer: 'Governance', status: 'original', description: 'Operational transparency and telemetry' },
+      
+      // New Implementations (M12-M19)
+      { id: 'M12', name: 'Model Abstraction', layer: 'New Implementations', status: 'new', description: 'Decouple orchestration from model vendors' },
+      { id: 'M13', name: 'Multi-Model Routing', layer: 'New Implementations', status: 'new', description: 'Intelligent model assignment' },
+      { id: 'M14', name: 'Agent Collaboration', layer: 'New Implementations', status: 'new', description: 'Inter-agent messaging infrastructure' },
+      { id: 'M15', name: 'Agent Marketplace', layer: 'New Implementations', status: 'new', description: 'Procure, license, and deploy agents' },
+      { id: 'M16', name: 'Execution Sandbox', layer: 'New Implementations', status: 'new', description: 'Isolated execution environment for agents' },
+      { id: 'M17', name: 'Cost Governance', layer: 'New Implementations', status: 'new', description: 'Prevent runaway operational costs' },
+      { id: 'M18', name: 'Enterprise Connectors', layer: 'New Implementations', status: 'new', description: 'Enterprise system integrations' },
+      { id: 'M19', name: 'Arabic Language Core', layer: 'New Implementations', status: 'new', description: 'Arabic NLP and terminology governance' },
+      
+      // Experience Portal & Infrastructure
+      { id: 'M21', name: 'Experience Portal', layer: 'Experience Portal', status: 'original', description: 'Web UI for all platform operations' },
+      { id: 'KAFKA', name: 'Kafka Event Bus', layer: 'Infrastructure', status: 'original', description: 'Asynchronous event streaming backbone' }
+    ];
+
+    const edges = [
+      // M01 -> M02, M10, M11
+      { source: 'M01', target: 'M02', type: 'sync', desc: 'Tenant provisioning creates IAM entities' },
+      { source: 'M01', target: 'M10', type: 'sync', desc: 'Tenant onboarding applies default policies' },
+      { source: 'M01', target: 'M11', type: 'async', desc: 'Tenant lifecycle events' },
+      
+      // M02 -> M01
+      { source: 'M02', target: 'M01', type: 'sync', desc: 'IAM validates tenant context' },
+      
+      // M03 -> M04, M07, M10, M09, M08, M11, M16, M12, M13, M14, M15, M05
+      { source: 'M03', target: 'M04', type: 'sync', desc: 'Runtime resolves agent identities' },
+      { source: 'M03', target: 'M07', type: 'async', desc: 'Workflow state persisted' },
+      { source: 'M03', target: 'M10', type: 'sync', desc: 'Pre-execution policy validation' },
+      { source: 'M03', target: 'M09', type: 'async', desc: 'Escalation requests' },
+      { source: 'M03', target: 'M08', type: 'async', desc: 'Delegated tool execution' },
+      { source: 'M03', target: 'M11', type: 'async', desc: 'Execution telemetry' },
+      { source: 'M03', target: 'M16', type: 'async', desc: 'Usage metrics' },
+      { source: 'M03', target: 'M12', type: 'sync', desc: 'LLM call abstraction' },
+      { source: 'M03', target: 'M13', type: 'sync', desc: 'Dynamic model assignment' },
+      { source: 'M03', target: 'M14', type: 'async', desc: 'Inter-agent coordination' },
+      { source: 'M03', target: 'M15', type: 'async', desc: 'Notification triggers' },
+      { source: 'M03', target: 'M05', type: 'sync', desc: 'Template context' },
+      
+      // M04 -> M11
+      { source: 'M04', target: 'M11', type: 'async', desc: 'Registry change events' },
+      
+      // M05 -> M03, M04, M07, M10, M18, M01, M02, M11, M12, M15
+      { source: 'M05', target: 'M03', type: 'sync', desc: 'Deploy agent swarms' },
+      { source: 'M05', target: 'M04', type: 'sync', desc: 'Register template agents' },
+      { source: 'M05', target: 'M07', type: 'sync', desc: 'Provision memory topology' },
+      { source: 'M05', target: 'M10', type: 'sync', desc: 'Apply governance rules' },
+      { source: 'M05', target: 'M18', type: 'sync', desc: 'Configure data integrations' },
+      { source: 'M05', target: 'M01', type: 'sync', desc: 'Validate tenant quota' },
+      { source: 'M05', target: 'M02', type: 'sync', desc: 'RBAC/ABAC evaluation' },
+      { source: 'M05', target: 'M11', type: 'sync', desc: 'Dashboard/alert configs' },
+      { source: 'M05', target: 'M12', type: 'sync', desc: 'Model selection hints' },
+      { source: 'M05', target: 'M15', type: 'sync', desc: 'Publish templates' },
+      
+      // M06 -> M07, M11, M19
+      { source: 'M06', target: 'M07', type: 'async', desc: 'Ingested content indexed' },
+      { source: 'M06', target: 'M11', type: 'async', desc: 'Ingestion telemetry' },
+      { source: 'M06', target: 'M19', type: 'sync', desc: 'Arabic text normalization' },
+      
+      // M07 -> M11
+      { source: 'M07', target: 'M11', type: 'async', desc: 'Memory events' },
+      
+      // M08 -> M10, M18, M11, M16
+      { source: 'M08', target: 'M10', type: 'sync', desc: 'Pre-execution policy check' },
+      { source: 'M08', target: 'M18', type: 'sync', desc: 'External system interaction' },
+      { source: 'M08', target: 'M11', type: 'async', desc: 'Execution results' },
+      { source: 'M08', target: 'M16', type: 'async', desc: 'Tool usage metrics' },
+      
+      // M09 -> M03, M11, M15
+      { source: 'M09', target: 'M03', type: 'async', desc: 'Approval signals' },
+      { source: 'M09', target: 'M11', type: 'async', desc: 'Supervision events' },
+      { source: 'M09', target: 'M15', type: 'async', desc: 'Escalation notifications' },
+      
+      // M10 -> M11
+      { source: 'M10', target: 'M11', type: 'async', desc: 'Policy violations' },
+      
+      // M12 -> M11, M17
+      { source: 'M12', target: 'M11', type: 'async', desc: 'Model telemetry' },
+      { source: 'M12', target: 'M17', type: 'async', desc: 'Model cost data' },
+      
+      // M13 -> M12, M11
+      { source: 'M13', target: 'M12', type: 'sync', desc: 'Routed model invocation' },
+      { source: 'M13', target: 'M11', type: 'async', desc: 'Routing decisions' },
+      
+      // M14 -> M07, M15, M11
+      { source: 'M14', target: 'M07', type: 'async', desc: 'Shared state sync' },
+      { source: 'M14', target: 'M15', type: 'async', desc: 'Collaboration notifications' },
+      { source: 'M14', target: 'M11', type: 'async', desc: 'Communication bus telemetry' },
+      
+      // M15 -> M11, M01, M16
+      { source: 'M15', target: 'M11', type: 'async', desc: 'Delivery status' },
+      { source: 'M15', target: 'M01', type: 'sync', desc: 'Tenant validation' },
+      { source: 'M15', target: 'M16', type: 'async', desc: 'Marketplace events' },
+      
+      // M16 -> M17, M11
+      { source: 'M16', target: 'M17', type: 'sync', desc: 'Cost threshold check' },
+      { source: 'M16', target: 'M11', type: 'async', desc: 'Billing events' },
+      
+      // M17 -> M03, M10, M11
+      { source: 'M17', target: 'M03', type: 'async', desc: 'Throttling signals' },
+      { source: 'M17', target: 'M10', type: 'sync', desc: 'Cost policy enforcement' },
+      { source: 'M17', target: 'M11', type: 'async', desc: 'Cost events' },
+      
+      // M18 -> M11
+      { source: 'M18', target: 'M11', type: 'async', desc: 'Connector health' },
+      
+      // M19 -> M11, M07
+      { source: 'M19', target: 'M11', type: 'async', desc: 'Processing telemetry' },
+      { source: 'M19', target: 'M07', type: 'async', desc: 'Terminology persistence' },
+      
+      // M21 -> All modules (proxy)
+      { source: 'M21', target: 'M01', type: 'sync', desc: 'Tenant management UI' },
+      { source: 'M21', target: 'M02', type: 'sync', desc: 'IAM management UI' },
+      { source: 'M21', target: 'M03', type: 'sync', desc: 'Workflow monitoring' },
+      { source: 'M21', target: 'M04', type: 'sync', desc: 'Agent catalog' },
+      { source: 'M21', target: 'M05', type: 'sync', desc: 'Department deployment' },
+      { source: 'M21', target: 'M06', type: 'sync', desc: 'Ingestion dashboard' },
+      { source: 'M21', target: 'M07', type: 'sync', desc: 'Memory management' },
+      { source: 'M21', target: 'M08', type: 'sync', desc: 'Tool management' },
+      { source: 'M21', target: 'M09', type: 'sync', desc: 'Supervision queue' },
+      { source: 'M21', target: 'M10', type: 'sync', desc: 'Policy dashboard' },
+      { source: 'M21', target: 'M11', type: 'sync', desc: 'Live metrics' },
+      { source: 'M21', target: 'M12', type: 'sync', desc: 'Model selection' },
+      { source: 'M21', target: 'M13', type: 'sync', desc: 'Routing dashboard' },
+      { source: 'M21', target: 'M14', type: 'sync', desc: 'Collaboration view' },
+      { source: 'M21', target: 'M15', type: 'sync', desc: 'Marketplace browsing' },
+      { source: 'M21', target: 'M16', type: 'sync', desc: 'Execution history' },
+      { source: 'M21', target: 'M17', type: 'sync', desc: 'Cost dashboard' },
+      { source: 'M21', target: 'M18', type: 'sync', desc: 'Connector status' },
+      { source: 'M21', target: 'M19', type: 'sync', desc: 'Arabic NLP view' },
+      
+      // Kafka <- All modules (event bus)
+      { source: 'M01', target: 'KAFKA', type: 'async', desc: 'Tenant events' },
+      { source: 'M02', target: 'KAFKA', type: 'async', desc: 'Identity events' },
+      { source: 'M03', target: 'KAFKA', type: 'async', desc: 'Orchestration events' },
+      { source: 'M04', target: 'KAFKA', type: 'async', desc: 'Registry events' },
+      { source: 'M05', target: 'KAFKA', type: 'async', desc: 'Template events' },
+      { source: 'M06', target: 'KAFKA', type: 'async', desc: 'Ingestion events' },
+      { source: 'M07', target: 'KAFKA', type: 'async', desc: 'Memory events' },
+      { source: 'M08', target: 'KAFKA', type: 'async', desc: 'Tool events' },
+      { source: 'M09', target: 'KAFKA', type: 'async', desc: 'Supervision events' },
+      { source: 'M10', target: 'KAFKA', type: 'async', desc: 'Policy events' },
+      { source: 'M11', target: 'KAFKA', type: 'async', desc: 'Observability events' },
+      { source: 'M12', target: 'KAFKA', type: 'async', desc: 'Model events' },
+      { source: 'M13', target: 'KAFKA', type: 'async', desc: 'Routing events' },
+      { source: 'M14', target: 'KAFKA', type: 'async', desc: 'Collaboration events' },
+      { source: 'M15', target: 'KAFKA', type: 'async', desc: 'Marketplace events' },
+      { source: 'M16', target: 'KAFKA', type: 'async', desc: 'Sandbox events' },
+      { source: 'M17', target: 'KAFKA', type: 'async', desc: 'Cost events' },
+      { source: 'M18', target: 'KAFKA', type: 'async', desc: 'Connector events' },
+      { source: 'M19', target: 'KAFKA', type: 'async', desc: 'Language events' }
+    ];
+
+    const colorMap = {
+      'Foundation': '#166534',
+      'Core Runtime': '#1d4ed8',
+      'Governance': '#b45309',
+      'New Implementations': '#7c3aed',
+      'Experience Portal': '#dc2626',
+      'Infrastructure': '#0ea5e9'
+    };
+
+    const statusBadge = {
+      'original': '✓ Existing',
+      'new': '✓ New'
+    };
+
+    const simulation = d3.forceSimulation(modules)
+      .force('link', d3.forceLink(edges).id(d => d.id).distance(120))
+      .force('charge', d3.forceManyBody().strength(-400))
+      .force('center', d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2))
+      .force('collision', d3.forceCollide().radius(60));
+
+    const svg = d3.select('#graph-container')
+      .append('svg')
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .attr('viewBox', `0 0 ${window.innerWidth} ${700}`)
+      .call(d3.zoom().on('zoom', (event) => {
+        svg.selectAll('g').attr('transform', event.transform);
+      }));
+
+    // Layer groupings
+    const layerGroups = {
+      'Foundation': { y: 80 },
+      'Core Runtime': { y: 220 },
+      'Governance': { y: 360 },
+      'New Implementations': { y: 500 },
+      'Experience Portal': { y: 640 },
+      'Infrastructure': { y: 680 }
+    };
+
+    // Layer labels
+    svg.selectAll('.layer-label')
+      .data(Object.entries(layerGroups))
+      .enter()
+      .append('text')
+      .attr('class', 'layer-label')
+      .attr('x', 40)
+      .attr('y', d => d[1].y)
+      .text(d => d[0]);
+
+    // Links
+    const link = svg.append('g')
+      .selectAll('.link')
+      .data(edges)
+      .enter()
+      .append('line')
+      .attr('class', 'link');
+
+    // Link labels
+    const linkLabel = svg.append('g')
+      .selectAll('.link-label')
+      .data(edges)
+      .enter()
+      .append('text')
+      .attr('class', 'link-label')
+      .text(d => d.desc);
+
+    // Nodes
+    const node = svg.append('g')
+      .selectAll('.node')
+      .data(modules)
+      .enter()
+      .append('g')
+      .attr('class', 'node')
+      .call(d3.drag()
+        .on('start', dragStarted)
+        .on('drag', dragged)
+        .on('end', dragEnded));
+
+    // Node circles
+    node.append('circle')
+      .attr('r', 24)
+      .attr('fill', d => colorMap[d.layer])
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 2);
+
+    // Node labels
+    node.append('text')
+      .attr('class', 'node-label')
+      .attr('text-anchor', 'middle')
+      .attr('dy', 0.35em)
+      .text(d => d.id);
+
+    // Node sublabels
+    node.append('text')
+      .attr('class', 'node-sublabel')
+      .attr('text-anchor', 'middle')
+      .attr('dy', 40)
+      .text(d => d.name);
+
+    // Tooltip
+    const tooltip = d3.select('#tooltip');
+
+    node.on('mouseover', function(event, d) {
+      tooltip.style('display', 'block')
+        .html(`<h4>${d.id}: ${d.name}</h4><p>${d.description}</p><p>Status: ${statusBadge[d.status]}</p>`);
+    })
+    .on('mousemove', function(event) {
+      tooltip.style('left', (event.pageX + 10) + 'px')
+        .style('top', (event.pageY - 10) + 'px');
+    })
+    .on('mouseout', function() {
+      tooltip.style('display', 'none');
+    });
+
+    // Simulation tick
+    simulation.on('tick', () => {
+      link
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
+
+      linkLabel
+        .attr('x', d => (d.source.x + d.target.x) / 2)
+        .attr('y', d => (d.source.y + d.target.y) / 2)
+        .attr('text-anchor', 'middle');
+
+      node.attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+
+    function dragStarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
+
+    function dragEnded(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+
+    // Zoom and pan
+    svg.call(d3.zoom()
+      .scaleExtent([0.5, 2])
+      .on('zoom', (event) => {
+        svg.selectAll('g').attr('transform', event.transform);
+      }));
+  </script>
+</body>
+</html>

@@ -1,0 +1,695 @@
+# Operan — New Modules Deployment Manifests
+# Dependencies: Kafka + PostgreSQL must exist in operan namespace
+# Apply after existing modules.yaml: kubectl apply -f deploy/k8s/new-modules.yaml -n operan
+---
+# ─── M12 — Model Abstraction (port 8012) ───
+# Foundation module — no internal deps, depends on Kafka
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-abstraction
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: model-abstraction
+    app.kubernetes.io/part-of: operan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: model-abstraction
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: model-abstraction
+        app.kubernetes.io/part-of: operan
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: model-abstraction
+        image: alimazraeh/operan-12-model-abstraction:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8012
+        env:
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        - name: DB_DSN
+          value: postgres://operan:CHANGE_ME@postgresql.operan.svc.cluster.local:5432/operan?sslmode=disable
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8012
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8012
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests: { cpu: 100m, memory: 128Mi }
+          limits: { memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: model-abstraction
+  namespace: operan
+spec:
+  selector:
+    app.kubernetes.io/name: model-abstraction
+  ports:
+  - port: 8012
+    targetPort: 8012
+---
+# ─── M19 — Arabic Language Core (port 8019) ───
+# Depends on: M12 (model-abstraction)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arabic-language-core
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: arabic-language-core
+    app.kubernetes.io/part-of: operan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: arabic-language-core
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: arabic-language-core
+        app.kubernetes.io/part-of: operan
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: arabic-language-core
+        image: alimazraeh/operan-19-arabic-language-core:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8019
+        env:
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        - name: DB_DSN
+          value: postgres://operan:CHANGE_ME@postgresql.operan.svc.cluster.local:5432/operan?sslmode=disable
+        - name: M12_BASE_URL
+          value: http://model-abstraction.operan.svc.cluster.local:8012
+        resources:
+          requests: { cpu: 100m, memory: 128Mi }
+          limits: { memory: 512Mi }
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8019
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8019
+          initialDelaySeconds: 10
+          periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: arabic-language-core
+  namespace: operan
+spec:
+  selector:
+    app.kubernetes.io/name: arabic-language-core
+  ports:
+  - port: 8019
+    targetPort: 8019
+---
+# ─── M17 — Cost Governance (port 8017) ───
+# Depends on: M12 (model-abstraction)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cost-governance
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: cost-governance
+    app.kubernetes.io/part-of: operan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cost-governance
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cost-governance
+        app.kubernetes.io/part-of: operan
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: cost-governance
+        image: alimazraeh/operan-17-cost-governance:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8017
+        env:
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        - name: DB_DSN
+          value: postgres://operan:CHANGE_ME@postgresql.operan.svc.cluster.local:5432/operan?sslmode=disable
+        - name: M12_BASE_URL
+          value: http://model-abstraction.operan.svc.cluster.local:8012
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8017
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8017
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests: { cpu: 100m, memory: 128Mi }
+          limits: { memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cost-governance
+  namespace: operan
+spec:
+  selector:
+    app.kubernetes.io/name: cost-governance
+  ports:
+  - port: 8017
+    targetPort: 8017
+---
+# ─── M06 — Knowledge Ingestion (port 8006) ───
+# Depends on: M12, M19, M07
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knowledge-ingestion
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: knowledge-ingestion
+    app.kubernetes.io/part-of: operan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: knowledge-ingestion
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: knowledge-ingestion
+        app.kubernetes.io/part-of: operan
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: knowledge-ingestion
+        image: alimazraeh/operan-06-knowledge-ingestion:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8006
+        env:
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        - name: DB_DSN
+          value: postgres://operan:CHANGE_ME@postgresql.operan.svc.cluster.local:5432/operan?sslmode=disable
+        - name: M12_BASE_URL
+          value: http://model-abstraction.operan.svc.cluster.local:8012
+        - name: M19_BASE_URL
+          value: http://arabic-language-core.operan.svc.cluster.local:8019
+        - name: M07_BASE_URL
+          value: http://memory-fabric.operan.svc.cluster.local:8007
+        resources:
+          requests: { cpu: 100m, memory: 256Mi }
+          limits: { memory: 1Gi }
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8006
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8006
+          initialDelaySeconds: 10
+          periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: knowledge-ingestion
+  namespace: operan
+spec:
+  selector:
+    app.kubernetes.io/name: knowledge-ingestion
+  ports:
+  - port: 8006
+    targetPort: 8006
+---
+# ─── M13 — Multi-Model Routing (port 8013) ───
+# Depends on: M12
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multi-model-routing
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: multi-model-routing
+    app.kubernetes.io/part-of: operan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: multi-model-routing
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: multi-model-routing
+        app.kubernetes.io/part-of: operan
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: multi-model-routing
+        image: alimazraeh/operan-13-model-routing:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8013
+        env:
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        - name: DB_DSN
+          value: postgres://operan:CHANGE_ME@postgresql.operan.svc.cluster.local:5432/operan?sslmode=disable
+        - name: M12_BASE_URL
+          value: http://model-abstraction.operan.svc.cluster.local:8012
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8013
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8013
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests: { cpu: 100m, memory: 128Mi }
+          limits: { memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: multi-model-routing
+  namespace: operan
+spec:
+  selector:
+    app.kubernetes.io/name: multi-model-routing
+  ports:
+  - port: 8013
+    targetPort: 8013
+---
+# ─── M16 — Execution Sandbox (port 8016) ───
+# Depends on: M10 (policy), M12
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: execution-sandbox
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: execution-sandbox
+    app.kubernetes.io/part-of: operan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: execution-sandbox
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: execution-sandbox
+        app.kubernetes.io/part-of: operan
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: execution-sandbox
+        image: alimazraeh/operan-16-execution-sandbox:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8016
+        securityContext:
+          privileged: true  # needed for chroot syscall isolation
+        env:
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        - name: DB_DSN
+          value: postgres://operan:CHANGE_ME@postgresql.operan.svc.cluster.local:5432/operan?sslmode=disable
+        - name: M10_BASE_URL
+          value: http://policy-governance.operan.svc.cluster.local:8010
+        resources:
+          requests: { cpu: 200m, memory: 256Mi }
+          limits: { memory: 1Gi }
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8016
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8016
+          initialDelaySeconds: 10
+          periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: execution-sandbox
+  namespace: operan
+spec:
+  selector:
+    app.kubernetes.io/name: execution-sandbox
+  ports:
+  - port: 8016
+    targetPort: 8016
+---
+# ─── M14 — Agent Collaboration (port 8014) ───
+# Depends on: M07, M12
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-collaboration
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: agent-collaboration
+    app.kubernetes.io/part-of: operan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: agent-collaboration
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: agent-collaboration
+        app.kubernetes.io/part-of: operan
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: agent-collaboration
+        image: alimazraeh/operan-14-agent-collaboration:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8014
+        env:
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        - name: DB_DSN
+          value: postgres://operan:CHANGE_ME@postgresql.operan.svc.cluster.local:5432/operan?sslmode=disable
+        - name: M07_BASE_URL
+          value: http://memory-fabric.operan.svc.cluster.local:8007
+        - name: M12_BASE_URL
+          value: http://model-abstraction.operan.svc.cluster.local:8012
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8014
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8014
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests: { cpu: 100m, memory: 128Mi }
+          limits: { memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-collaboration
+  namespace: operan
+spec:
+  selector:
+    app.kubernetes.io/name: agent-collaboration
+  ports:
+  - port: 8014
+    targetPort: 8014
+---
+# ─── M15 — Agent Marketplace (port 8015) ───
+# Depends on: M04, M03, M12
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-marketplace
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: agent-marketplace
+    app.kubernetes.io/part-of: operan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: agent-marketplace
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: agent-marketplace
+        app.kubernetes.io/part-of: operan
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: agent-marketplace
+        image: alimazraeh/operan-15-agent-marketplace:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8015
+        env:
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        - name: DB_DSN
+          value: postgres://operan:CHANGE_ME@postgresql.operan.svc.cluster.local:5432/operan?sslmode=disable
+        - name: M04_BASE_URL
+          value: http://agent-registry.operan.svc.cluster.local:8083
+        - name: M03_BASE_URL
+          value: http://agent-orchestration.operan.svc.cluster.local:8080
+        - name: M12_BASE_URL
+          value: http://model-abstraction.operan.svc.cluster.local:8012
+        resources:
+          requests: { cpu: 100m, memory: 128Mi }
+          limits: { memory: 512Mi }
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8015
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8015
+          initialDelaySeconds: 10
+          periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-marketplace
+  namespace: operan
+spec:
+  selector:
+    app.kubernetes.io/name: agent-marketplace
+  ports:
+  - port: 8015
+    targetPort: 8015
+---
+# ─── M18 — Enterprise Connectors (port 8018) ───
+# Depends on: M04, M12
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-connectors
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: enterprise-connectors
+    app.kubernetes.io/part-of: operan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: enterprise-connectors
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: enterprise-connectors
+        app.kubernetes.io/part-of: operan
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: enterprise-connectors
+        image: alimazraeh/operan-18-enterprise-connectors:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8018
+        env:
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        - name: DB_DSN
+          value: postgres://operan:CHANGE_ME@postgresql.operan.svc.cluster.local:5432/operan?sslmode=disable
+        - name: M04_BASE_URL
+          value: http://agent-registry.operan.svc.cluster.local:8083
+        - name: M12_BASE_URL
+          value: http://model-abstraction.operan.svc.cluster.local:8012
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8018
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8018
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests: { cpu: 100m, memory: 128Mi }
+          limits: { memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-connectors
+  namespace: operan
+spec:
+  selector:
+    app.kubernetes.io/name: enterprise-connectors
+  ports:
+  - port: 8018
+    targetPort: 8018
+---
+# ─── M10 — Policy Governance (port 8010) ───
+# Final module — depends on M04, M02, M08
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: policy-governance
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: policy-governance
+    app.kubernetes.io/part-of: operan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: policy-governance
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: policy-governance
+        app.kubernetes.io/part-of: operan
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: policy-governance
+        image: alimazraeh/operan-10-policy-governance:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8010
+        env:
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: operan-jwt
+              key: secret
+        - name: EVENT_BROKER_URL
+          value: kafka.operan.svc.cluster.local:9092
+        - name: DB_DSN
+          value: postgres://operan:CHANGE_ME@postgresql.operan.svc.cluster.local:5432/operan?sslmode=disable
+        - name: M04_BASE_URL
+          value: http://agent-registry.operan.svc.cluster.local:8083
+        resources:
+          requests: { cpu: 100m, memory: 128Mi }
+          limits: { memory: 512Mi }
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8010
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8010
+          initialDelaySeconds: 10
+          periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: policy-governance
+  namespace: operan
+spec:
+  selector:
+    app.kubernetes.io/name: policy-governance
+  ports:
+  - port: 8010
+    targetPort: 8010

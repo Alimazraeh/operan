@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-connectors
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: enterprise-connectors
+    module: "18"
+spec:
+  replicas: {{ .Values.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app: enterprise-connectors
+  template:
+    metadata:
+      labels:
+        app: enterprise-connectors
+        module: "18"
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      containers:
+        - name: enterprise-connectors
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8018
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          env:
+            - name: HTTP_PORT
+              value: "8018"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.jwt.name }}
+                  key: {{ .Values.secrets.jwt.key }}
+            - name: JWT_ISSUER
+              value: {{ .Values.jwt.issuer | default "operan-tenant-control-plane" }}
+            - name: DB_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.db.name }}
+                  key: {{ .Values.secrets.db.key }}
+            - name: EVENT_BROKER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.configMap.broker.name }}
+                  key: {{ .Values.configMap.broker.key }}
+            - name: M04_BASE_URL
+              value: {{ .Values.m04BaseUrl | default "http://agent-registry:8004" }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
