@@ -44,7 +44,9 @@ func (m *mockJobStore) GetByID(ctx context.Context, id string) (*store.Ingestion
 	if !ok {
 		return nil, fmt.Errorf("job not found: %s", id)
 	}
-	return job, nil
+	// Return a copy so the caller does not hold a pointer to shared data.
+	jobCopy := *job
+	return &jobCopy, nil
 }
 
 func (m *mockJobStore) UpdateStatus(ctx context.Context, id string, status string, updates map[string]any) error {
@@ -219,11 +221,18 @@ func waitForJob(t *testing.T, js *mockJobStore, jobID string, timeout time.Durat
 		}
 		switch job.Status {
 		case "completed", "failed", "cancelled":
-			return job, nil
+			// Return a copy to avoid races when the caller reads the struct.
+			jobCopy := *job
+			return &jobCopy, nil
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
-	return js.GetByID(context.Background(), jobID)
+	job, err := js.GetByID(context.Background(), jobID)
+	if err != nil {
+		return nil, err
+	}
+	jobCopy := *job
+	return &jobCopy, nil
 }
 
 // TestWorker_ProcessJob_ValidPipeline tests a full pipeline execution with a local test server.
