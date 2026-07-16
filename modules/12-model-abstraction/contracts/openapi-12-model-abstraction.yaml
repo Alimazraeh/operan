@@ -1,0 +1,592 @@
+openapi: "3.0.3"
+info:
+  title: Operan Model Abstraction Layer
+  version: "1.0.0"
+  description: |
+    Module 12 — Model Abstraction Layer.
+    Decouples all AI inference from specific model providers by providing a unified
+    interface that routes requests to any configured LLM backend (OpenAI, Anthropic,
+    LiteLLM, Ollama, Azure OpenAI).
+  contact:
+    name: Operan Platform
+
+servers:
+  - url: http://localhost:8012
+    description: Local development
+
+security:
+  - BearerAuth: []
+  - TenantHeader: []
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      tags: [Infrastructure]
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /v1/models/completions:
+    post:
+      summary: Unified chat completion
+      description: |
+        Routes a chat completion request to the appropriate LLM backend based on the
+        model name in the registry. Tracks token usage, calculates costs, and publishes
+        Kafka events. Supports automatic failover to backup providers.
+      tags: [Inference]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: Completion response from provider
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+        "400":
+          description: Bad request (missing model, invalid body)
+        "401":
+          description: Unauthorized (missing/invalid JWT or tenant mismatch)
+        "502":
+          description: Bad gateway (all providers failed)
+
+  /v1/models/embeddings:
+    post:
+      summary: Unified embeddings
+      description: Routes an embedding request to the appropriate LLM backend.
+      tags: [Inference]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmbedRequest"
+      responses:
+        "200":
+          description: Embedding response from provider
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmbedResponse"
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+
+  /v1/model-providers:
+    get:
+      summary: List model providers
+      description: Paginated list of registered LLM backends for the tenant.
+      tags: [Providers]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        "200":
+          description: Paginated provider list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderList"
+    post:
+      summary: Register a new LLM backend
+      description: Requires `model_admin` role.
+      tags: [Providers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProviderRequest"
+      responses:
+        "201":
+          description: Provider created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelProvider"
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden (insufficient permissions)
+
+  /v1/model-providers/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      summary: Update provider config
+      tags: [Providers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProviderRequest"
+      responses:
+        "200":
+          description: Provider updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelProvider"
+        "404":
+          description: Provider not found
+    delete:
+      summary: Soft-delete a provider
+      tags: [Providers]
+      responses:
+        "200":
+          description: Provider soft-deleted
+        "404":
+          description: Provider not found
+
+  /v1/model-registry:
+    get:
+      summary: List model registry entries
+      description: Paginated list of model → provider mappings.
+      tags: [Models]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: provider_id
+          in: query
+          description: Filter by provider UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Paginated model list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelList"
+    post:
+      summary: Register a model → provider mapping
+      description: Requires `model_admin` role.
+      tags: [Models]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateModelRequest"
+      responses:
+        "201":
+          description: Model registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelRegistry"
+
+  /v1/model-registry/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      summary: Update model config
+      tags: [Models]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateModelRequest"
+      responses:
+        "200":
+          description: Model updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelRegistry"
+        "404":
+          description: Model not found
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    TenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+
+    ChatRequest:
+      type: object
+      required: [model, messages]
+      properties:
+        model:
+          type: string
+          description: Model name registered in the model registry.
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+        temperature:
+          type: number
+          format: float
+        max_tokens:
+          type: integer
+        top_p:
+          type: number
+          format: float
+        stop:
+          type: array
+          items:
+            type: string
+        stream:
+          type: boolean
+          default: false
+
+    ChatMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [system, user, assistant]
+        content:
+          type: string
+        name:
+          type: string
+
+    ChatResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        model:
+          type: string
+        choices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatChoice"
+        usage:
+          $ref: "#/components/schemas/ChatUsage"
+
+    ChatChoice:
+      type: object
+      properties:
+        index:
+          type: integer
+        message:
+          $ref: "#/components/schemas/ChatMessage"
+        finish_reason:
+          type: string
+
+    ChatUsage:
+      type: object
+      properties:
+        prompt_tokens:
+          type: integer
+        completion_tokens:
+          type: integer
+        total_tokens:
+          type: integer
+
+    EmbedRequest:
+      type: object
+      required: [model, input]
+      properties:
+        model:
+          type: string
+        input:
+          type: array
+          items:
+            type: string
+        format:
+          type: string
+          enum: [float, base64]
+
+    EmbedResponse:
+      type: object
+      properties:
+        model:
+          type: string
+        object:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmbedDoc"
+        usage:
+          $ref: "#/components/schemas/EmbedUsage"
+
+    EmbedDoc:
+      type: object
+      properties:
+        index:
+          type: integer
+        embedding:
+          type: array
+          items:
+            type: number
+            format: float
+        object:
+          type: string
+
+    EmbedUsage:
+      type: object
+      properties:
+        prompt_tokens:
+          type: integer
+        total_tokens:
+          type: integer
+
+    CreateProviderRequest:
+      type: object
+      required: [name, type, base_url]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        type:
+          type: string
+          enum: [openai, anthropic, litellm, ollama, azure, custom]
+        base_url:
+          type: string
+          format: uri
+          maxLength: 500
+        api_key_secret_name:
+          type: string
+        is_active:
+          type: boolean
+          default: true
+        priority:
+          type: integer
+          default: 50
+        max_retries:
+          type: integer
+          default: 2
+        timeout_ms:
+          type: integer
+          default: 30000
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ModelProvider:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+        base_url:
+          type: string
+        is_active:
+          type: boolean
+        priority:
+          type: integer
+        max_retries:
+          type: integer
+        timeout_ms:
+          type: integer
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UpdateProviderRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+        base_url:
+          type: string
+        is_active:
+          type: boolean
+        priority:
+          type: integer
+        max_retries:
+          type: integer
+        timeout_ms:
+          type: integer
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ProviderList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModelProvider"
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+
+    CreateModelRequest:
+      type: object
+      required: [model_name, provider_id]
+      properties:
+        model_name:
+          type: string
+          maxLength: 200
+        provider_id:
+          type: string
+          format: uuid
+        provider_model_name:
+          type: string
+        supports_chat:
+          type: boolean
+          default: true
+        supports_embed:
+          type: boolean
+          default: true
+        max_tokens:
+          type: integer
+          default: 8192
+        cost_per_token:
+          type: object
+          additionalProperties: true
+          default:
+            prompt: 0.0
+            completion: 0.0
+        is_default:
+          type: boolean
+          default: false
+        is_active:
+          type: boolean
+          default: true
+
+    ModelRegistry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        model_name:
+          type: string
+        provider_id:
+          type: string
+          format: uuid
+        provider_model_name:
+          type: string
+        supports_chat:
+          type: boolean
+        supports_embed:
+          type: boolean
+        max_tokens:
+          type: integer
+        cost_per_token:
+          type: object
+          additionalProperties: true
+        is_default:
+          type: boolean
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UpdateModelRequest:
+      type: object
+      properties:
+        model_name:
+          type: string
+        provider_id:
+          type: string
+          format: uuid
+        provider_model_name:
+          type: string
+        supports_chat:
+          type: boolean
+        supports_embed:
+          type: boolean
+        max_tokens:
+          type: integer
+        cost_per_token:
+          type: object
+          additionalProperties: true
+        is_default:
+          type: boolean
+        is_active:
+          type: boolean
+
+    ModelList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModelRegistry"
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer

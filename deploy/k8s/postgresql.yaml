@@ -1,0 +1,82 @@
+# Operan — PostgreSQL Instance
+# Required by: M06, M10, M12, M13, M14, M15, M16, M17, M18, M19
+# Deploy before new-modules.yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: operan-postgresql
+  namespace: operan
+data:
+  POSTGRES_DB: operan
+  POSTGRES_USER: operan
+  POSTGRES_PASSWORD: "CHANGE_ME"
+  POSTGRES_HOST: postgresql.operan.svc.cluster.local
+  POSTGRES_PORT: "5432"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/part-of: operan
+spec:
+  serviceName: postgresql
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgresql
+        app.kubernetes.io/part-of: operan
+    spec:
+      containers:
+      - name: postgresql
+        image: postgres:16-alpine
+        envFrom:
+        - configMapRef:
+            name: operan-postgresql
+        ports:
+        - containerPort: 5432
+          name: postgres
+        resources:
+          requests: { cpu: 200m, memory: 256Mi }
+          limits: { memory: 1Gi }
+        readinessProbe:
+          exec:
+            command: ['pg_isready', '-U', 'operan']
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command: ['pg_isready', '-U', 'operan']
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: data
+        hostPath:
+          path: /var/lib/operan/postgresql
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/part-of: operan
+spec:
+  selector:
+    app.kubernetes.io/name: postgresql
+  ports:
+  - port: 5432
+    targetPort: 5432
+    name: postgres

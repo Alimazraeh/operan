@@ -1,0 +1,27 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/operan/policy-governance
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8010
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+config:
+  dbDsn: ""
+  eventBrokerURL: "localhost:9092"
+  m04BaseURL: "http://agent-registry:8004"
+
+secrets:
+  create: true
+  jwtSecret: "change-me-in-production"

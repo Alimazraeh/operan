@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operan ADOS — End-to-End Customer Lifecycle</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --muted: #64748b;
+      --foundation: #166534;
+      --core: #1d4ed8;
+      --gov: #b45309;
+      --new: #7c3aed;
+      --portal: #dc2626;
+      --infra: #0ea5e9;
+      --phase1: #dbeafe;
+      --phase2: #fef3c7;
+      --phase3: #d1fae5;
+      --phase4: #ede9fe;
+      --phase5: #fce7f3;
+      --phase6: #f1f5f9;
+      --phase7: #fee2e2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+      color: white;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .header h1 { font-size: 2em; margin-bottom: 8px; }
+    .header p { font-size: 1.1em; opacity: 0.9; max-width: 800px; margin: 0 auto; }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 20px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      justify-content: center;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: #f1f5f9;
+    }
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .phase {
+      margin-bottom: 30px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--card);
+    }
+    .phase-header {
+      padding: 16px 20px;
+      font-size: 1.3em;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .phase-number {
+      background: var(--text);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9em;
+    }
+    .phase-body {
+      padding: 20px;
+    }
+    .phase-description {
+      font-size: 1.05em;
+      color: var(--muted);
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .module-flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .module-card {
+      flex: 1;
+      min-width: 280px;
+      max-width: 320px;
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+    }
+    .module-card h4 {
+      margin-bottom: 8px;
+      font-size: 1.05em;
+    }
+    .module-card p {
+      font-size: 0.92em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .module-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 0.8em;
+      font-weight: 500;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+    .arrow {
+      text-align: center;
+      font-size: 2em;
+      color: var(--muted);
+      margin: 8px 0;
+    }
+    .event-bus {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin: 16px 0;
+      font-size: 0.95em;
+    }
+    .event-bus strong {
+      color: #0369a1;
+    }
+    .data-store {
+      background: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin: 16px 0;
+      font-size: 0.95em;
+      border-left: 4px solid #666;
+    }
+    .section-title {
+      font-size: 1.2em;
+      font-weight: 600;
+      margin: 24px 0 12px 0;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--border);
+    }
+    .interaction-list {
+      list-style: none;
+      padding: 0;
+    }
+    .interaction-list li {
+      padding: 10px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .interaction-list li:last-child {
+      border-bottom: none;
+    }
+    .module-ref {
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+    .action {
+      color: #0369a1;
+      font-weight: 500;
+    }
+    .footer {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: 40px;
+    }
+    .toc {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 30px;
+    }
+    .toc h3 {
+      margin-bottom: 12px;
+    }
+    .toc ul {
+      list-style: none;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 8px;
+    }
+    .toc li a {
+      text-decoration: none;
+      color: var(--core);
+      display: block;
+      padding: 6px 12px;
+      border-radius: 4px;
+    }
+    .toc li a:hover {
+      background: #f1f5f9;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Operan ADOS</h1>
+  <p>End-to-End Customer Lifecycle: From First Subscription to Account Closure</p>
+  <p style="margin-top:8px;font-size:0.9em;opacity:0.8;">How 20 modules work together to replace an enterprise IT offshore department</p>
+</div>
+
+<div class="legend">
+  <div class="legend-item">
+    <div class="legend-color" style="background:var(--foundation);"></div>
+    <span>Foundation (M01-02)</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background:var(--core);"></div>
+    <span>Core Runtime (M03-08)</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background:var(--gov);"></div>
+    <span>Governance (M09-11)</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background:var(--new);"></div>
+    <span>New (M06, M10, M12-19)</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background:var(--portal);"></div>
+    <span>Experience Portal (M21)</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background:var(--infra);"></div>
+    <span>Kafka Event Bus</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="toc">
+    <h3>📋 Table of Contents</h3>
+    <ul>
+      <li><a href="#phase1">Phase 1: Customer Onboarding & Tenant Creation</a></li>
+      <li><a href="#phase2">Phase 2: Identity Setup & Security Configuration</a></li>
+      <li><a href="#phase3">Phase 3: Department Deployment & Template Selection</a></li>
+      <li><a href="#phase4">Phase 4: Knowledge Ingestion & Intelligence Building</a></li>
+      <li><a href="#phase5">Phase 5: Daily Operations & Agent Execution</a></li>
+      <li><a href="#phase6">Phase 6: Monitoring, Optimization & Governance</a></li>
+      <li><a href="#phase7">Phase 7: Account Expiry, Renewal or Closure</a></li>
+      <li><a href="#module-summary">Module Interaction Summary Matrix</a></li>
+      <li><a href="#event-topics">Kafka Event Topic Reference</a></li>
+    </ul>
+  </div>
+
+</div>
+
+</body>
+</html><!-- PHASE 1: ONBOARDING -->
+<div class="container">
+  <div class="phase" id="phase1">
+    <div class="phase-header" style="background:var(--phase1);">
+      <div class="phase-number">1</div>
+      <span>Customer Onboarding & Tenant Creation</span>
+    </div>
+    <div class="phase-body">
+      <div class="phase-description">
+        The customer signs a contract. Your sales team creates a tenant. This phase provisions the isolated digital environment,
+        sets quotas, assigns a region (data residency), and creates root admin credentials.
+      </div>
+
+      <div class="section-title">🧩 Modules & Their Roles</div>
+      <div class="module-flow">
+        <div class="module-card" style="border-left:4px solid var(--portal);">
+          <h4>M21 — Experience Portal</h4>
+          <p><strong>Customer Action:</strong> Sales/admin logs into <code>https://operan.acmecorp.com</code></p>
+          <p><strong>What Happens:</strong> Portal proxies to M01's CreateTenant endpoint. Customer enters company name, plan type (Enterprise), region (me-central for data residency), and contact details.</p>
+          <p><strong>HTTP Flow:</strong> M21 → POST /v1/tenants → M01</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--foundation);">
+          <h4>M01 — Tenant Control Plane</h4>
+          <p><strong>What Happens:</strong> Creates Tenant record with unique namespace, encryption keys (AES-256-GCM), quota limits, and environment policy.</p>
+          <p><strong>DB Action:</strong> INSERT INTO tenants (tenant_id, name, plan_type, region, encryption_key_id, quota)</p>
+          <p><strong>Output:</strong> Returns tenant_id (e.g., "acme-corp-001") and JWT signing secret for this tenant's isolated space.</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--infra);">
+          <h4>Kafka Event Bus</h4>
+          <p><strong>Event Published:</strong> <code>operan.tenant.provisioned</code></p>
+          <p><strong>Payload:</strong> { tenant_id, name, plan_type, region, created_by, timestamp }</p>
+          <p><strong>Consumers:</strong> M02 (creates IAM entities), M11 (monitors health), M17 (initializes cost tracking)</p>
+        </div>
+      </div>
+
+      <div class="data-store">
+        <strong>📦 Persistent State (PostgreSQL):</strong><br>
+        <code>INSERT INTO tenants VALUES ('acme-corp-001', 'Acme Corp', 'enterprise', 'me-central', 'aes-256-gcm-key-id-...')</code>
+      </div>
+
+      <div class="event-bus">
+        <strong>🔄 Kafka Events Published:</strong><br>
+        <code>operan.tenant.provisioned</code> → consumed by M02, M11, M17<br>
+        <code>operan.tenant.created</code> → consumed by M03 (reserved orchestration slots)
+      </div>
+    </div>
+  </div>
+</div><!-- PHASE 2: IDENTITY SETUP -->
+<div class="container">
+  <div class="phase" id="phase2">
+    <div class="phase-header" style="background:var(--phase2);">
+      <div class="phase-number">2</div>
+      <span>Identity Setup & Security Configuration</span>
+    </div>
+    <div class="phase-body">
+      <div class="phase-description">
+        The customer configures their identity infrastructure. They enroll users via SSO (Azure AD, Okta), register their first agents,
+        define RBAC policies, and set up MFA. This is the security perimeter setup that gates everything else.
+      </div>
+
+      <div class="section-title">🧩 Modules & Their Roles</div>
+      <div class="module-flow">
+        <div class="module-card" style="border-left:4px solid var(--portal);">
+          <h4>M21 — Experience Portal</h4>
+          <p><strong>Customer Action:</strong> Admin goes to "Identity & Access" tab in portal</p>
+          <p><strong>What Happens:</strong> Portal displays M02's user management UI. Admin configures SSO settings, adds users, assigns roles.</p>
+          <p><strong>HTTP Flow:</strong> M21 → GET /v1/users → M02</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--foundation);">
+          <h4>M02 — Identity & Access</h4>
+          <p><strong>What Happens:</strong> Creates IAM entities: Users, Service Accounts, Agent Identities.</p>
+          <p><strong>SSO Integration:</strong> Connects to Azure AD / Okta via SCIM. Pushes user groups to Operan.</p>
+          <p><strong>Agent Registration:</strong> Admin defines agent identities with roles (e.g., "sales-agent", "contract-reviewer") and capabilities.</p>
+          <p><strong>RBAC/ABAC:</strong> Defines policies: "Sales agents can draft contracts but not send them"</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--foundation);">
+          <h4>M01 — Tenant Control Plane</h4>
+          <p><strong>Validation:</strong> M02 calls M01 to verify tenant has active plan and hasn't exceeded user quota.</p>
+          <p><strong>Quota Check:</strong> GET /v1/tenants/{id}/quota → M01 returns available seats</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--infra);">
+          <h4>Kafka Event Bus</h4>
+          <p><strong>Events Published:</strong><br>
+          <code>operan.iam.user.created</code> — M02 publishes new user events<br>
+          <code>operan.iam.agent.registered</code> — M02 publishes agent identity events<br>
+          <code>operan.iam.sso.sync</code> — External SSO directory sync events</p>
+        </div>
+      </div>
+
+      <div class="data-store">
+        <strong>📦 Persistent State (PostgreSQL):</strong><br>
+        <code>INSERT INTO users VALUES ('u-001', 'acme-corp-001', 'john@acme.com', 'admin', 'oidc-azure-ad')</code><br>
+        <code>INSERT INTO agent_ids VALUES ('agent-sales-001', 'acme-corp-001', 'sales-assistant', ['draft_contracts', 'crm_lookup'])</code>
+      </div>
+
+      <div class="event-bus">
+        <strong>🔄 Kafka Events Published:</strong><br>
+        <code>operan.iam.user.created</code> → consumed by M11, M10<br>
+        <code>operan.iam.agent.registered</code> → consumed by M04, M11
+      </div>
+    </div>
+  </div>
+</div><!-- PHASE 3: DEPARTMENT DEPLOYMENT -->
+<div class="container">
+  <div class="phase" id="phase3">
+    <div class="phase-header" style="background:var(--phase3);">
+      <div class="phase-number">3</div>
+      <span>Department Deployment & Template Selection</span>
+    </div>
+    <div class="phase-body">
+      <div class="phase-description">
+        The customer browses the marketplace or uses a pre-built template to deploy a department.
+        This phase provisions agents, workflows, memory, and governance — the entire department comes alive with one click.
+      </div>
+
+      <div class="section-title">🧩 Modules & Their Roles</div>
+      <div class="module-flow">
+        <div class="module-card" style="border-left:4px solid var(--portal);">
+          <h4>M21 — Experience Portal</h4>
+          <p><strong>Customer Action:</strong> Sales admin goes to "Departments" → "Deploy Template"</p>
+          <p><strong>What Happens:</strong> Portal shows catalog from M15 (Marketplace) with templates: Sales, HR, Finance, Legal.</p>
+          <p><strong>HTTP Flow:</strong> M21 → GET /v1/listings → M15 → returns "Sales Department v2.1"</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--core);">
+          <h4>M05 — Department Template Engine</h4>
+          <p><strong>What Happens:</strong> Loads Sales Department template which defines:</p>
+          <p>• 3 agents: sales-assistant, contract-reviewer, pricing-analyst<br>
+          • 2 workflows: opportunity-to-contract, quote-generation<br>
+          • Governance rules, KPI definitions, memory topology</p>
+          <p><strong>Deployment Pipeline:</strong> select → configure → connect_data → provision_memory → deploy_swarm → operational</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--core);">
+          <h4>M04 — Agent Registry</h4>
+          <p><strong>What Happens:</strong> Template defines 3 agents. M05 calls M04's <code>POST /v1/agents</code> to register each:</p>
+          <p>• sales-assistant: capabilities=[draft_contracts, crm_lookup]<br>
+          • contract-reviewer: capabilities=[review_contracts, risk_assessment]<br>
+          • pricing-analyst: capabilities=[quote_generation, margin_analysis]</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--core);">
+          <h4>M03 — Agent Orchestration</h4>
+          <p><strong>What Happens:</strong> M05 calls M03's <code>POST /v1/workflows</code> to create DAGs:</p>
+          <p>• opportunity-to-contract: fetch_crm → draft_contract → pricing_check → human_gate → send_contract<br>
+          • quote-generation: fetch_products → calculate_price → generate_quote → email_quote</p>
+          <p><strong>State:</strong> Workflows created in "pending" state, awaiting memory and policy setup.</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--gov);">
+          <h4>M10 — Policy Governance</h4>
+          <p><strong>What Happens:</strong> Template defines governance rules. M05 calls M10's <code>POST /v1/policies</code>:</p>
+          <p>• Rule 1: deny send_email if cost > $250k (requires M09 approval)<br>
+          • Rule 2: allow draft_contracts for sales-agent role<br>
+          • Rule 3: proxy (human review) for all contract changes > 10% margin</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--gov);">
+          <h4>M17 — Cost Governance</h4>
+          <p><strong>What Happens:</strong> M05 creates budget based on template's cost estimates:</p>
+          <p>• Monthly budget: $5,000 for sales department<br>
+          • Soft limit (80%): warn at $4,000<br>
+          • Hard limit (95%): throttle at $4,750</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--gov);">
+          <h4>M09 — Human Supervision</h4>
+          <p><strong>What Happens:</strong> M05 configures human gates from template:</p>
+          <p>• Gate 1: contract-sending requires manager approval (threshold: 1 approver)<br>
+          • Gate 2: changes > 10% margin require director approval (threshold: 2 approvers)</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--new);">
+          <h4>M12 — Model Abstraction</h4>
+          <p><strong>What Happens:</strong> Template specifies which models to use:</p>
+          <p>• Contract drafting: gpt-4o (high quality)<br>
+          • Quote generation: claude-3-haiku (cost-optimized)<br>
+          M05 calls M12's <code>POST /v1/models</code> to register these model mappings.</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--new);">
+          <h4>M14 — Agent Collaboration</h4>
+          <p><strong>What Happens:</strong> M05 creates channels for the department:</p>
+          <p>• Channel: "sales-dept-001" (type: department)<br>
+          • Members: all 3 agents + human supervisor<br>
+          • Agents can now send messages, hand off tasks, share context</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--infra);">
+          <h4>Kafka Event Bus</h4>
+          <p><strong>Events Published:</strong><br>
+          <code>operan.templates.template_deployed</code> → M15, M11<br>
+          <code>operan.agent-registry.agent_registered</code> → M04 confirms, M11 tracks<br>
+          <code>operan.orchestration.workflow_created</code> → M03 confirms, M11 tracks<br>
+          <code>operan.supervision.gate_configured</code> → M09 confirms gates<br>
+          <code>operan.cost.budget_created</code> → M17 confirms budget</p>
+        </div>
+      </div>
+
+      <div class="data-store">
+        <strong>📦 Persistent State (PostgreSQL):</strong><br>
+        <code>INSERT INTO agents (name, role, capabilities, tenant_id) VALUES ('sales-assistant', 'sales', [...], 'acme-corp-001')</code><br>
+        <code>INSERT INTO workflows (name, steps, tenant_id) VALUES ('opportunity-to-contract', [...], 'acme-corp-001')</code><br>
+        <code>INSERT INTO policies (name, action, scope, resource_type) VALUES ('no-large-emails', 'deny', 'tenant', 'tool')</code><br>
+        <code>INSERT INTO budgets (budget_amount, period, soft_limit_pct, hard_limit_pct) VALUES (5000, 'monthly', 80, 95)</code>
+      </div>
+
+      <div class="event-bus">
+        <strong>🔄 Kafka Events Published:</strong><br>
+        <code>operan.templates.template_deployed</code> → consumed by M15, M11<br>
+        <code>operan.agent-registry.agent_registered</code> → consumed by M04, M11, M14<br>
+        <code>operan.orchestration.workflow_created</code> → consumed by M03, M11, M14
+      </div>
+    </div>
+  </div>
+</div><!-- PHASE 4: KNOWLEDGE INGESTION -->
+<div class="container">
+  <div class="phase" id="phase4">
+    <div class="phase-header" style="background:var(--phase4);">
+      <div class="phase-number">4</div>
+      <span>Knowledge Ingestion & Intelligence Building</span>
+    </div>
+    <div class="phase-body">
+      <div class="phase-description">
+        The customer uploads their documents: CRM exports, past contracts, compliance manuals, pricing guides,
+        customer preference documents. M06 ingests, chunks, normalizes (Arabic if needed), embeds, and stores
+        everything in M07's memory fabric for semantic search.
+      </div>
+
+      <div class="section-title">🧩 Modules & Their Roles</div>
+      <div class="module-flow">
+        <div class="module-card" style="border-left:4px solid var(--portal);">
+          <h4>M21 — Experience Portal</h4>
+          <p><strong>Customer Action:</strong> Admin goes to "Knowledge" → "Upload Documents"</p>
+          <p><strong>What Happens:</strong> Portal shows file upload UI, SharePoint connector config, URL ingestion form.</p>
+          <p><strong>HTTP Flow:</strong> M21 → POST /v1/sources → M06</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--new);">
+          <h4>M06 — Knowledge Ingestion</h4>
+          <p><strong>What Happens:</strong> Creates ingestion source (file, URL, SharePoint, email). Starts async pipeline:</p>
+          <p>1. <strong>Extract:</strong> PDF/DOCX/XLSX → text layer<br>
+          2. <strong>Normalize:</strong> Call M19 for Arabic text (tashkeel removal, alef standardization)<br>
+          3. <strong>Chunk:</strong> Split text into 512-char chunks with 50-char overlap<br>
+          4. <strong>Dedup:</strong> SHA-256 hash to skip duplicate content<br>
+          5. <strong>Embed:</strong> Call M12 for vector embeddings<br>
+          6. <strong>Store:</strong> Call M07 to store vectors + metadata</p>
+          <p><strong>Progress:</strong> WebSockets show real-time: "Processed 47/120 chunks..."</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--new);">
+          <h4>M19 — Arabic Language Core</h4>
+          <p><strong>Called When:</strong> Source has <code>normalize_arabic=true</code></p>
+          <p><strong>What Happens:</strong> Normalizes Arabic text: removes tashkeel, standardizes alefs/hamzas,
+          detects dialect (MSA vs Gulf vs Egyptian).</p>
+          <p><strong>Endpoint:</strong> POST /v1/normalize → { normalized_text, actions: [...], is_msa: true }</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--new);">
+          <h4>M12 — Model Abstraction</h4>
+          <p><strong>Called When:</strong> After chunking, before storing</p>
+          <p><strong>What Happens:</strong> M06 calls M12's <code>POST /v1/models/embeddings</code> for each chunk.</p>
+          <p><strong>Response:</strong> { embedding: [768 floats], model: "qwen3-embedding-4b", tokens: 120 }</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--core);">
+          <h4>M07 — Memory Fabric</h4>
+          <p><strong>Called When:</strong> After embedding, to persist vectors</p>
+          <p><strong>What Happens:</strong> M06 calls M07's vector store API to store chunks with metadata:</p>
+          <p><code>INSERT INTO memory_vectors (tenant_id, namespace, vector, metadata) VALUES ('acme-corp-001', 'sales-dept', [...], {source: 'contract-2024.pdf', page: 3, chunk: 47})</code></p>
+          <p><strong>Search Ready:</strong> Agents can now query M07 for "which interface language does the client prefer?" — semantic match returns right result even with zero word overlap.</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--new);">
+          <h4>M19 — Arabic Terminology Governance</h4>
+          <p><strong>Optional:</strong> M06 also calls M19's terminology check:</p>
+          <p><code>POST /v1/terminology/check → { flagged_terms: [{term: "deprecated_term", suggestion: "approved_term"}] }</code></p>
+          <p><strong>Purpose:</strong> Ensures ingested documents use approved government terminology.</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--infra);">
+          <h4>Kafka Event Bus</h4>
+          <p><strong>Events Published:</strong><br>
+          <code>operan.knowledge.ingestion_started</code> → M11 tracks<br>
+          <code>operan.knowledge.chunk_created</code> → M11 tracks<br>
+          <code>operan.knowledge.embedding_stored</code> → M07 acknowledges<br>
+          <code>operan.knowledge.ingestion_completed</code> → M21 updates UI</p>
+        </div>
+      </div>
+
+      <div class="data-store">
+        <strong>📦 Persistent State:</strong><br>
+        <code>INSERT INTO ingestion_sources (tenant_id, name, source_type, file_type) VALUES ('acme-corp-001', '2024 Contracts', 'file', 'pdf')</code><br>
+        <code>INSERT INTO ingestion_results (job_id, chunk_index, chunk_text, chunk_metadata) VALUES ('job-001', 47, 'Customer prefers Arabic-first UI...', {source: 'contract.pdf', page: 3})</code><br>
+        <code>M07 stores: vector[768] + metadata{tenant: acme-corp-001, dept: sales-dept, source: contract.pdf, page: 3}</code>
+      </div>
+
+      <div class="event-bus">
+        <strong>🔄 Kafka Events Published:</strong><br>
+        <code>operan.knowledge.ingestion_started</code> → consumed by M11<br>
+        <code>operan.knowledge.chunk_created</code> → consumed by M11<br>
+        <code>operan.knowledge.embedding_stored</code> → consumed by M07, M11
+      </div>
+    </div>
+  </div>
+</div><!-- PHASE 5: DAILY OPERATIONS -->
+<div class="container">
+  <div class="phase" id="phase5">
+    <div class="phase-header" style="background:var(--phase5);">
+      <div class="phase-number">5</div>
+      <span>Daily Operations & Agent Execution</span>
+    </div>
+    <div class="phase-body">
+      <div class="phase-description">
+        This is the heart of the system. Agents execute workflows 24/7. Each execution touches multiple modules
+        in a complex dance of policy checks, model calls, tool execution, memory lookups, and human gates.
+        Here's the complete flow for a single real-world scenario: <strong>processing a $250k contract opportunity.</strong>
+      </div>
+
+      <div class="section-title">🎬 Scenario: Processing a $250K Contract</div>
+      
+      <div class="module-flow">
+        <div class="module-card" style="border-left:4px solid var(--core); background:#fff5f5;">
+          <h4>Step 1: Opportunity Created (M03)</h4>
+          <p>CRM webhook triggers workflow. M03 receives <code>POST /v1/workflows/{id}/execute</code></p>
+          <p><strong>Request:</strong> { opportunity_id: "opp-2024-047", value_usd: 250000, customer: "GovCorp" }</p>
+          <p><strong>Flow:</strong> M03 creates DAG execution, starts node 1: <code>fetch_crm_data</code></p>
+          <p><strong>State:</strong> workflow_id=wf-2024-047, status="executing"</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--core);">
+          <h4>Step 2: Policy Check (M10)</h4>
+          <p>Before executing, M03 calls M10's <code>POST /v1/policies/evaluate</code>:</p>
+          <p><strong>Request:</strong> { agent_id: "sales-assistant", action: "fetch_crm_data", resource: "crm_opportunities", cost: 0 }</p>
+          <p><strong>M10 Response:</strong> { allowed: true, action: "allow", policy_name: "crm-access-sales" }</p>
+          <p><strong>Audit:</strong> M10 logs to policy_audits table, publishes <code>operan.policy.evaluation</code></p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--gov);">
+          <h4>Step 3: Tool Execution (M08)</h4>
+          <p>M03 calls M08's <code>POST /v1/tools/execute</code> with tool call:</p>
+          <p><strong>Request:</strong> { tool_name: "crm_lookup", params: {id: "opp-2024-047"} }</p>
+          <p><strong>M08 Actions:</strong></p>
+          <p>• Calls M10 for policy check (tool execution policy)<br>
+          • Calls M16 for sandbox isolation (if tool needs execution)<br>
+          • Executes via M18 connector (Salesforce API)<br>
+          • Records result, publishes <code>operan.tool-execution.tool_executed</code></p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--new);">
+          <h4>Step 4: Memory Lookup (M07)</h4>
+          <p>Agent needs customer context. Calls M07's <code>POST /v1/vectors/search</code>:</p>
+          <p><strong>Query:</strong> { vector: [embedding of "customer preferences"], top_k: 5, tenant_id: "acme-corp-001" }</p>
+          <p><strong>Response:</strong> { results: [{text: "Customer prefers Arabic-first UI...", similarity: 0.92}, ...] }</p>
+          <p><strong>M07 publishes:</strong> <code>operan.memory.search_completed</code></p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--new);">
+          <h4>Step 5: Model Call (M12 via M13)</h4>
+          <p>Agent needs to draft contract. Calls M13 for model selection, then M12 for inference:</p>
+          <p><strong>M13 Resolution:</strong> { model_id: "gpt-4o", reason: "high quality needed for legal" }</p>
+          <p><strong>M12 Inference:</strong> POST /v1/models/completions → returns drafted contract text</p>
+          <p><strong>M12 tracks:</strong> cost_usd=0.02, prompt_tokens=500, completion_tokens=800</p>
+          <p><strong>M12 publishes:</strong> <code>operan.model.model_call_completed</code> → consumed by M17</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--gov);">
+          <h4>Step 6: Cost Check (M17)</h4>
+          <p>M12's cost event triggers M17 to update budget:</p>
+          <p><strong>M17 Action:</strong> Updates cost_events table, re-evaluates budgets</p>
+          <p><strong>Result:</strong> { spent: $4,520 / $5,000, percentage: 90.4%, throttle_level: "soft" }</p>
+          <p><strong>Warning:</strong> M17 publishes <code>operan.cost.budget_warning</code> (approaching 95% hard limit)</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--gov);">
+          <h4>Step 7: Human Gate (M09)</h4>
+          <p>Contract value $250k exceeds threshold. M03 calls M09's <code>POST /v1/gates/raise</code>:</p>
+          <p><strong>M09 Action:</strong> Creates approval request, publishes <code>operan.supervision.gate_raised</code></p>
+          <p><strong>Notification:</strong> M21 shows "New approval request: $250k contract to GovCorp"</p>
+          <p><strong>State:</strong> workflow pauses at gate, status="waiting_approval"</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--portal);">
+          <h4>Step 8: Human Decision (M21 → M09)</h4>
+          <p>Manager logs into M21, reviews contract, clicks "Approve":</p>
+          <p><strong>M21 → M09:</strong> POST /v1/gates/respond { gate_id, action: "approve", comment: "Looks good" }</p>
+          <p><strong>M09 Action:</strong> Records approval, publishes <code>operan.supervision.gate_responded</code></p>
+          <p><strong>Flow Resumes:</strong> M03 consumes gate_responded event, continues workflow</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--core);">
+          <h4>Step 9: Contract Sent (M03 → M08 → M18)</h4>
+          <p>Workflow resumes. Final node: send_contract via M08 → M18:</p>
+          <p><strong>M08:</strong> Calls M18's SMTP connector to send email with contract attachment</p>
+          <p><strong>M18 SMTP:</strong> Sends email via corporate SMTP relay, tracks delivery status</p>
+          <p><strong>M08 publishes:</strong> <code>operan.tool-execution.tool_executed</code> with success result</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--new);">
+          <h4>Step 10: Agent Coordination (M14)</h4>
+          <p>Contract sent. sales-assistant notifies contract-reviewer via M14:</p>
+          <p><strong>M14 Action:</strong> Posts message to "sales-dept-001" channel, creates handoff:</p>
+          <p>{ to_agent: "contract-reviewer", title: "Review sent contract", context: {contract_id: "con-047"} }</p>
+          <p><strong>M14 publishes:</strong> <code>operan.collaboration.handoff_created</code> → consumed by M03</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--gov);">
+          <h4>Step 11: Full Audit (M11)</h4>
+          <p>Throughout execution, M11 consumes all Kafka events and records:</p>
+          <p><strong>M11 stores:</strong> metrics, spans, traces for the entire workflow</p>
+          <p><strong>M21 displays:</strong> Real-time dashboard showing workflow progress, latency, costs</p>
+          <p><strong>M11 publishes:</strong> <code>operan.observability.span_created</code> for every step</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--infra);">
+          <h4>Kafka Event Bus — All Events</h4>
+          <p><strong>Published during this execution:</strong><br>
+          <code>operan.orchestration.workflow_created</code><br>
+          <code>operan.policy.evaluation</code><br>
+          <code>operan.tool-execution.tool_executed</code><br>
+          <code>operan.model.model_call_completed</code><br>
+          <code>operan.cost.budget_warning</code><br>
+          <code>operan.supervision.gate_raised</code><br>
+          <code>operan.supervision.gate_responded</code><br>
+          <code>operan.collaboration.handoff_created</code><br>
+          <code>operan.observability.span_created</code><br>
+          <code>operan.orchestration.workflow_completed</code></p>
+        </div>
+      </div>
+
+      <div class="data-store">
+        <strong>📦 Persistent State (PostgreSQL) — M03:</strong><br>
+        <code>INSERT INTO workflows (id, tenant_id, status, nodes) VALUES ('wf-2024-047', 'acme-corp-001', 'completed', [...])</code><br>
+        <code>INSERT INTO workflow_executions (id, workflow_id, status, started_at, completed_at) VALUES ('exec-001', 'wf-2024-047', 'completed', '2024-01-15 10:00:00', '2024-01-15 10:15:00')</code>
+      </div>
+
+      <div class="event-bus">
+        <strong>🔄 Kafka Events — Complete Flow:</strong><br>
+        <code>operan.orchestration.workflow_created</code> → M03, M11<br>
+        <code>operan.policy.evaluation</code> → M11<br>
+        <code>operan.tool-execution.tool_executed</code> → M11, M17<br>
+        <code>operan.model.model_call_completed</code> → M17<br>
+        <code>operan.cost.budget_warning</code> → M17 (soft throttle), M11<br>
+        <code>operan.supervision.gate_raised</code> → M09, M21<br>
+        <code>operan.supervision.gate_responded</code> → M03 (resumes), M11<br>
+        <code>operan.collaboration.handoff_created</code> → M03, M11, M14<br>
+        <code>operan.observability.span_created</code> → M11<br>
+        <code>operan.orchestration.workflow_completed</code> → M11, M17, M09
+      </div>
+    </div>
+  </div>
+</div><!-- PHASE 6: MONITORING, OPTIMIZATION & GOVERNANCE -->
+<div class="container">
+  <div class="phase" id="phase6">
+    <div class="phase-header" style="background:var(--phase6);">
+      <div class="phase-number">6</div>
+      <span>Monitoring, Optimization & Governance</span>
+    </div>
+    <div class="phase-body">
+      <div class="phase-description">
+        After deployment, ongoing operations require monitoring, cost optimization, policy tuning,
+        model performance tracking, and periodic knowledge updates. This phase runs continuously.
+      </div>
+
+      <div class="section-title">🧩 Continuous Operations & Modules</div>
+      <div class="module-flow">
+        <div class="module-card" style="border-left:4px solid var(--gov);">
+          <h4>M11 — Observability (Always Running)</h4>
+          <p><strong>What Happens:</strong> Consumes all Kafka events, records metrics, creates distributed traces.</p>
+          <p><strong>M21 Dashboard:</strong> Real-time views of:</p>
+          <p>• Active workflows: 47 running, 12 completed, 3 paused at gates<br>
+          • Agent performance: sales-assistant (98% success, avg latency 1.2s)<br>
+          • Cost tracking: $4,520 / $5,000 monthly budget (90%)<br>
+          • Health: All 21 modules healthy, Kafka lag &lt; 100ms</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--new);">
+          <h4>M13 — Multi-Model Routing (Optimization)</h4>
+          <p><strong>What Happens:</strong> M13 tracks model performance via events, re-ranks models.</p>
+          <p><strong>Analysis:</strong> "gpt-4o has 95% quality but costs $0.02/token. claude-3-haiku has 92% quality at $0.002/token."</p>
+          <p><strong>Action:</strong> M13 updates routing rules to use haiku for non-critical tasks (quotations, summaries), reserving gpt-4o for contracts.</p>
+          <p><strong>Result:</strong> 60% cost reduction with &lt;3% quality delta.</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--gov);">
+          <h4>M17 — Cost Governance (Continuous)</h4>
+          <p><strong>What Happens:</strong> M17 monitors cost_events, enforces budgets.</p>
+          <p><strong>Alert:</strong> "Budget at 95% — hard throttle enabled for new contract workflows"</p>
+          <p><strong>Action:</strong> M17 publishes <code>operan.cost.throttle_triggered</code> → M03 pauses non-critical workflows</p>
+          <p><strong>Resolution:</strong> Admin increases budget or approves override via M21.</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--gov);">
+          <h4>M10 — Policy Governance (Tuning)</h4>
+          <p><strong>What Happens:</strong> Admin reviews policy audit log in M21.</p>
+          <p><strong>Finding:</strong> "30% of contract drafts flagged for human review — threshold too low"</p>
+          <p><strong>Action:</strong> Update policy via M21 → M10: <code>PATCH /v1/policies/{id} → { action: "proxy", threshold: 15% }</code></p>
+          <p><strong>Effect:</strong> Only 10% of contracts now require human review (down from 30%).</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--new);">
+          <h4>M06 — Knowledge Updates (Periodic)</h4>
+          <p><strong>What Happens:</strong> Monthly or as new documents arrive.</p>
+          <p><strong>Process:</strong> Admin uploads new pricing guide → M06 ingests → M19 normalizes → M12 embeds → M07 stores.</p>
+          <p><strong>Effect:</strong> Agents immediately have access to latest pricing without retraining.</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--new);">
+          <h4>M15 — Marketplace (Agent Upgrades)</h4>
+          <p><strong>What Happens:</strong> Vendor releases updated agent template.</p>
+          <p><strong>Customer Action:</strong> M21 shows "New version available: Sales Agent v3.0 (improved contract accuracy)"</p>
+          <p><strong>Deploy:</strong> One-click upgrade → M15 deploys to M04/M03, version history preserved.</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--new);">
+          <h4>M18 — Connector Health (Continuous)</h4>
+          <p><strong>What Happens:</strong> M18 monitors connector health, runs periodic syncs.</p>
+          <p><strong>Alert:</strong> "Salesforce connector: 503 error on lookup_account"</p>
+          <p><strong>Action:</strong> M18 retries, notifies admin via M21. If persistent, M10 triggers alert policy.</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--portal);">
+          <h4>M21 — Admin Dashboard (Continuous)</h4>
+          <p><strong>What Happens:</strong> Central hub for all operations.</p>
+          <p><strong>Views Available:</strong></p>
+          <p>• Overview: Tenant stats, department health, KPIs<br>
+          • Agent Catalog: Browse, activate/deactivate agents<br>
+          • Workflows: Monitor, pause, resume, replay<br>
+          • Supervision: Approval queue, escalation management<br>
+          • Observability: Live metrics, traces, health status<br>
+          • Cost Dashboard: Real-time budget tracking, alerts<br>
+          • Policies: Policy rules, audit log, compliance reports</p>
+        </div>
+      </div>
+
+      <div class="data-store">
+        <strong>📦 Persistent State Updates (Ongoing):</strong><br>
+        <code>M11: INSERT INTO spans (trace_id, span_id, service, operation, duration_ms) VALUES (...)</code><br>
+        <code>M17: INSERT INTO cost_events (tenant_id, cost_usd, model_name) VALUES ('acme-corp-001', 0.02, 'gpt-4o')</code><br>
+        <code>M10: INSERT INTO policy_audits (tenant_id, result, evaluation_ms) VALUES ('acme-corp-001', 'allowed', 12)</code>
+      </div>
+
+      <div class="event-bus">
+        <strong>🔄 Kafka Events (Continuous):</strong><br>
+        <code>operan.observability.metric_recorded</code> → M11<br>
+        <code>operan.observability.span_created</code> → M11<br>
+        <code>operan.cost.cost_recorded</code> → M17<br>
+        <code>operan.policy.evaluation</code> → M11<br>
+        <code>operan.connector.sync_completed</code> → M11<br>
+        <code>operan.model.route.resolved</code> → M13 (performance tracking)
+      </div>
+    </div>
+  </div>
+</div><!-- PHASE 7: ACCOUNT EXPIRY, RENEWAL OR CLOSURE -->
+<div class="container">
+  <div class="phase" id="phase7">
+    <div class="phase-header" style="background:var(--phase7);">
+      <div class="phase-number">7</div>
+      <span>Account Expiry, Renewal or Closure</span>
+    </div>
+    <div class="phase-body">
+      <div class="phase-description">
+        After months or years of operation, the customer's subscription ends. They can renew, downgrade,
+        or close the account. This phase handles data retention, graceful degradation, and compliance
+        requirements (GDPR, data residency).
+      </div>
+
+      <div class="section-title">🧩 Modules & Their Roles</div>
+      <div class="module-flow">
+        <div class="module-card" style="border-left:4px solid var(--portal);">
+          <h4>M21 — Experience Portal</h4>
+          <p><strong>Customer Action:</strong> Admin sees "Subscription Expiring" banner on dashboard.</p>
+          <p><strong>Options Shown:</strong></p>
+          <p>• Renew: Same plan, same price<br>
+          • Upgrade: More agents, more storage<br>
+          • Downgrade: Fewer agents, reduced budget<br>
+          • Cancel: Export data, close account</p>
+          <p><strong>HTTP Flow:</strong> M21 → POST /v1/tenants/{id}/renew → M01</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--foundation);">
+          <h4>M01 — Tenant Control Plane</h4>
+          <p><strong>Renewal:</strong></p>
+          <p>• Updates tenant.plan_type, tenant.quota<br>
+          • Extends tenant.expires_at<br>
+          • Activates all suspended agents/workflows</p>
+          <p><strong>Cancellation:</strong></p>
+          <p>• Sets tenant.status = "suspended"<br>
+          • Disables all JWT tokens for tenant<br>
+          • Begins 30-day grace period</p>
+          <p><strong>Data Retention:</strong> Per compliance requirements, retains data for 90 days before permanent deletion.</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--gov);">
+          <h4>M17 — Cost Governance</h4>
+          <p><strong>Renewal:</strong> Updates budgets, removes hard throttle</p>
+          <p><strong>Cancellation:</strong> Sets budgets to zero, publishes <code>operan.cost.budget_expired</code></p>
+          <p><strong>Final Report:</strong> Generates cost summary for accounting: "Total spend: $47,832 over 18 months"</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--gov);">
+          <h4>M09 — Human Supervision</h4>
+          <p><strong>Action:</strong> Closes all open approval gates, publishes <code>operan.supervision.gate_closed</code></p>
+          <p><strong>Archives:</strong> All historical approvals/escalations for audit trail.</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--core);">
+          <h4>M03 — Agent Orchestration</h4>
+          <p><strong>Cancellation:</strong></p>
+          <p>• Sets all workflows to "cancelled"<br>
+          • Stops all in-progress executions<br>
+          • Publishes <code>operan.orchestration.workflow_cancelled</code></p>
+          <p><strong>Data:</strong> Workflow history preserved in M03 for audit (90 days).</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--core);">
+          <h4>M04 — Agent Registry</h4>
+          <p><strong>Cancellation:</strong></p>
+          <p>• Sets all agents to status="inactive"<br>
+          • Preserves agent definitions for 90 days<br>
+          • Can restore if customer re-subscribes</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--core);">
+          <h4>M07 — Memory Fabric</h4>
+          <p><strong>Cancellation (90 days):</strong></p>
+          <p>• Vectors marked as "expired"<br>
+          • After 90 days: <code>DELETE FROM memory_vectors WHERE tenant_id='acme-corp-001'</code></p>
+          <p><strong>Export:</strong> Customer can export all memory vectors + metadata before deletion.</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--new);">
+          <h4>M10 — Policy Governance</h4>
+          <p><strong>Cancellation:</strong></p>
+          <p>• All policies set to status="deprecated"<br>
+          • Audit log preserved for 7 years (compliance requirement)</p>
+          <p><strong>GDPR:</strong> "Right to be forgotten" — customer can request full data deletion.</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--gov);">
+          <h4>M11 — Observability</h4>
+          <p><strong>Cancellation:</strong></p>
+          <p>• Metrics retained for 90 days<br>
+          • Traces archived for compliance<br>
+          • After retention period: data purged per retention policy</p>
+        </div>
+        <div class="module-card" style="border-left:4px solid var(--infra);">
+          <h4>Kafka Event Bus</h4>
+          <p><strong>Final Events:</strong><br>
+          <code>operan.tenant.suspended</code> → M02, M03, M04, M07, M09, M10, M11, M17<br>
+          <code>operan.tenant.data_exported</code> → M07, M10, M11<br>
+          <code>operan.tenant.deprovisioned</code> → All modules, data deleted</p>
+        </div>
+      </div>
+
+      <div class="data-store">
+        <strong>📦 Final State Transitions:</strong><br>
+        <code>M01: UPDATE tenants SET status='suspended', expires_at='2024-06-15' WHERE tenant_id='acme-corp-001'</code><br>
+        <code>M04: UPDATE agents SET status='inactive' WHERE tenant_id='acme-corp-001'</code><br>
+        <code>M03: UPDATE workflows SET status='cancelled' WHERE tenant_id='acme-corp-001'</code><br>
+        <code>M07: UPDATE memory_vectors SET status='expired' WHERE tenant_id='acme-corp-001'</code><br>
+        <code>M10: UPDATE policies SET status='deprecated' WHERE tenant_id='acme-corp-001'</code>
+      </div>
+
+      <div class="event-bus">
+        <strong>🔄 Kafka Events — Closure Flow:</strong><br>
+        <code>operan.tenant.suspended</code> → consumed by all modules<br>
+        <code>operan.tenant.data_exported</code> → consumed by M07, M10, M11<br>
+        <code>operan.tenant.deprovisioned</code> → consumed by all modules, triggers data deletion
+      </div>
+
+      <div class="section-title" style="margin-top:30px;">🔄 Renewal Flow (Simpler Path)</div>
+      <div class="module-flow">
+        <div class="module-card" style="border-left:4px solid var(--foundation);">
+          <h4>Renewal Steps</h4>
+          <p>1. M21 shows renewal prompt<br>
+          2. Customer clicks "Renew"<br>
+          3. M01 extends tenant.expires_at<br>
+          4. M17 resets cost tracking for new period<br>
+          5. M09 clears any suspended gates<br>
+          6. M03 resumes workflows from "paused"<br>
+          7. M04 reactivates all agents<br>
+          8. Kafka event: <code>operan.tenant.renewed</code><br>
+          9. All modules receive event, resume normal operation</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- MODULE INTERACTION SUMMARY MATRIX -->
+<div class="container">
+  <div class="phase" id="module-summary">
+    <div class="phase-header">
+      <div class="phase-number">📊</div>
+      <span>Module Interaction Summary Matrix</span>
+    </div>
+    <div class="phase-body">
+      <div class="phase-description">
+        Every module's interactions across the entire customer lifecycle. Shows which modules call which,
+        when, and for what purpose.
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.9em;">
+          <thead>
+            <tr style="background:#f1f5f9;">
+              <th style="padding:10px;text-align:left;border-bottom:2px solid #e2e8f0;">Module</th>
+              <th style="padding:10px;text-align:left;border-bottom:2px solid #e2e8f0;">Phase 1</th>
+              <th style="padding:10px;text-align:left;border-bottom:2px solid #e2e8f0;">Phase 2</th>
+              <th style="padding:10px;text-align:left;border-bottom:2px solid #e2e8f0;">Phase 3</th>
+              <th style="padding:10px;text-align:left;border-bottom:2px solid #e2e8f0;">Phase 4</th>
+              <th style="padding:10px;text-align:left;border-bottom:2px solid #e2e8f0;">Phase 5</th>
+              <th style="padding:10px;text-align:left;border-bottom:2px solid #e2e8f0;">Phase 6</th>
+              <th style="padding:10px;text-align:left;border-bottom:2px solid #e2e8f0;">Phase 7</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M01 Tenant</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Create tenant</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Quota check</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Template quota</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Renew/cancel</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M02 IAM</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Create IAM</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Users, agents</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">RBAC setup</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Deactivate users</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M03 Orchestration</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Create workflows</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Execute DAGs</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Monitor, pause</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Cancel workflows</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M04 Registry</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Register agents</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Resolve agents</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Agent metrics</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Deactivate agents</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M05 Templates</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Deploy dept</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M06 Ingestion</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Ingest docs</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Update knowledge</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Periodic ingest</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Export data</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M07 Memory</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Provision memory</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Store vectors</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Semantic search</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Memory health</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Export/delete vectors</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M08 Tools</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Register tools</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Execute tools</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Tool metrics</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M09 Supervision</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Setup gates</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Human approval</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Supervision logs</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Close gates</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M10 Policy</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Default policies</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">RBAC policies</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Department rules</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Pre-execution checks</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Policy tuning</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Audit log retention</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M11 Observability</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Tenant events</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">IAM events</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Deploy events</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Ingestion events</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ All execution events</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Metrics, traces</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Data retention</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M12 Models</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Register models</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Embed texts</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ LLM inference</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Cost tracking</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M13 Routing</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Setup routing</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Model selection</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Re-rank models</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M14 Collaboration</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Create channels</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Agent messaging</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Presence tracking</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M15 Marketplace</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Browse templates</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Deploy agents</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Agent upgrades</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M16 Sandbox</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Isolate execution</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Sandbox metrics</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M17 Cost</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Init tracking</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Set budgets</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Track costs</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Cost optimization</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Final report</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M18 Connectors</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Configure</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ External calls</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Connector health</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M19 Arabic</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Normalize text</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Terminology check</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Glossary updates</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;"></td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;font-weight:600;">M21 Portal</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ UI for onboarding</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ UI for IAM</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ UI for deploy</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ UI for ingest</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ All operations UI</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ All monitoring</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">✅ Renewal/closure</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div><!-- KAFKA EVENT TOPIC REFERENCE -->
+<div class="container">
+  <div class="phase" id="event-topics">
+    <div class="phase-header">
+      <div class="phase-number">📡</div>
+      <span>Kafka Event Topic Reference</span>
+    </div>
+    <div class="phase-body">
+      <div class="phase-description">
+        All Kafka events published by the Operan platform. Each topic follows the pattern
+        <code>operan.{module}.{action}</code>. Events flow through Kafka and are consumed by relevant modules.
+      </div>
+
+      <div class="section-title">Tenant & IAM Events</div>
+      <table style="width:100%;border-collapse:collapse;font-size:0.9em;">
+        <thead><tr style="background:#f1f5f9;"><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Topic</th><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Module</th><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Trigger</th><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Consumers</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.tenant.provisioned</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M01</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Tenant created</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M02, M11, M17</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.tenant.renewed</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M01</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Subscription renewed</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M02-M21 (all)</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.tenant.suspended</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M01</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Subscription expired</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M02-M21 (all)</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.iam.user.created</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M02</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">User enrolled via SSO</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11, M10</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.iam.agent.registered</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M02</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Agent identity created</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M04, M11, M14</td></tr>
+        </tbody>
+      </table>
+
+      <div class="section-title">Core Runtime Events</div>
+      <table style="width:100%;border-collapse:collapse;font-size:0.9em;">
+        <thead><tr style="background:#f1f5f9;"><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Topic</th><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Module</th><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Trigger</th><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Consumers</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.templates.template_deployed</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M05</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Department deployed</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M15, M11</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.agent-registry.agent_registered</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M04</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Agent registered</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11, M14</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.orchestration.workflow_created</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M03</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Workflow DAG created</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11, M14</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.orchestration.workflow_completed</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M03</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">DAG execution finished</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11, M17, M09</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.tool-execution.tool_executed</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M08</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Tool execution complete</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11, M17</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.knowledge.chunk_created</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M06</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Document chunked</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.knowledge.embedding_stored</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M06</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Vector stored in M07</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M07, M11</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.memory.search_completed</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M07</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Semantic search done</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11</td></tr>
+        </tbody>
+      </table>
+
+      <div class="section-title">Governance Events</div>
+      <table style="width:100%;border-collapse:collapse;font-size:0.9em;">
+        <thead><tr style="background:#f1f5f9;"><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Topic</th><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Module</th><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Trigger</th><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Consumers</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.supervision.gate_raised</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M09</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Human approval needed</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M09, M21</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.supervision.gate_responded</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M09</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Human approved/rejected</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M03 (resumes), M11</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.policy.evaluation</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M10</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Policy check performed</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.policy.violation</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M10</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Policy rule violated</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11, M09 (escalate)</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.cost.cost_recorded</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M12/M08</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Model/tool call cost</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M17</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.cost.budget_warning</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M17</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Budget approaching limit</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M17, M11, M03</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.cost.throttle_triggered</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M17</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Hard limit reached</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M03 (pauses), M11</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.observability.span_created</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Execution step traced</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11 (internal)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="section-title">New Modules Events</div>
+      <table style="width:100%;border-collapse:collapse;font-size:0.9em;">
+        <thead><tr style="background:#f1f5f9;"><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Topic</th><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Module</th><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Trigger</th><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;">Consumers</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.model.model_call_completed</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M12</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">LLM inference done</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M17, M11</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.model.route.resolved</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M13</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Model selected by router</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M13 (perf tracking), M11</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.arabic.text_normalized</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M19</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Arabic text processed</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.arabic.terminology_check</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M19</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Terminology governance</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.collaboration.message_sent</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M14</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Agent message posted</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11, M07</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.collaboration.handoff_created</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M14</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Task handed off</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M03, M11</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.marketplace.listing_created</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M15</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">New template/agent listed</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.marketplace.deployed</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M15</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Agent deployed to tenant</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M03, M04, M11</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.sandbox.execution_completed</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M16</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Sandbox execution done</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M08, M11</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">operan.connector.sync_completed</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M18</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Connector sync done</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">M11</td></tr>
+        </tbody>
+      </table>
+
+      <div class="data-store" style="margin-top:20px;">
+        <strong>💡 Key Insight:</strong> Every single action an agent takes produces a Kafka event. M11 (Observability)
+        consumes ALL events and records them. This creates a complete audit trail and enables real-time monitoring,
+        distributed tracing, and analytics. The event bus is the nervous system that connects all 20 modules.
+      </div>
+    </div>
+  </div>
+</div>

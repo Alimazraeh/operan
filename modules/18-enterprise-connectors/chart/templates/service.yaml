@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-connectors
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: enterprise-connectors
+    module: "18"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8018
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: enterprise-connectors

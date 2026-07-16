@@ -1,0 +1,6 @@
+apiVersion: v2
+name: execution-sandbox
+description: Execution Sandbox — isolated tool execution for agent workflows
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

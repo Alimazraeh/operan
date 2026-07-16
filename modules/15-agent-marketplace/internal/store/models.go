@@ -1,6 +1,9 @@
 package store
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // Listing represents a marketplace listing (agent, template, tool, integration, or skill).
 type Listing struct {
@@ -174,8 +177,20 @@ func (s StringArray) Value() (interface{}, error) {
 
 // ToSlice returns the parsed string slice.
 func (s StringArray) ToSlice() []string {
-	if !s.Valid {
+	if !s.Valid || s.String == "" {
 		return []string{}
 	}
-	return []string{s.String}
+	var result []string
+	if err := json.Unmarshal([]byte(s.String), &result); err != nil {
+		return []string{s.String}
+	}
+	return result
+}
+
+// AgentSpec represents an agent definition extracted from a marketplace listing's metadata.
+type AgentSpec struct {
+	Name         string
+	Role         string
+	Capabilities []string
+	Tools        []string
 }

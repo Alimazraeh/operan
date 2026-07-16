@@ -1,0 +1,13 @@
+apiVersion: v2
+name: knowledge-ingestion
+description: Operan Module 06 — Knowledge Ingestion Pipeline
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - operan
+  - m06
+  - knowledge-ingestion
+  - document-processing
+  - embeddings
+home: https://operan.dev

@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "model-routing.fullname" . }}
+  labels:
+    {{- include "model-routing.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "model-routing.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "model-routing.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8013
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          env:
+            - name: PORT
+              value: "8013"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secretName }}
+                  key: jwt-secret
+            - name: DB_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secretName }}
+                  key: db-dsn
+            - name: M12_BASE_URL
+              value: "{{ .Values.m12BaseUrl }}"
+            - name: EVENT_BROKER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secretName }}
+                  key: event-broker-url
+                  optional: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "model-routing.fullname" . }}
+  labels:
+    {{- include "model-routing.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8013
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "model-routing.selectorLabels" . | nindent 4 }}
