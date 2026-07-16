@@ -1,0 +1,557 @@
+openapi: "3.0.3"
+info:
+  title: Operan Agent Marketplace API
+  description: Centralized marketplace where agents and department templates can be listed, discovered, vetted, and deployed.
+  version: "1.0.0"
+  contact:
+    name: Operan API Support
+    url: https://operan.dev
+
+servers:
+  - url: http://localhost:8015
+
+security:
+  - BearerAuth: []
+  - TenantHeader: []
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Unauthenticated health check endpoint
+      operationId: healthCheck
+      tags:
+        - System
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /v1/listings:
+    get:
+      summary: List and search marketplace listings
+      description: Browse and filter marketplace listings by category, capability, rating, price, and search term.
+      operationId: listListings
+      tags:
+        - Listings
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [agent, template, tool, integration, skill]
+        - name: listing_type
+          in: query
+          schema:
+            type: string
+            enum: [vetted, user_generated]
+        - name: capability
+          in: query
+          schema:
+            type: string
+        - name: language
+          in: query
+          schema:
+            type: string
+        - name: requires_subscription
+          in: query
+          schema:
+            type: boolean
+        - name: subscription_tier
+          in: query
+          schema:
+            type: string
+        - name: price_min
+          in: query
+          schema:
+            type: number
+            format: double
+        - name: price_max
+          in: query
+          schema:
+            type: number
+            format: double
+        - name: rating_min
+          in: query
+          schema:
+            type: number
+            format: double
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated listing results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedListingsResponse"
+        "401":
+          description: Unauthorized
+
+  /v1/listings/{id}:
+    get:
+      summary: Get listing detail
+      description: Retrieve detailed information about a specific marketplace listing.
+      operationId: getListing
+      tags:
+        - Listings
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Listing detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "404":
+          description: Listing not found
+        "401":
+          description: Unauthorized
+
+  /v1/listings/{id}/deploy:
+    post:
+      summary: Deploy listing to tenant environment
+      description: Deploy a listing's agents and workflows into the tenant's environment. Requires active subscription.
+      operationId: deployListing
+      tags:
+        - Deploy
+      parameters:
+        - name: id
+          in: path
+          required: 1
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Deployment result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeploymentResult"
+        "400":
+          description: Deployment failed (e.g., no subscription, compatibility check fail)
+        "401":
+          description: Unauthorized
+
+  /v1/subscriptions:
+    post:
+      summary: Subscribe to a listing
+      description: Subscribe to a marketplace listing. Free listings activate immediately; paid listings get a trial.
+      operationId: subscribe
+      tags:
+        - Subscriptions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscribeRequest"
+      responses:
+        "201":
+          description: Subscription created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionResponse"
+        "400":
+          description: Invalid request or listing not approved
+        "404":
+          description: Listing not found
+        "401":
+          description: Unauthorized
+    get:
+      summary: List my subscriptions
+      description: Retrieve all subscriptions for the current tenant.
+      operationId: listSubscriptions
+      tags:
+        - Subscriptions
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, expired, cancelled, trial]
+      responses:
+        "200":
+          description: Paginated subscription results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedSubscriptionsResponse"
+        "401":
+          description: Unauthorized
+
+  /v1/reviews:
+    post:
+      summary: Create a review for a listing
+      description: Rate and review a listing you are subscribed to. One review per tenant per listing.
+      operationId: createReview
+      tags:
+        - Reviews
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReviewRequest"
+      responses:
+        "201":
+          description: Review created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewResponse"
+        "400":
+          description: Invalid rating (must be 1-5)
+        "403":
+          description: Not subscribed to this listing
+        "409":
+          description: Review already exists
+        "401":
+          description: Unauthorized
+    get:
+      summary: List reviews for a listing
+      description: Retrieve reviews for a specific listing.
+      operationId: listReviews
+      tags:
+        - Reviews
+      parameters:
+        - name: listing_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated reviews
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedReviewsResponse"
+        "401":
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    TenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+
+    Listing:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        vendor_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [agent, template, tool, integration, skill]
+        listing_type:
+          type: string
+          enum: [vetted, user_generated]
+        status:
+          type: string
+          enum: [draft, pending_review, approved, rejected, deactivated]
+        version:
+          type: string
+        compatibility_versions:
+          type: object
+          additionalProperties:
+            type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        supported_languages:
+          type: array
+          items:
+            type: string
+        requires_subscription:
+          type: boolean
+        subscription_tier:
+          type: string
+        trial_days:
+          type: integer
+        price_usd:
+          type: number
+          format: double
+        rating_avg:
+          type: number
+          format: double
+        rating_count:
+          type: integer
+        download_count:
+          type: integer
+        metadata:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PaginatedListingsResponse:
+      type: object
+      properties:
+        listings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Listing"
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+
+    SubscribeRequest:
+      type: object
+      required:
+        - listing_id
+      properties:
+        listing_id:
+          type: string
+          format: uuid
+
+    SubscriptionResponse:
+      type: object
+      properties:
+        subscription_id:
+          type: string
+          format: uuid
+        listing_name:
+          type: string
+        subscription_tier:
+          type: string
+        status:
+          type: string
+          enum: [active, expired, cancelled, trial]
+        expires_at:
+          type: string
+          format: date-time
+        trial_days_remaining:
+          type: integer
+
+    PaginatedSubscriptionsResponse:
+      type: object
+      properties:
+        subscriptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TenantSubscription"
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+
+    TenantSubscription:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        listing_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [active, expired, cancelled, trial]
+        started_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        auto_renew:
+          type: boolean
+        subscription_tier:
+          type: string
+        trial_used:
+          type: boolean
+        deployed:
+          type: boolean
+        deployed_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    CreateReviewRequest:
+      type: object
+      required:
+        - listing_id
+        - rating
+      properties:
+        listing_id:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        title:
+          type: string
+        review_text:
+          type: string
+
+    ReviewResponse:
+      type: object
+      properties:
+        review:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            listing_id:
+              type: string
+              format: uuid
+            rating:
+              type: integer
+            title:
+              type: string
+            review_text:
+              type: string
+            verified_purchase:
+              type: boolean
+            created_at:
+              type: string
+              format: date-time
+
+    PaginatedReviewsResponse:
+      type: object
+      properties:
+        reviews:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        listing_id:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        title:
+          type: string
+        review_text:
+          type: string
+        verified_purchase:
+          type: boolean
+        helpful_count:
+          type: integer
+        status:
+          type: string
+          enum: [active, flagged, removed]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DeploymentResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        deployment_id:
+          type: string
+          format: uuid
+        created_agents:
+          type: array
+          items:
+            type: string
+        created_workflows:
+          type: array
+          items:
+            type: string
+        errors:
+          type: array
+          items:
+            type: string
+        deployed_at:
+          type: string
+          format: date-time

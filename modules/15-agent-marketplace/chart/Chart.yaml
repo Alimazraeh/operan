@@ -1,0 +1,11 @@
+apiVersion: v2
+name: agent-marketplace
+description: Operan Module 15 — Agent Marketplace
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - operan
+  - m15
+  - agent-marketplace
+home: https://operan.dev
