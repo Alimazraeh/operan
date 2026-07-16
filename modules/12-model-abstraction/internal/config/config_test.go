@@ -7,7 +7,7 @@ import (
 
 func TestLoad_DefaultPort(t *testing.T) {
 	os.Unsetenv("HTTP_PORT")
-	os.Unsetenv("IAM_TOKEN_SECRET")
+	os.Unsetenv("JWT_SECRET")
 	os.Unsetenv("EVENT_BROKER_URL")
 	os.Unsetenv("DB_DSN")
 	os.Unsetenv("PROVIDER_API_KEYS")
@@ -21,13 +21,13 @@ func TestLoad_DefaultPort(t *testing.T) {
 
 func TestLoad_FailClosed(t *testing.T) {
 	os.Setenv("HTTP_PORT", "8012")
-	os.Setenv("IAM_TOKEN_SECRET", "change-me-in-production")
+	os.Setenv("JWT_SECRET", "change-me-in-production")
 	os.Unsetenv("EVENT_BROKER_URL")
 	os.Unsetenv("DB_DSN")
 	os.Unsetenv("PROVIDER_API_KEYS")
 	defer func() {
 		os.Unsetenv("HTTP_PORT")
-		os.Unsetenv("IAM_TOKEN_SECRET")
+		os.Unsetenv("JWT_SECRET")
 		os.Unsetenv("EVENT_BROKER_URL")
 		os.Unsetenv("DB_DSN")
 		os.Unsetenv("PROVIDER_API_KEYS")
@@ -40,7 +40,7 @@ func TestLoad_FailClosed(t *testing.T) {
 }
 
 func TestLoad_Success(t *testing.T) {
-	os.Setenv("IAM_TOKEN_SECRET", "test-secret-key")
+	os.Setenv("JWT_SECRET", "test-secret-key")
 	os.Unsetenv("HTTP_PORT")
 	os.Unsetenv("EVENT_BROKER_URL")
 	os.Unsetenv("DB_DSN")
@@ -60,7 +60,7 @@ func TestLoad_Success(t *testing.T) {
 
 func TestLoad_CustomPort(t *testing.T) {
 	os.Setenv("HTTP_PORT", "9999")
-	os.Setenv("IAM_TOKEN_SECRET", "test-secret")
+	os.Setenv("JWT_SECRET", "test-secret")
 	os.Unsetenv("EVENT_BROKER_URL")
 	os.Unsetenv("DB_DSN")
 	os.Unsetenv("PROVIDER_API_KEYS")
@@ -75,7 +75,7 @@ func TestLoad_CustomPort(t *testing.T) {
 }
 
 func TestLoad_ProviderAPIKeys(t *testing.T) {
-	os.Setenv("IAM_TOKEN_SECRET", "test-secret")
+	os.Setenv("JWT_SECRET", "test-secret")
 	os.Setenv("PROVIDER_API_KEYS", `[{"name":"openai","key":"sk-abc"},{"name":"anthropic","key":"sk-ant-xyz"}]`)
 	os.Unsetenv("HTTP_PORT")
 	os.Unsetenv("EVENT_BROKER_URL")
@@ -94,7 +94,7 @@ func TestLoad_ProviderAPIKeys(t *testing.T) {
 }
 
 func TestLoad_InvalidProviderAPIKeys(t *testing.T) {
-	os.Setenv("IAM_TOKEN_SECRET", "test-secret")
+	os.Setenv("JWT_SECRET", "test-secret")
 	os.Setenv("PROVIDER_API_KEYS", "not-json")
 	os.Unsetenv("HTTP_PORT")
 	os.Unsetenv("EVENT_BROKER_URL")

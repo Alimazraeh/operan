@@ -32,13 +32,13 @@ func SetupRouter(listingStore *store.ListingStore, subStore *store.SubscriptionS
 	r.Use(middleware.RequestID)
 	r.Use(middleware.TraceID)
 
-	// Health endpoint (no auth required)
-	r.Get("/health", healthHandler)
-
-	// Authenticated routes
+	// Authenticated routes — middleware must come before any route definitions
 	authValidator := middleware.NewAuthValidator("", "")
 	r.Use(middleware.JWTMiddleware(authValidator))
 	r.Use(middleware.TenantMiddleware())
+
+	// Health endpoint (no auth required)
+	r.Get("/health", healthHandler)
 
 	// API routes
 	r.Get("/v1/listings", lh.ListListings)
