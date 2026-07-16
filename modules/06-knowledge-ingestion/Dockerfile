@@ -1,30 +1,20 @@
 # Build stage
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS builder
 WORKDIR /app
-
-RUN apk --no-cache add git ca-certificates
-
 COPY go.mod go.sum ./
-RUN go mod download 2>/dev/null || true
-
+RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-w -s" \
-    -o /knowledge-ingestion .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /knowledge-ingestion .
 
 # Runtime stage
 FROM alpine:3.19
-RUN apk --no-cache add ca-certificates
-
+RUN apk add --no-cache ca-certificates wget \
+    && addgroup -g 1001 operan \
+    && adduser -u 1001 -G operan -s /bin/sh -D operan
 WORKDIR /app
-COPY --from=builder /knowledge-ingestion .
-
-RUN adduser -D -u 1000 knowledge-ingestion
-USER knowledge-ingestion
-
+COPY --from=builder /knowledge-ingestion /app/knowledge-ingestion
 EXPOSE 8006
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8006/health || exit 1
-
-CMD ["/knowledge-ingestion"]
+USER operan
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8006/health || exit 1
+ENTRYPOINT ["/app/knowledge-ingestion"]
