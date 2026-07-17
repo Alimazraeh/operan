@@ -249,8 +249,8 @@ spec:
         - name: M07_BASE_URL
           value: http://memory-fabric.operan.svc.cluster.local:8007
         resources:
-          requests: { cpu: 100m, memory: 256Mi }
-          limits: { memory: 1Gi }
+          requests: { cpu: 100m, memory: 1Gi }
+          limits: { memory: 4Gi }
         readinessProbe:
           httpGet:
             path: /health
