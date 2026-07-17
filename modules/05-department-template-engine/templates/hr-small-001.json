@@ -1,0 +1,591 @@
+{
+  "id": "hr-small-001",
+  "name": "Small Business HR Department",
+  "description": "2–5 person HR department for SMBs. Generalist model with shared functions. Handles hiring, payroll basics, benefits admin, employee relations, and compliance for organizations with up to 50 employees.",
+  "category": "hr",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "small",
+    "department_size": "2-5 FTE",
+    "company_size": "up to 50 employees",
+    "industry": "general",
+    "compliance_level": "lightweight",
+    "frameworks": ["SHRM-USA", "ACAS-UK", "ISO-30401"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["hr", "small-business", "generalist", "smb", "startup"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "hr-generalist-01",
+      "role": "HR Generalist / Department Head",
+      "capabilities": [
+        "employee-relations",
+        "policy-administration",
+        "benefits-management",
+        "basic-employment-law",
+        "payroll-processing",
+        "onboarding-offboarding",
+        "performance-review-coordination",
+        "compliance-reporting"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "episodic-enabled",
+      "tool_requirements": ["calendar", "email", "document-storage", "payroll-api"],
+      "system_prompt": "You are the HR Generalist and department head for a small business. You handle everything from hiring to compliance. You are pragmatic, direct, and focused on operational efficiency. When uncertain about legal compliance, flag it for the employee to consult external counsel. You maintain employee confidentiality rigorously.",
+      "constraints": {
+        "max_tokens_per_request": 4096,
+        "rate_limit": 100,
+        "pii_handling": "encrypted-at-rest"
+      },
+      "access_control": {
+        "employee_records": "read-write",
+        "payroll_data": "read-write",
+        "salary_bands": "read-only",
+        "org_structure": "read-write"
+      }
+    },
+    {
+      "id": "hr-gpo-01",
+      "role": "General Purpose Agent — HR Support",
+      "capabilities": [
+        "document-drafting",
+        "scheduling",
+        "data-entry",
+        "policy-retrieval",
+        "form-processing",
+        "email-templates"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["document-storage", "email", "templates-library"],
+      "system_prompt": "You are an HR support agent handling routine tasks: drafting onboarding checklists, scheduling interviews, filing compliance forms, answering employee policy questions. You always route sensitive topics (complaints, disciplinary matters, salary disputes) to the human HR Generalist.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["discrimination", "harassment", "termination", "litigation"]
+      },
+      "access_control": {
+        "employee_records": "read-only",
+        "payroll_data": "none",
+        "salary_bands": "none"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-onboarding-001",
+      "name": "New Hire Onboarding (End-to-End)",
+      "description": "Standard onboarding workflow for small businesses. Covers day-1 setup through first-90-day check-ins.",
+      "triggers": ["manual", "event:new-hire-created"],
+      "steps": [
+        {
+          "id": "onb-01",
+          "type": "agent_call",
+          "name": "Create Employee Record",
+          "config": {
+            "agent": "hr-generalist-01",
+            "task": "Create employee record in HR system with start date, role, department, manager, compensation band, and equipment needs"
+          },
+          "timeout_seconds": 30
+        },
+        {
+          "id": "onb-02",
+          "type": "tool_call",
+          "name": "Provision IT Accounts",
+          "config": {
+            "tools": ["email-account", "calendar", "slack", "document-access"],
+            "role_required": "standard-employee"
+          },
+          "timeout_seconds": 60
+        },
+        {
+          "id": "onb-03",
+          "type": "notification",
+          "name": "Send Welcome Package",
+          "config": {
+            "template": "onboarding/welcome-email",
+            "recipients": ["new-hire", "manager", "team"],
+            "cc": ["hr-generalist-01"]
+          },
+          "timeout_seconds": 30
+        },
+        {
+          "id": "onb-04",
+          "type": "agent_call",
+          "name": "Prepare Day-1 Checklist",
+          "config": {
+            "agent": "hr-gpo-01",
+            "task": "Generate personalized onboarding checklist: badge, desk setup, IT equipment, first-day schedule, benefits enrollment forms, tax withholding forms"
+          },
+          "timeout_seconds": 30
+        },
+        {
+          "id": "onb-05",
+          "type": "approval",
+          "name": "Manager Confirmation",
+          "config": {
+            "required_by": "hiring-manager",
+            "timeout_hours": 24
+          }
+        },
+        {
+          "id": "onb-06",
+          "type": "transformation",
+          "name": "Schedule 30-60-90 Day Check-ins",
+          "config": {
+            "agent": "hr-gpo-01",
+            "task": "Schedule recurring calendar events with manager and new hire for 30, 60, and 90-day reviews"
+          },
+          "timeout_seconds": 60
+        }
+      ],
+      "error_handling": {
+        "max_retries": 3,
+        "fallback": "escalate-to-human"
+      }
+    },
+    {
+      "id": "wf-offboarding-001",
+      "name": "Employee Offboarding",
+      "description": "Comprehensive offboarding including final pay, benefit cessation, equipment return, knowledge transfer, and exit interview.",
+      "triggers": ["manual", "event:termination-created"],
+      "steps": [
+        {
+          "id": "off-01",
+          "type": "approval",
+          "name": "Offboarding Authorization",
+          "config": {
+            "required_by": "department-head",
+            "timeout_hours": 24
+          }
+        },
+        {
+          "id": "off-02",
+          "type": "agent_call",
+          "name": "Calculate Final Compensation",
+          "config": {
+            "agent": "hr-generalist-01",
+            "task": "Calculate final pay including accrued PTO, prorated bonuses, expense reimbursements"
+          },
+          "timeout_seconds": 30
+        },
+        {
+          "id": "off-03",
+          "type": "tool_call",
+          "name": "Revoke Access (Gradual)",
+          "config": {
+            "tools": ["email", "calendar", "document-access", "slack"],
+            "revocation_schedule": "day-of-termination"
+          }
+        },
+        {
+          "id": "off-04",
+          "type": "agent_call",
+          "name": "Conduct Exit Interview",
+          "config": {
+            "agent": "hr-generalist-01",
+            "template": "exit-interview-standard"
+          },
+          "timeout_seconds": 30
+        },
+        {
+          "id": "off-05",
+          "type": "notification",
+          "name": "Notify IT for Equipment Return",
+          "config": {
+            "message": "Initiate equipment return workflow for departing employee"
+          }
+        },
+        {
+          "id": "off-06",
+          "type": "transformation",
+          "name": "Update Org Chart and Headcount",
+          "config": {
+            "agent": "hr-gpo-01",
+            "task": "Update org chart, close headcount requisition, update employee count reports"
+          }
+        }
+      ],
+      "error_handling": {
+        "max_retries": 2,
+        "critical_path": ["off-02", "off-03"],
+        "on_failure": "immediate-escalation"
+      }
+    },
+    {
+      "id": "wf-leave-001",
+      "name": "Leave Management (Sick, PTO, FMLA)",
+      "description": "Request, approval, and tracking for all leave types.",
+      "triggers": ["manual", "schedule:recurring"],
+      "steps": [
+        {
+          "id": "leave-01",
+          "type": "agent_call",
+          "name": "Validate Leave Entitlement",
+          "config": {
+            "agent": "hr-gpo-01",
+            "task": "Check employee's accrued leave balance and eligibility rules"
+          }
+        },
+        {
+          "id": "leave-02",
+          "type": "approval",
+          "name": "Manager Approval",
+          "config": {
+            "required_by": "direct-manager",
+            "timeout_hours": 48,
+            "auto_approve_if": "pto_balance > 40 hours and tenure > 2 years"
+          }
+        },
+        {
+          "id": "leave-03",
+          "type": "transformation",
+          "name": "Update Calendar and Status",
+          "config": {
+            "agent": "hr-gpo-01",
+            "task": "Block calendar, set out-of-office, update team availability dashboard"
+          }
+        },
+        {
+          "id": "leave-04",
+          "type": "conditional",
+          "name": "FMLA/Serious Leave Check",
+          "config": {
+            "condition": "leave_type in ['medical', 'family-leave'] and duration > 5 days",
+            "true_path": "notify-compliance-review",
+            "false_path": "complete"
+          }
+        }
+      ]
+    },
+    {
+      "id": "wf-hiring-001",
+      "name": "Hiring Pipeline (Small Business)",
+      "description": "Lean hiring process for SMBs: requisition through offer acceptance.",
+      "triggers": ["manual", "event:headcount-approved"],
+      "steps": [
+        {
+          "id": "hire-01",
+          "type": "agent_call",
+          "name": "Draft Job Description",
+          "config": {
+            "agent": "hr-gpo-01",
+            "task": "Generate JD based on role template, required skills, and budget band"
+          }
+        },
+        {
+          "id": "hire-02",
+          "type": "approval",
+          "name": "Budget Approval",
+          "config": {
+            "required_by": "department-head",
+            "timeout_hours": 48
+          }
+        },
+        {
+          "id": "hire-03",
+          "type": "tool_call",
+          "name": "Post to Job Boards",
+          "config": {
+            "channels": ["linkedin", "indeed", "company-careers"],
+            "auto_renew": true,
+            "renew_days": 7
+          }
+        },
+        {
+          "id": "hire-04",
+          "type": "agent_call",
+          "name": "Screen Applications",
+          "config": {
+            "agent": "hr-gpo-01",
+            "task": "Screen resumes against minimum requirements, rank candidates 1-3"
+          },
+          "timeout_seconds": 120
+        },
+        {
+          "id": "hire-05",
+          "type": "transformation",
+          "name": "Schedule Interviews",
+          "config": {
+            "agent": "hr-gpo-01",
+            "task": "Coordinate interview slots with hiring manager and panelists"
+          }
+        },
+        {
+          "id": "hire-06",
+          "type": "notification",
+          "name": "Send Offer Letter",
+          "config": {
+            "template": "offer-letter-standard",
+            "approval_required": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "wf-performance-001",
+      "name": "Annual Performance Review Cycle",
+      "description": "Simplified review cycle: self-assessment, manager evaluation, calibration, final rating.",
+      "triggers": ["schedule:annual"],
+      "steps": [
+        {
+          "id": "perf-01",
+          "type": "notification",
+          "name": "Kick Off Review Cycle",
+          "config": {
+            "message": "Performance review period has started. Self-assessments due in 2 weeks.",
+            "recipients": ["all-employees"]
+          }
+        },
+        {
+          "id": "perf-02",
+          "type": "agent_call",
+          "name": "Collect Self-Assessments",
+          "config": {
+            "agent": "hr-gpo-01",
+            "task": "Collect and organize self-assessment forms from all employees"
+          },
+          "timeout_seconds": 60
+        },
+        {
+          "id": "perf-03",
+          "type": "agent_call",
+          "name": "Generate Manager Evaluation Draft",
+          "config": {
+            "agent": "hr-generalist-01",
+            "task": "Draft manager evaluations based on performance data, goals achieved, and feedback received"
+          }
+        },
+        {
+          "id": "perf-04",
+          "type": "approval",
+          "name": "Calibration Review",
+          "config": {
+            "required_by": "department-head",
+            "task": "Review rating distribution for consistency across team"
+          }
+        },
+        {
+          "id": "perf-05",
+          "type": "notification",
+          "name": "Deliver Review to Employee",
+          "config": {
+            "schedule": "manager-employee-1:1",
+            "follow_up_days": 7
+          }
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": true,
+    "procedural_enabled": false,
+    "graph_enabled": false,
+    "memory_profiles": {
+      "hr-generalist-01": "episodic-enabled, high-retention-employee-records",
+      "hr-gpo-01": "semantic-enabled, template-retrieval-optimized"
+    },
+    "retention_policy": {
+      "employee_records": "7-years-after-termination",
+      "application_data": "1-year-after-hiring-decision",
+      "performance_reviews": "5-years",
+      "payroll_data": "7-years"
+    },
+    "compression_settings": {
+      "episodic": "semantic-summary-after-90-days",
+      "semantic": "vector-dim-768"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-hr-001",
+      "name": "PII Protection",
+      "type": "data_usage",
+      "enforcement": "enforce",
+      "conditions": {
+        "data_classification": "PII",
+        "access_level": "hr-generalist-and-above"
+      },
+      "actions": ["log-all-access", "encrypt-at-rest", "mask-in-logs"]
+    },
+    {
+      "id": "gov-hr-002",
+      "name": "Salary Confidentiality",
+      "type": "access_control",
+      "enforcement": "enforce",
+      "conditions": {
+        "field": "compensation",
+        "visible_roles": ["department-head", "finance-director"]
+      },
+      "actions": ["deny-access", "log-attempt", "notify-compliance"]
+    },
+    {
+      "id": "gov-hr-003",
+      "name": "Complaint Escalation",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {
+        "keywords": ["harassment", "discrimination", "retaliation", "whistleblower"]
+      },
+      "actions": ["immediate-human-escalation", "preserve-evidence", "notify-legal"]
+    },
+    {
+      "id": "gov-hr-004",
+      "name": "Leave Accrual Accuracy",
+      "type": "audit",
+      "enforcement": "enforce",
+      "conditions": {
+        "frequency": "monthly"
+      },
+      "actions": ["reconcile-accruals", "flag-discrepancies"]
+    },
+    {
+      "id": "gov-hr-005",
+      "name": "Agent Output Review",
+      "type": "audit",
+      "enforcement": "warn",
+      "conditions": {
+        "agent_role": "hr-gpo-01",
+        "sensitive_topics": true
+      },
+      "actions": ["human-review-required", "log-output"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "hr-kpi-001",
+      "name": "Time-to-Fill",
+      "description": "Average days from requisition approval to offer acceptance",
+      "metric_type": "counter",
+      "unit": "days",
+      "thresholds": {"target": 30, "warning": 35, "critical": 45},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "hr-kpi-002",
+      "name": "Employee Turnover Rate",
+      "description": "Annual voluntary and involuntary turnover percentage",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 10, "warning": 15, "critical": 20},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "hr-kpi-003",
+      "name": "Open Headcount vs Budget",
+      "description": "Difference between approved and filled positions",
+      "metric_type": "counter",
+      "unit": "positions",
+      "thresholds": {"target": 0, "warning": 1, "critical": 3},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "hr-kpi-004",
+      "name": "Employee Satisfaction Index",
+      "description": "Aggregate of survey scores (1-5 scale)",
+      "metric_type": "gauge",
+      "unit": "score",
+      "thresholds": {"target": 4.0, "warning": 3.5, "critical": 3.0},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "hr-kpi-005",
+      "name": "Payroll Accuracy Rate",
+      "description": "Percentage of pay cycles processed without errors",
+      "metric_type": "boolean",
+      "unit": "percent",
+      "thresholds": {"target": 100, "warning": 98, "critical": 95},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "hr-kpi-006",
+      "name": "Onboarding Completion Rate",
+      "description": "Percentage of new hires completing first-week onboarding within SLA",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 100, "warning": 90, "critical": 75},
+      "aggregation_period": "month"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-hr-001",
+      "type": "erp",
+      "name": "Payroll System",
+      "provider": "adp",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"endpoint": "https://api.adp.com", "sync_frequency": "bi-weekly"}
+    },
+    {
+      "id": "int-hr-002",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"domain": "{tenant}.ongoogle.com", "admin_api": true}
+    },
+    {
+      "id": "int-hr-003",
+      "type": "messaging",
+      "name": "Team Communication",
+      "provider": "slack",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"workspace": "{tenant}"}
+    },
+    {
+      "id": "int-hr-004",
+      "type": "document",
+      "name": "Employee Handbooks & Policies",
+      "provider": "google_drive",
+      "auth_method": "api_key",
+      "status": "active",
+      "config": {"shared_folder": "hr/policies"}
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-hr-001",
+      "name": "Agent Autonomy Boundaries",
+      "scope": "agent",
+      "rules": [
+        {"agent": "hr-gpo-01", "allowed": ["draft", "schedule", "retrieval", "summary"], "denied": ["make-final-hiring-decision", "terminate-employment", "change-compensation"]},
+        {"agent": "hr-generalist-01", "allowed": ["all"], "denied": ["override-legal-compliance"]},
+        {"requirement": "all-agent-output-involving-individual-employees-requires-human-confirmation-before-action"}
+      ]
+    },
+    {
+      "id": "pol-hr-002",
+      "name": "Compliance Maintenance",
+      "scope": "department",
+      "rules": [
+        {"frequency": "quarterly", "action": "review-local-employment-law-updates"},
+        {"frequency": "annually", "action": "update-employee-handbook"},
+        {"frequency": "annually", "action": "conduct-compliance-audit"}
+      ]
+    },
+    {
+      "id": "pol-hr-003",
+      "name": "Data Retention",
+      "scope": "system",
+      "rules": [
+        {"data_type": "employee-records", "retention": "7-years-post-termination", "disposal": "secure-delete"},
+        {"data_type": "application-data", "retention": "1-year", "disposal": "anonymize"},
+        {"data_type": "performance-reviews", "retention": "5-years", "disposal": "secure-delete"}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "small",
+    "department_size": "2-5 FTE",
+    "company_size": "up to 50 employees",
+    "industry": "general",
+    "compliance_level": "lightweight",
+    "frameworks": ["SHRM-USA", "ACAS-UK", "ISO-30401"],
+    "last_reviewed": "2026-07-17"
+  }
+}

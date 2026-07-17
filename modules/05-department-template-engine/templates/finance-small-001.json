@@ -1,0 +1,799 @@
+{
+  "id": "finance-small-001",
+  "name": "Small Business Finance Department",
+  "description": "2–3 person finance department for SMBs. Generalist model with Controller, Bookkeeper, and GPO. Handles daily bookkeeping, AP/AR, payroll coordination, tax filing basics, budget tracking, and financial reporting for organizations with up to 50 employees. Light compliance (standard GAAP).",
+  "category": "finance",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "small",
+    "department_size": "2-3 FTE",
+    "company_size": "up to 50 employees",
+    "industry": "general",
+    "compliance_level": "lightweight",
+    "frameworks": ["GAAP", "QuickBooks", "Xero"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["finance", "small-business", "generalist", "smb", "bookkeeping", "ap-ar", "payroll-coordination"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "finance-controller-01",
+      "role": "Finance Controller / Department Head",
+      "capabilities": [
+        "financial-reporting",
+        "budget-management",
+        "tax-preparation",
+        "ap-ar-oversee",
+        "payroll-coordination",
+        "cash-flow-management",
+        "financial-analysis",
+        "compliance-reporting",
+        "vendor-management",
+        "bank-reconciliation"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "episodic-enabled, procedural-enabled",
+      "tool_requirements": ["accounting-system", "bank-api", "email", "document-storage", "payroll-api", "analytics-dashboard"],
+      "system_prompt": "You are the Finance Controller for a small business. You oversee all financial operations: bookkeeping, AP/AR, payroll coordination, tax filing, budget tracking, and financial reporting. You are meticulous with numbers, pragmatic in decision-making, and always flag compliance risks. When uncertain about tax treatment or regulatory requirements, consult external CPA counsel before proceeding. You maintain strict financial data confidentiality.",
+      "constraints": {
+        "max_tokens_per_request": 8192,
+        "rate_limit": 200,
+        "pii_handling": "encrypted-at-rest",
+        "financial_data": "immutable-audit-trail"
+      },
+      "access_control": {
+        "financial_records": "read-write",
+        "bank_accounts": "read-write",
+        "payroll_data": "read-write",
+        "vendor_contracts": "read-write",
+        "tax_records": "read-write"
+      }
+    },
+    {
+      "id": "finance-bookkeeper-01",
+      "role": "Bookkeeper",
+      "capabilities": [
+        "journal-entries",
+        "bank-reconciliation",
+        "ap-processing",
+        "ar-processing",
+        "expense-categorization",
+        "invoice-processing",
+        "account-maintenance",
+        "monthly-closing-support",
+        "vendor-statement-reconciliation"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["accounting-system", "email", "document-storage", "expense-management"],
+      "system_prompt": "You are a Bookkeeper handling daily financial transactions for a small business. You process invoices, reconcile bank statements, manage AP/AR, and maintain the general ledger. You follow established coding standards and escalate discrepancies to the Finance Controller. You prioritize accuracy and timeliness in all entries.",
+      "constraints": {
+        "max_tokens_per_request": 4096,
+        "approval_required_for": ["journal-entries-over-5000", "vendor-creation", "account-closure"]
+      },
+      "access_control": {
+        "financial_records": "read-write-entry-only",
+        "bank_accounts": "read-only",
+        "payroll_data": "read-only",
+        "vendor_contracts": "read-only",
+        "tax_records": "none"
+      }
+    },
+    {
+      "id": "finance-gpo-01",
+      "role": "General Purpose Agent — Finance Support",
+      "capabilities": [
+        "document-drafting",
+        "data-entry",
+        "report-generation",
+        "invoice-scan",
+        "expense-processing",
+        "retrieval",
+        "meeting-minutes"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["document-storage", "email", "accounting-system", "templates-library"],
+      "system_prompt": "You are a Finance GPO handling routine support tasks: scanning and categorizing expenses, drafting standard financial reports, data entry for vendor invoices, retrieving accounting policies, and processing expense claims. You never make final approval decisions on payments or adjust ledger accounts. You route all financial anomalies and exception cases to the Bookkeeper or Controller.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["fraud", "tax-evasion", "audit-discrepancy", "payroll-error"],
+        "no_approval_authority": true
+      },
+      "access_control": {
+        "financial_records": "read-only",
+        "bank_accounts": "none",
+        "payroll_data": "none",
+        "vendor_contracts": "read-only",
+        "tax_records": "none",
+        "expense_claims": "read-write-input-only"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-ap-001",
+      "name": "Accounts Payable Processing",
+      "description": "End-to-end AP workflow: invoice receipt through vendor payment. Includes 3-way match (PO, receipt, invoice), approval routing, and payment scheduling.",
+      "triggers": ["manual", "event:invoice-received"],
+      "steps": [
+        {
+          "id": "ap-01",
+          "type": "agent_call",
+          "name": "Scan and Categorize Invoice",
+          "config": {
+            "agent": "finance-gpo-01",
+            "task": "Extract invoice data from vendor email or upload, categorize expenses to GL accounts, extract vendor, date, amount, PO number, and line items"
+          },
+          "timeout_seconds": 30
+        },
+        {
+          "id": "ap-02",
+          "type": "tool_call",
+          "name": "3-Way Match Validation",
+          "config": {
+            "tools": ["accounting-system"],
+            "match_documents": ["purchase-order", "receiving-report", "vendor-invoice"],
+            "tolerance_percent": 2
+          }
+        },
+        {
+          "id": "ap-03",
+          "type": "conditional",
+          "name": "Match Result Check",
+          "config": {
+            "condition": "three_way_match == failed",
+            "true_path": "escalate-exception",
+            "false_path": "approve-for-payment"
+          }
+        },
+        {
+          "id": "ap-04",
+          "type": "approval",
+          "name": "Payment Approval",
+          "config": {
+            "required_by": "finance-controller-01",
+            "timeout_hours": 48,
+            "approval_matrix": {
+              "under_2500": "bookkeeper-approves",
+              "2500_to_10000": "controller-approves",
+              "over_10000": "controller-plus-ops-approval"
+            }
+          }
+        },
+        {
+          "id": "ap-05",
+          "type": "tool_call",
+          "name": "Execute Payment",
+          "config": {
+            "tools": ["accounting-system"],
+            "payment_methods": ["ach", "check", "wire"],
+            "schedule": "weekly-payment-run"
+          }
+        },
+        {
+          "id": "ap-06",
+          "type": "notification",
+          "name": "Notify Vendor and Record",
+          "config": {
+            "template": "payment-confirmation",
+            "recipients": ["vendor"],
+            "cc": ["finance-gpo-01"]
+          }
+        }
+      ],
+      "error_handling": {
+        "max_retries": 2,
+        "fallback": "escalate-to-human"
+      }
+    },
+    {
+      "id": "wf-ar-001",
+      "name": "Accounts Receivable & Collections",
+      "description": "Invoice generation, delivery, payment tracking, and collections follow-up for outstanding receivables.",
+      "triggers": ["manual", "event:sale-completed", "schedule:recurring"],
+      "steps": [
+        {
+          "id": "ar-01",
+          "type": "agent_call",
+          "name": "Generate Invoice",
+          "config": {
+            "agent": "finance-bookkeeper-01",
+            "task": "Create customer invoice from sales order with line items, pricing, tax calculation, payment terms, and PO reference"
+          },
+          "timeout_seconds": 30
+        },
+        {
+          "id": "ar-02",
+          "type": "tool_call",
+          "name": "Send Invoice to Customer",
+          "config": {
+            "tools": ["email", "accounting-system"],
+            "delivery_method": ["email-pdf", "customer-portal"],
+            "auto_send": true
+          }
+        },
+        {
+          "id": "ar-03",
+          "type": "transformation",
+          "name": "Payment Tracking Monitor",
+          "config": {
+            "agent": "finance-gpo-01",
+            "schedule": ["daily"],
+            "checks": ["outstanding-invoices", "aging-categories", "overdue-flag"]
+          }
+        },
+        {
+          "id": "ar-04",
+          "type": "conditional",
+          "name": "Aging Check",
+          "config": {
+            "condition": "invoice.due_date_passed == true",
+            "true_path": "send-reminder",
+            "false_path": "continue-monitoring"
+          }
+        },
+        {
+          "id": "ar-05",
+          "type": "tool_call",
+          "name": "Send Collection Reminders",
+          "config": {
+            "tools": ["email"],
+            "reminder_schedule": ["1-day-overdue", "7-days-overdue", "14-days-overdue", "30-days-overdue"],
+            "escalation_template": "formal-demand-letter"
+          }
+        },
+        {
+          "id": "ar-06",
+          "type": "approval",
+          "name": "Write-off Authorization",
+          "config": {
+            "required_by": "finance-controller-01",
+            "conditions": ["invoice_age > 90_days", "multiple-collection-attempts"],
+            "timeout_hours": 72
+          }
+        }
+      ],
+      "error_handling": {
+        "max_retries": 3,
+        "fallback": "escalate-to-human",
+        "critical_path": ["ar-01"]
+      }
+    },
+    {
+      "id": "wf-payroll-001",
+      "name": "Payroll Coordination Cycle",
+      "description": "Bi-weekly payroll coordination: timesheet collection, payroll data validation, tax withholding coordination, and pay run processing.",
+      "triggers": ["schedule:bi-weekly"],
+      "steps": [
+        {
+          "id": "pay-01",
+          "type": "notification",
+          "name": "Open Payroll Period",
+          "config": {
+            "template": "payroll-period-open",
+            "recipients": ["all-managers"],
+            "message": "Payroll period opens. Submit timesheets and adjustments by deadline.",
+            "send_before": "2-days-before-payroll"
+          }
+        },
+        {
+          "id": "pay-02",
+          "type": "tool_call",
+          "name": "Collect Timesheets and Adjustments",
+          "config": {
+            "tools": ["payroll-api", "hris-api"],
+            "include": ["regular-hours", "overtime", "leave", "bonuses", "expense-reimbursements"],
+            "deadline": "payroll-cut-off"
+          }
+        },
+        {
+          "id": "pay-03",
+          "type": "agent_call",
+          "name": "Validate Payroll Data",
+          "config": {
+            "agent": "finance-bookkeeper-01",
+            "task": "Cross-check timesheets against employee records, verify overtime calculations, flag unusual entries, reconcile against previous pay cycle"
+          }
+        },
+        {
+          "id": "pay-04",
+          "type": "approval",
+          "name": "Controller Payroll Approval",
+          "config": {
+            "required_by": "finance-controller-01",
+            "timeout_hours": 24
+          }
+        },
+        {
+          "id": "pay-05",
+          "type": "tool_call",
+          "name": "Process Pay Run",
+          "config": {
+            "tools": ["payroll-api"],
+            "process": ["gross-to-net", "tax-withholding", "benefits-deductions", "direct-deposit"],
+            "tax_filing": "automated"
+          }
+        },
+        {
+          "id": "pay-06",
+          "type": "notification",
+          "name": "Payroll Completion Notification",
+          "config": {
+            "template": "payroll-complete",
+            "recipients": ["all-employees", "department-heads"],
+            "cc": ["finance-controller-01"]
+          }
+        }
+      ],
+      "error_handling": {
+        "max_retries": 2,
+        "critical_path": ["pay-03", "pay-04", "pay-05"],
+        "on_failure": "immediate-escalation-to-controller"
+      }
+    },
+    {
+      "id": "wf-monthly-close-001",
+      "name": "Monthly Financial Close",
+      "description": "Standard monthly close process: account reconciliations, accruals, adjustments, financial statements preparation, and management reporting.",
+      "triggers": ["schedule:monthly"],
+      "steps": [
+        {
+          "id": "close-01",
+          "type": "agent_call",
+          "name": "Close Prior Period Lock",
+          "config": {
+            "agent": "finance-bookkeeper-01",
+            "task": "Lock prior month entries, verify no post-dated transactions exist, confirm all AP/AR entries posted"
+          },
+          "timeout_seconds": 30
+        },
+        {
+          "id": "close-02",
+          "type": "tool_call",
+          "name": "Bank and Account Reconciliations",
+          "config": {
+            "tools": ["accounting-system", "bank-api"],
+            "accounts": ["checking", "savings", "credit-card", "payroll-liability", "tax-liability", "accounts-receivable", "accounts-payable"],
+            "reconcile_to": "bank-statement"
+          }
+        },
+        {
+          "id": "close-03",
+          "type": "agent_call",
+          "name": "Process Accruals and Adjustments",
+          "config": {
+            "agent": "finance-bookkeeper-01",
+            "task": "Record accrued expenses, prepaid amortization, depreciation entries, and any necessary adjusting journal entries"
+          }
+        },
+        {
+          "id": "close-04",
+          "type": "approval",
+          "name": "Controller Review",
+          "config": {
+            "required_by": "finance-controller-01",
+            "task": "Review reconciliations, adjustments, and trial balance for accuracy",
+            "timeout_hours": 48
+          }
+        },
+        {
+          "id": "close-05",
+          "type": "transformation",
+          "name": "Generate Financial Statements",
+          "config": {
+            "agent": "finance-controller-01",
+            "statements": ["balance-sheet", "income-statement", "cash-flow-statement", "trial-balance"],
+            "format": "standard-gaap"
+          }
+        },
+        {
+          "id": "close-06",
+          "type": "notification",
+          "name": "Deliver Management Report",
+          "config": {
+            "template": "monthly-management-report",
+            "recipients": ["business-owner", "department-heads"],
+            "attachments": ["financial-statements", "cash-flow-summary", "variance-analysis"]
+          }
+        }
+      ],
+      "error_handling": {
+        "max_retries": 2,
+        "critical_path": ["close-02", "close-04"],
+        "on_failure": "defer-close-and-notify-controller"
+      }
+    },
+    {
+      "id": "wf-tax-001",
+      "name": "Tax Filing Coordination",
+      "description": "Quarterly and annual tax filing preparation: sales tax, payroll tax, income tax, and year-end financial tax documentation.",
+      "triggers": ["schedule:quarterly", "schedule:annual"],
+      "steps": [
+        {
+          "id": "tax-01",
+          "type": "agent_call",
+          "name": "Compile Tax Data",
+          "config": {
+            "agent": "finance-bookkeeper-01",
+            "task": "Extract sales tax collected, payroll tax withheld, deductible expenses, and income records from accounting system"
+          },
+          "timeout_seconds": 30
+        },
+        {
+          "id": "tax-02",
+          "type": "tool_call",
+          "name": "Validate Tax Calculations",
+          "config": {
+            "tools": ["accounting-system"],
+            "checks": ["tax-rate-accuracy", "exemption-validation", "jurisdiction-alignment", "deduction-completeness"]
+          }
+        },
+        {
+          "id": "tax-03",
+          "type": "approval",
+          "name": "Controller Review",
+          "config": {
+            "required_by": "finance-controller-01",
+            "timeout_hours": 72
+          }
+        },
+        {
+          "id": "tax-04",
+          "type": "notification",
+          "name": "Route to External CPA",
+          "config": {
+            "recipients": ["external-cpa"],
+            "message": "Quarterly/annual tax package ready for review and filing",
+            "attachments": ["tax-data-extract", "supporting-schedules", "prior-year-comparison"]
+          }
+        },
+        {
+          "id": "tax-05",
+          "type": "transformation",
+          "name": "File and Archive",
+          "config": {
+            "agent": "finance-controller-01",
+            "actions": ["file-tax-return", "pay-tax-liability", "archive-records", "update-tax-calendar"]
+          }
+        }
+      ],
+      "error_handling": {
+        "max_retries": 1,
+        "fallback": "escalate-to-external-cpa",
+        "critical_path": ["tax-01", "tax-03"]
+      }
+    },
+    {
+      "id": "wf-budget-001",
+      "name": "Budget Tracking and Variance Analysis",
+      "description": "Ongoing budget monitoring: actual vs budget variance analysis, forecast updates, and budget revision proposals.",
+      "triggers": ["schedule:monthly", "manual"],
+      "steps": [
+        {
+          "id": "bud-01",
+          "type": "agent_call",
+          "name": "Extract Actuals vs Budget",
+          "config": {
+            "agent": "finance-controller-01",
+            "task": "Pull actual expenditures and revenues by department and GL account, compare against approved budget for period"
+          },
+          "timeout_seconds": 30
+        },
+        {
+          "id": "bud-02",
+          "type": "transformation",
+          "name": "Variance Analysis",
+          "config": {
+            "agent": "finance-controller-01",
+            "calculate": ["absolute-variance", "percent-variance", "year-over-year-comparison"],
+            "flag_threshold": 10
+          }
+        },
+        {
+          "id": "bud-03",
+          "type": "notification",
+          "name": "Flag Over-Budget Departments",
+          "config": {
+            "template": "budget-overspend-notice",
+            "recipients": ["department-heads"],
+            "condition": "variance_percent > 10",
+            "cc": ["finance-controller-01"]
+          }
+        },
+        {
+          "id": "bud-04",
+          "type": "transformation",
+          "name": "Update Forecast",
+          "config": {
+            "agent": "finance-controller-01",
+            "task": "Rolling 3-month forecast based on actuals and pipeline, adjust annual projection"
+          }
+        },
+        {
+          "id": "bud-05",
+          "type": "notification",
+          "name": "Budget Report to Owner",
+          "config": {
+            "template": "budget-variance-report",
+            "recipients": ["business-owner"],
+            "attachments": ["variance-breakdown", "forecast-update", "recommendations"]
+          }
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": true,
+    "procedural_enabled": true,
+    "graph_enabled": false,
+    "memory_profiles": {
+      "finance-controller-01": "episodic-enabled, procedural-enabled, high-retention-financial",
+      "finance-bookkeeper-01": "semantic-enabled, procedural-enabled, transaction-history",
+      "finance-gpo-01": "semantic-enabled, template-optimized"
+    },
+    "retention_policy": {
+      "financial_records": "7-years",
+      "tax_records": "7-years",
+      "payroll_data": "7-years",
+      "invoice_documents": "7-years",
+      "bank_reconciliations": "7-years"
+    },
+    "compression_settings": {
+      "episodic": "semantic-summary-after-180-days",
+      "semantic": "vector-dim-768"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-fin-001",
+      "name": "Financial Data Confidentiality",
+      "type": "data_usage",
+      "enforcement": "enforce",
+      "conditions": {
+        "data_classification": "confidential-financial",
+        "access_level": "controller-and-above"
+      },
+      "actions": ["log-all-access", "encrypt-at-rest", "mask-in-logs", "restrict-export"]
+    },
+    {
+      "id": "gov-fin-002",
+      "name": "Payment Approval Segregation",
+      "type": "access_control",
+      "enforcement": "enforce",
+      "conditions": {
+        "rule": "invoice-processor != payment-approver"
+      },
+      "actions": ["prevent-concurrent-approval", "log-violation", "notify-controller"]
+    },
+    {
+      "id": "gov-fin-003",
+      "name": "Audit Trail Integrity",
+      "type": "audit",
+      "enforcement": "enforce",
+      "conditions": {
+        "record_types": ["journal-entries", "payments", "adjustments", "reconciliations"],
+        "modification": "immutable-after-posting"
+      },
+      "actions": ["log-all-modifications", "require-reversal-entry", "preserve-original"]
+    },
+    {
+      "id": "gov-fin-004",
+      "name": "Bank Reconciliation Accuracy",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {
+        "frequency": "monthly",
+        "unreconciled_items_threshold": 5
+      },
+      "actions": ["flag-unreconciled", "require-explanation", "controller-review"]
+    },
+    {
+      "id": "gov-fin-005",
+      "name": "GPO Agent Output Review",
+      "type": "audit",
+      "enforcement": "warn",
+      "conditions": {
+        "agent_role": "finance-gpo-01",
+        "sensitive_topics": true
+      },
+      "actions": ["human-review-required", "log-output"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "fin-kpi-001",
+      "name": "Close Cycle Time",
+      "description": "Days from period end to completed monthly financial close",
+      "metric_type": "counter",
+      "unit": "days",
+      "thresholds": {"target": 5, "warning": 7, "critical": 10},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "fin-kpi-002",
+      "name": "AP Processing Accuracy",
+      "description": "Percentage of invoices processed without error on first pass",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 98, "warning": 95, "critical": 90},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "fin-kpi-003",
+      "name": "AR Days Outstanding",
+      "description": "Average number of days to collect payment after invoice",
+      "metric_type": "counter",
+      "unit": "days",
+      "thresholds": {"target": 30, "warning": 40, "critical": 60},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "fin-kpi-004",
+      "name": "Budget Variance Rate",
+      "description": "Average absolute variance between budgeted and actual spend across departments",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 5, "warning": 10, "critical": 15},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "fin-kpi-005",
+      "name": "Payroll Accuracy Rate",
+      "description": "Percentage of pay cycles processed without correction",
+      "metric_type": "boolean",
+      "unit": "percent",
+      "thresholds": {"target": 100, "warning": 98, "critical": 95},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "fin-kpi-006",
+      "name": "Tax Filing On-Time Rate",
+      "description": "Percentage of tax filings submitted by deadline without extension",
+      "metric_type": "boolean",
+      "unit": "percent",
+      "thresholds": {"target": 100, "warning": 100, "critical": 80},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "fin-kpi-007",
+      "name": "Cash Position Coverage",
+      "description": "Months of operating expenses covered by current cash balance",
+      "metric_type": "gauge",
+      "unit": "months",
+      "thresholds": {"target": 6, "warning": 3, "critical": 1},
+      "aggregation_period": "month"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-fin-001",
+      "type": "erp",
+      "name": "Accounting System",
+      "provider": "quickbooks_online",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"endpoint": "https://api.intuit.com", "sync_frequency": "real-time", "modules": ["gl", "ap", "ar", "payroll", "reporting"]}
+    },
+    {
+      "id": "int-fin-002",
+      "type": "erp",
+      "name": "Alternative Accounting Platform",
+      "provider": "xero",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"endpoint": "https://api.xero.com", "sync_frequency": "real-time", "modules": ["gl", "ap", "ar", "bank"]}
+    },
+    {
+      "id": "int-fin-003",
+      "type": "custom",
+      "name": "Bank Feeds",
+      "provider": "plaid",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"endpoint": "https://api.plaid.com", "sync_frequency": "daily", "accounts_to_sync": ["checking", "savings", "credit-card"]}
+    },
+    {
+      "id": "int-fin-004",
+      "type": "erp",
+      "name": "Payroll System",
+      "provider": "gustoh",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"endpoint": "https://api.gusto.com", "sync_frequency": "bi-weekly", "modules": ["payroll", "tax-withholding", "benefits"]}
+    },
+    {
+      "id": "int-fin-005",
+      "type": "email",
+      "name": "Finance Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"domain": "{tenant}.google.com", "folders": ["invoices", "bank-statements", "tax-correspondence"]}
+    },
+    {
+      "id": "int-fin-006",
+      "type": "document",
+      "name": "Document Storage",
+      "provider": "google_drive",
+      "auth_method": "api_key",
+      "status": "active",
+      "config": {"shared_folder": "finance/documents", "categories": ["invoices", "receipts", "tax-records", "bank-statements"]}
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-fin-001",
+      "name": "Agent Autonomy Boundaries",
+      "scope": "agent",
+      "rules": [
+        {
+          "agent": "finance-gpo-01",
+          "allowed": ["scan-invoices", "categorize-expenses", "data-entry", "report-draft", "retrieval", "expense-processing"],
+          "denied": ["approve-payments", "adjust-ledger", "change-bank-accounts", "file-taxes", "modify-payroll", "create-vendors"]
+        },
+        {
+          "agent": "finance-bookkeeper-01",
+          "allowed": ["journal-entries", "reconciliation", "ap-processing", "ar-processing", "expense-categorization"],
+          "denied": ["override-approvals", "close-period-without-review", "modify-bank-routes", "create-new-vendor-bank-account"]
+        },
+        {
+          "agent": "finance-controller-01",
+          "allowed": ["all-operations"],
+          "denied": ["override-audit-logs", "delete-posted-entries", "bypass-segregation-of-duties"]
+        },
+        {
+          "requirement": "all-agent-output-involving-financial-transactions-requires-human-confirmation-before-execution"
+        }
+      ]
+    },
+    {
+      "id": "pol-fin-002",
+      "name": "Compliance and Audit Readiness",
+      "scope": "department",
+      "rules": [
+        {
+          "frequency": "quarterly",
+          "action": "review-gaap-compliance-and-update-accounting-policies"
+        },
+        {
+          "frequency": "annually",
+          "action": "external-cpa-audit-of-financial-statements"
+        },
+        {
+          "frequency": "monthly",
+          "action": "verify-all-accounts-reconciled-within-5-business-days"
+        }
+      ]
+    },
+    {
+      "id": "pol-fin-003",
+      "name": "Data Retention and Disposal",
+      "scope": "system",
+      "rules": [
+        {
+          "data_type": "financial-records",
+          "retention": "7-years",
+          "disposal": "secure-delete"
+        },
+        {
+          "data_type": "tax-records",
+          "retention": "7-years",
+          "disposal": "secure-delete"
+        },
+        {
+          "data_type": "payroll-data",
+          "retention": "7-years",
+          "disposal": "secure-delete"
+        },
+        {
+          "data_type": "invoice-documents",
+          "retention": "7-years",
+          "disposal": "secure-delete"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1171 @@
+{
+  "id": "legal-large-001",
+  "name": "Large Enterprise Legal Department",
+  "description": "15–40 person legal department for enterprise organizations (500+ employees). Multi-layer structure: General Counsel, Deputy GC, Contract Management Lead, IP Counsel, Employment Counsel, Compliance Counsel, Litigation Manager, Paralegals, and GPO pod. Handles multi-layer contract approval, regulatory compliance, M&A support, IP portfolio management, litigation management, and regulatory filings. Frameworks: SOX, GDPR, industry-specific regulations.",
+  "category": "legal",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "large",
+    "department_size": "15-40 FTE",
+    "company_size": "500+ employees",
+    "industry": "global",
+    "compliance_level": "full-regulatory",
+    "frameworks": ["SOX", "GDPR", "CCPA", "HIPAA", "FCPA", "industry-specific-regulations"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["legal", "enterprise", "multi-layer", "global", "compliance", "ma", "litigation", "ip-management"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "legal-gc-01",
+      "role": "General Counsel / Chief Legal Officer",
+      "capabilities": [
+        "enterprise-legal-strategy",
+        "legal-operations-management",
+        "m-and-a-advisory",
+        "board-advisory",
+        "regulatory-compliance-oversee",
+        "litigation-overseer",
+        "ip-strategy",
+        "risk-management",
+        "external-counsel-management",
+        "legal-technology-strategy",
+        "cross-border-compliance",
+        "ethics-and-compliance-program"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "episodic-enabled, graph-enabled, full-retention",
+      "tool_requirements": ["contract-management-system", "case-management", "email", "document-storage", "board-reporting", "legal-research-db", "analytics-dashboard", "contract-management-system"],
+      "system_prompt": "You are the General Counsel and Chief Legal Officer for a large enterprise. You lead a global legal organization of 25+ professionals across contract management, corporate governance, litigation, IP, employment law, compliance, and regulatory affairs. You report to the CEO and serve on the executive team. You advise the board on legal risks, oversee M&A transactions, manage external counsel relationships, and drive the legal technology strategy. You maintain the highest standards of ethical conduct, attorney-client privilege, and regulatory compliance across all operating jurisdictions.",
+      "constraints": {
+        "max_tokens_per_request": 16384,
+        "rate_limit": 1000,
+        "confidentiality": "attorney-client-privileged, board-privileged",
+        "legal_advice_disclaimer": "ai-assistance-not-substitute-for-licensed-counsel"
+      },
+      "access_control": {
+        "contracts": "read-write-global",
+        "litigation_files": "read-write-global",
+        "compliance_documents": "read-write-global",
+        "ip_records": "read-write-global",
+        "board_documents": "read-write",
+        "employment_records": "read-only",
+        "external_counsel_files": "read-write-global",
+        "ma_documents": "read-write",
+        "regulatory_filings": "read-write"
+      }
+    },
+    {
+      "id": "legal-deputy-gc-01",
+      "role": "Deputy General Counsel",
+      "capabilities": [
+        "contract-negotiation-oversee",
+        "corporate-governance",
+        "policy-development",
+        "regulatory-advisory",
+        "team-leadership",
+        "cross-functional-advisory",
+        "business-unit-legal-support",
+        "vendor-masterset-negotiation"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "episodic-enabled, graph-enabled",
+      "tool_requirements": ["contract-management-system", "email", "document-storage", "legal-research-db", "case-management"],
+      "system_prompt": "You are the Deputy General Counsel, second-in-command to the GC. You oversee day-to-day legal operations, manage contract negotiations and corporate governance matters, and serve as the primary legal advisor to business unit leaders. You coordinate cross-departmental legal initiatives and act as GC in their absence. You maintain deep relationships with senior leadership and ensure consistent legal standards across all business units.",
+      "constraints": {
+        "max_tokens_per_request": 8192,
+        "confidentiality": "attorney-client-privileged"
+      },
+      "access_control": {
+        "contracts": "read-write-global",
+        "litigation_files": "read-write",
+        "compliance_documents": "read-write",
+        "ip_records": "read-write",
+        "board_documents": "read-write",
+        "regulatory_filings": "read-write",
+        "employment_records": "read-only"
+      }
+    },
+    {
+      "id": "legal-contract-lead-01",
+      "role": "Contract Management Lead",
+      "capabilities": [
+        "contract-lifecycle-oversee",
+        "clause-library-management",
+        "contract-analytics",
+        "obligation-tracking",
+        "renewal-management",
+        "contract-templates",
+        "contract-risk-assessment",
+        "clm-system-administration"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "episodic-enabled, procedural-enabled",
+      "tool_requirements": ["contract-management-system", "email", "document-storage", "analytics-dashboard", "legal-research-db"],
+      "system_prompt": "You lead the Contract Management team for a large enterprise. You oversee the full contract lifecycle from intake to archive, manage the clause and template library, run contract analytics, track obligations and renewal dates, and ensure consistent contract quality across all business units. You administer the CLM system and develop contract risk scoring models. You escalate complex negotiations and high-risk contracts to the Deputy GC or General Counsel.",
+      "constraints": {
+        "max_tokens_per_request": 8192,
+        "contract_authority": "up-to-500k-annual-value"
+      },
+      "access_control": {
+        "contracts": "read-write-all",
+        "litigation_files": "read-only",
+        "compliance_documents": "read-only",
+        "ip_records": "none",
+        "board_documents": "none",
+        "contract_templates": "read-write",
+        "clause_library": "read-write"
+      }
+    },
+    {
+      "id": "legal-ip-counsel-01",
+      "role": "IP Counsel",
+      "capabilities": [
+        "patent-prosecution-oversee",
+        "trademark-management",
+        "copyright-protection",
+        "trade-secret-protocols",
+        "licensing-negotiation",
+        "ip-infringement-monitoring",
+        "open-source-compliance",
+        "ip-strategy-advisory",
+        "technology-transfer"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "episodic-enabled, procedural-enabled",
+      "tool_requirements": ["legal-research-db", "trademark-database", "patent-database", "email", "document-storage"],
+      "system_prompt": "You are the IP Counsel managing the enterprise intellectual property portfolio. You oversee patent and trademark prosecution, manage copyright registrations, develop trade secret protocols, negotiate IP licensing agreements, monitor for infringement, and advise on open-source compliance. You work closely with engineering, product, and R&D teams to identify protectable IP and develop comprehensive IP strategies aligned with business objectives.",
+      "constraints": {
+        "max_tokens_per_request": 8192,
+        "ip_confidentiality": "strict"
+      },
+      "access_control": {
+        "ip_records": "read-write-global",
+        "contracts": "read-write-ip-related",
+        "litigation_files": "read-only",
+        "compliance_documents": "read-only",
+        "board_documents": "none",
+        "patent_portfolios": "read-write",
+        "trademark_portfolios": "read-write"
+      }
+    },
+    {
+      "id": "legal-employment-counsel-01",
+      "role": "Employment Counsel",
+      "capabilities": [
+        "employment-law-advisory",
+        "workplace-investigation-oversee",
+        "handbook-development",
+        "wage-hour-compliance",
+        "benefits-law",
+        "union-labor-relations",
+        "immigration-employment",
+        "separation-agreements",
+        "discrimination-defense"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "episodic-enabled",
+      "tool_requirements": ["legal-research-db", "email", "document-storage", "case-management", "hris-api"],
+      "system_prompt": "You are the Employment Counsel providing legal advice on all employment-related matters for a large enterprise. You advise HR and management on employee relations, workplace investigations, handbook policies, wage and hour compliance, benefits law, and union/labor relations. You draft and review separation agreements, manage employment litigation, and ensure compliance with federal, state, and local employment regulations across all operating jurisdictions.",
+      "constraints": {
+        "max_tokens_per_request": 8192,
+        "confidentiality": "attorney-client-privileged"
+      },
+      "access_control": {
+        "employment_records": "read-write",
+        "contracts": "read-only",
+        "litigation_files": "read-write-employment",
+        "compliance_documents": "read-write",
+        "ip_records": "none",
+        "board_documents": "none"
+      }
+    },
+    {
+      "id": "legal-compliance-counsel-01",
+      "role": "Compliance Counsel",
+      "capabilities": [
+        "regulatory-compliance",
+        "compliance-program-design",
+        "policy-development",
+        "compliance-training",
+        "regulatory-filings",
+        "sanctions-screening",
+        "anti-corruption",
+        "data-privacy-compliance",
+        "industry-regulatory-advisory"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["legal-research-db", "email", "document-storage", "compliance-management-system", "regulatory-database", "screening-tools"],
+      "system_prompt": "You are the Compliance Counsel responsible for designing and managing the enterprise compliance program. You oversee regulatory compliance across all operating jurisdictions, manage regulatory filings, develop compliance policies and training programs, conduct sanctions screening, and advise on anti-corruption, data privacy, and industry-specific regulatory requirements. You coordinate with the ethics and compliance officer on investigations and remediation.",
+      "constraints": {
+        "max_tokens_per_request": 8192,
+        "confidentiality": "attorney-client-privileged"
+      },
+      "access_control": {
+        "compliance_documents": "read-write-global",
+        "contracts": "read-only",
+        "litigation_files": "read-only",
+        "ip_records": "none",
+        "board_documents": "read-only",
+        "regulatory_filings": "read-write",
+        "screening_results": "read-write"
+      }
+    },
+    {
+      "id": "legal-litigation-mgr-01",
+      "role": "Litigation Manager",
+      "capabilities": [
+        "litigation-strategy",
+        "case-management",
+        "e-discovery-oversee",
+        "deposition-preparation",
+        "expert-witness-coordination",
+        "settlement-analysis",
+        "external-counsel-management",
+        "trial-preparation",
+        "appeals-management"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "episodic-enabled, immutable-storage",
+      "tool_requirements": ["case-management", "e-discovery-platform", "legal-research-db", "email", "document-storage", "billing-system"],
+      "system_prompt": "You are the Litigation Manager overseeing all active and potential litigation for the enterprise. You develop litigation strategy, manage case budgets, oversee e-discovery, coordinate with external counsel, prepare depositions, manage expert witnesses, and drive toward optimal resolution. You maintain the litigation matter budget, track outcomes, and report litigation exposure to the General Counsel. All litigation files are treated as privileged and immutable.",
+      "constraints": {
+        "max_tokens_per_request": 8192,
+        "litigation_privilege": "strict, immutable",
+        "budget_authority": "up-to-1m-per-matter"
+      },
+      "access_control": {
+        "litigation_files": "read-write-global",
+        "e_discovery": "read-write",
+        "external_counsel_files": "read-write",
+        "contracts": "read-only",
+        "ip_records": "read-only",
+        "board_documents": "none",
+        "billing_system": "read-write"
+      }
+    },
+    {
+      "id": "legal-paralegal-pod-01",
+      "role": "Paralegal Pod — Legal Support",
+      "capabilities": [
+        "contract-preparation",
+        "document-organization",
+        "deadline-tracking",
+        "filing-management",
+        "legal-research-assist",
+        "due-diligence-support",
+        "meeting-minutes",
+        "compliance-calendar-management",
+        "e-discovery-assist",
+        "citation-formatting"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["contract-management-system", "case-management", "document-storage", "email", "calendar", "legal-research-db"],
+      "system_prompt": "You are a member of the Paralegal Pod supporting the enterprise legal department at scale. You prepare contract drafts from approved templates, organize litigation and transaction files, track filing and renewal deadlines, assist with legal research, support due diligence processes, manage meeting minutes for board and committee meetings, and assist with e-discovery tasks. You never provide legal advice — you always route substantive legal questions to the appropriate attorney. You maintain meticulous records across multiple workstreams simultaneously.",
+      "constraints": {
+        "max_tokens_per_request": 4096,
+        "no_legal_advice": true,
+        "template_only_contracts": true,
+        "volume": "multi-workstream"
+      },
+      "access_control": {
+        "contracts": "read-write-template-only",
+        "litigation_files": "read-write-case-assigned",
+        "compliance_documents": "read-only",
+        "ip_records": "read-only",
+        "board_documents": "none",
+        "legal_library": "read-write",
+        "e_discovery": "read-only-assist"
+      }
+    },
+    {
+      "id": "legal-gpo-pod-01",
+      "role": "GPO Pod — Legal Support",
+      "capabilities": [
+        "document-drafting",
+        "contract-scan",
+        "clause-extraction",
+        "retrieval",
+        "template-management",
+        "deadline-reminder",
+        "document-formatting",
+        "contract-redlining",
+        "obligation-extraction"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["document-storage", "email", "contract-management-system", "templates-library", "legal-research-db"],
+      "system_prompt": "You are a member of the Legal GPO Pod handling routine support tasks at enterprise scale. You scan incoming contracts for key terms, extract standard clauses, retrieve approved templates, format legal documents, send deadline reminders, assist with contract redlining on standard provisions, and extract obligations from executed contracts. You NEVER provide legal interpretation or advice. You flag any contract with unusual terms, high-risk clauses, or deviations from standard templates for review by the Contract Management Lead or assigned attorney. All legal documents are handled with strict confidentiality.",
+      "constraints": {
+        "max_tokens_per_request": 4096,
+        "no_legal_advice": true,
+        "flag_thresholds": ["indemnification-over-500k", "non-compete-clauses", "auto-renewal-over-24-months", "data-processing-agreements", "cross-border-clauses", "regulatory-requirements"],
+        "confidentiality": "high",
+        "volume": "high-throughput"
+      },
+      "access_control": {
+        "contracts": "read-only-scan-only",
+        "litigation_files": "none",
+        "compliance_documents": "read-only",
+        "ip_records": "none",
+        "board_documents": "none",
+        "legal_library": "read-only",
+        "templates_library": "read-write"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-contract-lifecycle-001",
+      "name": "Enterprise Contract Lifecycle Management",
+      "description": "Multi-tier contract lifecycle management for enterprise scale: intake, risk scoring, routing, review, multi-layer negotiation, executive approval gates, execution, and obligation tracking.",
+      "triggers": ["manual", "event:contract-request-created"],
+      "steps": [
+        {
+          "id": "clm-01",
+          "type": "agent_call",
+          "name": "Contract Intake and Classification",
+          "config": {
+            "agent": "legal-paralegal-pod-01",
+            "task": "Capture contract request details: party names, contract type, purpose, business owner, desired timeline, jurisdiction, annual value, and any attached drafts or counterparty terms. Assign tracking ID."
+          },
+          "timeout_seconds": 30
+        },
+        {
+          "id": "clm-02",
+          "type": "agent_call",
+          "name": "Automated Risk Scoring",
+          "config": {
+            "agent": "legal-contract-lead-01",
+            "task": "Run automated risk scoring against contract risk model: identify high-risk provisions, non-standard clauses, regulatory requirements, and financial exposure. Assign risk tier: low, medium, high, critical."
+          }
+        },
+        {
+          "id": "clm-03",
+          "type": "conditional",
+          "name": "Risk-Based Routing",
+          "config": {
+            "condition": "contract.risk_tier",
+            "true_path": "tiered-review-routing",
+            "false_path": "standard-review"
+          }
+        },
+        {
+          "id": "clm-04",
+          "type": "approval",
+          "name": "Review Path Approval",
+          "config": {
+            "required_by": "legal-contract-lead-01",
+            "timeout_hours": 24,
+            "routing": {
+              "low": "contract-lead-can-approve",
+              "medium": "deputy-gc-review",
+              "high": "gc-review-plus-external-counsel",
+              "critical": "gc-plus-board-approval"
+            }
+          }
+        },
+        {
+          "id": "clm-05",
+          "type": "agent_call",
+          "name": "Draft or Review Contract",
+          "config": {
+            "agent": "legal-deputy-gc-01",
+            "task": "Draft contract from approved template or review counterparty draft with annotations, track-changes version, and commentary on non-standard provisions"
+          }
+        },
+        {
+          "id": "clm-06",
+          "type": "tool_call",
+          "name": "Manage Negotiation Rounds",
+          "config": {
+            "tools": ["email", "contract-management-system"],
+            "max_negotiation_rounds": 7,
+            "escalation_after_rounds": 4,
+            "sla_hours_per_round": 72
+          }
+        },
+        {
+          "id": "clm-07",
+          "type": "approval",
+          "name": "Executive Approval Gate",
+          "config": {
+            "required_by": "legal-gc-01",
+            "timeout_hours": 48,
+            "auto_approve_if": "risk_tier == low AND standard_template AND value < 100000"
+          }
+        },
+        {
+          "id": "clm-08",
+          "type": "tool_call",
+          "name": "Execute and Obligation Tracking",
+          "config": {
+            "tools": ["docushield", "contract-management-system"],
+            "actions": ["send-for-electronic-signature", "track-execution", "archive-final-version", "extract-obligations", "set-renewal-alerts", "trigger-obligation-workflows"]
+          }
+        },
+        {
+          "id": "clm-09",
+          "type": "notification",
+          "name": "Deliver Executed Contract Package",
+          "config": {
+            "template": "contract-executed-enterprise",
+            "recipients": ["contract-requestor", "business-unit-leader"],
+            "cc": ["legal-paralegal-pod-01", "contract-lead-01"],
+            "attachments": ["executed-contract-pdf", "key-terms-digest", "obligation-tracker", "renewal-calendar"]
+          }
+        }
+      ],
+      "error_handling": {
+        "max_retries": 3,
+        "critical_path": ["clm-02", "clm-04", "clm-07", "clm-08"],
+        "on_failure": "escalate-to-general-counsel"
+      }
+    },
+    {
+      "id": "wf-ma-001",
+      "name": "M&A Due Diligence and Support",
+      "description": "End-to-end M&A legal support: target identification, document room management, due diligence review, deal structuring, regulatory approval, and post-merger integration.",
+      "triggers": ["manual", "event:ma-deal-initiated"],
+      "steps": [
+        {
+          "id": "ma-01",
+          "type": "agent_call",
+          "name": "Deal Initiation and Team Assembly",
+          "config": {
+            "agent": "legal-gc-01",
+            "task": "Assemble M&A legal team: lead attorney, contract lead, IP counsel, compliance counsel, paralegals. Define scope, timeline, and deliverables. Engage external counsel as needed."
+          }
+        },
+        {
+          "id": "ma-02",
+          "type": "tool_call",
+          "name": "Set Up Virtual Data Room",
+          "config": {
+            "tools": ["document-storage", "contract-management-system"],
+            "actions": ["create-vdr", "set-access-controls", "organize-data-room-folders", "enable-audit-logging"],
+            "access_levels": ["internal-team", "external-counsel", "buyer-authorized"]
+          }
+        },
+        {
+          "id": "ma-03",
+          "type": "agent_call",
+          "name": "Conduct Legal Due Diligence",
+          "config": {
+            "agent": "legal-paralegal-pod-01",
+            "task": "Review target company contracts, corporate records, IP registrations, litigation matters, employment agreements, compliance programs, and regulatory filings. Prepare diligence reports and issue matrices."
+          }
+        },
+        {
+          "id": "ma-04",
+          "type": "agent_call",
+          "name": "Draft Transaction Documents",
+          "config": {
+            "agent": "legal-deputy-gc-01",
+            "task": "Prepare purchase agreement, disclosure schedules, ancillary agreements, and closing documents based on due diligence findings and negotiated terms"
+          }
+        },
+        {
+          "id": "ma-05",
+          "type": "tool_call",
+          "name": "Manage Regulatory Filings",
+          "config": {
+            "tools": ["document-storage", "email"],
+            "filings": ["hart-scott-rodino", "regulatory-approvals", "anti-trust-filings"],
+            "coordination": "external-counsel"
+          }
+        },
+        {
+          "id": "ma-06",
+          "type": "approval",
+          "name": "Deal Approval",
+          "config": {
+            "required_by": ["legal-gc-01", "ceo", "board"],
+            "timeout_hours": 72
+          }
+        },
+        {
+          "id": "ma-07",
+          "type": "transformation",
+          "name": "Post-Merger Integration Planning",
+          "config": {
+            "agent": "legal-deputy-gc-01",
+            "task": "Develop integration plan: contract assignment, IP transfer, compliance harmonization, employment terms alignment, and systems integration"
+          }
+        }
+      ],
+      "error_handling": {
+        "max_retries": 2,
+        "critical_path": ["ma-03", "ma-04", "ma-06"],
+        "on_failure": "immediate-escalation-to-gc"
+      }
+    },
+    {
+      "id": "wf-litigation-001",
+      "name": "Litigation Management",
+      "description": "End-to-end litigation lifecycle: matter intake, strategy development, external counsel engagement, e-discovery, discovery, trial preparation, settlement, and post-trial.",
+      "triggers": ["manual", "event:litigation-received"],
+      "steps": [
+        {
+          "id": "lit-01",
+          "type": "agent_call",
+          "name": "Matter Intake and Conflict Check",
+          "config": {
+            "agent": "legal-litigation-mgr-01",
+            "task": "Document matter details, parties, claims, damages sought, jurisdiction, and urgency. Run conflicts check. Assign matter number and initial file."
+          }
+        },
+        {
+          "id": "lit-02",
+          "type": "agent_call",
+          "name": "Initial Strategy and Budget",
+          "config": {
+            "agent": "legal-gc-01",
+            "task": "Develop initial litigation strategy, set matter budget, determine whether to handle in-house or engage external counsel, establish case management plan"
+          }
+        },
+        {
+          "id": "lit-03",
+          "type": "tool_call",
+          "name": "Engage External Counsel",
+          "config": {
+            "tools": ["billing-system", "email"],
+            "selection_criteria": ["specialization", "jurisdiction", "fee-arrangement", "past-performance"],
+            "fee-arrangements": ["hourly", "capped", "contingency", "blended-rate"]
+          }
+        },
+        {
+          "id": "lit-04",
+          "type": "tool_call",
+          "name": "E-Discovery Management",
+          "config": {
+            "tools": ["e-discovery-platform"],
+            "phases": ["collection", "processing", "review", "production"],
+            "custodians": "auto-identify",
+            "sla_days": 30
+          }
+        },
+        {
+          "id": "lit-05",
+          "type": "agent_call",
+          "name": "Discovery and Deposition Management",
+          "config": {
+            "agent": "legal-litigation-mgr-01",
+            "task": "Manage document review, prepare witnesses for depositions, draft and respond to interrogatories, prepare motions, and develop trial strategy"
+          }
+        },
+        {
+          "id": "lit-06",
+          "type": "conditional",
+          "name": "Settlement Evaluation",
+          "config": {
+            "condition": "settlement-opportunity-exists",
+            "true_path": "settlement-analysis-and-approval",
+            "false_path": "trial-preparation"
+          }
+        },
+        {
+          "id": "lit-07",
+          "type": "approval",
+          "name": "Settlement Authorization",
+          "config": {
+            "required_by": "legal-gc-01",
+            "conditions": ["settlement-within-budget", "legal-advisory-provided"],
+            "timeout_hours": 48
+          }
+        },
+        {
+          "id": "lit-08",
+          "type": "notification",
+          "name": "Matter Closure and Lessons Learned",
+          "config": {
+            "template": "litigation-matter-closed",
+            "recipients": ["business-unit-leader", "department-heads"],
+            "cc": ["legal-gc-01"],
+            "attachments": ["matter-summary", "outcomes-analysis", "lessons-learned"]
+          }
+        }
+      ],
+      "error_handling": {
+        "max_retries": 2,
+        "critical_path": ["lit-02", "lit-04", "lit-07"],
+        "on_failure": "immediate-escalation-to-gc"
+      }
+    },
+    {
+      "id": "wf-compliance-001",
+      "name": "Global Compliance Program Management",
+      "description": "Enterprise-wide compliance program: policy management, regulatory monitoring, training, audits, investigations, and reporting to board and regulators.",
+      "triggers": ["schedule:quarterly", "event:regulatory-change", "manual"],
+      "steps": [
+        {
+          "id": "comp-01",
+          "type": "agent_call",
+          "name": "Regulatory Landscape Assessment",
+          "config": {
+            "agent": "legal-compliance-counsel-01",
+            "task": "Assess regulatory changes across all operating jurisdictions. Prioritize impacts by business unit, function, and regulation type."
+          }
+        },
+        {
+          "id": "comp-02",
+          "type": "agent_call",
+          "name": "Compliance Risk Assessment",
+          "config": {
+            "agent": "legal-compliance-counsel-01",
+            "task": "Conduct enterprise-wide compliance risk assessment, identify gaps, prioritize remediation, and update compliance risk matrix"
+          }
+        },
+        {
+          "id": "comp-03",
+          "type": "tool_call",
+          "name": "Update Compliance Program",
+          "config": {
+            "tools": ["document-storage", "compliance-management-system"],
+            "updates": ["policies", "procedures", "training-materials", "code-of-conduct"],
+            "version_control": true
+          }
+        },
+        {
+          "id": "comp-04",
+          "type": "tool_call",
+          "name": "Deliver Compliance Training",
+          "config": {
+            "tools": ["email", "lms-system"],
+            "modules": ["code-of-conduct", "anti-corruption", "data-privacy", "workplace-harassment", "sanctions"],
+            "completion_target": "100-percent-by-deadline"
+          }
+        },
+        {
+          "id": "comp-05",
+          "type": "agent_call",
+          "name": "Board Compliance Report",
+          "config": {
+            "agent": "legal-gc-01",
+            "task": "Prepare and deliver quarterly compliance report to board: regulatory developments, compliance metrics, audit findings, investigation updates, and remediation status"
+          }
+        },
+        {
+          "id": "comp-06",
+          "type": "tool_call",
+          "name": "Regulatory Filings Management",
+          "config": {
+            "tools": ["document-storage", "email"],
+            "filings": ["sec-filings", "industry-regulatory", "local-government"],
+            "calendar": "centralized-filing-calendar"
+          }
+        }
+      ],
+      "error_handling": {
+        "max_retries": 2,
+        "critical_path": ["comp-02", "comp-05"]
+      }
+    },
+    {
+      "id": "wf-ip-portfolio-001",
+      "name": "Enterprise IP Portfolio Management",
+      "description": "Comprehensive IP portfolio management: asset identification, prosecution, licensing, enforcement, open-source compliance, and strategic IP advisory.",
+      "triggers": ["manual", "schedule:quarterly"],
+      "steps": [
+        {
+          "id": "ip-01",
+          "type": "agent_call",
+          "name": "IP Asset Identification",
+          "config": {
+            "agent": "legal-ip-counsel-01",
+            "task": "Identify new intellectual property across the enterprise: inventions, trademarks, domain names, content, trade secrets, and software. Coordinate with engineering, product, and R&D teams."
+          }
+        },
+        {
+          "id": "ip-02",
+          "type": "tool_call",
+          "name": "Prior Art and Clearance Search",
+          "config": {
+            "tools": ["legal-research-db", "trademark-database", "patent-database"],
+            "searches": ["prior-art-search", "trademark-clearance", "domain-availability", "open-source-license-check"],
+            "jurisdiction": "us-international"
+          }
+        },
+        {
+          "id": "ip-03",
+          "type": "agent_call",
+          "name": "File IP Applications",
+          "config": {
+            "agent": "legal-paralegal-pod-01",
+            "task": "Prepare and file patent applications, trademark registrations, copyright registrations through USPTO and international offices. Track deadlines and office actions."
+          }
+        },
+        {
+          "id": "ip-04",
+          "type": "agent_call",
+          "name": "Licensing and Enforcement",
+          "config": {
+            "agent": "legal-ip-counsel-01",
+            "task": "Negotiate IP licensing agreements, monitor for infringement, send cease-and-desist letters, coordinate enforcement actions with external counsel"
+          }
+        },
+        {
+          "id": "ip-05",
+          "type": "notification",
+          "name": "Portfolio Health Report",
+          "config": {
+            "template": "ip-portfolio-quarterly-report",
+            "recipients": ["legal-gc-01"],
+            "cc": ["legal-deputy-gc-01"],
+            "schedule": "quarterly",
+            "attachments": ["portfolio-status", "maintenance-schedule", "enforcement-actions", "licensing-revenue"]
+          }
+        }
+      ],
+      "error_handling": {
+        "max_retries": 2,
+        "critical_path": ["ip-03", "ip-04"]
+      }
+    },
+    {
+      "id": "wf-employment-law-001",
+      "name": "Enterprise Employment Law Advisory",
+      "description": "Comprehensive employment law support: policy advisory, investigation oversight, separation management, union/labor relations, and regulatory compliance across jurisdictions.",
+      "triggers": ["manual", "event:employment-issue-reported"],
+      "steps": [
+        {
+          "id": "emp-01",
+          "type": "agent_call",
+          "name": "Case Intake and Classification",
+          "config": {
+            "agent": "legal-paralegal-pod-01",
+            "task": "Document employment issue details: nature, parties, timeline, evidence, jurisdiction, and urgency. Classify: standard, elevated, critical."
+          }
+        },
+        {
+          "id": "emp-02",
+          "type": "conditional",
+          "name": "Severity Assessment",
+          "config": {
+            "condition": "case.classification in ['critical', 'elevated']",
+            "true_path": "immediate-gc-or-employment-counsel-review",
+            "false_path": "standard-advisory-path"
+          }
+        },
+        {
+          "id": "emp-03",
+          "type": "agent_call",
+          "name": "Legal Advisory and Investigation Oversight",
+          "config": {
+            "agent": "legal-employment-counsel-01",
+            "task": "Provide legal guidance on employment matter, oversee investigation if warranted, advise on documentation requirements, legal obligations, and recommended actions"
+          }
+        },
+        {
+          "id": "emp-04",
+          "type": "tool_call",
+          "name": "Prepare Advisory Documentation",
+          "config": {
+            "tools": ["document-storage", "email"],
+            "document_type": "attorney-client-privileged-memo",
+            "classification": "privileged"
+          }
+        },
+        {
+          "id": "emp-05",
+          "type": "approval",
+          "name": "Action Authorization",
+          {
+            "required_by": "legal-employment-counsel-01",
+            "timeout_hours": 48
+          }
+        },
+        {
+          "id": "emp-06",
+          "type": "notification",
+          "name": "Close with Documentation",
+          "config": {
+            "template": "employment-matter-closed",
+            "recipients": ["hr-vp", "business-unit-leader"],
+            "cc": ["legal-paralegal-pod-01"],
+            "attachments": ["advisory-memo", "recommended-actions", "documentation-checklist"]
+          }
+        }
+      ],
+      "error_handling": {
+        "max_retries": 2,
+        "critical_path": ["emp-03", "emp-04"],
+        "on_failure": "immediate-escalation"
+      }
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": true,
+    "procedural_enabled": true,
+    "graph_enabled": true,
+    "memory_profiles": {
+      "legal-gc-01": "episodic-enabled, graph-enabled, full-retention, privileged",
+      "legal-deputy-gc-01": "episodic-enabled, graph-enabled, full-retention",
+      "legal-contract-lead-01": "episodic-enabled, procedural-enabled, high-retention",
+      "legal-ip-counsel-01": "episodic-enabled, procedural-enabled, high-retention",
+      "legal-employment-counsel-01": "episodic-enabled, high-retention-privileged",
+      "legal-compliance-counsel-01": "semantic-enabled, procedural-enabled, regulatory-indexed",
+      "legal-litigation-mgr-01": "episodic-enabled, immutable-storage, litigation-privileged",
+      "legal-paralegal-pod-01": "semantic-enabled, procedural-enabled, multi-workstream",
+      "legal-gpo-pod-01": "semantic-enabled, template-optimized, high-throughput"
+    },
+    "retention_policy": {
+      "contracts": "7-years-after-expiration",
+      "litigation_files": "10-years-after-closure",
+      "compliance_documents": "7-years",
+      "ip_records": "duration-of-ip-right-plus-5-years",
+      "board_documents": "permanent",
+      "employment_records": "7-years",
+      "ma_documents": "permanent",
+      "regulatory_filings": "7-years",
+      "legal-advisory-memos": "7-years"
+    },
+    "compression_settings": {
+      "episodic": "semantic-summary-after-365-days",
+      "semantic": "vector-dim-1536",
+      "graph": "entity-relation-indexed",
+      "immutable": "litigation-and-privileged-storage"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-leg-large-001",
+      "name": "Attorney-Client Privilege Protection",
+      "type": "data_usage",
+      "enforcement": "enforce",
+      "conditions": {
+        "data_classification": "attorney-client-privileged, board-privileged",
+        "access_level": "legal-team-and-board-members-only"
+      },
+      "actions": ["restrict-access", "encrypt-at-rest-and-transit", "prevent-export", "log-all-access", "watermark-documents"]
+    },
+    {
+      "id": "gov-leg-large-002",
+      "name": "Contract Execution Authority Matrix",
+      "type": "access_control",
+      "enforcement": "enforce",
+      "conditions": {
+        "rule": "no-binding-contract-without-appropriate-approval-tier",
+        "approval_matrix": {
+          "low_risk_under_100k": "contract-lead-can-sign",
+          "medium_risk_under_500k": "deputy-gc-can-sign",
+          "high_risk_or_over_500k": "gc-must-sign",
+          "ma_or_strategic_transaction": "gc-plus-board-approval"
+        }
+      },
+      "actions": ["block-execution", "notify-legal", "log-violation"]
+    },
+    {
+      "id": "gov-leg-large-003",
+      "name": "Litigation File Privilege and Immutability",
+      "type": "data_usage",
+      "enforcement": "enforce",
+      "conditions": {
+        "record_types": ["litigation-files", "e-discovery", "external-counsel-files"],
+        "modification": "immutable-after-creation"
+      },
+      "actions": ["preserve-documents", "prevent-modification", "require-copy-for-edits", "maintain-chain-of-custody"]
+    },
+    {
+      "id": "gov-leg-large-004",
+      "name": "GPO Pod Legal Boundary",
+      "type": "access_control",
+      "enforcement": "enforce",
+      "conditions": {
+        "agent_role": "legal-gpo-pod-01",
+        "prohibited_actions": ["provide-legal-advice", "interpret-contracts-for-binding-purposes", "recommend-negotiation-strategy", "approve-contracts"]
+      },
+      "actions": ["block-output", "log-attempt", "notify-contract-lead"]
+    },
+    {
+      "id": "gov-leg-large-005",
+      "name": "Conflict of Interest Screening",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {
+        "trigger": "new-matter-intake",
+        "check_required": true,
+        "scope": "global-all-entities"
+      },
+      "actions": ["run-conflicts-search", "document-results", "escalate-if-conflict-found"]
+    },
+    {
+      "id": "gov-leg-large-006",
+      "name": "External Counsel Budget Control",
+      "type": "audit",
+      "enforcement": "enforce",
+      "conditions": {
+        "rule": "external-counsel-spending-within-approved-budget",
+        "approval_threshold": "100000"
+      },
+      "actions": ["track-spend", "flag-over-budget", "require-approval", "notify-gc"]
+    },
+    {
+      "id": "gov-leg-large-007",
+      "name": "Regulatory Filing Compliance",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {
+        "frequency": "regulatory-calendar",
+        "scope": "all-jurisdictions",
+        "missed_filing": "never-acceptable"
+      },
+      "actions": ["calendar-tracking", "early-alerts", "immediate-escalation-if-at-risk", "post-mortem-if-missed"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "leg-lg-kpi-001",
+      "name": "Contract Turnaround Time",
+      "description": "Average days from contract request to executed agreement by risk tier",
+      "metric_type": "counter",
+      "unit": "days",
+      "thresholds": {"target": 5, "warning": 10, "critical": 20},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "leg-lg-kpi-002",
+      "name": "Contract Volume by Risk Tier",
+      "description": "Number of contracts processed by risk tier: low, medium, high, critical",
+      "metric_type": "counter",
+      "unit": "count",
+      "thresholds": {"target": null, "warning": null, "critical": null},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "leg-lg-kpi-003",
+      "name": "Standard Contract Usage Rate",
+      "description": "Percentage of contracts executed using approved company templates vs. custom drafts",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 85, "warning": 70, "critical": 50},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "leg-lg-kpi-004",
+      "name": "Compliance Training Completion Rate",
+      "description": "Percentage of employees completing mandatory compliance training by deadline",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 98, "warning": 90, "critical": 80},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "leg-lg-kpi-005",
+      "name": "Litigation Matter Budget Adherence",
+      "description": "Percentage of litigation matters within approved external counsel budget",
+      "metric_type": "gauge",
+      "unit": "percent-within-budget",
+      "thresholds": {"target": 95, "warning": 85, "critical": 70},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "leg-lg-kpi-006",
+      "name": "IP Portfolio Health Score",
+      "description": "Composite score of IP portfolio: current renewals, active protections, enforcement actions, licensing revenue",
+      "metric_type": "gauge",
+      "unit": "score",
+      "thresholds": {"target": 90, "warning": 75, "critical": 60},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "leg-lg-kpi-007",
+      "name": "External Counsel Cost per Matter",
+      "description": "Average external counsel spend per litigation or transaction matter",
+      "metric_type": "counter",
+      "unit": "usd",
+      "thresholds": {"target": 75000, "warning": 125000, "critical": 250000},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "leg-lg-kpi-008",
+      "name": "Regulatory Filing On-Time Rate",
+      "description": "Percentage of regulatory filings submitted by deadline across all jurisdictions",
+      "metric_type": "boolean",
+      "unit": "percent",
+      "thresholds": {"target": 100, "warning": 100, "critical": 95},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "leg-lg-kpi-009",
+      "name": "Legal Matter Closure Rate",
+      "description": "Percentage of open legal matters closed within target timeframe",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 85, "warning": 70, "critical": 55},
+      "aggregation_period": "quarter"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-leg-lg-001",
+      "type": "document",
+      "name": "Contract Management System",
+      "provider": "docushield",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"endpoint": "https://app.docusign.com/api", "modules": ["contract-lifecycle", "e-signature", "template-library", "clause-library", "analytics", "obligation-tracking", "risk-scoring"]}
+    },
+    {
+      "id": "int-leg-lg-002",
+      "type": "email",
+      "name": "Legal Team Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"domain": "{tenant}.google.com", "folders": ["incoming-contracts", "legal-advisory", "board-correspondence", "litigation-files", "compliance-documents", "ip-records"]}
+    },
+    {
+      "id": "int-leg-lg-003",
+      "type": "document",
+      "name": "Legal Document Management",
+      "provider": "sharepoint",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"shared_site": "legal-department", "document_libraries": ["contracts", "litigation", "compliance", "ip-records", "board-documents", "templates", "external-counsel"], "retention_policies": true}
+    },
+    {
+      "id": "int-leg-lg-004",
+      "type": "custom",
+      "name": "Legal Research Platform",
+      "provider": "westlaw_practice_management",
+      "auth_method": "api_key",
+      "status": "active",
+      "config": {"endpoint": "https://api.thomsonreuters.com", "modules": ["case-law", "statutes", "regulations", "secondary-sources", "forms-and-documents", "practice-guides"]}
+    },
+    {
+      "id": "int-leg-lg-005",
+      "type": "document",
+      "name": "Case Management System",
+      "provider": "clevver-legal",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"endpoint": "https://api.clevverlegal.com", "modules": ["case-tracking", "deadline-management", "document-management", "billing", "matter-budgeting", "reporting"]}
+    },
+    {
+      "id": "int-leg-lg-006",
+      "type": "document",
+      "name": "E-Discovery Platform",
+      "provider": "enforce",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"endpoint": "https://api.enforce.com", "modules": ["collection", "processing", "review", "production", "analytics"]}
+    },
+    {
+      "id": "int-leg-lg-007",
+      "type": "messaging",
+      "name": "Legal Team Communication",
+      "provider": "slack",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"workspace": "{tenant}-legal", "channels": ["#general", "#contracts", "#litigation", "#compliance", "#ip", "#employment", "#board", "#external-counsel"]}
+    },
+    {
+      "id": "int-leg-lg-008",
+      "type": "custom",
+      "name": "Compliance Management System",
+      "provider": "highoview",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"endpoint": "https://api.highoview.com", "modules": ["policy-management", "risk-assessment", "training", "auditing", "incident-management", "regulatory-tracker"]}
+    },
+    {
+      "id": "int-leg-lg-009",
+      "type": "custom",
+      "name": "Sanctions and Screening",
+      "provider": "refinitiv_world_check",
+      "auth_method": "api_key",
+      "status": "active",
+      "config": {"endpoint": "https://api.refinitiv.com", "modules": ["sanctions-screening", "pep-screening", "adverse-media", "beneficial-ownership"]}
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-leg-lg-001",
+      "name": "Agent Autonomy Boundaries",
+      "scope": "agent",
+      "rules": [
+        {
+          "agent": "legal-gpo-pod-01",
+          "allowed": ["scan-contracts", "extract-clauses", "retrieval", "template-management", "deadline-reminders", "document-formatting", "contract-redlining-standard", "obligation-extraction"],
+          "denied": ["provide-legal-advice", "interpret-contracts-for-binding-purposes", "recommend-negotiation-strategy", "approve-contracts", "modify-clauses-substantively", "send-legal-opinions", "sign-legal-documents"]
+        },
+        {
+          "agent": "legal-paralegal-pod-01",
+          "allowed": ["prepare-contracts-from-templates", "organize-documents", "track-deadlines", "research-assist", "due-diligence-support", "e-discovery-assist", "citation-formatting"],
+          "denied": ["provide-legal-advice", "negotiate-contract-terms", "represent-company-in-legal-matters", "sign-legal-documents", "authorize-settlement"]
+        },
+        {
+          "agent": "legal-contract-lead-01",
+          "allowed": ["contract-review", "negotiation-within-authority", "template-management", "risk-assessment", "standard-approval"],
+          "denied": ["approve-high-risk-contracts", "authorize-settlement", "waive-legal-rights", "bypass-executive-approval-gates"]
+        },
+        {
+          "agent": "legal-gc-01",
+          "allowed": ["all-legal-operations"],
+          "denied": ["waive-attorney-client-privilege", "authorize-settlement-without-board-approval-if-over-threshold", "bypass-governance-requirements"]
+        },
+        {
+          "requirement": "no-agent-can-provide-binding-legal-advice-without-human-legal-counsel-confirmation"
+        }
+      ]
+    },
+    {
+      "id": "pol-leg-lg-002",
+      "name": "Legal and Regulatory Compliance",
+      "scope": "department",
+      "rules": [
+        {
+          "frequency": "quarterly",
+          "action": "review-regulatory-changes-and-update-compliance-policies-across-all-jurisdictions"
+        },
+        {
+          "frequency": "annually",
+          "action": "full-compliance-audit-and-external-attorney-review-of-compliance-program"
+        },
+        {
+          "frequency": "quarterly",
+          "action": "review-contract-template-library-and-clause-database-for-updates-and-improvements"
+        },
+        {
+          "frequency": "annually",
+          "action": "comprehensive-risk-assessment-of-all-legal-exposures"
+        }
+      ]
+    },
+    {
+      "id": "pol-leg-lg-003",
+      "name": "Privilege, Confidentiality and Data Security",
+      "scope": "system",
+      "rules": [
+        {
+          "data_type": "attorney-client-privileged",
+          "access": "legal-team-and-board-members-only",
+          "encryption": "required-at-rest-and-transit",
+          "watermarking": "required"
+        },
+        {
+          "data_type": "litigation-files",
+          "access": "legal-team-and-external-counsel-assigned-to-matter",
+          "encryption": "required-at-rest-and-transit",
+          "immutable": "true"
+        },
+        {
+          "data_type": "board-documents",
+          "access": "board-members-and-general-counsel",
+          "encryption": "required-at-rest-and-transit",
+          "retention": "permanent"
+        },
+        {
+          "data_type": "ip-records",
+          "access": "ip-counsel-and-assigned-team",
+          "encryption": "required-at-rest-and-transit"
+        }
+      ]
+    }
+  ]
+}

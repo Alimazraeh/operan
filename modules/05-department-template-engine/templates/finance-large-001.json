@@ -1,0 +1,585 @@
+{
+  "id": "finance-large-001",
+  "name": "Large Enterprise Finance Department",
+  "description": "15–40 person Finance department for enterprise organizations (500+ employees). Multi-layered structure with CFO, VP Finance, FP&A, Accounting, Treasury, Tax, Internal Audit, and Financial Systems. Full SOX compliance, global reporting, and enterprise financial controls.",
+  "category": "finance",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "large",
+    "department_size": "15-40 FTE",
+    "company_size": "500+ employees",
+    "industry": "global",
+    "compliance_level": "full-sarbanes-oxley",
+    "frameworks": ["GAAP", "IFRS", "SOX", "ASC-606", "ICOFR"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["finance", "enterprise", "accounting", "fp-a", "treasury", "sox", "global"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "cfo-01",
+      "role": "Chief Financial Officer",
+      "capabilities": [
+        "financial-strategy",
+        "capital-allocation",
+        "financial-reporting",
+        "investor-relations",
+        "risk-management",
+        "merger-acquisition",
+        "board-advisory",
+        "treasury-management",
+        "tax-strategy"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "semantic-enabled, graph-enabled, full-retention",
+      "tool_requirements": ["financial-systems", "analytics-dashboard", "email", "board-reporting", "budget-tool"],
+      "system_prompt": "You are the CFO for a large enterprise. You oversee all financial operations, strategic planning, investor relations, and board reporting. You manage the finance, accounting, FP&A, treasury, tax, and internal audit functions. You are the chief risk officer for financial matters and ensure full compliance with SOX, GAAP, and IFRS.",
+      "constraints": {
+        "max_tokens_per_request": 16384,
+        "financial-data": "strict-confidentiality",
+        "sox-data": "immutable, audit-trail"
+      },
+      "access_control": {
+        "all-finance-data": "read-write",
+        "board-reports": "read-write",
+        "financial-systems": "read-write",
+        "investor-data": "read-write",
+        "tax-records": "read-write",
+        "audit-files": "read-write"
+      }
+    },
+    {
+      "id": "vp-finance-01",
+      "role": "VP of Finance — FP&A",
+      "capabilities": [
+        "financial-planning",
+        "budgeting",
+        "forecasting",
+        "variance-analysis",
+        "management-reporting",
+        "scenario-planning",
+        "business-intelligence"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["fp-a-system", "analytics-dashboard", "email", "budget-tool"],
+      "system_prompt": "You are the VP of Finance leading FP&A. You manage annual budgeting, quarterly forecasting, variance analysis, and management reporting. You provide financial insights to business unit leaders and support strategic decision-making.",
+      "constraints": {"max_tokens_per_request": 8192},
+      "access_control": {
+        "fp-a-data": "read-write",
+        "budget-data": "read-write",
+        "financial-systems": "read-only",
+        "management-reports": "read-write"
+      }
+    },
+    {
+      "id": "controller-01",
+      "role": "Controller — Head of Accounting",
+      "capabilities": [
+        "financial-accounting",
+        "general-ledger",
+        "accounts-payable",
+        "accounts-receivable",
+        "month-end-close",
+        "sox-compliance",
+        "financial-statements",
+        "audit-coordination"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled, immutable-storage",
+      "tool_requirements": ["erp-system", "accounting-system", "email", "audit-trail"],
+      "system_prompt": "You are the Controller and Head of Accounting. You oversee all accounting operations including GL, AP, AR, month-end close, and financial statements. You ensure SOX compliance, coordinate with external auditors, and maintain financial controls.",
+      "constraints": {
+        "max_tokens_per_request": 8192,
+        "accounting-data": "immutable, sox-audit-trail"
+      },
+      "access_control": {
+        "general-ledger": "read-write",
+        "financial-statements": "read-write",
+        "sox-documents": "read-write",
+        "audit-files": "read-write",
+        "all-accounting": "read-write"
+      }
+    },
+    {
+      "id": "treasury-lead-01",
+      "role": "Treasury Lead",
+      "capabilities": [
+        "cash-management",
+        "liquidity-management",
+        "debt-management",
+        "investment-management",
+        "forex-management",
+        "banking-relationships",
+        "financial-risk-management"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["treasury-system", "bank-apis", "email", "analytics-dashboard"],
+      "system_prompt": "You are the Treasury Lead. You manage cash and liquidity, banking relationships, debt and investments, forex exposure, and financial risk. You optimize working capital and ensure sufficient liquidity for operations.",
+      "constraints": {"max_tokens_per_request": 8192},
+      "access_control": {
+        "treasury-data": "read-write",
+        "bank-accounts": "read-write",
+        "investment-portfolio": "read-write",
+        "financial-systems": "read-only"
+      }
+    },
+    {
+      "id": "tax-director-01",
+      "role": "Tax Director",
+      "capabilities": [
+        "tax-planning",
+        "tax-compliance",
+        "transfer-pricing",
+        "international-tax",
+        "tax-technology",
+        "audit-defense",
+        "tax-strategy"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["tax-system", "email", "document-storage", "analytics-dashboard"],
+      "system_prompt": "You are the Tax Director. You manage all tax planning, compliance, and strategy across global jurisdictions. You handle transfer pricing, international tax, and tax audits. You work with external tax advisors and ensure compliance with local tax laws.",
+      "constraints": {"max_tokens_per_request": 8192},
+      "access_control": {
+        "tax-records": "read-write",
+        "tax-filings": "read-write",
+        "financial-systems": "read-only",
+        "transfer-pricing-docs": "read-write"
+      }
+    },
+    {
+      "id": "internal-audit-lead-01",
+      "role": "Internal Audit Lead",
+      "capabilities": [
+        "internal-audit",
+        "risk-assessment",
+        "controls-testing",
+        "compliance-auditing",
+        "investigations",
+        "audit-reporting",
+        "sox-testing"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, immutable-storage",
+      "tool_requirements": ["audit-management", "email", "document-storage", "analytics-dashboard"],
+      "system_prompt": "You lead Internal Audit. You conduct risk-based audits, test SOX controls, investigate fraud allegations, and report audit findings to the Audit Committee. You maintain independence and objectivity in all audit activities.",
+      "constraints": {
+        "max_tokens_per_request": 8192,
+        "audit-files": "immutable, privileged"
+      },
+      "access_control": {
+        "all-company-data": "read-only-audit",
+        "audit-files": "read-write",
+        "investigation-files": "read-write-privileged",
+        "sox-testing": "read-write"
+      }
+    },
+    {
+      "id": "financial-analyst-01",
+      "role": "Senior Financial Analyst",
+      "capabilities": [
+        "financial-analysis",
+        "modeling",
+        "variance-analysis",
+        "management-reporting",
+        "budget-tracking",
+        "forecasting-assistance"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["fp-a-system", "analytics-dashboard", "email"],
+      "system_prompt": "You are a Senior Financial Analyst supporting FP&A. You build financial models, perform variance analysis, generate management reports, and assist with budgeting and forecasting.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "financial-data": "read-write",
+        "budget-data": "read-only",
+        "management-reports": "read-write"
+      }
+    },
+    {
+      "id": "finance-gpo-pod-01",
+      "role": "GPO Pod — Finance Support",
+      "capabilities": [
+        "document-drafting",
+        "data-entry",
+        "report-generation",
+        "scheduling",
+        "data-entry",
+        "reconciliation-assistance",
+        "faq-response"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["document-storage", "email", "financial-systems", "templates-library"],
+      "system_prompt": "You are a Finance GPO pod member handling routine tasks: drafting documents, data entry, generating reports, scheduling meetings, assisting with reconciliations, and answering employee questions about expense policies. You always escalate financial reporting, audit findings, and SOX-related matters to the appropriate human finance specialist.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["financial-reporting", "audit-findings", "sox-issues", "fraud-indicators"]
+      },
+      "access_control": {
+        "financial-data": "read-only",
+        "budget-data": "read-only",
+        "financial-systems": "read-only",
+        "audit-files": "none",
+        "investigation-files": "none"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-close-001",
+      "name": "Month-End Close Process",
+      "description": "Formalized month-end close process with workstreams, deadlines, and quality gates for SOX compliance.",
+      "triggers": ["schedule:monthly"],
+      "steps": [
+        {
+          "id": "close-01",
+          "type": "agent_call",
+          "name": "Close Calendar & Workstream Assignment",
+          "config": {
+            "agent": "finance-gpo-pod-01",
+            "task": "Distribute close calendar, assign workstream owners, set deadlines for each close activity"
+          }
+        },
+        {
+          "id": "close-02",
+          "type": "transformation",
+          "name": "Execute Workstream Activities",
+          "config": {
+            "agent": "controller-01",
+            "task": "Execute AP, AR, GL, fixed assets, payroll, and intercompany reconciliations"
+          }
+        },
+        {
+          "id": "close-03",
+          "type": "approval",
+          "name": "Quality Gate Review",
+          "config": {
+            "required_by": "vp-finance-01",
+            "task": "Review account reconciliations, journal entries, and SOX controls for accuracy"
+          }
+        },
+        {
+          "id": "close-04",
+          "type": "agent_call",
+          "name": "Generate Financial Statements",
+          "config": {
+            "agent": "controller-01",
+            "task": "Generate trial balance, income statement, balance sheet, cash flow statement"
+          }
+        },
+        {
+          "id": "close-05",
+          "type": "approval",
+          "name": "CFO Sign-off",
+          "config": {
+            "required_by": "cfo-01",
+            "task": "Review and approve financial statements for distribution"
+          }
+        },
+        {
+          "id": "close-06",
+          "type": "notification",
+          "name": "Distribute to Stakeholders",
+          "config": {
+            "recipients": ["board", "audit-committee", "investor-relations"],
+            "schedule": "by-close-date"
+          }
+        }
+      ]
+    },
+    {
+      "id": "wf-budget-001",
+      "name": "Annual Budgeting & Forecasting",
+      "description": "Annual budget cycle with department submissions, consolidation, and quarterly reforecasts.",
+      "triggers": ["schedule:annual", "schedule:quarterly"],
+      "steps": [
+        {
+          "id": "bud-01",
+          "type": "agent_call",
+          "name": "Issue Budget Instructions",
+          "config": {
+            "agent": "finance-gpo-pod-01",
+            "task": "Distribute budget instructions, templates, and assumptions to department heads"
+          }
+        },
+        {
+          "id": "bud-02",
+          "type": "transformation",
+          "name": "Consolidate Budget Submissions",
+          "config": {
+            "agent": "financial-analyst-01",
+            "task": "Consolidate department budgets, validate assumptions, identify variances"
+          }
+        },
+        {
+          "id": "bud-03",
+          "type": "approval",
+          "name": "Budget Review & Approval",
+          "config": {
+            "required_by": "cfo-01",
+            "task": "Review consolidated budget, present to executive team and board"
+          }
+        },
+        {
+          "id": "bud-04",
+          "type": "transformation",
+          "name": "Load Approved Budget",
+          "config": {
+            "agent": "finance-gpo-pod-01",
+            "task": "Load approved budget into financial system for tracking"
+          }
+        }
+      ]
+    },
+    {
+      "id": "wf-sox-001",
+      "name": "SOX Compliance & Controls Testing",
+      "description": "Annual SOX 404 compliance program including control design, testing, and remediation.",
+      "triggers": ["schedule:quarterly", "event:sox-planning"],
+      "steps": [
+        {
+          "id": "sox-01",
+          "type": "agent_call",
+          "name": "Control Universe Update",
+          "config": {
+            "agent": "internal-audit-lead-01",
+            "task": "Review and update control universe for changes in processes and systems"
+          }
+        },
+        {
+          "id": "sox-02",
+          "type": "agent_call",
+          "name": "Test Key Controls",
+          "config": {
+            "agent": "internal-audit-lead-01",
+            "task": "Perform detailed testing of SOX controls, document workpapers"
+          }
+        },
+        {
+          "id": "sox-03",
+          "type": "conditional",
+          "name": "Deficiency Assessment",
+          "config": {
+            "condition": "control_test_fails",
+            "true_path": "deficiency-reporting-and-remediation",
+            "false_path": "controls-pass"
+          }
+        },
+        {
+          "id": "sox-04",
+          "type": "approval",
+          "name": "Management Certification",
+          "config": {
+            "required_by": "cfo-01",
+            "task": "Sign SOX management certification"
+          }
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": true,
+    "procedural_enabled": true,
+    "graph_enabled": true,
+    "memory_profiles": {
+      "cfo-01": "semantic-enabled, graph-enabled, full-retention, sox-audit-trail",
+      "vp-finance-01": "semantic-enabled, procedural-enabled",
+      "controller-01": "semantic-enabled, procedural-enabled, immutable-storage",
+      "treasury-lead-01": "semantic-enabled, procedural-enabled",
+      "tax-director-01": "semantic-enabled, procedural-enabled",
+      "internal-audit-lead-01": "semantic-enabled, immutable-storage",
+      "financial-analyst-01": "semantic-enabled, financial-data-access",
+      "finance-gpo-pod-01": "semantic-enabled, documentation-optimized"
+    },
+    "retention_policy": {
+      "financial-statements": "7-years",
+      "tax-records": "7-years",
+      "audit-files": "indefinite",
+      "sox-testing": "7-years",
+      "investigation-files": "indefinite",
+      "budget-data": "5-years"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-fin-001",
+      "name": "SOX Financial Reporting Integrity",
+      "type": "audit",
+      "enforcement": "enforce",
+      "conditions": {
+        "report_type": "financial-statements",
+        "requirement": "dual-signoff"
+      },
+      "actions": ["cfo-signoff-required", "controller-signoff-required", "audit-trail", "immutable-records"]
+    },
+    {
+      "id": "gov-fin-002",
+      "name": "Segregation of Duties",
+      "type": "access_control",
+      "enforcement": "enforce",
+      "conditions": {
+        "rule": "financial-reporter != payment-approver",
+        "rule2": "budget-setter != budget-spender"
+      },
+      "actions": ["prevent-concurrent-approval", "log-violation", "notify-cfo"]
+    },
+    {
+      "id": "gov-fin-003",
+      "name": "Confidential Financial Data Protection",
+      "type": "data_usage",
+      "enforcement": "enforce",
+      "conditions": {
+        "data_classification": "confidential-financial",
+        "access_level": "need-to-know"
+      },
+      "actions": ["encrypt-at-rest", "log-all-access", "restrict-export", "watermark-documents"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "fin-kpi-001",
+      "name": "Close Cycle Time",
+      "description": "Number of business days to complete month-end close",
+      "metric_type": "gauge",
+      "unit": "days",
+      "thresholds": {"target": 5, "warning": 7, "critical": 10},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "fin-kpi-002",
+      "name": "Budget Variance",
+      "description": "Actual vs budgeted revenue and expenses as percentage",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 2, "warning": 5, "critical": 10},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "fin-kpi-003",
+      "name": "SOX Compliance Rate",
+      "description": "Percentage of SOX controls passing testing",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 100, "warning": 95, "critical": 90},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "fin-kpi-004",
+      "name": "Cash Runway",
+      "description": "Number of months current cash can cover operating expenses",
+      "metric_type": "gauge",
+      "unit": "months",
+      "thresholds": {"target": 24, "warning": 12, "critical": 6},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "fin-kpi-005",
+      "name": "Days Sales Outstanding (DSO)",
+      "description": "Average number of days to collect receivables",
+      "metric_type": "gauge",
+      "unit": "days",
+      "thresholds": {"target": 45, "warning": 60, "critical": 90},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "fin-kpi-006",
+      "name": "Audit Finding Closure Rate",
+      "description": "Percentage of audit findings remediated on time",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 100, "warning": 90, "critical": 75},
+      "aggregation_period": "quarter"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-fin-001",
+      "type": "erp",
+      "name": "ERP System",
+      "provider": "netsuite",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"endpoint": "https://system.na1.netsuite.com"}
+    },
+    {
+      "id": "int-fin-002",
+      "type": "erp",
+      "name": "FP&A Platform",
+      "provider": "adaptive",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"endpoint": "https://api.adaptive.com"}
+    },
+    {
+      "id": "int-fin-003",
+      "type": "erp",
+      "name": "Treasury Management",
+      "provider": "kyriba",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"endpoint": "https://api.kyriba.com"}
+    },
+    {
+      "id": "int-fin-004",
+      "type": "erp",
+      "name": "Tax Management",
+      "provider": "avalara",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"endpoint": "https://api.avalara.com"}
+    },
+    {
+      "id": "int-fin-005",
+      "type": "document",
+      "name": "Audit Management",
+      "provider": "workiva",
+      "auth_method": "oauth2",
+      "status": "active",
+      "config": {"endpoint": "https://api.workiva.com"}
+    },
+    {
+      "id": "int-fin-006",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active"
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-fin-001",
+      "name": "Agent Autonomy in Finance",
+      "scope": "agent",
+      "rules": [
+        {"agent": "finance-gpo-pod-01", "allowed": ["documentation", "data-entry", "reporting", "scheduling"], "denied": ["approve-financial-statements", "make-payments", "approve-journal-entries", "conduct-audits"]},
+        {"requirement": "all-agent-actions-affecting-financial-reporting-require-human-confirmation-and-approval"}
+      ]
+    },
+    {
+      "id": "pol-fin-002",
+      "name": "Financial Data Retention",
+      "scope": "system",
+      "rules": [
+        {"data_type": "financial-statements", "retention": "7-years", "disposal": "secure-delete"},
+        {"data_type": "tax-records", "retention": "7-years", "disposal": "secure-delete"},
+        {"data_type": "audit-files", "retention": "indefinite", "disposal": "none"},
+        {"data_type": "sox-testing", "retention": "7-years", "disposal": "secure-delete"}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "large",
+    "department_size": "15-40 FTE",
+    "company_size": "500+ employees",
+    "industry": "global",
+    "compliance_level": "full-sarbanes-oxley",
+    "frameworks": ["GAAP", "IFRS", "SOX", "ASC-606", "ICOFR"],
+    "last_reviewed": "2026-07-17"
+  }
+}
