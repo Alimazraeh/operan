@@ -98,7 +98,7 @@ type M19Client interface {
 // jobLogger returns a safe logger (no-op if nil).
 func (w *Worker) jobLogger(msg string, args ...any) {
 	if w.logger != nil {
-		w.jobLogger(msg, args...)
+		w.logger.Printf("worker: "+msg, args...)
 	}
 }
 
