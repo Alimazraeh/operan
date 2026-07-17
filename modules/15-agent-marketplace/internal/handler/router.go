@@ -35,22 +35,24 @@ func SetupRouter(listingStore *store.ListingStore, subStore *store.SubscriptionS
 	// Health endpoint (no auth required)
 	r.Get("/health", healthHandler)
 
-	// Authenticated routes — middleware must come before any route definitions
+	// Auth middleware — applies to API sub-router only
+	api := chi.NewRouter()
 	authValidator := middleware.NewAuthValidator("", "")
-	r.Use(middleware.JWTMiddleware(authValidator))
-	r.Use(middleware.TenantMiddleware())
+	api.Use(middleware.JWTMiddleware(authValidator))
+	api.Use(middleware.TenantMiddleware())
 
 	// API routes
-	r.Get("/v1/listings", lh.ListListings)
-	r.Get("/v1/listings/{id}", lh.GetListing)
-	r.Post("/v1/listings/{id}/deploy", lh.DeployListing)
+	api.Get("/v1/listings", lh.ListListings)
+	api.Get("/v1/listings/{id}", lh.GetListing)
+	api.Post("/v1/listings/{id}/deploy", lh.DeployListing)
 
-	r.Post("/v1/subscriptions", sh.Subscribe)
-	r.Get("/v1/subscriptions", sh.ListSubscriptions)
+	api.Post("/v1/subscriptions", sh.Subscribe)
+	api.Get("/v1/subscriptions", sh.ListSubscriptions)
 
-	r.Post("/v1/reviews", rh.CreateReview)
-	r.Get("/v1/reviews", rh.ListReviews)
+	api.Post("/v1/reviews", rh.CreateReview)
+	api.Get("/v1/reviews", rh.ListReviews)
 
+	r.Mount("/", api)
 	return r
 }
 
