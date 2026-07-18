@@ -46,6 +46,7 @@ All configuration is via environment variables:
 | `IAM_TOKEN_SECRET` | *(none)* | **Yes** | HMAC signing secret for internal service/agent tokens. Must be a strong random string. |
 | `IAM_TOKEN_EXPIRY_MIN` | `60` | No | JWT token expiry in minutes |
 | `IAM_EVENT_BROKER_URL` | *(empty — log-only)* | No | Kafka broker address (`host:port`) for event publishing; empty = log-only |
+| `IAM_DATABASE_URL` | *(empty — in-memory)* | No | PostgreSQL DSN for persistent user/audit storage. When set, all user writes and audit events are synced to DB. Example: `postgres://user:pass@host:5432/iam?sslmode=disable` |
 | `IAM_OTEL_ENABLED` | `true` | No | Enable OpenTelemetry tracing |
 | `IAM_OTEL_COLLECTOR_URL` | `http://otel-collector:4317` | No | OTLP collector endpoint |
 | `AUTHENTIK_SERVER_URL` | *(none)* | **Yes** | Base URL of Authentik API |
@@ -55,6 +56,10 @@ All configuration is via environment variables:
 | `AUTHENTIK_INGRESS_DOMAIN` | `auth.operan.internal` | No | Domain for Ingress resources |
 
 > **Security:** `IAM_TOKEN_SECRET` must be set to a strong, randomly generated value. The service will refuse to start with an empty or default value.
+
+## Database Persistence
+
+When `IAM_DATABASE_URL` is set, the module runs PostgreSQL migrations on startup and persists all user and audit data to the database. The in-memory store continues to serve as the fast path, with writes sync'd to PostgreSQL in the background. If the database is unavailable, writes still succeed in-memory (with a log warning) — the database provides durability, not availability.
 
 ## Authentik Integration
 
