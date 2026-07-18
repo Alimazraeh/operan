@@ -2,34 +2,43 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Operan</title>
+<title>Operan — Agentic Department Operating System</title>
 <link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
 
+<!-- ═══ LOGIN ═══ -->
 <div id="login" class="login-wrap">
-  <div class="login-card">
-    <div class="brand-lg"><span class="logo">O</span><div><h1>Operan</h1>
-      <p>Agentic Department Operating System</p></div></div>
+  <div class="login-card glass">
+    <div class="brand-lg">
+      <span class="logo">O</span>
+      <div><h1>Operan</h1><p>Agentic Department Operating System</p></div>
+    </div>
     <label>Signing secret</label>
     <input id="loginSecret" type="password" placeholder="paste the tenant signing secret" autocomplete="off">
     <label>Tenant</label>
     <div class="frow">
       <input id="loginTenant" placeholder="tenant id">
-      <button class="ghost" id="btnNewTenant">New</button>
+      <button class="ghost sm" id="btnNewTenant">New</button>
     </div>
-    <button id="btnConnect" class="wide">Enter the platform</button>
+    <button class="wide lg" id="btnConnect">Enter the platform</button>
     <div class="err" id="loginMsg"></div>
     <p class="fine">Secrets never leave this page — JWTs are minted in your browser.
-    Sovereign by design: this portal and every service behind it run on this machine.</p>
+    Sovereign by design: everything runs on-cluster, no data leaves.</p>
   </div>
 </div>
 
+<!-- ═══ SHELL ═══ -->
 <div id="shell" style="display:none">
   <nav id="sidebar">
+    <div class="overlay"></div>
     <div class="brand"><span class="logo">O</span><b>Operan</b></div>
+    <div class="tenant-switcher">
+      <button class="tenant-switcher-btn" id="tenantSwitchBtn">⊞ Switch tenant ▾</button>
+      <div class="tenant-dropdown" id="tenantDropdown"></div>
+    </div>
     <a data-view="overview" class="navlink">⌂ Overview</a>
     <a data-view="departments" class="navlink">🏢 Departments</a>
     <a data-view="agents" class="navlink">🤖 Agents</a>
@@ -44,9 +53,13 @@
       <a id="btnLogout">Sign out</a>
     </div>
   </nav>
+
   <div id="main">
     <div id="topbar">
-      <div id="crumb"></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="ghost sm menu-toggle" id="menuToggle">☰</button>
+        <div id="crumb">Overview</div>
+      </div>
       <div id="healthdots"></div>
     </div>
     <div id="view"></div>
