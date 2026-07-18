@@ -226,6 +226,13 @@ func (s *UserStore) SetRoles(id string, roles []string) error {
 	return nil
 }
 
+// CountTotal returns the total number of users in the store.
+func (s *UserStore) CountTotal() (int, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return len(s.users), nil
+}
+
 // unmarshalRoleIDs converts the JSON roles field to a string slice.
 func unmarshalRoleIDs(jsonStr string) []string {
 	if jsonStr == "" || jsonStr == "[]" {

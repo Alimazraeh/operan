@@ -20,13 +20,13 @@ import (
 // UserHandler handles user-related HTTP endpoints.
 type UserHandler struct {
 	Auth      *authentik.Client
-	Users     *store.UserStore // Kept for backward compat with test helpers
-	Audit     *store.AuditStore
+	Users     store.UserStoreAPI
+	Audit     store.AuditStoreAPI
 	Publisher *events.Publisher
 }
 
 // NewUserHandler creates a new user handler.
-func NewUserHandler(auth *authentik.Client, users *store.UserStore, audit *store.AuditStore, publisher *events.Publisher) *UserHandler {
+func NewUserHandler(auth *authentik.Client, users store.UserStoreAPI, audit store.AuditStoreAPI, publisher *events.Publisher) *UserHandler {
 	return &UserHandler{
 		Auth:      auth,
 		Users:     users,

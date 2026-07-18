@@ -15,6 +15,7 @@ import (
 
 	"github.com/operan/modules/02-identity-access/internal/authentik"
 	"github.com/operan/modules/02-identity-access/internal/config"
+	"github.com/operan/modules/02-identity-access/internal/database"
 	"github.com/operan/modules/02-identity-access/internal/events"
 	"github.com/operan/modules/02-identity-access/internal/handler"
 	"github.com/operan/modules/02-identity-access/internal/middleware"
@@ -26,9 +27,34 @@ import (
 func main() {
 	cfg := config.Load()
 
-	// Initialize stores
-	users := store.NewUserStore()
-	audit := store.NewAuditStore()
+	// Initialize in-memory stores (always created — wrapped if DB configured)
+	var users store.UserStoreAPI
+	var audit store.AuditStoreAPI
+	memUsers := store.NewUserStore()
+	memAudit := store.NewAuditStore()
+
+	// Initialize database connection if configured — adds persistence layer
+	if cfg.DatabaseURL != "" {
+		ctx := context.Background()
+		pool, err := database.NewPool(ctx, cfg.DatabaseURL)
+		if err != nil {
+			log.Fatalf("Failed to connect to database: %v", err)
+		}
+
+		// Run migrations
+		if err := database.RunMigrations(ctx, pool); err != nil {
+			log.Fatalf("Failed to run migrations: %v", err)
+		}
+		log.Printf("Database initialized and migrated successfully")
+
+		// Wrap stores with persistence layer
+		users = store.NewPersistentUserStore(memUsers, pool)
+		audit = store.NewPersistentAuditStore(memAudit, pool)
+	} else {
+		log.Printf("No database configured — running in-memory mode")
+		users = memUsers
+		audit = memAudit
+	}
 
 	// Initialize event publisher
 	publisher := events.NewPublisher(cfg.EventBrokerURL)
