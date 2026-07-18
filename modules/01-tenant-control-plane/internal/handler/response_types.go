@@ -358,6 +358,7 @@ func RegisterRoutes(h *middleware.Handler, mux *http.ServeMux) {
 	// Tenant CRUD
 	mux.HandleFunc("GET /v1/tenants", ListTenants(h))
 	mux.HandleFunc("POST /v1/tenants", CreateTenant(h))
+	mux.HandleFunc("POST /v1/tenants/bootstrap", BootstrapTenant(h))
 	mux.HandleFunc("GET /v1/tenants/{id}", GetTenant(h))
 	mux.HandleFunc("PATCH /v1/tenants/{id}", PatchTenant(h))
 	mux.HandleFunc("DELETE /v1/tenants/{id}", DeleteTenant(h))

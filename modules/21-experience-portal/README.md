@@ -25,6 +25,32 @@ signing secret — the secret never leaves the page.
 | Connectors | 18 | Enterprise connector management (M365, Salesforce, SAP, HubSpot, REST, SMTP), sync triggers, health checks, exposed tools |
 | The Story | all | Guided 8-step end-to-end scenario, every step a real API call |
 
+## Authentication
+
+The portal uses **password-file authentication** backed by Module 02:
+
+1. Enter the admin password (set via `IAM_ADMIN_PASSWORD_FILE`)
+2. Portal POSTs to `POST /svc/iam/admin/login` → M02 validates password against file
+3. M02 returns a signed JWT (HMAC-SHA256, `IAM_TOKEN_SECRET`)
+4. JWT is stored in the session for all subsequent requests
+
+### Setup
+
+```bash
+# 1. Set the JWT signing secret
+export IAM_TOKEN_SECRET="a-strong-secret-at-least-32-characters"
+
+# 2. Generate a password file
+# Option A: Use the bootstrap endpoint to generate one
+curl -X POST http://localhost:8002/api/v1/iam/admin/login
+
+# Option B: Set it manually
+echo "your-secure-password" > /etc/operan/admin.pass
+chmod 600 /etc/operan/admin.pass
+```
+
+On first login, the portal also calls `POST /svc/tenants/bootstrap` which creates a default-tenant if none exist.
+
 ## UI Features
 
 - **Glassmorphism dark theme** — CSS design system with custom properties, backdrop-blur cards, gradient accents

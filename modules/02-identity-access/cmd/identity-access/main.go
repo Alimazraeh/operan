@@ -49,10 +49,23 @@ func main() {
 	adHandler := handler.NewADHandler(authClient, publisher)
 	delegationHandler := handler.NewDelegationHandler(authClient, publisher)
 
+	// Admin bootstrap login handler (password file auth)
+	adminLoginHandler := handler.NewAdminLoginHandler(cfg)
+
 	// Setup routes — base path: /api/v1/iam
 	mux := http.NewServeMux()
 
 	// Health check is registered later alongside the readiness probe.
+
+	// ─── Admin bootstrap login ───
+	mux.HandleFunc("/api/v1/iam/admin/login", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			adminLoginHandler.Login(w, r)
+		default:
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		}
+	})
 
 	// POST /api/v1/iam/users
 	mux.HandleFunc("/api/v1/iam/users", func(w http.ResponseWriter, r *http.Request) {

@@ -16,8 +16,8 @@
       <span class="logo">O</span>
       <div><h1>Operan</h1><p>Agentic Department Operating System</p></div>
     </div>
-    <label>Signing secret</label>
-    <input id="loginSecret" type="password" placeholder="paste the tenant signing secret" autocomplete="off">
+    <label>Admin password</label>
+    <input id="loginSecret" type="password" placeholder="enter the platform admin password" autocomplete="off">
     <label>Tenant</label>
     <div class="frow">
       <input id="loginTenant" placeholder="tenant id">
@@ -25,8 +25,7 @@
     </div>
     <button class="wide lg" id="btnConnect">Enter the platform</button>
     <div class="err" id="loginMsg"></div>
-    <p class="fine">Secrets never leave this page — JWTs are minted in your browser.
-    Sovereign by design: everything runs on-cluster, no data leaves.</p>
+    <p class="fine">Your password never leaves this page. A JWT is minted in your browser after authentication.</p>
   </div>
 </div>
 
