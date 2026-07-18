@@ -1,329 +1,272 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Platform — Operan | Enterprise Agentic Workforce Infrastructure</title>
-  <meta name="description" content="A modular platform for deploying and governing digital departments. Six-layer architecture built for enterprise scale.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platform — Operan | Enterprise Agentic Workforce Infrastructure</title>
+<meta name="description" content="Six-layer architecture. 20 modules. Deploy and govern digital departments at enterprise scale.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
 </head>
 <body>
+<canvas id="rain-canvas" class="rain-canvas"></canvas>
 
-  <nav class="nav" id="nav">
-    <div class="nav__inner">
-      <a href="index.html" class="nav__logo">
-        <svg><use href="assets/svg/logo.svg#icon-logo"/></svg>
-        OPERAN
-      </a>
-      <div class="nav__links" id="navLinks">
-        <a href="index.html" class="nav__link">Home</a>
-        <a href="platform.html" class="nav__link nav__link--active">Platform</a>
-        <a href="departments.html" class="nav__link">Departments</a>
-        <a href="industries.html" class="nav__link">Industries</a>
-        <a href="security.html" class="nav__link">Security</a>
-        <a href="about.html" class="nav__link">About</a>
-        <a href="private-cloud.html" class="nav__link">Private Cloud</a>
-        <a href="briefing.html" class="btn btn--primary nav__cta">Request Executive Briefing</a>
+<!-- ═══ Navigation ═══ -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">OPERAN</a>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="platform.html" class="nav-link active">Platform</a>
+      <a href="departments.html" class="nav-link">Departments</a>
+      <a href="industries.html" class="nav-link">Industries</a>
+      <a href="security.html" class="nav-link">Security</a>
+      <a href="about.html" class="nav-link">About</a>
+      <a href="briefing.html" class="nav-cta">Request Briefing</a>
+    </div>
+    <div class="nav-toggle" id="navToggle"><span></span><span></span><span></span></div>
+  </div>
+</nav>
+
+<div class="page-canvas">
+
+<!-- ═══ PAGE HEADER ═══ -->
+<section class="section" style="padding-top:calc(var(--nav-h) + var(--space-3xl));padding-bottom:var(--space-3xl);">
+  <div class="section-inner">
+    <div class="reveal" style="max-width:720px;margin:0 auto;text-align:center;">
+      <div class="section-label" style="justify-content:center;">Platform Architecture</div>
+      <h1 class="section-title" style="font-size:var(--text-4xl);">Enterprise <span class="accent">Agentic Workforce</span> Infrastructure</h1>
+      <p class="section-subtitle" style="margin:var(--space-md) auto 0;">A modular platform for deploying and governing digital departments. Six layers of infrastructure, designed for sovereign operations at enterprise scale.</p>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ═══ SIX-LAYER ARCHITECTURE ═══ -->
+<section class="section section--dark">
+  <div class="section-inner">
+    <div class="section-header reveal">
+      <div class="section-label">Architecture</div>
+      <h2 class="section-title">Six-Layer <span class="accent">Platform</span></h2>
+      <p class="section-subtitle">Each layer builds on the one below. Independently governable. Composed into a complete system.</p>
+    </div>
+
+    <div style="max-width:720px;margin:0 auto;">
+      <div class="arch-layer reveal" style="display:flex;align-items:center;gap:var(--space-lg);padding:var(--space-md) var(--space-lg);border-radius:10px;border:1px solid var(--border-subtle);margin-bottom:4px;transition:all 0.3s;background:var(--bg-card);">
+        <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:var(--text-sm);color:var(--cyan);font-weight:600;">1</div>
+        <div style="flex:1;"><strong style="font-size:var(--text-sm);">Experience Layer</strong><span style="font-size:var(--text-xs);color:var(--gray-400);margin-left:var(--space-sm);">API gateways, dashboards, integration points for human operators and external systems</span></div>
       </div>
-      <div class="nav__toggle" id="navToggle" aria-label="Toggle navigation">
-        <span></span><span></span><span></span>
+      <div class="arch-layer reveal" style="display:flex;align-items:center;gap:var(--space-lg);padding:var(--space-md) var(--space-lg);border-radius:10px;border:1px solid var(--border-subtle);margin-bottom:4px;transition:all 0.3s;background:var(--bg-card);">
+        <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:var(--text-sm);color:var(--cyan);font-weight:600;">2</div>
+        <div style="flex:1;"><strong style="font-size:var(--text-sm);">Department Layer</strong><span style="font-size:var(--text-xs);color:var(--gray-400);margin-left:var(--space-sm);">Configurable department templates with org structures, roles, and operational workflows</span></div>
+      </div>
+      <div class="arch-layer reveal" style="display:flex;align-items:center;gap:var(--space-lg);padding:var(--space-md) var(--space-lg);border-radius:10px;border:1px solid var(--border-subtle);margin-bottom:4px;transition:all 0.3s;background:var(--bg-card);">
+        <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:var(--text-sm);color:var(--cyan);font-weight:600;">3</div>
+        <div style="flex:1;"><strong style="font-size:var(--text-sm);">Agent Layer</strong><span style="font-size:var(--text-xs);color:var(--gray-400);margin-left:var(--space-sm);">Specialized digital workers with domain-specific capabilities and coordination protocols</span></div>
+      </div>
+      <div class="arch-layer reveal" style="display:flex;align-items:center;gap:var(--space-lg);padding:var(--space-md) var(--space-lg);border-radius:10px;border:1px solid var(--border-subtle);margin-bottom:4px;transition:all 0.3s;background:var(--bg-card);">
+        <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:var(--text-sm);color:var(--cyan);font-weight:600;">4</div>
+        <div style="flex:1;"><strong style="font-size:var(--text-sm);">Memory Layer</strong><span style="font-size:var(--text-xs);color:var(--gray-400);margin-left:var(--space-sm);">Institutional knowledge fabric&mdash;structured, searchable, perpetually compoundable</span></div>
+      </div>
+      <div class="arch-layer reveal" style="display:flex;align-items:center;gap:var(--space-lg);padding:var(--space-md) var(--space-lg);border-radius:10px;border:1px solid var(--border-subtle);margin-bottom:4px;transition:all 0.3s;background:var(--bg-card);">
+        <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:var(--text-sm);color:var(--cyan);font-weight:600;">5</div>
+        <div style="flex:1;"><strong style="font-size:var(--text-sm);">Governance Layer</strong><span style="font-size:var(--text-xs);color:var(--gray-400);margin-left:var(--space-sm);">Policy engine, compliance monitoring, audit trails, human oversight workflows</span></div>
+      </div>
+      <div class="arch-layer reveal" style="display:flex;align-items:center;gap:var(--space-lg);padding:var(--space-md) var(--space-lg);border-radius:10px;border:1px solid var(--border-subtle);margin-bottom:4px;transition:all 0.3s;background:var(--bg-card);">
+        <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:var(--text-sm);color:var(--cyan);font-weight:600;">6</div>
+        <div style="flex:1;"><strong style="font-size:var(--text-sm);">Infrastructure Layer</strong><span style="font-size:var(--text-xs);color:var(--gray-400);margin-left:var(--space-sm);">Multi-tenant deployment fabric with sovereign data controls and air-gapped support</span></div>
       </div>
     </div>
-  </nav>
+  </div>
+</section>
 
-  <section class="section" style="padding-top:calc(var(--header-height) + var(--space-4xl));padding-bottom:var(--space-4xl);">
-    <div class="container">
-      <div class="reveal" style="max-width:720px;margin:0 auto;text-align:center;">
-        <p class="section-label" style="justify-content:center;">Platform Architecture</p>
-        <h1 class="text-gradient">Enterprise Agentic Workforce Infrastructure</h1>
-        <p style="color:var(--color-gray-400);font-size:var(--text-lg);margin-top:var(--space-xl);line-height:1.8;">
-          A modular platform for deploying and governing digital departments. Six layers of infrastructure, designed for sovereign operations at enterprise scale.
-        </p>
+<!-- ═══ 20 MODULES ═══ -->
+<section class="section" id="modules">
+  <div class="section-inner">
+    <div class="section-header reveal">
+      <div class="section-label">Modules</div>
+      <h2 class="section-title">20 Modular <span class="accent">Capabilities</span></h2>
+      <p class="section-subtitle">Each module is independently deployable, composable, and governed. Build exactly the capacity you need.</p>
+    </div>
+    <div class="grid grid-4">
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:0ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M01</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Tenant Control Plane</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:50ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M02</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Identity &amp; Access</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:100ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M03</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Agent Orchestration</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:150ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M04</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Agent Registry</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:200ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M05</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Dept. Template Engine</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:250ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M06</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Knowledge Ingestion</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:300ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M07</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Memory Fabric</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:350ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M08</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Tool Execution</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:400ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M09</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Human Supervision</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:450ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M10</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Policy &amp; Governance</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:500ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M11</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Observability</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:550ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M12</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Model Abstraction</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:600ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M13</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Model Routing</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:650ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M14</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Agent Collaboration</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:700ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M15</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Agent Marketplace</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:750ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M16</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Execution Sandbox</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:800ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M17</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Cost Governance</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:850ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M18</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Enterprise Connectors</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:900ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M19</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Arabic Intelligence</div>
+      </div>
+      <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:950ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-xs);">M20</div>
+        <div style="font-size:var(--text-sm);font-weight:500;">Sovereign Deployment</div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- Architecture Layers -->
-  <section class="section section--darker">
-    <div class="container">
-      <div class="reveal">
-        <h2 style="text-align:center;margin-bottom:var(--space-3xl);">Six-Layer Architecture</h2>
+<div class="section-divider"></div>
 
-        <div class="arch-layers">
-          <div class="arch-layer">
-            <div class="arch-layer__number">1</div>
-            <div class="arch-layer__content">
-              <div class="arch-layer__name">Experience Layer</div>
-              <div class="arch-layer__desc">API gateways, dashboards, and integration points for human operators and external systems</div>
-            </div>
-            <svg class="arch-layer__arrow" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-          </div>
-          <div class="arch-layer">
-            <div class="arch-layer__number">2</div>
-            <div class="arch-layer__content">
-              <div class="arch-layer__name">Department Layer</div>
-              <div class="arch-layer__desc">Configurable department templates with org structures, roles, and operational workflows</div>
-            </div>
-            <svg class="arch-layer__arrow" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-          </div>
-          <div class="arch-layer">
-            <div class="arch-layer__number">3</div>
-            <div class="arch-layer__content">
-              <div class="arch-layer__name">Agent Layer</div>
-              <div class="arch-layer__desc">Specialized digital workers with domain-specific capabilities and coordination protocols</div>
-            </div>
-            <svg class="arch-layer__arrow" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-          </div>
-          <div class="arch-layer">
-            <div class="arch-layer__number">4</div>
-            <div class="arch-layer__content">
-              <div class="arch-layer__name">Memory Layer</div>
-              <div class="arch-layer__desc">Institutional knowledge fabric — structured, searchable, and perpetually compoundable</div>
-            </div>
-            <svg class="arch-layer__arrow" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-          </div>
-          <div class="arch-layer">
-            <div class="arch-layer__number">5</div>
-            <div class="arch-layer__content">
-              <div class="arch-layer__name">Governance Layer</div>
-              <div class="arch-layer__desc">Policy engine, compliance monitoring, audit trails, and human oversight workflows</div>
-            </div>
-            <svg class="arch-layer__arrow" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-          </div>
-          <div class="arch-layer">
-            <div class="arch-layer__number">6</div>
-            <div class="arch-layer__content">
-              <div class="arch-layer__name">Infrastructure Layer</div>
-              <div class="arch-layer__desc">Multi-tenant deployment fabric with sovereign data controls and air-gapped support</div>
-            </div>
-          </div>
-        </div>
+<!-- ═══ CORE PRINCIPLES ═══ -->
+<section class="section section--dark">
+  <div class="section-inner">
+    <div class="section-header reveal">
+      <div class="section-label">Design Principles</div>
+      <h2 class="section-title">Built for <span class="accent">Sovereign Operations</span></h2>
+    </div>
+    <div class="grid grid-3">
+      <div class="card reveal" style="transition-delay:0ms;">
+        <h3 style="font-size:var(--text-base);margin-bottom:var(--space-sm);">&#x1F3E2; Multi-Tenant Isolation</h3>
+        <p style="font-size:var(--text-sm);color:var(--gray-400);line-height:1.7;">Complete tenant separation at every layer. Data, processes, and outputs are cryptographically isolated per organization.</p>
+      </div>
+      <div class="card reveal" style="transition-delay:100ms;">
+        <h3 style="font-size:var(--text-base);margin-bottom:var(--space-sm);">&#x1F5FB;&#xFE0F; Sovereign by Design</h3>
+        <p style="font-size:var(--text-sm);color:var(--gray-400);line-height:1.7;">Deploy within your own infrastructure. Full data residency controls. Air-gapped and offline-capable deployments.</p>
+      </div>
+      <div class="card reveal" style="transition-delay:200ms;">
+        <h3 style="font-size:var(--text-base);margin-bottom:var(--space-sm);">&#x1F50D; Explainable First</h3>
+        <p style="font-size:var(--text-sm);color:var(--gray-400);line-height:1.7;">Every output is traceable to its source. Every decision includes its rationale. No black-box operations.</p>
+      </div>
+      <div class="card reveal" style="transition-delay:300ms;">
+        <h3 style="font-size:var(--text-base);margin-bottom:var(--space-sm);">&#x1F517; Composable Architecture</h3>
+        <p style="font-size:var(--text-sm);color:var(--gray-400);line-height:1.7;">Deploy modules individually or as a complete platform. Each module is independently versioned and upgradable.</p>
+      </div>
+      <div class="card reveal" style="transition-delay:400ms;">
+        <h3 style="font-size:var(--text-base);margin-bottom:var(--space-sm);">&#x1F4CA; Observability Built-In</h3>
+        <p style="font-size:var(--text-sm);color:var(--gray-400);line-height:1.7;">Complete telemetry, audit trails, and performance monitoring across every module and every agent action.</p>
+      </div>
+      <div class="card reveal" style="transition-delay:500ms;">
+        <h3 style="font-size:var(--text-base);margin-bottom:var(--space-sm);">&#x1F527; Modular Runtime</h3>
+        <p style="font-size:var(--text-sm);color:var(--gray-400);line-height:1.7;">Hot-swappable modules. Rolling updates. Zero-downtime deployments. Enterprise-grade reliability.</p>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- Modules Grid -->
-  <section class="section" id="modules">
-    <div class="container">
-      <div class="section-header reveal">
-        <p class="section-label">Platform Modules</p>
-        <h2>20 Modular Capabilities</h2>
-        <p>Each module is independently deployable, composable, and governed. Build exactly the capacity you need.</p>
-      </div>
-
-      <div class="module-grid">
-        <div class="module-card reveal">
-          <div class="module-card__id">M01</div>
-          <div class="module-card__name">Tenant Control Plane</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:50ms;">
-          <div class="module-card__id">M02</div>
-          <div class="module-card__name">Identity & Access</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:100ms;">
-          <div class="module-card__id">M03</div>
-          <div class="module-card__name">Agent Orchestration</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:150ms;">
-          <div class="module-card__id">M04</div>
-          <div class="module-card__name">Agent Registry</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:200ms;">
-          <div class="module-card__id">M05</div>
-          <div class="module-card__name">Dept. Template Engine</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:250ms;">
-          <div class="module-card__id">M06</div>
-          <div class="module-card__name">Knowledge Ingestion</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:300ms;">
-          <div class="module-card__id">M07</div>
-          <div class="module-card__name">Memory Fabric</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:350ms;">
-          <div class="module-card__id">M08</div>
-          <div class="module-card__name">Tool Execution</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:400ms;">
-          <div class="module-card__id">M09</div>
-          <div class="module-card__name">Human Supervision</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:450ms;">
-          <div class="module-card__id">M10</div>
-          <div class="module-card__name">Policy & Governance</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:500ms;">
-          <div class="module-card__id">M11</div>
-          <div class="module-card__name">Observability</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:550ms;">
-          <div class="module-card__id">M12</div>
-          <div class="module-card__name">Model Abstraction</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:600ms;">
-          <div class="module-card__id">M13</div>
-          <div class="module-card__name">Model Routing</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:650ms;">
-          <div class="module-card__id">M14</div>
-          <div class="module-card__name">Agent Collaboration</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:700ms;">
-          <div class="module-card__id">M15</div>
-          <div class="module-card__name">Agent Marketplace</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:750ms;">
-          <div class="module-card__id">M16</div>
-          <div class="module-card__name">Execution Sandbox</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:800ms;">
-          <div class="module-card__id">M17</div>
-          <div class="module-card__name">Cost Governance</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:850ms;">
-          <div class="module-card__id">M18</div>
-          <div class="module-card__name">Enterprise Connectors</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:900ms;">
-          <div class="module-card__id">M19</div>
-          <div class="module-card__name">Arabic Intelligence</div>
-        </div>
-        <div class="module-card reveal" style="transition-delay:950ms;">
-          <div class="module-card__id">M20</div>
-          <div class="module-card__name">Sovereign Deployment</div>
-        </div>
-      </div>
+<!-- ═══ FINAL CTA ═══ -->
+<section class="section">
+  <div class="section-inner">
+    <div style="max-width:640px;margin:0 auto;text-align:center;" class="reveal">
+      <h2 style="font-size:var(--text-3xl);margin-bottom:var(--space-lg);">Ready to Explore the Platform?</h2>
+      <p style="color:var(--gray-300);margin-bottom:var(--space-xl);line-height:1.7;">Schedule a strategic assessment to understand how Operan maps to your organization's operational requirements.</p>
+      <a href="briefing.html" class="btn btn-primary btn-lg">Schedule Strategic Assessment &rarr;</a>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- Core Principles -->
-  <section class="section section--darker">
-    <div class="container">
-      <div class="section-header reveal">
-        <p class="section-label">Design Principles</p>
-        <h2>Built for Sovereign Operations</h2>
+</div><!-- /page-canvas -->
+
+<!-- ═══ Footer ═══ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">OPERAN</div>
+        <p class="footer-tagline">The Operating System for Digital Departments.<br>Enterprise Agentic Workforce Infrastructure.</p>
       </div>
-
-      <div class="grid grid--3">
-        <div class="card reveal">
-          <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-lg);">
-            <svg style="width:28px;height:28px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-building"/></svg>
-            <h3 style="font-size:var(--text-base);">Multi-Tenant Isolation</h3>
-          </div>
-          <p style="color:var(--color-gray-400);font-size:var(--text-sm);line-height:1.7;">
-            Complete tenant separation at every layer. Data, processes, and outputs are cryptographically isolated per organization.
-          </p>
+      <div>
+        <div class="footer-heading">Platform</div>
+        <div class="footer-links">
+          <a href="platform.html" class="footer-link">Architecture</a>
+          <a href="platform.html#modules" class="footer-link">Modules</a>
         </div>
-
-        <div class="card reveal" style="transition-delay:100ms;">
-          <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-lg);">
-            <svg style="width:28px;height:28px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-lock"/></svg>
-            <h3 style="font-size:var(--text-base);">Sovereign by Design</h3>
-          </div>
-          <p style="color:var(--color-gray-400);font-size:var(--text-sm);line-height:1.7;">
-            Deploy within your own infrastructure. Full data residency controls. Air-gapped and offline-capable deployments.
-          </p>
+      </div>
+      <div>
+        <div class="footer-heading">Solutions</div>
+        <div class="footer-links">
+          <a href="departments.html" class="footer-link">Departments</a>
+          <a href="industries.html" class="footer-link">Industries</a>
+          <a href="security.html" class="footer-link">Security</a>
+          <a href="private-cloud.html" class="footer-link">Private Cloud</a>
         </div>
-
-        <div class="card reveal" style="transition-delay:200ms;">
-          <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-lg);">
-            <svg style="width:28px;height:28px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-hand"/></svg>
-            <h3 style="font-size:var(--text-base);">Explainable First</h3>
-          </div>
-          <p style="color:var(--color-gray-400);font-size:var(--text-sm);line-height:1.7;">
-            Every output is traceable to its source. Every decision includes its rationale. No black-box operations.
-          </p>
-        </div>
-
-        <div class="card reveal" style="transition-delay:300ms;">
-          <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-lg);">
-            <svg style="width:28px;height:28px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-globe"/></svg>
-            <h3 style="font-size:var(--text-base);">Composable Architecture</h3>
-          </div>
-          <p style="color:var(--color-gray-400);font-size:var(--text-sm);line-height:1.7;">
-            Deploy modules individually or as a complete platform. Each module is independently versioned and upgradable.
-          </p>
-        </div>
-
-        <div class="card reveal" style="transition-delay:400ms;">
-          <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-lg);">
-            <svg style="width:28px;height:28px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-chart"/></svg>
-            <h3 style="font-size:var(--text-base);">Observability Built-In</h3>
-          </div>
-          <p style="color:var(--color-gray-400);font-size:var(--text-sm);line-height:1.7;">
-            Complete telemetry, audit trails, and performance monitoring across every module and every agent action.
-          </p>
-        </div>
-
-        <div class="card reveal" style="transition-delay:500ms;">
-          <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-lg);">
-            <svg style="width:28px;height:28px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-server"/></svg>
-            <h3 style="font-size:var(--text-base);">Modular Runtime</h3>
-          </div>
-          <p style="color:var(--color-gray-400);font-size:var(--text-sm);line-height:1.7;">
-            Hot-swappable modules. Rolling updates. Zero-downtime deployments. Enterprise-grade reliability.
-          </p>
+      </div>
+      <div>
+        <div class="footer-heading">Company</div>
+        <div class="footer-links">
+          <a href="about.html" class="footer-link">About</a>
+          <a href="briefing.html" class="footer-link">Request Briefing</a>
         </div>
       </div>
     </div>
-  </section>
-
-  <!-- CTA -->
-  <section class="section">
-    <div class="container">
-      <div class="reveal" style="max-width:600px;margin:0 auto;text-align:center;">
-        <h2 style="margin-bottom:var(--space-lg);">Ready to Explore the Platform?</h2>
-        <p style="color:var(--color-gray-400);margin-bottom:var(--space-2xl);">Schedule a strategic assessment to understand how Operan maps to your organization's operational requirements.</p>
-        <a href="briefing.html" class="btn btn--primary btn--lg">
-          Schedule Strategic Assessment
-          <svg><use href="assets/svg/icons.svg#icon-arrow-right"/></svg>
-        </a>
-      </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Operan. All rights reserved.</span>
+      <span>Empower Your Workforce. Replace Broken Work. Not People.</span>
     </div>
-  </section>
+  </div>
+</footer>
 
-  <footer class="footer">
-    <div class="container">
-      <div class="footer__grid">
-        <div>
-          <div class="footer__brand-name">OPERAN</div>
-          <p class="footer__brand-tagline">The Operating System for Digital Departments.</p>
-        </div>
-        <div>
-          <h4 class="footer__heading">Platform</h4>
-          <div class="footer__links">
-            <a href="platform.html" class="footer__link">Architecture</a>
-            <a href="platform.html#modules" class="footer__link">Modules</a>
-          </div>
-        </div>
-        <div>
-          <h4 class="footer__heading">Solutions</h4>
-          <div class="footer__links">
-            <a href="departments.html" class="footer__link">Digital Departments</a>
-            <a href="industries.html" class="footer__link">Industries</a>
-            <a href="security.html" class="footer__link">Security</a>
-            <a href="private-cloud.html" class="footer__link">Private Cloud</a>
-          </div>
-        </div>
-        <div>
-          <h4 class="footer__heading">Company</h4>
-          <div class="footer__links">
-            <a href="about.html" class="footer__link">About</a>
-            <a href="briefing.html" class="footer__link">Request Briefing</a>
-          </div>
-        </div>
-      </div>
-      <div class="footer__bottom">
-        <span>© 2026 Operan. All rights reserved.</span>
-        <span>Enterprise Agentic Workforce Infrastructure</span>
-      </div>
-    </div>
-  </footer>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="js/main.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>

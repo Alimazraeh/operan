@@ -1,559 +1,555 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Digital Departments — Operan | Deploy Ready-Made Departments</title>
-  <meta name="description" content="Explore Operan's digital department templates. Human Resources, Finance, Legal, Engineering, Research, and Compliance — each with specialized workers and governance.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Departments — Operan | 10 AI-Native Department Templates</title>
+<meta name="description" content="10 department templates. Each a complete operational unit: agents, workflows, governance, KPIs. Deploy in days, not months.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
 </head>
 <body>
+<canvas id="rain-canvas" class="rain-canvas"></canvas>
 
-  <nav class="nav" id="nav">
-    <div class="nav__inner">
-      <a href="index.html" class="nav__logo">
-        <svg><use href="assets/svg/logo.svg#icon-logo"/></svg>
-        OPERAN
-      </a>
-      <div class="nav__links" id="navLinks">
-        <a href="index.html" class="nav__link">Home</a>
-        <a href="platform.html" class="nav__link">Platform</a>
-        <a href="departments.html" class="nav__link nav__link--active">Departments</a>
-        <a href="industries.html" class="nav__link">Industries</a>
-        <a href="security.html" class="nav__link">Security</a>
-        <a href="about.html" class="nav__link">About</a>
-        <a href="private-cloud.html" class="nav__link">Private Cloud</a>
-        <a href="briefing.html" class="btn btn--primary nav__cta">Request Executive Briefing</a>
-      </div>
-      <div class="nav__toggle" id="navToggle"><span></span><span></span><span></span></div>
+<!-- ═══ Navigation ═══ -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">OPERAN</a>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="platform.html" class="nav-link">Platform</a>
+      <a href="departments.html" class="nav-link active">Departments</a>
+      <a href="industries.html" class="nav-link">Industries</a>
+      <a href="security.html" class="nav-link">Security</a>
+      <a href="about.html" class="nav-link">About</a>
+      <a href="briefing.html" class="nav-cta">Request Briefing</a>
     </div>
-  </nav>
+    <div class="nav-toggle" id="navToggle"><span></span><span></span><span></span></div>
+  </div>
+</nav>
 
-  <section class="section" style="padding-top:calc(var(--header-height) + var(--space-4xl));padding-bottom:var(--space-4xl);">
-    <div class="container">
-      <div class="reveal" style="max-width:720px;margin:0 auto;text-align:center;">
-        <p class="section-label" style="justify-content:center;">Digital Departments</p>
-        <h1 class="text-gradient">Deploy Departments. Beyond Job Descriptions.</h1>
-        <p style="color:var(--color-gray-400);font-size:var(--text-lg);margin-top:var(--space-xl);line-height:1.8;">
-          Each digital department is a complete operational unit — structured, governed, and ready to execute. Customize the template to your organization's policies and start operating immediately.
-        </p>
-      </div>
+<div class="page-canvas">
+
+<!-- ═══ PAGE HEADER ═══ -->
+<section class="section" style="padding-top:calc(var(--nav-h) + var(--space-3xl));padding-bottom:var(--space-3xl);">
+  <div class="section-inner">
+    <div class="reveal" style="max-width:720px;margin:0 auto;text-align:center;">
+      <div class="section-label" style="justify-content:center;">Department Templates</div>
+      <h1 class="section-title" style="font-size:var(--text-4xl);">Deploy Complete <span class="accent">Departments.</span></h1>
+      <p class="section-subtitle" style="margin:var(--space-md) auto 0;">Each digital department is a complete operational unit&mdash;structured, governed, and ready to execute. Customize to your policies. Start operating immediately.</p>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- HR Department -->
-  <section class="section section--darker" id="hr">
-    <div class="container">
-      <div class="reveal">
-        <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-xl);">
-          <svg style="width:40px;height:40px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-users"/></svg>
-          <h2>Human Resources Department</h2>
-        </div>
-        <div class="grid grid--2">
-          <div>
-            <p style="color:var(--color-gray-400);line-height:1.8;margin-bottom:var(--space-xl);">
-              A complete HR department deployed as digital workers. Handles policy support, candidate screening, onboarding workflows, employee queries, and compliance monitoring — all under defined governance boundaries.
-            </p>
-            <h4 style="margin-bottom:var(--space-lg);">Capabilities</h4>
-            <div class="feature-list">
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Policy document generation and interpretation</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Candidate screening and matching against requirements</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Automated onboarding workflows and documentation</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Employee support and FAQ resolution</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Employment compliance monitoring</span>
-              </div>
-            </div>
-          </div>
-          <div class="tab-panel__visual">
-            <div style="position:relative;padding-bottom:70%;height:0;overflow:visible;border-radius:var(--radius-lg);">
-              <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;position:absolute;top:0;left:0;">
-                <!-- HR Org Chart -->
-                <rect x="150" y="10" width="100" height="36" rx="6" fill="#1A2235" stroke="#00D4FF" stroke-width="1"/>
-                <text x="200" y="33" text-anchor="middle" fill="#FFFFFF" font-size="11" font-family="Inter, sans-serif">HR Director</text>
-                <line x1="200" y1="46" x2="200" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="200" y1="70" x2="90" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="200" y1="70" x2="310" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="90" y1="70" x2="90" y2="94" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="310" y1="70" x2="310" y2="94" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <rect x="25" y="94" width="130" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
-                <text x="90" y="114" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Recruitment Agent</text>
-                <rect x="245" y="94" width="130" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
-                <text x="310" y="114" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Policy Agent</text>
-                <line x1="90" y1="126" x2="55" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="90" y1="126" x2="125" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="55" y1="126" x2="55" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="125" y1="126" x2="125" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <rect x="15" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="55" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Screening</text>
-                <rect x="95" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="135" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Onboarding</text>
-                <line x1="310" y1="126" x2="275" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="310" y1="126" x2="345" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="275" y1="126" x2="275" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="345" y1="126" x2="345" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <rect x="235" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="275" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Compliance</text>
-                <rect x="305" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="345" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Support</text>
-                <!-- glow effects -->
-                <rect x="150" y="10" width="100" height="36" rx="6" fill="#00D4FF" opacity="0.05"/>
-                <line x1="200" y1="46" x2="200" y2="70" stroke="#00D4FF" stroke-width="1" opacity="0.2"/>
-                <!-- Labels -->
-                <text x="200" y="220" text-anchor="middle" fill="#00D4FF" font-size="9" font-family="JetBrains Mono, monospace" opacity="0.6">HR DEPARTMENT • 4 AGENTS • FULLY GOVERNED</text>
-              </svg>
-            </div>
-          </div>
-        </div>
+<div class="section-divider"></div>
+
+<!-- ═══ DEPARTMENTS LIST ═══ -->
+<section class="section section--dark" id="departments">
+
+  <!-- HR -->
+  <div class="section-inner" id="hr">
+    <div class="reveal">
+      <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-xl);">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(0,180,216,0.1);display:flex;align-items:center;justify-content:center;font-size:22px;">&#x1F465;</div>
+        <h2 style="font-size:var(--text-2xl);">Human Resources</h2>
       </div>
-    </div>
-  </section>
-
-  <!-- Finance Department -->
-  <section class="section" id="finance">
-    <div class="container">
-      <div class="reveal">
-        <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-xl);">
-          <svg style="width:40px;height:40px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-briefcase"/></svg>
-          <h2>Finance Department</h2>
-        </div>
-        <div class="grid grid--2">
-          <div class="tab-panel__visual">
-            <div style="position:relative;padding-bottom:70%;height:0;overflow:visible;border-radius:var(--radius-lg);">
-              <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;position:absolute;top:0;left:0;">
-                <rect x="150" y="10" width="100" height="36" rx="6" fill="#1A2235" stroke="#00D4FF" stroke-width="1"/>
-                <text x="200" y="33" text-anchor="middle" fill="#FFFFFF" font-size="11" font-family="Inter, sans-serif">Finance Director</text>
-                <line x1="200" y1="46" x2="200" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="200" y1="70" x2="70" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="200" y1="70" x2="200" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="200" y1="70" x2="330" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="70" y1="70" x2="70" y2="94" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="200" y1="70" x2="200" y2="94" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="330" y1="70" x2="330" y2="94" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <rect x="5" y="94" width="130" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
-                <text x="70" y="114" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Accounts Agent</text>
-                <rect x="135" y="94" width="130" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
-                <text x="200" y="114" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Budget Agent</text>
-                <rect x="265" y="94" width="130" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
-                <text x="330" y="114" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Reporting Agent</text>
-                <line x1="70" y1="126" x2="55" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="70" y1="126" x2="85" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="55" y1="126" x2="55" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="85" y1="126" x2="85" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <rect x="15" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="55" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Invoice Processing</text>
-                <rect x="95" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="135" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Reconciliation</text>
-                <line x1="200" y1="126" x2="185" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="200" y1="126" x2="215" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="185" y1="126" x2="185" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="215" y1="126" x2="215" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <rect x="145" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="185" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Monitoring</text>
-                <rect x="225" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="265" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Forecasting</text>
-                <line x1="330" y1="126" x2="315" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="330" y1="126" x2="345" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="315" y1="126" x2="315" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="345" y1="126" x2="345" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <rect x="305" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="345" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Period-End</text>
-                <text x="200" y="220" text-anchor="middle" fill="#00D4FF" font-size="9" font-family="JetBrains Mono, monospace" opacity="0.6">FINANCE DEPARTMENT • 3 AGENTS • FULLY GOVERNED</text>
-              </svg>
-            </div>
-          </div>
-          <div>
-            <p style="color:var(--color-gray-400);line-height:1.8;margin-bottom:var(--space-xl);">
-              A fully functional finance department. Processes invoices, monitors budgets, generates reports, and provides forecasting — all with complete auditability and compliance.
-            </p>
-            <h4 style="margin-bottom:var(--space-lg);">Capabilities</h4>
-            <div class="feature-list">
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Automated invoice processing and matching</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Real-time budget monitoring and variance analysis</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Financial report generation in multiple formats</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Predictive forecasting and scenario analysis</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Automated reconciliation and audit trail</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Legal Department -->
-  <section class="section section--darker" id="legal">
-    <div class="container">
-      <div class="reveal">
-        <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-xl);">
-          <svg style="width:40px;height:40px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-scale"/></svg>
-          <h2>Legal Department</h2>
-        </div>
-        <div class="grid grid--2">
-          <div>
-            <p style="color:var(--color-gray-400);line-height:1.8;margin-bottom:var(--space-xl);">
-              Contract analysis, clause extraction, risk identification, and policy review — automated by legal-specialized digital workers with access to your organization's legal knowledge base.
-            </p>
-            <h4 style="margin-bottom:var(--space-lg);">Capabilities</h4>
-            <div class="feature-list">
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Contract review and risk scoring</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Automated clause extraction and comparison</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Risk identification and flagging</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Policy document review and alignment</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Regulatory change monitoring</span>
-              </div>
-            </div>
-          </div>
-          <div class="tab-panel__visual">
-            <div style="position:relative;padding-bottom:70%;height:0;overflow:visible;border-radius:var(--radius-lg);">
-              <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;position:absolute;top:0;left:0;">
-                <rect x="150" y="10" width="100" height="36" rx="6" fill="#1A2235" stroke="#00D4FF" stroke-width="1"/>
-                <text x="200" y="33" text-anchor="middle" fill="#FFFFFF" font-size="11" font-family="Inter, sans-serif">Legal Director</text>
-                <line x1="200" y1="46" x2="200" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="200" y1="70" x2="90" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="200" y1="70" x2="310" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="90" y1="70" x2="90" y2="94" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="310" y1="70" x2="310" y2="94" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <rect x="25" y="94" width="130" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
-                <text x="90" y="114" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Contract Agent</text>
-                <rect x="245" y="94" width="130" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
-                <text x="310" y="114" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Policy Agent</text>
-                <line x1="90" y1="126" x2="55" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="90" y1="126" x2="125" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="55" y1="126" x2="55" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="125" y1="126" x2="125" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <rect x="15" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="55" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Review &amp; Score</text>
-                <rect x="95" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="135" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Clause Extract</text>
-                <line x1="310" y1="126" x2="275" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="310" y1="126" x2="345" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="275" y1="126" x2="275" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="345" y1="126" x2="345" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <rect x="235" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="275" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Risk Analysis</text>
-                <rect x="305" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="345" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Regulatory Watch</text>
-                <text x="200" y="220" text-anchor="middle" fill="#00D4FF" font-size="9" font-family="JetBrains Mono, monospace" opacity="0.6">LEGAL DEPARTMENT • 2 AGENTS • FULLY GOVERNED</text>
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Engineering Department -->
-  <section class="section" id="engineering">
-    <div class="container">
-      <div class="reveal">
-        <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-xl);">
-          <svg style="width:40px;height:40px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-factory"/></svg>
-          <h2>Engineering Department</h2>
-        </div>
-        <div class="grid grid--2">
-          <div class="tab-panel__visual">
-            <div style="position:relative;padding-bottom:70%;height:0;overflow:visible;border-radius:var(--radius-lg);">
-              <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;position:absolute;top:0;left:0;">
-                <rect x="150" y="10" width="100" height="36" rx="6" fill="#1A2235" stroke="#00D4FF" stroke-width="1"/>
-                <text x="200" y="33" text-anchor="middle" fill="#FFFFFF" font-size="11" font-family="Inter, sans-serif">Engineering Director</text>
-                <line x1="200" y1="46" x2="200" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="200" y1="70" x2="70" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="200" y1="70" x2="330" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="70" y1="70" x2="70" y2="94" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="330" y1="70" x2="330" y2="94" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <rect x="5" y="94" width="130" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
-                <text x="70" y="114" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">QA Agent</text>
-                <rect x="265" y="94" width="130" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
-                <text x="330" y="114" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Planning Agent</text>
-                <line x1="70" y1="126" x2="55" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="70" y1="126" x2="85" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="55" y1="126" x2="55" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="85" y1="126" x2="85" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <rect x="15" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="55" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Code Review</text>
-                <rect x="95" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="135" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Quality Check</text>
-                <line x1="330" y1="126" x2="315" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="330" y1="126" x2="345" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="315" y1="126" x2="315" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="345" y1="126" x2="345" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <rect x="305" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="345" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Sprint Plan</text>
-                <text x="200" y="220" text-anchor="middle" fill="#00D4FF" font-size="9" font-family="JetBrains Mono, monospace" opacity="0.6">ENGINEERING DEPARTMENT • 2 AGENTS • FULLY GOVERNED</text>
-              </svg>
-            </div>
-          </div>
-          <div>
-            <p style="color:var(--color-gray-400);line-height:1.8;margin-bottom:var(--space-xl);">
-              Documentation, quality review, knowledge retrieval, and sprint planning — automated engineering support that accelerates delivery while maintaining standards.
-            </p>
-            <h4 style="margin-bottom:var(--space-lg);">Capabilities</h4>
-            <div class="feature-list">
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Technical documentation generation and maintenance</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Quality assurance review and reporting</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Knowledge base retrieval and synthesis</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Sprint planning and resource allocation</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Research Department -->
-  <section class="section section--darker" id="research">
-    <div class="container">
-      <div class="reveal">
-        <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-xl);">
-          <svg style="width:40px;height:40px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-microscope"/></svg>
-          <h2>Research Department</h2>
-        </div>
-        <div class="grid grid--2">
-          <div>
-            <p style="color:var(--color-gray-400);line-height:1.8;margin-bottom:var(--space-xl);">
-              Literature analysis, knowledge synthesis, comprehensive reporting, and citation validation — research capabilities that compound organizational knowledge over time.
-            </p>
-            <h4 style="margin-bottom:var(--space-lg);">Capabilities</h4>
-            <div class="feature-list">
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Academic and industry literature analysis</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Cross-domain knowledge synthesis</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Technical and market reporting</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Citation accuracy validation</span>
-              </div>
-            </div>
-          </div>
-          <div class="tab-panel__visual">
-            <div style="position:relative;padding-bottom:70%;height:0;overflow:visible;border-radius:var(--radius-lg);">
-              <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;position:absolute;top:0;left:0;">
-                <rect x="150" y="10" width="100" height="36" rx="6" fill="#1A2235" stroke="#00D4FF" stroke-width="1"/>
-                <text x="200" y="33" text-anchor="middle" fill="#FFFFFF" font-size="11" font-family="Inter, sans-serif">Research Director</text>
-                <line x1="200" y1="46" x2="200" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="200" y1="70" x2="90" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="200" y1="70" x2="310" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="90" y1="70" x2="90" y2="94" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="310" y1="70" x2="310" y2="94" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <rect x="25" y="94" width="130" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
-                <text x="90" y="114" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Analysis Agent</text>
-                <rect x="245" y="94" width="130" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
-                <text x="310" y="114" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Synthesis Agent</text>
-                <line x1="90" y1="126" x2="55" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="90" y1="126" x2="125" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="55" y1="126" x2="55" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="125" y1="126" x2="125" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <rect x="15" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="55" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Lit. Analysis</text>
-                <rect x="95" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="135" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Data Mining</text>
-                <line x1="310" y1="126" x2="275" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="310" y1="126" x2="345" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="275" y1="126" x2="275" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="345" y1="126" x2="345" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <rect x="235" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="275" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Synthesis</text>
-                <rect x="305" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="345" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Citations</text>
-                <text x="200" y="220" text-anchor="middle" fill="#00D4FF" font-size="9" font-family="JetBrains Mono, monospace" opacity="0.6">RESEARCH DEPARTMENT • 2 AGENTS • FULLY GOVERNED</text>
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Compliance Department -->
-  <section class="section" id="compliance">
-    <div class="container">
-      <div class="reveal">
-        <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-xl);">
-          <svg style="width:40px;height:40px;color:var(--color-cyan);"><use href="assets/svg/icons.svg#icon-shield"/></svg>
-          <h2>Compliance Department</h2>
-        </div>
-        <div class="grid grid--2">
-          <div class="tab-panel__visual">
-            <div style="position:relative;padding-bottom:70%;height:0;overflow:visible;border-radius:var(--radius-lg);">
-              <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;position:absolute;top:0;left:0;">
-                <rect x="150" y="10" width="100" height="36" rx="6" fill="#1A2235" stroke="#00D4FF" stroke-width="1"/>
-                <text x="200" y="33" text-anchor="middle" fill="#FFFFFF" font-size="11" font-family="Inter, sans-serif">Compliance Director</text>
-                <line x1="200" y1="46" x2="200" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="200" y1="70" x2="90" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="200" y1="70" x2="310" y2="70" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="90" y1="70" x2="90" y2="94" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <line x1="310" y1="70" x2="310" y2="94" stroke="#00D4FF" stroke-width="0.5" opacity="0.5"/>
-                <rect x="25" y="94" width="130" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
-                <text x="90" y="114" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Monitoring Agent</text>
-                <rect x="245" y="94" width="130" height="32" rx="4" fill="#111827" stroke="#2D3A4F" stroke-width="1"/>
-                <text x="310" y="114" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Audit Agent</text>
-                <line x1="90" y1="126" x2="55" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="90" y1="126" x2="125" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="55" y1="126" x2="55" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="125" y1="126" x2="125" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <rect x="15" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="55" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Regulatory Scan</text>
-                <rect x="95" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="135" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Alert System</text>
-                <line x1="310" y1="126" x2="275" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="310" y1="126" x2="345" y2="126" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="275" y1="126" x2="275" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <line x1="345" y1="126" x2="345" y2="148" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
-                <rect x="235" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="275" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Audit Prep</text>
-                <rect x="305" y="148" width="80" height="28" rx="4" fill="#0C1220" stroke="#4A5568" stroke-width="0.5"/>
-                <text x="345" y="166" text-anchor="middle" fill="#64748B" font-size="9" font-family="Inter, sans-serif">Reporting</text>
-                <text x="200" y="220" text-anchor="middle" fill="#00D4FF" font-size="9" font-family="JetBrains Mono, monospace" opacity="0.6">COMPLIANCE DEPARTMENT • 2 AGENTS • FULLY GOVERNED</text>
-              </svg>
-            </div>
-          </div>
-          <div>
-            <p style="color:var(--color-gray-400);line-height:1.8;margin-bottom:var(--space-xl);">
-              Continuous regulatory monitoring, audit preparation, risk assessment, and policy enforcement — ensuring your organization stays compliant while operations continue uninterrupted.
-            </p>
-            <h4 style="margin-bottom:var(--space-lg);">Capabilities</h4>
-            <div class="feature-list">
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Real-time regulatory change monitoring</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Automated audit preparation and documentation</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Risk assessment and scoring</span>
-              </div>
-              <div class="feature-list__item">
-                <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-                <span>Policy enforcement verification</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA -->
-  <section class="section section--darker">
-    <div class="container">
-      <div class="reveal" style="max-width:600px;margin:0 auto;text-align:center;">
-        <h2>Ready to Deploy Your First Department?</h2>
-        <p style="color:var(--color-gray-400);margin:var(--space-lg) 0 var(--space-2xl);">Request an executive briefing to discuss your organization's operational needs and how digital departments can address them.</p>
-        <a href="briefing.html" class="btn btn--primary btn--lg">
-          Request Executive Briefing
-          <svg><use href="assets/svg/icons.svg#icon-arrow-right"/></svg>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <footer class="footer">
-    <div class="container">
-      <div class="footer__grid">
+      <div class="grid grid-2" style="gap:var(--space-2xl);">
         <div>
-          <div class="footer__brand-name">OPERAN</div>
-          <p class="footer__brand-tagline">The Operating System for Digital Departments.</p>
+          <p style="color:var(--gray-300);line-height:1.8;margin-bottom:var(--space-xl);">A complete HR department as digital workers. Handles policy support, candidate screening, onboarding workflows, employee queries, and compliance monitoring.</p>
+          <ul class="feature-list">
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Policy document generation and interpretation</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Candidate screening and matching</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Automated onboarding workflows</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Employee support and FAQ resolution</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Employment compliance monitoring</li>
+          </ul>
         </div>
         <div>
-          <h4 class="footer__heading">Platform</h4>
-          <div class="footer__links">
-            <a href="platform.html" class="footer__link">Architecture</a>
-            <a href="platform.html#modules" class="footer__link">Modules</a>
+          <div class="card" style="padding:var(--space-lg);">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--cyan);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">AI HANDLES</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Screening &amp; matching</li>
+                  <li style="margin-bottom:4px;">&#10132; Policy generation</li>
+                  <li style="margin-bottom:4px;">&#10132; Onboarding workflows</li>
+                  <li style="margin-bottom:4px;">&#10132; Employee FAQs</li>
+                </ul>
+              </div>
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--gold);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">HUMANS HANDLE</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Strategic decisions</li>
+                  <li style="margin-bottom:4px;">&#10132; Talent development</li>
+                  <li style="margin-bottom:4px;">&#10132; Employee relations</li>
+                  <li style="margin-bottom:4px;">&#10132; Policy design</li>
+                </ul>
+              </div>
+            </div>
+            <div style="margin-top:var(--space-md);padding-top:var(--space-sm);border-top:1px solid var(--border-subtle);">
+              <span style="font-size:var(--text-xs);color:var(--cyan);">&#10003; Saudization compliant &bull; 24/7 consistency</span>
+            </div>
           </div>
         </div>
-        <div>
-          <h4 class="footer__heading">Solutions</h4>
-          <div class="footer__links">
-            <a href="departments.html" class="footer__link">Digital Departments</a>
-            <a href="industries.html" class="footer__link">Industries</a>
-            <a href="security.html" class="footer__link">Security</a>
-            <a href="private-cloud.html" class="footer__link">Private Cloud</a>
-          </div>
-        </div>
-        <div>
-          <h4 class="footer__heading">Company</h4>
-          <div class="footer__links">
-            <a href="about.html" class="footer__link">About</a>
-            <a href="briefing.html" class="footer__link">Request Briefing</a>
-          </div>
-        </div>
-      </div>
-      <div class="footer__bottom">
-        <span>© 2026 Operan. All rights reserved.</span>
-        <span>Enterprise Agentic Workforce Infrastructure</span>
       </div>
     </div>
-  </footer>
+  </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="js/main.js"></script>
+  <div class="section-divider" style="margin:var(--space-3xl) 0;"></div>
+
+  <!-- Finance -->
+  <div class="section-inner" id="finance">
+    <div class="reveal">
+      <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-xl);">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(212,168,83,0.1);display:flex;align-items:center;justify-content:center;font-size:22px;">&#x1F4B0;</div>
+        <h2 style="font-size:var(--text-2xl);">Finance</h2>
+      </div>
+      <div class="grid grid-2" style="gap:var(--space-2xl);">
+        <div>
+          <p style="color:var(--gray-300);line-height:1.8;margin-bottom:var(--space-xl);">Fully functional finance department. Processes invoices, monitors budgets, generates reports, and provides forecasting&mdash;all with complete auditability.</p>
+          <ul class="feature-list">
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Automated invoice processing and matching</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Real-time budget monitoring and variance analysis</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Financial report generation</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Predictive forecasting and scenario analysis</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Automated reconciliation and audit trail</li>
+          </ul>
+        </div>
+        <div>
+          <div class="card" style="padding:var(--space-lg);">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--cyan);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">AI HANDLES</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Transaction processing</li>
+                  <li style="margin-bottom:4px;">&#10132; Report generation</li>
+                  <li style="margin-bottom:4px;">&#10132; Compliance checks</li>
+                  <li style="margin-bottom:4px;">&#10132; Reconciliation</li>
+                </ul>
+              </div>
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--gold);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">HUMANS HANDLE</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Financial strategy</li>
+                  <li style="margin-bottom:4px;">&#10132; Investment decisions</li>
+                  <li style="margin-bottom:4px;">&#10132; Stakeholder relations</li>
+                  <li style="margin-bottom:4px;">&#10132; Policy design</li>
+                </ul>
+              </div>
+            </div>
+            <div style="margin-top:var(--space-md);padding-top:var(--space-sm);border-top:1px solid var(--border-subtle);">
+              <span style="font-size:var(--text-xs);color:var(--cyan);">&#10003; SOX compliant &bull; Full audit trail</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider" style="margin:var(--space-3xl) 0;"></div>
+
+  <!-- Legal -->
+  <div class="section-inner" id="legal">
+    <div class="reveal">
+      <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-xl);">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(139,92,246,0.1);display:flex;align-items:center;justify-content:center;font-size:22px;">&#x1F4D6;</div>
+        <h2 style="font-size:var(--text-2xl);">Legal</h2>
+      </div>
+      <div class="grid grid-2" style="gap:var(--space-2xl);">
+        <div>
+          <p style="color:var(--gray-300);line-height:1.8;margin-bottom:var(--space-xl);">Contract analysis, clause extraction, risk identification, and policy review&mdash;automated by legal-specialized digital workers.</p>
+          <ul class="feature-list">
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Contract review and risk scoring</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Automated clause extraction and comparison</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Risk identification and flagging</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Policy document review and alignment</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Regulatory change monitoring</li>
+          </ul>
+        </div>
+        <div>
+          <div class="card" style="padding:var(--space-lg);">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--cyan);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">AI HANDLES</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Contract review</li>
+                  <li style="margin-bottom:4px;">&#10132; Legal research</li>
+                  <li style="margin-bottom:4px;">&#10132; Document drafting</li>
+                  <li style="margin-bottom:4px;">&#10132; Clause comparison</li>
+                </ul>
+              </div>
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--gold);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">HUMANS HANDLE</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Litigation strategy</li>
+                  <li style="margin-bottom:4px;">&#10132; Negotiation</li>
+                  <li style="margin-bottom:4px;">&#10132; Client counsel</li>
+                  <li style="margin-bottom:4px;">&#10132; Court representation</li>
+                </ul>
+              </div>
+            </div>
+            <div style="margin-top:var(--space-md);padding-top:var(--space-sm);border-top:1px solid var(--border-subtle);">
+              <span style="font-size:var(--text-xs);color:var(--cyan);">&#10003; Arabic legal support &bull; Bilingual documents</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider" style="margin:var(--space-3xl) 0;"></div>
+
+  <!-- Compliance -->
+  <div class="section-inner" id="compliance">
+    <div class="reveal">
+      <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-xl);">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(34,197,94,0.1);display:flex;align-items:center;justify-content:center;font-size:22px;">&#x1F6E1;</div>
+        <h2 style="font-size:var(--text-2xl);">Compliance</h2>
+      </div>
+      <div class="grid grid-2" style="gap:var(--space-2xl);">
+        <div>
+          <p style="color:var(--gray-300);line-height:1.8;margin-bottom:var(--space-xl);">Automated compliance monitoring across PDPL, NCA, SDAIA, and internal policies. 24/7 continuous surveillance.</p>
+          <ul class="feature-list">
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Real-time policy monitoring</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Automated risk assessment</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Breach detection and alerting</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Regulatory change tracking</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Compliance reporting</li>
+          </ul>
+        </div>
+        <div>
+          <div class="card" style="padding:var(--space-lg);">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--cyan);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">AI HANDLES</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Policy monitoring</li>
+                  <li style="margin-bottom:4px;">&#10132; Risk assessment</li>
+                  <li style="margin-bottom:4px;">&#10132; Breach detection</li>
+                  <li style="margin-bottom:4px;">&#10132; Report generation</li>
+                </ul>
+              </div>
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--gold);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">HUMANS HANDLE</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Remediation decisions</li>
+                  <li style="margin-bottom:4px;">&#10132; Policy design</li>
+                  <li style="margin-bottom:4px;">&#10132; Regulatory liaison</li>
+                  <li style="margin-bottom:4px;">&#10132; Audit defense</li>
+                </ul>
+              </div>
+            </div>
+            <div style="margin-top:var(--space-md);padding-top:var(--space-sm);border-top:1px solid var(--border-subtle);">
+              <span style="font-size:var(--text-xs);color:var(--cyan);">&#10003; PDPL/NCA/SDAIA &bull; 24/7 monitoring</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider" style="margin:var(--space-3xl) 0;"></div>
+
+  <!-- Engineering -->
+  <div class="section-inner" id="engineering">
+    <div class="reveal">
+      <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-xl);">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(236,72,153,0.1);display:flex;align-items:center;justify-content:center;font-size:22px;">&#x1F527;</div>
+        <h2 style="font-size:var(--text-2xl);">Engineering</h2>
+      </div>
+      <div class="grid grid-2" style="gap:var(--space-2xl);">
+        <div>
+          <p style="color:var(--gray-300);line-height:1.8;margin-bottom:var(--space-xl);">Engineering operations: project tracking, code review coordination, QA workflows, and release management.</p>
+          <ul class="feature-list">
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Project tracking and status reporting</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Code review coordination</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>QA workflow management</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Release planning and tracking</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Multi-site team coordination</li>
+          </ul>
+        </div>
+        <div>
+          <div class="card" style="padding:var(--space-lg);">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--cyan);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">AI HANDLES</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Project tracking</li>
+                  <li style="margin-bottom:4px;">&#10132; Status reporting</li>
+                  <li style="margin-bottom:4px;">&#10132; QA coordination</li>
+                  <li style="margin-bottom:4px;">&#10132; Documentation</li>
+                </ul>
+              </div>
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--gold);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">HUMANS HANDLE</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Architecture design</li>
+                  <li style="margin-bottom:4px;">&#10132; Code decisions</li>
+                  <li style="margin-bottom:4px;">&#10132; Technical strategy</li>
+                  <li style="margin-bottom:4px;">&#10132; Engineering mgmt</li>
+                </ul>
+              </div>
+            </div>
+            <div style="margin-top:var(--space-md);padding-top:var(--space-sm);border-top:1px solid var(--border-subtle);">
+              <span style="font-size:var(--text-xs);color:var(--cyan);">&#10003; Multi-site scaling &bull; Jira/Confluence integration</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider" style="margin:var(--space-3xl) 0;"></div>
+
+  <!-- IT Operations -->
+  <div class="section-inner" id="it-ops">
+    <div class="reveal">
+      <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-xl);">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(14,165,233,0.1);display:flex;align-items:center;justify-content:center;font-size:22px;">&#x1F4BB;</div>
+        <h2 style="font-size:var(--text-2xl);">IT Operations</h2>
+      </div>
+      <div class="grid grid-2" style="gap:var(--space-2xl);">
+        <div>
+          <p style="color:var(--gray-300);line-height:1.8;margin-bottom:var(--space-xl);">IT service management: incident response, monitoring, asset management, and SLA tracking.</p>
+          <ul class="feature-list">
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Automated incident triage</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>System monitoring and alerting</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Asset lifecycle management</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>SLA compliance tracking</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Change management automation</li>
+          </ul>
+        </div>
+        <div>
+          <div class="card" style="padding:var(--space-lg);">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--cyan);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">AI HANDLES</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Incident triage</li>
+                  <li style="margin-bottom:4px;">&#10132; Monitoring &amp; alerts</li>
+                  <li style="margin-bottom:4px;">&#10132; SLA tracking</li>
+                  <li style="margin-bottom:4px;">&#10132; Documentation</li>
+                </ul>
+              </div>
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--gold);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">HUMANS HANDLE</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Infrastructure design</li>
+                  <li style="margin-bottom:4px;">&#10132; Crisis management</li>
+                  <li style="margin-bottom:4px;">&#10132; Vendor strategy</li>
+                  <li style="margin-bottom:4px;">&#10132; Architecture decisions</li>
+                </ul>
+              </div>
+            </div>
+            <div style="margin-top:var(--space-md);padding-top:var(--space-sm);border-top:1px solid var(--border-subtle);">
+              <span style="font-size:var(--text-xs);color:var(--cyan);">&#10003; 24/7 response &bull; ITIL-aligned</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider" style="margin:var(--space-3xl) 0;"></div>
+
+  <!-- Marketing -->
+  <div class="section-inner" id="marketing">
+    <div class="reveal">
+      <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-xl);">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(244,114,182,0.1);display:flex;align-items:center;justify-content:center;font-size:22px;">&#x1F4E3;</div>
+        <h2 style="font-size:var(--text-2xl);">Marketing</h2>
+      </div>
+      <div class="grid grid-2" style="gap:var(--space-2xl);">
+        <div>
+          <p style="color:var(--gray-300);line-height:1.8;margin-bottom:var(--space-xl);">Campaign management, content production, analytics, and audience engagement&mdash;powered by AI agents.</p>
+          <ul class="feature-list">
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Campaign planning and execution</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Content generation and localization</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Analytics and reporting</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Audience segmentation</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Channel management</li>
+          </ul>
+        </div>
+        <div>
+          <div class="card" style="padding:var(--space-lg);">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--cyan);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">AI HANDLES</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Content generation</li>
+                  <li style="margin-bottom:4px;">&#10132; Campaign ops</li>
+                  <li style="margin-bottom:4px;">&#10132; Analytics</li>
+                  <li style="margin-bottom:4px;">&#10132; A/B testing</li>
+                </ul>
+              </div>
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--gold);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">HUMANS HANDLE</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Creative strategy</li>
+                  <li style="margin-bottom:4px;">&#10132; Brand voice</li>
+                  <li style="margin-bottom:4px;">&#10132; Partnership building</li>
+                  <li style="margin-bottom:4px;">&#10132; Market positioning</li>
+                </ul>
+              </div>
+            </div>
+            <div style="margin-top:var(--space-md);padding-top:var(--space-sm);border-top:1px solid var(--border-subtle);">
+              <span style="font-size:var(--text-xs);color:var(--cyan);">&#10003; Bilingual content &bull; Arabic-first marketing</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider" style="margin:var(--space-3xl) 0;"></div>
+
+  <!-- Procurement -->
+  <div class="section-inner" id="procurement">
+    <div class="reveal">
+      <div style="display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-xl);">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(16,185,129,0.1);display:flex;align-items:center;justify-content:center;font-size:22px;">&#x1F4B2;</div>
+        <h2 style="font-size:var(--text-2xl);">Procurement</h2>
+      </div>
+      <div class="grid grid-2" style="gap:var(--space-2xl);">
+        <div>
+          <p style="color:var(--gray-300);line-height:1.8;margin-bottom:var(--space-xl);">Vendor management, purchase orders, contract lifecycle, and spend analysis&mdash;fully governed.</p>
+          <ul class="feature-list">
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Vendor evaluation and management</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Purchase order automation</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Spend analysis and optimization</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Contract lifecycle management</li>
+            <li><span class="feature-check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Compliance and audit readiness</li>
+          </ul>
+        </div>
+        <div>
+          <div class="card" style="padding:var(--space-lg);">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--cyan);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">AI HANDLES</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Vendor evaluation</li>
+                  <li style="margin-bottom:4px;">&#10132; PO processing</li>
+                  <li style="margin-bottom:4px;">&#10132; Spend analysis</li>
+                  <li style="margin-bottom:4px;">&#10132; Contract tracking</li>
+                </ul>
+              </div>
+              <div>
+                <div style="font-size:var(--text-xs);color:var(--gold);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:var(--space-sm);">HUMANS HANDLE</div>
+                <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;">
+                  <li style="margin-bottom:4px;">&#10132; Vendor selection</li>
+                  <li style="margin-bottom:4px;">&#10132; Contract negotiation</li>
+                  <li style="margin-bottom:4px;">&#10132; Strategy decisions</li>
+                  <li style="margin-bottom:4px;">&#10132; Relationship building</li>
+                </ul>
+              </div>
+            </div>
+            <div style="margin-top:var(--space-md);padding-top:var(--space-sm);border-top:1px solid var(--border-subtle);">
+              <span style="font-size:var(--text-xs);color:var(--cyan);">&#10003; Procurement policy enforcement</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ═══ SIZE PROFILES ═══ -->
+<section class="section section--dark">
+  <div class="section-inner">
+    <div class="section-header reveal">
+      <div class="section-label">Configurability</div>
+      <h2 class="section-title">Empowers at <span class="accent">Every Size</span></h2>
+      <p class="section-subtitle">Each department template adapts to your organization's scale. Three enterprise sizes, each with tailored configurations.</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card reveal tilt-card" style="text-align:center;transition-delay:0ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-sm);letter-spacing:0.1em;">SMALL</div>
+        <h3 style="font-size:var(--text-lg);margin-bottom:var(--space-xs);">2&ndash;5 FTE</h3>
+        <p style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;margin-bottom:var(--space-md);">Core agents with essential governance. Perfect for smaller teams starting their AI transformation.</p>
+        <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;text-align:left;">
+          <li>&#10132; 3&ndash;5 core agents per department</li>
+          <li>&#10132; Essential governance &amp; compliance</li>
+          <li>&#10132; Standard reporting dashboards</li>
+          <li>&#10132; Basic integrations</li>
+        </ul>
+      </div>
+      <div class="card reveal tilt-card" style="text-align:center;transition-delay:80ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-sm);letter-spacing:0.1em;">MEDIUM</div>
+        <h3 style="font-size:var(--text-lg);margin-bottom:var(--space-xs);">5&ndash;20 FTE</h3>
+        <p style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;margin-bottom:var(--space-md);">Expanded team with advanced governance, multi-site coordination, and comprehensive KPIs.</p>
+        <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;text-align:left;">
+          <li>&#10132; 8&ndash;15 agents per department</li>
+          <li>&#10132; Advanced governance &amp; policies</li>
+          <li>&#10132; Custom KPI dashboards</li>
+          <li>&#10132; Full integration suite</li>
+        </ul>
+      </div>
+      <div class="card reveal tilt-card" style="text-align:center;transition-delay:160ms;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:var(--text-xs);color:var(--cyan);margin-bottom:var(--space-sm);letter-spacing:0.1em;">LARGE</div>
+        <h3 style="font-size:var(--text-lg);margin-bottom:var(--space-xs);">20+ FTE</h3>
+        <p style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;margin-bottom:var(--space-md);">Full department with multi-site support, custom policies, advanced analytics, and dedicated governance.</p>
+        <ul style="font-size:var(--text-xs);color:var(--gray-400);line-height:1.6;text-align:left;">
+          <li>&#10132; 20+ agents per department</li>
+          <li>&#10132; Custom governance &amp; policies</li>
+          <li>&#10132; Advanced analytics &amp; ML</li>
+          <li>&#10132; Multi-site coordination</li>
+        </ul>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:var(--space-xl);" class="reveal">
+      <p style="color:var(--gray-500);font-size:var(--text-sm);margin-bottom:var(--space-md);">10 departments &times; 3 enterprise sizes = 30 ways to empower your workforce</p>
+      <a href="briefing.html" class="btn btn-primary">Request Executive Briefing &rarr;</a>
+    </div>
+  </div>
+</section>
+
+</div><!-- /page-canvas -->
+
+<!-- ═══ Footer ═══ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">OPERAN</div>
+        <p class="footer-tagline">The Operating System for Digital Departments.<br>Enterprise Agentic Workforce Infrastructure.</p>
+      </div>
+      <div>
+        <div class="footer-heading">Platform</div>
+        <div class="footer-links">
+          <a href="platform.html" class="footer-link">Architecture</a>
+          <a href="platform.html#modules" class="footer-link">Modules</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-heading">Solutions</div>
+        <div class="footer-links">
+          <a href="departments.html" class="footer-link">Departments</a>
+          <a href="industries.html" class="footer-link">Industries</a>
+          <a href="security.html" class="footer-link">Security</a>
+          <a href="private-cloud.html" class="footer-link">Private Cloud</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-heading">Company</div>
+        <div class="footer-links">
+          <a href="about.html" class="footer-link">About</a>
+          <a href="briefing.html" class="footer-link">Request Briefing</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Operan. All rights reserved.</span>
+      <span>Empower Your Workforce. Replace Broken Work. Not People.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
