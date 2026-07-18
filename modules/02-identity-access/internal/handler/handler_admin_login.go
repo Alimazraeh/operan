@@ -4,11 +4,13 @@
 package handler
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -139,7 +141,7 @@ func (h *AdminLoginHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if adminIDFile == "" {
 		adminIDFile = "/etc/operan/admin-id"
 	}
-	if err := os.MkdirAll("/etc/operan", 0755); err == nil {
+	if err := os.MkdirAll(filepath.Dir(adminIDFile), 0755); err == nil {
 		os.WriteFile(adminIDFile, []byte(userID+"\n"), 0600)
 	}
 
@@ -150,22 +152,22 @@ func (h *AdminLoginHandler) Login(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// GeneratePassword generates a random password and writes it to the password file.
+// GeneratePassword generates a cryptographically secure random password and writes it to the password file.
 func (h *AdminLoginHandler) GeneratePassword(w http.ResponseWriter, r *http.Request) {
-	// 12 random bytes → 24 hex chars → "admin-" + 24 chars = 30 char password
-	seed := time.Now().UnixNano()
-	password := "admin-"
-	for i := 0; i < 12; i++ {
-		seed = (seed * 6364136223846793005 + 1442695040888963407) & 0xffffffff
-		val := byte((seed >> (i * 4)) & 0x0f)
-		password += fmt.Sprintf("%x", val)
+	// Generate 24 random bytes → 48 hex chars → "admin-" + 48 chars = 54 char password
+	bytes := make([]byte, 24)
+	if _, err := rand.Read(bytes); err != nil {
+		h.WriteError(w, http.StatusInternalServerError, 500, "random read failed", err.Error())
+		return
 	}
+	password := "admin-" + fmt.Sprintf("%x", bytes)
 
 	passFile := os.Getenv("IAM_ADMIN_PASSWORD_FILE")
 	if passFile == "" {
 		passFile = "/etc/operan/admin.pass"
 	}
-	if err := os.MkdirAll("/etc/operan", 0755); err != nil {
+	// Create the parent directory of the password file
+	if err := os.MkdirAll(filepath.Dir(passFile), 0755); err != nil {
 		h.WriteError(w, http.StatusInternalServerError, 500, "directory creation failed", err.Error())
 		return
 	}

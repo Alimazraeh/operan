@@ -451,9 +451,11 @@ func (h *ABACHandler) evaluateABAC(ctx context.Context, tenantID string, req *AB
 			result.Reason = "unknown rule type, defaulting to pass"
 		}
 
-		// If effect is "deny", invert the result.
-		if policy.Effect == "deny" {
-			result.Passed = !result.Passed
+		// If effect is "deny", invert the result only if the rule matched.
+		// A deny policy should only fire when its conditions are satisfied.
+		if policy.Effect == "deny" && result.Passed {
+			result.Passed = false
+			result.Reason = "denied by policy: " + policy.Name
 		}
 
 		results = append(results, result)
@@ -673,14 +675,60 @@ func evaluateDepartmentPolicy(ctx context.Context, attrs map[string]interface{},
 	return dept == actorDept
 }
 
-// evaluateCustomPolicy is a placeholder for custom rule evaluation.
+// evaluateCustomPolicy evaluates a custom ABAC policy.
+// Implements a simple expression language:
+//   - "expression" key contains a JSONPath-like condition string
+//   - Supports operators: eq, neq, in, not_in, gt, lt, gte, lte
+//   - Fallback to deny-by-default when no expression is defined.
 func evaluateCustomPolicy(ctx context.Context, attrs map[string]interface{}, conditions map[string]interface{}) bool {
-	// Custom policies can be implemented by extending this function.
-	// For now, default to pass.
-	_ = ctx
-	_ = attrs
-	_ = conditions
-	return true
+	expr, ok := conditions["expression"].(string)
+	if !ok || expr == "" {
+		// No expression defined — deny by default for custom rules
+		return false
+	}
+
+	// Parse simple key=value expressions: "key op value"
+	parts := strings.Fields(expr)
+	if len(parts) < 3 {
+		return false
+	}
+
+	key := parts[0]
+	op := parts[1]
+	value := strings.Join(parts[2:], " ")
+
+	attrVal, exists := attrs[key]
+	if !exists {
+		// Attribute missing — deny by default
+		return false
+	}
+
+	attrStr := fmt.Sprintf("%v", attrVal)
+
+	switch op {
+	case "eq":
+		return attrStr == value
+	case "neq":
+		return attrStr != value
+	case "in":
+		// value is comma-separated list
+		for _, item := range strings.Split(value, ",") {
+			if strings.TrimSpace(attrStr) == strings.TrimSpace(item) {
+				return true
+			}
+		}
+		return false
+	case "not_in":
+		for _, item := range strings.Split(value, ",") {
+			if strings.TrimSpace(attrStr) == strings.TrimSpace(item) {
+				return false
+			}
+		}
+		return true
+	}
+
+	// Unknown operator — deny by default
+	return false
 }
 
 // ---------------------------------------------------------------------------

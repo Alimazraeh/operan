@@ -271,11 +271,42 @@ func (s *DelegationRoleStore) RevokeDelegation(roleID, userID string) error {
 }
 
 // ListDelegations returns all delegation grants for a tenant/user/role.
+// Derives grants from the role's DelegatedToIDs field.
+// If roleID is empty, returns grants for all roles in the tenant.
+// If userID is set, filters to grants for that user only.
 func (s *DelegationRoleStore) ListDelegations(tenantID, roleID, userID string) ([]models.DelegationGrant, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	// This is a simplified version - in production, you'd have a dedicated store for delegation grants
-	// For now, we return empty list as the grants are tracked in the role itself
-	return []models.DelegationGrant{}, nil
+	var grants []models.DelegationGrant
+	for _, role := range s.roles {
+		// Filter by tenant
+		if role.TenantID != tenantID {
+			continue
+		}
+		// Filter by role ID if specified
+		if roleID != "" && role.ID != roleID {
+			continue
+		}
+
+		for _, uid := range role.DelegatedToIDs {
+			// Filter by user ID if specified
+			if userID != "" && uid != userID {
+				continue
+			}
+
+			grant := models.DelegationGrant{
+				ID:             uuid.New().String(),
+				TenantID:       role.TenantID,
+				DelegationRoleID: role.ID,
+				UserID:         uid,
+				Scope:          role.Scope,
+				IsActive:       true,
+				GrantedAt:      role.CreatedAt, // Use role creation time as a proxy
+			}
+			grants = append(grants, grant)
+		}
+	}
+
+	return grants, nil
 }
