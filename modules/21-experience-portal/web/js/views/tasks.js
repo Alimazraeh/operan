@@ -1,6 +1,6 @@
 // Tasks & Projects — Create, assign, track, SLA monitoring
-import { $, esc, statCard, card, btn, emptyState, toast } from "./ui.js";
-import { listWorkflows, createWorkflow, executeWorkflow, uuid4 } from "./api.js";
+import { $, esc, statCard, card, btn, emptyState, toast } from "../ui.js";
+import { listWorkflows, createWorkflow, executeWorkflow, uuid4 } from "../api.js";
 
 export default async function viewTasks() {
   const res = await listWorkflows(1, 50);

@@ -1,6 +1,6 @@
 // Dashboard — KPI overview at a glance
-import { $, esc, statCard, card, btn } from "./ui.js";
-import { get, listAgents, listTemplates, listWorkflows, listSupervisionQueue, listCostEvents, listPolicies } from "./api.js";
+import { $, esc, statCard, card, btn } from "../ui.js";
+import { get, listAgents, listTemplates, listWorkflows, listSupervisionQueue, listCostEvents, listPolicies } from "../api.js";
 
 export default async function viewDashboard(page) {
   // Fetch stats in parallel

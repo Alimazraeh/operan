@@ -1,6 +1,6 @@
 // Settings — Admin settings, API keys, integrations, billing
-import { $, esc, card, btn, emptyState, toast } from "./ui.js";
-import { listConnectors, createConnector, listPolicies, session, del, SVC } from "./api.js";
+import { $, esc, card, btn, emptyState, toast } from "../ui.js";
+import { listConnectors, createConnector, listPolicies, session, del, SVC } from "../api.js";
 
 export default async function viewSettings() {
   const [connRes, polRes] = await Promise.all([

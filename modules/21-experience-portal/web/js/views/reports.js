@@ -1,6 +1,6 @@
 // Reports — Hourly, daily, weekly, monthly operational reports
-import { $, esc, statCard, card, btn, toast } from "./ui.js";
-import { listSpans, listCostEvents } from "./api.js";
+import { $, esc, statCard, card, btn, toast } from "../ui.js";
+import { listSpans, listCostEvents } from "../api.js";
 
 export default async function viewReports(period) {
   period = period || "daily";
