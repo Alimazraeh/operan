@@ -1,481 +1,925 @@
 {
   "id": "ops-all-001",
-  "name": "IT Operations Department — All Sizes",
-  "description": "Scalable IT Operations department template for organizations of any size. Covers infrastructure management, network administration, security, help desk, cloud operations, and disaster recovery. Staffing adjusts based on company size.",
-  "category": "ops",
+  "name": "IT Operations Team",
+  "description": "An IT/Operations department template for companies of any size (3-20 FTE). This template covers an operations team with an IT Manager, System Administrator, Network Engineer, Help Desk Lead, Help Desk Agents, Security Administrator, and a General Purpose Operator (GPO). It provides comprehensive IT infrastructure management including infrastructure administration, network management, security operations, help desk support, user provisioning, and disaster recovery. Designed for organizations that need reliable, secure, and scalable IT operations with clear service level expectations.",
+  "category": "operations",
   "version": "1.0.0",
   "metadata": {
-    "enterprise_size": "all-sizes",
-    "department_size": "3-20 FTE (adjusts by size)",
-    "company_size": "all sizes (10-5000+ employees)",
-    "industry": "general",
-    "compliance_level": "standard-to-formalized",
-    "frameworks": ["ITIL", "DevOps", "SRE"],
+    "enterprise_size": "all",
+    "department_size": "3-20 FTE",
+    "company_size": "3-5000+ employees",
+    "industry": "All industries -- Finance, Healthcare, Education, Government, Technology",
+    "compliance_level": "strict",
+    "frameworks": [
+      "ITIL",
+      "DevOps",
+      "SRE"
+    ],
     "last_reviewed": "2026-07-17"
   },
-  "tags": ["ops", "it-operations", "infrastructure", "help-desk", "cloud", "all-sizes"],
+  "tags": [
+    "operations",
+    "it-infrastructure",
+    "network-administration",
+    "help-desk",
+    "security",
+    "disaster-recovery",
+    "itil",
+    "service-management"
+  ],
   "status": "published",
   "created_by": "platform",
   "agents": [
     {
-      "id": "it-manager-01",
-      "role": "IT Manager / Director",
+      "id": "agent-it-mgr-001",
+      "name": "IT Manager",
+      "role": "IT Manager",
+      "level": "senior",
+      "description": "IT department leader responsible for strategic planning, budget management, vendor relationships, policy governance, service level management, and cross-functional coordination with business units.",
       "capabilities": [
         "it-strategy",
-        "infrastructure-management",
-        "vendor-management",
         "budget-management",
-        "disaster-recovery",
-        "security-overview",
-        "cloud-management",
-        "it-policy-development"
+        "vendor-management",
+        "policy-governance",
+        "service-management",
+        "risk-management",
+        "compliance-overview",
+        "team-leadership"
       ],
-      "model": "qwen-72b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["monitoring", "ticketing", "email", "asset-management"],
-      "system_prompt": "You are the IT Manager/Director for a company of any size. You manage all IT operations including infrastructure, network, security, cloud, and help desk. You plan budgets, manage vendors, and ensure systems are reliable and secure.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "all-it-data": "read-write",
-        "infrastructure": "read-write",
-        "security-data": "read-write",
-        "budget-data": "read-write"
+      "agent_model": "qwen-72b",
+      "memory_profile": "full-retention",
+      "permissions": [
+        "budget-approve",
+        "vendor-contract-approve",
+        "policy-approve",
+        "infrastructure-change-approve",
+        "security-exception-approve"
+      ],
+      "schedule": {
+        "availability": "business-hours",
+        "escalation_path": "cio"
       }
     },
     {
-      "id": "sysadmin-01",
+      "id": "agent-sys-admin-001",
+      "name": "System Administrator",
       "role": "System Administrator",
+      "level": "mid",
+      "description": "Infrastructure specialist responsible for server administration, operating system management, virtualization, cloud infrastructure, system monitoring, and backup/recovery operations.",
       "capabilities": [
-        "server-management",
-        "cloud-infra",
+        "server-administration",
+        "os-management",
+        "virtualization",
+        "cloud-infrastructure",
+        "system-monitoring",
         "backup-recovery",
-        "user-provisioning",
-        "network-administration",
         "patch-management",
-        "monitoring"
-      ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["monitoring", "ticketing", "cloud-console", "backup-system"],
-      "system_prompt": "You are a System Administrator. You manage servers, cloud infrastructure, backups, user accounts, and network configurations. You ensure systems are running smoothly and perform regular maintenance.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "servers": "read-write",
-        "cloud-infra": "read-write",
-        "user-data": "read-only",
-        "network-config": "read-write"
-      }
-    },
-    {
-      "id": "network-engineer-01",
-      "role": "Network Engineer",
-      "capabilities": [
-        "network-design",
-        "network-monitoring",
-        "firewall-management",
-        "vpn-configuration",
-        "network-security",
-        "troubleshooting",
         "capacity-planning"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["network-monitoring", "firewall-console", "ticketing"],
-      "system_prompt": "You are a Network Engineer. You design, manage, and troubleshoot the company network including LAN, WAN, VPN, and firewalls. You monitor network performance and plan for capacity growth.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "network-config": "read-write",
-        "firewall-rules": "read-write",
-        "network-logs": "read-write"
+      "agent_model": "qwen-34b",
+      "memory_profile": "procedural-enabled",
+      "permissions": [
+        "server-config-edit",
+        "monitoring-config",
+        "backup-manage",
+        "patch-approve",
+        "cloud-console-access"
+      ],
+      "schedule": {
+        "availability": "business-hours",
+        "escalation_path": "agent-it-mgr-001"
       }
     },
     {
-      "id": "helpdesk-lead-01",
+      "id": "agent-net-eng-001",
+      "name": "Network Engineer",
+      "role": "Network Engineer",
+      "level": "mid",
+      "description": "Network infrastructure specialist responsible for network design, configuration, troubleshooting, firewall management, VPN administration, and network performance optimization.",
+      "capabilities": [
+        "network-design",
+        "network-configuration",
+        "firewall-management",
+        "vpn-administration",
+        "network-troubleshooting",
+        "performance-optimization",
+        "vlan-management",
+        "wireless-administration"
+      ],
+      "agent_model": "qwen-34b",
+      "memory_profile": "procedural-enabled",
+      "permissions": [
+        "network-config-edit",
+        "firewall-rules-edit",
+        "vpn-credentials",
+        "network-monitoring-access"
+      ],
+      "schedule": {
+        "availability": "business-hours",
+        "escalation_path": "agent-it-mgr-001"
+      }
+    },
+    {
+      "id": "agent-helpdesk-lead-001",
+      "name": "Help Desk Lead",
       "role": "Help Desk Lead",
+      "level": "mid",
+      "description": "Help desk team leader responsible for ticket management, SLA enforcement, team coordination, escalation handling, knowledge base maintenance, and service desk operations.",
       "capabilities": [
         "ticket-management",
-        "user-support",
-        "tier-escalation",
-        "documentation",
-        "training",
-        "sla-management",
-        "vendor-coordination"
+        "sla-enforcement",
+        "team-coordination",
+        "escalation-handling",
+        "knowledge-base",
+        "first-line-troubleshooting",
+        "user-support"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["ticketing", "knowledge-base", "email", "chat"],
-      "system_prompt": "You lead the Help Desk team. You manage support tickets, coordinate escalations, maintain the knowledge base, and ensure SLA compliance. You handle complex user issues and train junior support staff.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "tickets": "read-write",
-        "knowledge-base": "read-write",
-        "user-data": "read-only",
-        "security-data": "none"
+      "agent_model": "qwen-34b",
+      "memory_profile": "semantic-enabled",
+      "permissions": [
+        "ticket-manage",
+        "sla-config",
+        "kb-edit",
+        "user-access-provision",
+        "service-desk-tools"
+      ],
+      "schedule": {
+        "availability": "business-hours",
+        "escalation_path": "agent-it-mgr-001"
       }
     },
     {
-      "id": "helpdesk-agent-01",
+      "id": "agent-helpdesk-001",
+      "name": "Help Desk Agent",
       "role": "Help Desk Agent",
+      "level": "junior",
+      "description": "First-line IT support agent responsible for handling user tickets, basic troubleshooting, password resets, software installation, and escalation of complex issues to senior team members.",
       "capabilities": [
-        "user-support",
         "ticket-resolution",
         "password-management",
         "software-installation",
-        "hardware-troubleshooting",
-        "phone-support"
+        "basic-troubleshooting",
+        "user-onboarding",
+        "hardware-setup"
       ],
-      "model": "qwen-14b",
-      "memory_profile": "semantic-enabled",
-      "tool_requirements": ["ticketing", "knowledge-base", "remote-access"],
-      "system_prompt": "You are a Help Desk Agent handling user support tickets. You resolve common IT issues, install software, troubleshoot hardware, and provide phone/email support. You escalate complex issues to senior staff.",
-      "constraints": {
-        "max_tokens_per_request": 2048,
-        "sensitive_topics": ["security-breach", "data-loss"]
-      },
-      "access_control": {
-        "tickets": "read-write",
-        "knowledge-base": "read-only",
-        "user-data": "read-only",
-        "security-data": "none"
+      "agent_model": "qwen-14b",
+      "memory_profile": "episodic-enabled",
+      "permissions": [
+        "ticket-resolve",
+        "password-reset",
+        "software-provision",
+        "user-onboarding"
+      ],
+      "schedule": {
+        "availability": "business-hours",
+        "escalation_path": "agent-helpdesk-lead-001"
       }
     },
     {
-      "id": "ops-gpo-01",
-      "role": "General Purpose Agent — IT Operations Support",
+      "id": "agent-security-admin-001",
+      "name": "Security Administrator",
+      "role": "Security Administrator",
+      "level": "senior",
+      "description": "Security specialist responsible for security monitoring, vulnerability management, access control, incident response, compliance audits, and security policy enforcement.",
       "capabilities": [
-        "ticket-routing",
-        "documentation",
-        "report-generation",
-        "scheduling",
-        "data-entry",
-        "inventory-tracking",
-        "faq-response"
+        "security-monitoring",
+        "vulnerability-management",
+        "access-control",
+        "incident-response",
+        "compliance-auditing",
+        "policy-enforcement",
+        "security-architecture",
+        "security-awareness-training"
       ],
-      "model": "qwen-14b",
-      "memory_profile": "semantic-enabled",
-      "tool_requirements": ["ticketing", "document-storage", "asset-management", "email"],
-      "system_prompt": "You are an IT Operations GPO handling routine tasks: routing tickets, maintaining documentation, generating reports, tracking inventory, scheduling maintenance, answering common IT questions. You always route security incidents, major outages, and infrastructure changes to the appropriate human operator.",
-      "constraints": {
-        "max_tokens_per_request": 2048,
-        "sensitive_topics": ["security-incident", "major-outage", "infrastructure-change"]
-      },
-      "access_control": {
-        "tickets": "read-write",
-        "documentation": "read-write",
-        "asset-inventory": "read-write",
-        "security-data": "none"
+      "agent_model": "qwen-72b",
+      "memory_profile": "full-retention",
+      "permissions": [
+        "security-tools-access",
+        "access-control-manage",
+        "incident-command",
+        "vulnerability-scan",
+        "security-policy-edit"
+      ],
+      "schedule": {
+        "availability": "always-on",
+        "escalation_path": "agent-it-mgr-001"
+      }
+    },
+    {
+      "id": "agent-ops-gpo-001",
+      "name": "Operations GPO",
+      "role": "GPO",
+      "level": "general",
+      "description": "Operational support agent handling IT asset management, documentation, reporting, automated provisioning, compliance tracking, and administrative tasks.",
+      "capabilities": [
+        "asset-management",
+        "documentation",
+        "reporting",
+        "automated-provisioning",
+        "compliance-tracking",
+        "inventory-management",
+        "change-management"
+      ],
+      "agent_model": "qwen-14b",
+      "memory_profile": "procedural-enabled",
+      "permissions": [
+        "asset-register",
+        "documentation-edit",
+        "report-generate",
+        "provisioning-automate",
+        "change-log"
+      ],
+      "schedule": {
+        "availability": "always-on",
+        "escalation_path": "agent-it-mgr-001"
       }
     }
   ],
   "workflows": [
     {
-      "id": "wf-ticket-001",
-      "name": "IT Support Ticket Management",
-      "description": "End-to-end ticket lifecycle from submission to resolution with SLA tracking.",
-      "triggers": ["manual", "event:ticket-created"],
+      "id": "wf-incident-management-001",
+      "name": "Incident Management Workflow",
+      "description": "ITIL-aligned incident management process for detecting, classifying, resolving, and documenting IT incidents with appropriate escalation paths.",
+      "triggers": [
+        "monitoring_alert",
+        "user_ticket",
+        "service_degradation",
+        "security_alert",
+        "manual_trigger"
+      ],
       "steps": [
         {
-          "id": "tick-01",
-          "type": "agent_call",
-          "name": "Ticket Classification",
-          "config": {
-            "agent": "ops-gpo-01",
-            "task": "Classify ticket type, priority, and assign to appropriate queue"
-          }
+          "order": 1,
+          "action": "detect-and-log",
+          "agent": "agent-ops-gpo-001",
+          "description": "Detect incident through monitoring alerts or user ticket. Log incident in the ITSM system with initial classification, priority level, and affected services",
+          "status_conditions": [
+            "incident_logged"
+          ]
         },
         {
-          "id": "tick-02",
-          "type": "approval",
-          "name": "SLA Verification",
-          "config": {
-            "required_by": "helpdesk-lead-01",
-            "task": "Verify SLA requirements based on priority and user tier"
-          }
+          "order": 2,
+          "action": "classify-and-prioritize",
+          "agent": "agent-helpdesk-lead-001",
+          "description": "Classify incident severity (Critical/High/Medium/Low) based on business impact and urgency. Assign to the appropriate support tier",
+          "status_conditions": [
+            "classified",
+            "tier_assigned"
+          ]
         },
         {
-          "id": "tick-03",
-          "type": "transformation",
-          "name": "Auto-Resolution Attempt",
-          "config": {
-            "agent": "ops-gpo-01",
-            "task": "Attempt automated resolution using knowledge base articles"
-          }
+          "order": 3,
+          "action": "diagnose-and-resolve",
+          "agent": "agent-sys-admin-001",
+          "description": "Diagnose root cause using monitoring tools, logs, and diagnostic procedures. Implement resolution or workaround. If unresolved, escalate to the appropriate specialist",
+          "status_conditions": [
+            "resolved",
+            "escalated",
+            "workaround_applied"
+          ]
         },
         {
-          "id": "tick-04",
-          "type": "conditional",
-          "name": "Escalation Check",
-          "config": {
-            "condition": "auto_resolution_failed OR priority in ['high', 'critical']",
-            "true_path": "escalate-to-senior-staff",
-            "false_path": "auto-resolve-and-close"
-          }
+          "order": 4,
+          "action": "communicate-status",
+          "agent": "agent-ops-gpo-001",
+          "description": "Send status updates to affected users and stakeholders at defined intervals. Critical incidents trigger executive notification",
+          "status_conditions": [
+            "updates_sent"
+          ]
         },
         {
-          "id": "tick-05",
-          "type": "agent_call",
-          "name": "Human Resolution",
-          "config": {
-            "agent": "helpdesk-agent-01",
-            "task": "Resolve ticket with human intervention, document solution"
-          }
+          "order": 5,
+          "action": "verify-resolution",
+          "agent": "agent-helpdesk-lead-001",
+          "description": "Verify with the user that the issue is fully resolved and services are operating normally. Document resolution details in the incident record",
+          "status_conditions": [
+            "verified",
+            "requires_rework"
+          ]
         },
         {
-          "id": "tick-06",
-          "type": "transformation",
-          "name": "Close & Survey",
-          "config": {
-            "agent": "ops-gpo-01",
-            "task": "Close ticket, send customer satisfaction survey"
-          }
+          "order": 6,
+          "action": "close-and-review",
+          "agent": "agent-security-admin-001",
+          "description": "Close the incident, update knowledge base with resolution steps, and identify if post-incident review or preventive action is required",
+          "status_conditions": [
+            "closed",
+            "review_required"
+          ]
         }
       ]
     },
     {
-      "id": "wf-disaster-001",
-      "name": "Disaster Recovery & Backup",
-      "description": "Backup schedule, disaster recovery testing, and incident recovery procedures.",
-      "triggers": ["schedule:daily", "schedule:quarterly"],
+      "id": "wf-change-management-001",
+      "name": "Change Management Workflow",
+      "description": "ITIL-aligned change management process for evaluating, approving, implementing, and reviewing changes to the IT infrastructure with minimal disruption.",
+      "triggers": [
+        "change_request_submitted",
+        "scheduled_maintenance",
+        "security_patch",
+        "manual_trigger"
+      ],
       "steps": [
         {
-          "id": "dr-01",
-          "type": "agent_call",
-          "name": "Verify Backup Completeness",
-          "config": {
-            "agent": "sysadmin-01",
-            "task": "Verify daily backups completed successfully, check backup sizes and integrity"
-          }
+          "order": 1,
+          "action": "submit-change-request",
+          "agent": "agent-sys-admin-001",
+          "description": "Submit change request with description, rationale, implementation plan, rollback plan, risk assessment, and estimated impact window",
+          "status_conditions": [
+            "change_requested"
+          ]
         },
         {
-          "id": "dr-02",
-          "type": "transformation",
-          "name": "DR Test Schedule",
-          "config": {
-            "agent": "ops-gpo-01",
-            "task": "Schedule quarterly disaster recovery tests, notify stakeholders"
-          }
+          "order": 2,
+          "action": "categorize-change",
+          "agent": "agent-ops-gpo-001",
+          "description": "Categorize the change: Standard (pre-approved), Normal (requires CAB review), or Emergency (security hotfix, critical outage fix)",
+          "status_conditions": [
+            "categorized"
+          ]
         },
         {
-          "id": "dr-03",
-          "type": "agent_call",
-          "name": "Execute DR Test",
-          "config": {
-            "agent": "sysadmin-01",
-            "task": "Execute disaster recovery test, document results, identify gaps"
-          }
+          "order": 3,
+          "action": "review-and-approve",
+          "agent": "agent-it-mgr-001",
+          "description": "For Normal changes, CAB (Change Advisory Board) reviews impact, risk, and implementation plan. For Standard changes, verify against approved templates. For Emergency changes, provide rapid approval with post-hoc review",
+          "status_conditions": [
+            "approved",
+            "approved_with_conditions",
+            "rejected"
+          ]
         },
         {
-          "id": "dr-04",
-          "type": "approval",
-          "name": "DR Plan Review",
-          "config": {
-            "required_by": "it-manager-01",
-            "task": "Review DR test results, update disaster recovery plan"
-          }
+          "order": 4,
+          "action": "implement-change",
+          "agent": "agent-sys-admin-001",
+          "description": "Implement the change during the approved maintenance window following the documented implementation plan. Execute rollback procedures if issues arise",
+          "status_conditions": [
+            "implemented",
+            "rollback_executed"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "verify-implementation",
+          "agent": "agent-sys-admin-001",
+          "description": "Verify the change was successful: services running correctly, no regressions, performance within normal parameters",
+          "status_conditions": [
+            "verified",
+            "issue_detected"
+          ]
+        },
+        {
+          "order": 6,
+          "action": "post-implementation-review",
+          "agent": "agent-ops-gpo-001",
+          "description": "Document the change in the change log, capture lessons learned, update documentation, and close the change request in the ITSM system",
+          "status_conditions": [
+            "reviewed",
+            "change_closed"
+          ]
         }
       ]
     },
     {
-      "id": "wf-outage-001",
-      "name": "Major Outage Response",
-      "description": "Response process for major system outages affecting multiple users or services.",
-      "triggers": ["manual", "event:major-outage-detected"],
+      "id": "wf-user-provisioning-001",
+      "name": "User Provisioning Workflow",
+      "description": "Automated user provisioning and deprovisioning process covering account creation, access assignment, resource allocation, and timely offboarding.",
+      "triggers": [
+        "new_hire",
+        "role_change",
+        "transfer",
+        "termination",
+        "manual_trigger"
+      ],
       "steps": [
         {
-          "id": "out-01",
-          "type": "agent_call",
-          "name": "Outage Assessment",
-          "config": {
-            "agent": "sysadmin-01",
-            "task": "Assess scope of outage, identify affected systems, estimate impact"
-          }
+          "order": 1,
+          "action": "receive-request",
+          "agent": "agent-ops-gpo-001",
+          "description": "Receive user provisioning request from HR system or manager. Validate the request with the appropriate approver based on access level and policy",
+          "status_conditions": [
+            "request_received",
+            "approved"
+          ]
         },
         {
-          "id": "out-02",
-          "type": "notification",
-          "name": "Notify IT Manager",
-          "config": {
-            "recipients": ["it-manager-01", "helpdesk-lead-01"],
-            "message": "Major outage detected, requires escalation"
-          }
+          "order": 2,
+          "action": "determine-access-profile",
+          "agent": "agent-security-admin-001",
+          "description": "Determine the user's access profile based on role, department, and least-privilege principles. Assign to appropriate groups and define resource access",
+          "status_conditions": [
+            "access_profile_defined"
+          ]
         },
         {
-          "id": "out-03",
-          "type": "agent_call",
-          "name": "Incident Command",
-          "config": {
-            "agent": "it-manager-01",
-            "task": "Lead incident response, coordinate teams, communicate status"
-          }
+          "order": 3,
+          "action": "provision-accounts",
+          "agent": "agent-ops-gpo-001",
+          "description": "Create accounts in Active Directory, email system, SaaS applications, and other managed systems. Set initial passwords and enforce MFA",
+          "status_conditions": [
+            "accounts_provisioned"
+          ]
         },
         {
-          "id": "out-04",
-          "type": "transformation",
-          "name": "Post-Outage Review",
-          "config": {
-            "agent": "ops-gpo-01",
-            "task": "Document outage details, root cause, and action items"
-          }
+          "order": 4,
+          "action": "allocate-resources",
+          "agent": "agent-sys-admin-001",
+          "description": "Allocate hardware (laptop, peripherals), software licenses, cloud resources, and access to shared drives or collaboration tools",
+          "status_conditions": [
+            "resources_allocated"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "notify-and-onboard",
+          "agent": "agent-helpdesk-lead-001",
+          "description": "Notify the user and their manager that accounts are ready. Send onboarding checklist and provide access credentials securely",
+          "status_conditions": [
+            "user_notified"
+          ]
+        },
+        {
+          "order": 6,
+          "action": "audit-and-compliance",
+          "agent": "agent-security-admin-001",
+          "description": "Log the provisioning action for audit compliance. Add user to the access review schedule for periodic credential review",
+          "status_conditions": [
+            "audit_logged",
+            "review_scheduled"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wf-backup-recovery-001",
+      "name": "Backup and Recovery Workflow",
+      "description": "Systematic backup operations and disaster recovery procedures ensuring data integrity, availability, and tested recovery capabilities.",
+      "triggers": [
+        "scheduled_backup",
+        "manual_trigger",
+        "disaster_recovery_test",
+        "data_loss_event"
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "action": "execute-backup",
+          "agent": "agent-sys-admin-001",
+          "description": "Execute scheduled backups according to the backup policy: full backups (weekly), incremental backups (daily), and transaction log backups (hourly for critical databases)",
+          "status_conditions": [
+            "backup_complete",
+            "backup_failed"
+          ]
+        },
+        {
+          "order": 2,
+          "action": "verify-backup-integrity",
+          "agent": "agent-ops-gpo-001",
+          "description": "Verify backup integrity through checksums, size validation, and automated restore tests. Alert on any backup failures or anomalies",
+          "status_conditions": [
+            "verified",
+            "integrity_failure"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "test-recovery",
+          "agent": "agent-sys-admin-001",
+          "description": "Execute periodic disaster recovery tests (quarterly minimum): restore from backup to isolated environment and verify data integrity and application functionality",
+          "status_conditions": [
+            "recovery_tested",
+            "recovery_failed"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "document-results",
+          "agent": "agent-ops-gpo-001",
+          "description": "Document backup and recovery test results including RTO (Recovery Time Objective) and RPO (Recovery Point Objective) achievement. Identify any gaps",
+          "status_conditions": [
+            "results_documented"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "optimize-configuration",
+          "agent": "agent-sys-admin-001",
+          "description": "Adjust backup schedules, retention policies, and storage allocation based on test results, changing data volumes, and business requirements",
+          "status_conditions": [
+            "configuration_updated"
+          ]
+        },
+        {
+          "order": 6,
+          "action": "compliance-reporting",
+          "agent": "agent-security-admin-001",
+          "description": "Generate backup compliance reports for audit purposes. Document backup coverage across all critical systems and regulatory requirements",
+          "status_conditions": [
+            "report_generated"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wf-capacity-planning-001",
+      "name": "Capacity Planning Workflow",
+      "description": "Proactive capacity planning process for monitoring resource utilization, forecasting growth, and preventing infrastructure bottlenecks.",
+      "triggers": [
+        "monthly_review",
+        "quarterly_review",
+        "threshold_breached",
+        "new_initiative",
+        "manual_trigger"
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "action": "collect-utilization-data",
+          "agent": "agent-sys-admin-001",
+          "description": "Gather current utilization data across all infrastructure: CPU, memory, storage, network bandwidth, license counts, and user counts",
+          "status_conditions": [
+            "data_collected"
+          ]
+        },
+        {
+          "order": 2,
+          "action": "analyze-trends",
+          "agent": "agent-ops-gpo-001",
+          "description": "Analyze utilization trends over the past 6-12 months. Identify systems approaching capacity thresholds and trending toward saturation",
+          "status_conditions": [
+            "trends_analyzed"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "forecast-demand",
+          "agent": "agent-it-mgr-001",
+          "description": "Project future demand based on business growth plans, new initiatives, and seasonal patterns. Identify capacity gaps and timeline for action",
+          "status_conditions": [
+            "forecast_complete"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "recommend-actions",
+          "agent": "agent-sys-admin-001",
+          "description": "Recommend infrastructure actions: hardware procurement, cloud scaling, license purchases, optimization projects, or architecture changes",
+          "status_conditions": [
+            "recommendations_formulated"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "secure-approval",
+          "agent": "agent-it-mgr-001",
+          "description": "Present capacity plan to leadership for budget approval. Prioritize actions based on risk, cost, and business impact",
+          "status_conditions": [
+            "approved",
+            "prioritized"
+          ]
+        },
+        {
+          "order": 6,
+          "action": "track-implementation",
+          "agent": "agent-ops-gpo-001",
+          "description": "Track capacity improvement actions to completion. Update monitoring dashboards and verify that capacity thresholds are met after implementation",
+          "status_conditions": [
+            "tracking_active",
+            "actions_complete"
+          ]
         }
       ]
     }
   ],
   "memory_topology": {
-    "semantic_enabled": true,
-    "episodic_enabled": true,
-    "procedural_enabled": true,
-    "graph_enabled": false,
-    "memory_profiles": {
-      "it-manager-01": "semantic-enabled, procedural-enabled, full-retention",
-      "sysadmin-01": "semantic-enabled, procedural-enabled",
-      "network-engineer-01": "semantic-enabled, procedural-enabled",
-      "helpdesk-lead-01": "semantic-enabled, procedural-enabled",
-      "helpdesk-agent-01": "semantic-enabled, ticket-optimized",
-      "ops-gpo-01": "semantic-enabled, documentation-optimized"
+    "semantic_memory": {
+      "enabled": true,
+      "description": "Stores IT knowledge base articles, troubleshooting guides, infrastructure documentation, security policies, and compliance requirements",
+      "storage_backend": "vector-store",
+      "retention_days": 365,
+      "scopes": [
+        "troubleshooting-guides",
+        "infrastructure-documentation",
+        "security-policies",
+        "compliance-requirements",
+        "runbooks",
+        "vendor-documentation"
+      ]
     },
-    "retention_policy": {
-      "tickets": "1-year",
-      "disaster-recovery-tests": "3-years",
-      "outage-reports": "2-years",
-      "backup-logs": "1-year"
+    "episodic_memory": {
+      "enabled": true,
+      "description": "Records incident histories, change records, user provisioning events, backup test results, and compliance audit findings",
+      "storage_backend": "time-series-db",
+      "retention_days": 730,
+      "scopes": [
+        "incident-histories",
+        "change-records",
+        "user-provisioning-events",
+        "backup-test-results",
+        "compliance-audits",
+        "security-events"
+      ]
+    },
+    "procedural_memory": {
+      "enabled": true,
+      "description": "Caches operational procedures, deployment scripts, troubleshooting sequences, backup procedures, and disaster recovery runbooks",
+      "storage_backend": "file-system",
+      "retention_days": 365,
+      "scopes": [
+        "troubleshooting-sequences",
+        "backup-procedures",
+        "disaster-recovery-runbooks",
+        "provisioning-scripts",
+        "patch-procedures",
+        "network-config-procedures"
+      ]
+    },
+    "graph_memory": {
+      "enabled": true,
+      "description": "Maps network topology, infrastructure dependencies, access control relationships, and service ownership for impact analysis and troubleshooting",
+      "storage_backend": "graph-db",
+      "retention_days": -1,
+      "scopes": [
+        "network-topology",
+        "infrastructure-dependencies",
+        "access-control-graph",
+        "service-ownership",
+        "data-flow-diagrams"
+      ]
+    },
+    "immutable_storage": {
+      "enabled": true,
+      "description": "Immutable audit logs, change records, incident reports, and compliance documentation provide the immutable record of all IT operations",
+      "storage_backend": "immutable-log",
+      "retention_days": -1,
+      "scopes": [
+        "audit-logs",
+        "change-records",
+        "incident-reports",
+        "compliance-documents",
+        "security-audit-trails",
+        "backup-verification-logs"
+      ]
     }
   },
   "governance_rules": [
     {
-      "id": "gov-ops-001",
-      "name": "Change Management",
-      "type": "compliance",
-      "enforcement": "enforce",
-      "conditions": {
-        "change_type": "infrastructure-change",
-        "requirement": "approval-required"
-      },
-      "actions": ["change-approval-required", "change-window-scheduling", "rollback-plan-required"]
+      "id": "gov-001",
+      "name": "Change Management Requirement",
+      "rule": "All changes to production infrastructure must follow the change management process. No emergency changes without post-hoc CAB review within 48 hours. Standard changes must use approved templates and runbooks.",
+      "scope": "infrastructure-changes",
+      "severity": "high",
+      "enforcement": "process-gate"
     },
     {
-      "id": "gov-ops-002",
-      "name": "Incident Record Integrity",
-      "type": "audit",
-      "enforcement": "enforce",
-      "conditions": {
-        "record_type": "outage-report",
-        "severity": "major"
-      },
-      "actions": ["immutable-records", "chain-of-custody", "no-deletion"]
+      "id": "gov-002",
+      "name": "Access Control and Least Privilege",
+      "rule": "All user and service accounts must follow the principle of least privilege. Access must be reviewed quarterly. Administrative access requires multi-factor authentication. Unexplained access requests must be escalated to the Security Administrator.",
+      "scope": "access-control",
+      "severity": "critical",
+      "enforcement": "automated"
+    },
+    {
+      "id": "gov-003",
+      "name": "Backup and Recovery Compliance",
+      "rule": "All critical systems must have documented backup procedures with verified restore capability. Backup tests must be performed quarterly. RPO must not exceed 24 hours for critical systems and 72 hours for non-critical systems.",
+      "scope": "data-protection",
+      "severity": "high",
+      "enforcement": "process-gate"
+    },
+    {
+      "id": "gov-004",
+      "name": "Security Patch Management",
+      "rule": "Critical security patches must be applied within 7 days of release. High-severity patches within 30 days. All patching must be tested in a non-production environment first. Emergency patches for active exploits must be applied immediately with documented justification.",
+      "scope": "security",
+      "severity": "critical",
+      "enforcement": "automated"
+    },
+    {
+      "id": "gov-005",
+      "name": "Incident Response and Escalation",
+      "rule": "All incidents must be logged in the ITSM system with proper classification and priority. P1 incidents must be acknowledged within 30 minutes and escalated to the IT Manager within 60 minutes. Post-incident review required for all P1 incidents within 5 business days.",
+      "scope": "incident-management",
+      "severity": "high",
+      "enforcement": "process-gate"
+    },
+    {
+      "id": "gov-006",
+      "name": "Compliance and Audit Readiness",
+      "rule": "All IT operations must maintain compliance with relevant regulations (GDPR, HIPAA, SOX, PCI-DSS as applicable). Quarterly compliance audits required. Documentation must be current and accessible to auditors.",
+      "scope": "compliance",
+      "severity": "high",
+      "enforcement": "process-gate"
     }
   ],
   "kpis": [
     {
-      "id": "ops-kpi-001",
+      "id": "kpi-001",
       "name": "System Uptime",
-      "description": "Percentage of time critical systems are operational",
-      "metric_type": "gauge",
-      "unit": "percent",
-      "thresholds": {"target": 99.9, "warning": 99.5, "critical": 99.0},
-      "aggregation_period": "month"
+      "description": "Percentage of time critical IT systems and services are available and operational",
+      "target": "99.9%+ uptime for critical systems",
+      "measurement": "percentage monthly",
+      "baseline": 99.5,
+      "target_value": 99.95,
+      "threshold": 99.0,
+      "frequency": "monthly",
+      "dashboard": "reliability-metrics"
     },
     {
-      "id": "ops-kpi-002",
+      "id": "kpi-002",
+      "name": "Mean Time to Resolution (MTTR)",
+      "description": "Average time from incident detection to full resolution",
+      "target": "under 4 hours for P1, under 8 hours for P2",
+      "measurement": "hours",
+      "baseline": 6,
+      "target_value": 2,
+      "threshold": 12,
+      "frequency": "per-incident",
+      "dashboard": "incident-metrics"
+    },
+    {
+      "id": "kpi-003",
       "name": "Ticket Resolution Time",
-      "description": "Average time to resolve support tickets by priority",
-      "metric_type": "gauge",
-      "unit": "hours",
-      "thresholds": {"target": 4, "warning": 8, "critical": 24},
-      "aggregation_period": "week"
+      "description": "Average time to resolve user support tickets by priority level",
+      "target": "P1: 1 hour, P2: 4 hours, P3: 1 business day, P4: 3 business days",
+      "measurement": "hours per ticket",
+      "baseline": 8,
+      "target_value": 4,
+      "threshold": 16,
+      "frequency": "weekly",
+      "dashboard": "service-metrics"
     },
     {
-      "id": "ops-kpi-003",
+      "id": "kpi-004",
+      "name": "Security Incidents",
+      "description": "Number of security incidents (breaches, policy violations, vulnerabilities) per quarter",
+      "target": "zero critical security incidents",
+      "measurement": "count per quarter",
+      "baseline": 3,
+      "target_value": 0,
+      "threshold": 1,
+      "frequency": "quarterly",
+      "dashboard": "security-metrics"
+    },
+    {
+      "id": "kpi-005",
+      "name": "User Satisfaction Score",
+      "description": "Average user satisfaction rating from post-incident and support ticket surveys",
+      "target": "4.0+ out of 5.0",
+      "measurement": "survey score",
+      "baseline": 3.5,
+      "target_value": 4.2,
+      "threshold": 3.0,
+      "frequency": "monthly",
+      "dashboard": "service-metrics"
+    },
+    {
+      "id": "kpi-006",
       "name": "Backup Success Rate",
-      "description": "Percentage of scheduled backups completing successfully",
-      "metric_type": "gauge",
-      "unit": "percent",
-      "thresholds": {"target": 100, "warning": 95, "critical": 90},
-      "aggregation_period": "week"
+      "description": "Percentage of scheduled backups that complete successfully without errors",
+      "target": "99.5%+ success rate",
+      "measurement": "percentage",
+      "baseline": 98,
+      "target_value": 99.9,
+      "threshold": 95,
+      "frequency": "weekly",
+      "dashboard": "reliability-metrics"
     },
     {
-      "id": "ops-kpi-004",
-      "name": "Security Incident Count",
-      "description": "Number of security incidents per month",
-      "metric_type": "counter",
-      "unit": "incidents",
-      "thresholds": {"target": 0, "warning": 2, "critical": 5},
-      "aggregation_period": "month"
+      "id": "kpi-007",
+      "name": "First Call Resolution Rate",
+      "description": "Percentage of user tickets resolved on first contact without requiring follow-up or escalation",
+      "target": "70%+ first call resolution",
+      "measurement": "percentage",
+      "baseline": 60,
+      "target_value": 75,
+      "threshold": 50,
+      "frequency": "weekly",
+      "dashboard": "service-metrics"
     },
     {
-      "id": "ops-kpi-005",
-      "name": "User Satisfaction",
-      "description": "Average user satisfaction score for IT support",
-      "metric_type": "gauge",
-      "unit": "score",
-      "thresholds": {"target": 4.5, "warning": 4.0, "critical": 3.5},
-      "aggregation_period": "month"
+      "id": "kpi-008",
+      "name": "Patch Compliance Rate",
+      "description": "Percentage of systems with security patches applied within the required timeframe",
+      "target": "95%+ patch compliance within SLA",
+      "measurement": "percentage",
+      "baseline": 85,
+      "target_value": 95,
+      "threshold": 80,
+      "frequency": "weekly",
+      "dashboard": "security-metrics"
     }
   ],
   "integrations": [
     {
-      "id": "int-ops-001",
-      "type": "custom",
-      "name": "Monitoring",
-      "provider": "datadog",
-      "auth_method": "api_key",
-      "status": "active",
-      "config": {"endpoint": "https://api.datadoghq.com"}
+      "id": "int-monitoring-001",
+      "name": "Monitoring (Nagios / Zabbix / Datadog)",
+      "purpose": "Infrastructure and service monitoring with alerting on availability, performance, and security events across all systems",
+      "type": "monitoring",
+      "access": "read-write",
+      "events_subscribed": [
+        "alert",
+        "threshold_breach",
+        "service_down",
+        "security_event"
+      ],
+      "auth_method": "api-key"
     },
     {
-      "id": "int-ops-002",
-      "type": "custom",
-      "name": "Ticketing System",
-      "provider": "servicenow",
-      "auth_method": "oauth2",
-      "status": "active",
-      "config": {"endpoint": "https://api.servicenow.com"}
+      "id": "int-ticketing-001",
+      "name": "Ticketing System (ServiceNow / Jira Service Management / Zendesk)",
+      "purpose": "IT service management platform for incident, problem, change, and request tracking with SLA management and reporting",
+      "type": "ticketing",
+      "access": "read-write",
+      "events_subscribed": [
+        "ticket_created",
+        "ticket_resolved",
+        "sla_breach",
+        "escalation_triggered"
+      ],
+      "auth_method": "oauth"
     },
     {
-      "id": "int-ops-003",
-      "type": "custom",
-      "name": "Cloud Platform",
-      "provider": "aws",
-      "auth_method": "api_key",
-      "status": "active",
-      "config": {"region": "us-east-1"}
+      "id": "int-ad-001",
+      "name": "Active Directory / Microsoft Entra ID",
+      "purpose": "Identity and access management for user authentication, group policies, and directory services",
+      "type": "identity-management",
+      "access": "read-write",
+      "events_subscribed": [
+        "user_created",
+        "access_changed",
+        "policy_updated",
+        "account_locked"
+      ],
+      "auth_method": "oauth"
     },
     {
-      "id": "int-ops-004",
-      "type": "email",
-      "name": "Company Email",
-      "provider": "google_workspace",
-      "auth_method": "oauth2",
-      "status": "active"
+      "id": "int-cloud-001",
+      "name": "Cloud Platforms (AWS / Azure / GCP)",
+      "purpose": "Cloud infrastructure provisioning, monitoring, and management across compute, storage, network, and managed services",
+      "type": "cloud-platform",
+      "access": "read-write",
+      "events_subscribed": [
+        "infrastructure_change",
+        "cost_alert",
+        "service_disruption",
+        "security_event"
+      ],
+      "auth_method": "iam-role"
+    },
+    {
+      "id": "int-backup-001",
+      "name": "Backup Systems (Veeam / Commvault / AWS Backup)",
+      "purpose": "Data backup, replication, and disaster recovery management across on-premises and cloud environments",
+      "type": "backup",
+      "access": "read-write",
+      "events_subscribed": [
+        "backup_complete",
+        "backup_failed",
+        "recovery_test_result",
+        "storage_warning"
+      ],
+      "auth_method": "api-key"
+    },
+    {
+      "id": "int-pagerduty-001",
+      "name": "Incident Management (PagerDuty / Opsgenie)",
+      "purpose": "On-call scheduling, incident alerting, escalation management, and incident timeline capture",
+      "type": "incident-management",
+      "access": "read-write",
+      "events_subscribed": [
+        "incident_created",
+        "incident_resolved",
+        "schedule_change"
+      ],
+      "auth_method": "api-key"
     }
   ],
   "operational_policies": [
     {
-      "id": "pol-ops-001",
-      "name": "Agent Autonomy in IT Operations",
-      "scope": "agent",
-      "rules": [
-        {"agent": "ops-gpo-01", "allowed": ["ticket-routing", "documentation", "reporting", "inventory-tracking"], "denied": ["execute-infrastructure-changes", "respond-to-security-incidents", "modify-firewall-rules"]},
-        {"requirement": "all-agent-actions-affecting-infrastructure-require-human-confirmation"}
-      ]
+      "id": "policy-001",
+      "name": "Help Desk Support Hours and Escalation",
+      "description": "Standard support hours are Monday-Friday 8:00-18:00. Extended hours and weekend support for critical systems as defined in the SLA. P1 incidents require 24/7 coverage with the Security Administrator or System Administrator on call. Escalation path: Help Desk Agent -> Help Desk Lead -> System Administrator/Network Engineer -> IT Manager. Response SLAs: P1 (30 min), P2 (2 hours), P3 (1 business day), P4 (3 business days).",
+      "scope": "service-management",
+      "effective_from": "2026-07-17",
+      "review_frequency": "quarterly"
     },
     {
-      "id": "pol-ops-002",
-      "name": "Data Retention for IT Records",
-      "scope": "system",
-      "rules": [
-        {"data_type": "tickets", "retention": "1-year", "disposal": "anonymize"},
-        {"data_type": "disaster-recovery-tests", "retention": "3-years", "disposal": "secure-delete"},
-        {"data_type": "outage-reports", "retention": "2-years", "disposal": "secure-delete"}
-      ]
+      "id": "policy-002",
+      "name": "Change Management and Maintenance Windows",
+      "description": "All production infrastructure changes must follow the change management process with documented approval. Standard maintenance windows are Saturday 02:00-06:00 and Sunday 00:00-04:00 (local time). Emergency changes require rapid CAB review within 48 hours. All changes must have a documented rollback plan.",
+      "scope": "change-management",
+      "effective_from": "2026-07-17",
+      "review_frequency": "biannually"
+    },
+    {
+      "id": "policy-003",
+      "name": "Security and Access Control Policy",
+      "description": "All systems require MFA for administrative access. User access reviews conducted quarterly. Password policy: minimum 12 characters, complexity requirements, 90-day rotation for privileged accounts. Security awareness training required annually for all staff. Incident response plan reviewed and tested biannually.",
+      "scope": "security",
+      "effective_from": "2026-07-17",
+      "review_frequency": "quarterly"
     }
-  ],
-  "metadata": {
-    "enterprise_size": "all-sizes",
-    "department_size": "3-20 FTE (adjusts by size)",
-    "company_size": "all sizes (10-5000+ employees)",
-    "industry": "general",
-    "compliance_level": "standard-to-formalized",
-    "frameworks": ["ITIL", "DevOps", "SRE"],
-    "last_reviewed": "2026-07-17"
-  }
+  ]
 }

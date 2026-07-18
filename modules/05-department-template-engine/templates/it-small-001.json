@@ -1,0 +1,238 @@
+{
+  "id": "it-small-001",
+  "name": "Small IT Department",
+  "description": "1–3 person IT department for small businesses (up to 50 employees). Handles core infrastructure, helpdesk support, and basic network administration.",
+  "category": "it",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "small",
+    "department_size": "1-3 FTE",
+    "company_size": "up to 50 employees",
+    "industry": "general",
+    "compliance_level": "basic",
+    "frameworks": ["ITIL-v4", "NIST-CSF-lite"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["it", "small-business", "helpdesk", "infrastructure"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "it-lead-01",
+      "role": "IT Manager / Systems Administrator",
+      "capabilities": [
+        "network-administration",
+        "infrastructure-management",
+        "helpdesk-support",
+        "security-basics",
+        "vendor-management"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["monitoring-system", "ticketing-system", "remote-access", "documentation"],
+      "system_prompt": "You are the IT Manager for a small business. You manage servers, network, helpdesk tickets, and coordinate with external vendors for specialized tasks.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "infrastructure": "read-write",
+        "ticketing": "read-write",
+        "user-accounts": "read-write",
+        "network-config": "read-write"
+      }
+    },
+    {
+      "id": "it-gpo-01",
+      "role": "GPO Pod — IT Support",
+      "capabilities": [
+        "ticket-routing",
+        "faq-response",
+        "user-support",
+        "documentation"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["ticketing-system", "knowledge-base", "remote-access"],
+      "system_prompt": "You are an IT GPO pod member. You handle user support tickets, route issues, provide FAQ answers, and maintain documentation. Always escalate infrastructure issues and security incidents to the IT Manager.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["security-incident", "infrastructure-outage", "data-breach"]
+      },
+      "access_control": {
+        "ticketing": "read-write",
+        "knowledge-base": "read-write",
+        "infrastructure": "read-only",
+        "network-config": "none"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-ticket-001",
+      "name": "Helpdesk Ticket Management",
+      "description": "Receive, triage, resolve, and close user support tickets.",
+      "triggers": ["manual", "event:ticket-created"],
+      "steps": [
+        {
+          "id": "ticket-01",
+          "type": "agent_call",
+          "name": "Triage Ticket",
+          "config": {"agent": "it-gpo-01", "task": "Categorize ticket, assign priority, attempt resolution"}
+        },
+        {
+          "id": "ticket-02",
+          "type": "conditional",
+          "name": "Escalation Check",
+          "config": {
+            "condition": "ticket.priority in ['high', 'critical']",
+            "true_path": "escalate-to-it-lead",
+            "false_path": "self-resolve"
+          }
+        },
+        {
+          "id": "ticket-03",
+          "type": "transformation",
+          "name": "Resolve Ticket",
+          "config": {"agent": "it-lead-01", "task": "Diagnose issue, apply fix, document solution"}
+        },
+        {
+          "id": "ticket-04",
+          "type": "tool_call",
+          "name": "Close Ticket",
+          "config": {"tool": "ticketing-system", "status": "resolved"}
+        }
+      ]
+    },
+    {
+      "id": "wf-maintenance-001",
+      "name": "Routine Infrastructure Maintenance",
+      "description": "Scheduled maintenance for servers, network, and backup systems.",
+      "triggers": ["schedule:weekly", "schedule:monthly"],
+      "steps": [
+        {
+          "id": "maint-01",
+          "type": "tool_call",
+          "name": "Run Health Checks",
+          "config": {"tools": ["server-health", "network-ping", "backup-verify"]}
+        },
+        {
+          "id": "maint-02",
+          "type": "agent_call",
+          "name": "Review Reports",
+          "config": {"agent": "it-lead-01", "task": "Review health check reports, identify issues"}
+        },
+        {
+          "id": "maint-03",
+          "type": "transformation",
+          "name": "Apply Maintenance",
+          "config": {"agent": "it-lead-01", "task": "Apply patches, update configs, verify backups"}
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": false,
+    "procedural_enabled": true,
+    "graph_enabled": false,
+    "memory_profiles": {
+      "it-lead-01": "semantic-enabled, procedural-enabled",
+      "it-gpo-01": "semantic-enabled"
+    },
+    "retention_policy": {
+      "ticket-history": "1-year",
+      "incident-reports": "3-years",
+      "backup-logs": "6-months"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-it-s-001",
+      "name": "Access Control Policy",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"action_type": "user-permission-change"},
+      "actions": ["require-approval", "log-changes", "audit-trail"]
+    },
+    {
+      "id": "gov-it-s-002",
+      "name": "Backup Verification",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"data_type": "critical-data"},
+      "actions": ["verify-daily", "test-restores-quarterly"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "it-kpi-s-001",
+      "name": "Ticket Resolution Time",
+      "description": "Average time to resolve helpdesk tickets",
+      "metric_type": "gauge",
+      "unit": "hours",
+      "thresholds": {"target": 4, "warning": 8, "critical": 24},
+      "aggregation_period": "week"
+    },
+    {
+      "id": "it-kpi-s-002",
+      "name": "System Uptime",
+      "description": "Percentage of time critical systems are operational",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 99.5, "warning": 98, "critical": 95},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "it-kpi-s-003",
+      "name": "Backup Success Rate",
+      "description": "Percentage of successful backup operations",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 100, "warning": 95, "critical": 90},
+      "aggregation_period": "week"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-it-s-001",
+      "type": "custom",
+      "name": "Monitoring System",
+      "provider": "pnp4nagios",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-it-s-002",
+      "type": "custom",
+      "name": "Ticketing System",
+      "provider": "osTicket",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-it-s-003",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active"
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-it-s-001",
+      "name": "Agent Autonomy",
+      "scope": "agent",
+      "rules": [
+        {"agent": "it-gpo-01", "allowed": ["ticket-handling", "user-support", "documentation"], "denied": ["change-infrastructure", "modify-security-settings", "deploy-to-production"]}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "small",
+    "department_size": "1-3 FTE",
+    "company_size": "up to 50 employees",
+    "industry": "general",
+    "compliance_level": "basic",
+    "frameworks": ["ITIL-v4", "NIST-CSF-lite"],
+    "last_reviewed": "2026-07-17"
+  }
+}

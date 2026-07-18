@@ -1,938 +1,819 @@
 {
   "id": "mkt-sm-001",
   "name": "Small/Medium Marketing Team",
-  "description": "A marketing department optimized for small to medium companies (up to 500 employees) with 3-10 marketing FTE. Features a Marketing Manager, Content Specialist, Digital Marketing Specialist, Designer/Creator, and a General Practice Operator (GPO). Handles full-funnel marketing — content creation, social media management, SEO/SEM, email campaigns, brand management, lead generation, and event marketing. Designed for teams that need to maintain a consistent brand presence, drive demand generation, and support sales with marketing collateral, all while measuring campaign effectiveness and optimizing ROI.",
+  "description": "A marketing department template for small to medium companies (up to 500 employees). This template covers a 3-10 FTE marketing department with a Marketing Manager, Content Specialist, Digital Marketing Specialist, Designer/Creator, and a General Purpose Operator (GPO). It provides end-to-end marketing capabilities including content creation, social media management, SEO/SEM, email campaigns, brand management, and lead generation. Designed for agile marketing teams that need to move fast across multiple channels while maintaining brand consistency and measurable ROI.",
   "category": "marketing",
   "version": "1.0.0",
   "metadata": {
     "enterprise_size": "small",
     "department_size": "3-10 FTE",
     "company_size": "up to 500 employees",
-    "industry": "technology, software, saas, b2b, b2c",
+    "industry": "Technology, E-commerce, Consumer Goods, Professional Services",
     "compliance_level": "standard",
     "frameworks": [
-      "inbound_marketing",
-      "content_marketing",
-      "growth_marketing"
+      "inbound marketing",
+      "content marketing",
+      "growth marketing"
     ],
     "last_reviewed": "2026-07-17"
   },
   "tags": [
     "marketing",
     "small-team",
-    "content",
-    "social_media",
+    "content-creation",
+    "social-media",
     "seo",
-    "email_marketing",
-    "brand_management",
-    "lead_generation",
-    "inbound",
-    "growth"
+    "email-marketing",
+    "lead-generation",
+    "brand-management"
   ],
   "status": "published",
   "created_by": "platform",
   "agents": [
     {
-      "id": "mkt-mgr-001",
-      "title": "Marketing Manager",
-      "level": "management",
-      "roles": [
-        "strategy",
-        "campaign_management",
-        "budget_management",
-        "cross_functional_leadership"
+      "id": "agent-mkt-mgr-001",
+      "name": "Marketing Manager",
+      "role": "Marketing Manager",
+      "level": "senior",
+      "description": "Strategic leader responsible for marketing planning, campaign oversight, budget management, cross-functional alignment, and performance reporting. Sets marketing priorities and ensures alignment with revenue goals.",
+      "capabilities": [
+        "campaign-strategy",
+        "budget-management",
+        "performance-analysis",
+        "cross-functional-alignment",
+        "brand-overview",
+        "team-coordination",
+        "stakeholder-management"
       ],
-      "responsibilities": [
-        "Define and execute the overall marketing strategy aligned with company revenue goals",
-        "Plan and manage marketing budgets across channels (paid, content, events, tools)",
-        "Lead content strategy and editorial calendar planning",
-        "Coordinate with sales, product, and customer success for aligned messaging",
-        "Manage marketing analytics and report ROI to leadership",
-        "Oversee brand guidelines and ensure brand consistency across all channels",
-        "Lead the marketing team — manage workload, priorities, and professional development",
-        "Evaluate and select marketing tools and platforms (CRM, CMS, automation)"
+      "agent_model": "qwen-72b",
+      "memory_profile": "full-retention",
+      "permissions": [
+        "campaign-approve",
+        "budget-approve",
+        "content-publish",
+        "analytics-access",
+        "vendor-contracts"
       ],
-      "skill_matrix": {
-        "strategy": 5,
-        "campaign_management": 5,
-        "analytics": 4,
-        "content_oversight": 4,
-        "budget_management": 5,
-        "team_leadership": 5
-      },
-      "availability": "full_time"
+      "schedule": {
+        "availability": "business-hours",
+        "escalation_path": "cmo"
+      }
     },
     {
-      "id": "content-spec-001",
-      "title": "Content Specialist",
+      "id": "agent-content-spec-001",
+      "name": "Content Specialist",
+      "role": "Content Specialist",
       "level": "mid",
-      "roles": [
-        "content_creation",
-        "blog_writing",
-        "seo_content",
-        "copywriting"
+      "description": "Content creation and management specialist responsible for blog posts, whitepapers, case studies, email copy, web copy, and content calendar management. Ensures brand voice consistency and SEO optimization.",
+      "capabilities": [
+        "content-creation",
+        "copywriting",
+        "seo-writing",
+        "content-calendar",
+        "editing",
+        "content-seo",
+        "email-copy"
       ],
-      "responsibilities": [
-        "Write and edit blog posts, whitepapers, case studies, and product documentation",
-        "Develop SEO-optimized content following keyword research and content strategy",
-        "Create compelling copy for landing pages, email campaigns, and ad copy",
-        "Manage the content calendar — plan, write, edit, and publish content",
-        "Conduct content audits and optimize existing content for SEO and engagement",
-        "Collaborate with Designer/Creator on visual content for articles and social media",
-        "Research industry trends and competitor content strategies"
+      "agent_model": "qwen-34b",
+      "memory_profile": "semantic-enabled",
+      "permissions": [
+        "content-create",
+        "content-edit",
+        "cms-edit",
+        "seo-analysis"
       ],
-      "skill_matrix": {
-        "writing": 5,
-        "seo": 4,
-        "content_strategy": 4,
-        "editing": 5,
-        "analytics": 3,
-        "brand_voice": 4
-      },
-      "availability": "full_time"
+      "schedule": {
+        "availability": "business-hours",
+        "escalation_path": "agent-mkt-mgr-001"
+      }
     },
     {
-      "id": "digital-mkt-001",
-      "title": "Digital Marketing Specialist",
+      "id": "agent-digital-mkt-001",
+      "name": "Digital Marketing Specialist",
+      "role": "Digital Marketing Specialist",
       "level": "mid",
-      "roles": [
-        "paid_advertising",
-        "seo_sem",
-        "email_marketing",
-        "analytics"
+      "description": "Digital channel specialist managing paid campaigns (SEM, social ads), SEO strategy, email marketing automation, analytics, and lead nurturing workflows. Focused on measurable results and conversion optimization.",
+      "capabilities": [
+        "sem-management",
+        "paid-social",
+        "seo-strategy",
+        "email-marketing",
+        "analytics",
+        "conversion-optimization",
+        "lead-nurturing",
+        "ab-testing"
       ],
-      "responsibilities": [
-        "Plan, launch, and optimize paid advertising campaigns (Google Ads, LinkedIn, Meta)",
-        "Manage SEO/SEM strategy — keyword research, on-page optimization, link building",
-        "Build and execute email marketing campaigns using CRM and automation tools",
-        "Track and report on digital campaign performance — CTR, CPC, CPA, ROI",
-        "A/B test landing pages, email subject lines, and ad creatives",
-        "Maintain Google Analytics 4 and Google Search Console for organic performance",
-        "Manage social media scheduling and community engagement",
-        "Optimize marketing funnel metrics from awareness to conversion"
+      "agent_model": "qwen-34b",
+      "memory_profile": "semantic-enabled",
+      "permissions": [
+        "ad-platform-access",
+        "email-platform-access",
+        "analytics-access",
+        "campaign-launch",
+        "landing-page-edit"
       ],
-      "skill_matrix": {
-        "paid_ads": 5,
-        "seo_sem": 5,
-        "email_marketing": 4,
-        "analytics": 5,
-        "ab_testing": 4,
-        "social_media": 4
-      },
-      "availability": "full_time"
+      "schedule": {
+        "availability": "business-hours",
+        "escalation_path": "agent-mkt-mgr-001"
+      }
     },
     {
-      "id": "designer-001",
-      "title": "Designer / Creator",
+      "id": "agent-designer-001",
+      "name": "Designer/Creator",
+      "role": "Designer/Creator",
       "level": "mid",
-      "roles": [
-        "visual_design",
-        "brand_assets",
-        "video_editing",
-        "social_media_graphics"
+      "description": "Visual content creator responsible for social media graphics, ad creatives, email templates, presentation decks, brand assets, and multimedia content. Maintains brand visual standards.",
+      "capabilities": [
+        "graphic-design",
+        "social-media-graphics",
+        "ad-creatives",
+        "email-templates",
+        "brand-assets",
+        "video-editing",
+        "presentation-design"
       ],
-      "responsibilities": [
-        "Design marketing collateral — brochures, one-pagers, decks, presentations",
-        "Create and maintain brand assets — logo usage, color palette, typography guidelines",
-        "Design social media graphics, carousels, and story templates",
-        "Produce video content — product demos, customer testimonials, explainers",
-        "Create email template designs in collaboration with Digital Marketing Specialist",
-        "Develop landing page designs and work with engineering for implementation",
-        "Maintain brand asset library (digital asset management system)"
+      "agent_model": "qwen-34b",
+      "memory_profile": "semantic-enabled",
+      "permissions": [
+        "design-tools-access",
+        "asset-publish",
+        "brand-guidelines-edit"
       ],
-      "skill_matrix": {
-        "visual_design": 5,
-        "brand_design": 5,
-        "video_editing": 4,
-        "ui_design": 3,
-        "motion_graphics": 3,
-        "illustration": 4
-      },
-      "availability": "full_time"
+      "schedule": {
+        "availability": "business-hours",
+        "escalation_path": "agent-mkt-mgr-001"
+      }
     },
     {
-      "id": "gpo-mkt-001",
-      "title": "Marketing GPO",
-      "level": "support",
-      "roles": [
-        "operations_support",
-        "tooling_admin",
-        "event_coordination",
-        "compliance"
+      "id": "agent-mkt-gpo-001",
+      "name": "Marketing GPO",
+      "role": "GPO",
+      "level": "general",
+      "description": "Operational support agent handling CRM data management, report generation, asset organization, compliance checks, and administrative marketing tasks.",
+      "capabilities": [
+        "data-management",
+        "reporting",
+        "asset-organization",
+        "compliance",
+        "task-automation",
+        "crm-administration",
+        "content-publishing"
       ],
-      "responsibilities": [
-        "Manage marketing tool subscriptions and platform access (CRM, CMS, automation, analytics)",
-        "Maintain marketing tech stack — ensure integrations between CRM, CMS, email, and analytics work",
-        "Coordinate event logistics — trade shows, webinars, conferences, and product launches",
-        "Handle vendor relationships for print production, photographer, videographer, and agencies",
-        "Maintain marketing compliance — GDPR, data privacy, and CAN-SPAM compliance for email",
-        "Track marketing spend against budget and process invoices for paid campaigns",
-        "Maintain the content asset library and ensure proper naming conventions and metadata",
-        "Support lead routing between marketing automation and CRM systems"
+      "agent_model": "qwen-14b",
+      "memory_profile": "procedural-enabled",
+      "permissions": [
+        "cms-access",
+        "crm-access",
+        "report-generate",
+        "data-export"
       ],
-      "skill_matrix": {
-        "operations": 5,
-        "tooling": 4,
-        "event_management": 4,
-        "compliance": 4,
-        "vendor_management": 4,
-        "budget_tracking": 3
-      },
-      "availability": "full_time"
+      "schedule": {
+        "availability": "always-on",
+        "escalation_path": "agent-mkt-mgr-001"
+      }
     }
   ],
   "workflows": [
     {
+      "id": "wf-campaign-planning-001",
+      "name": "Campaign Planning Workflow",
+      "description": "End-to-end marketing campaign planning process from strategy definition through execution and performance analysis.",
+      "triggers": [
+        "quarterly_planning",
+        "new_campaign_idea",
+        "product_launch",
+        "seasonal_trigger",
+        "manual_trigger"
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "action": "define-objectives",
+          "agent": "agent-mkt-mgr-001",
+          "description": "Define campaign objectives, target audience, key messages, success metrics (KPIs), budget allocation, and timeline",
+          "status_conditions": [
+            "objectives_defined"
+          ]
+        },
+        {
+          "order": 2,
+          "action": "channel-strategy",
+          "agent": "agent-digital-mkt-001",
+          "description": "Determine optimal channel mix (email, social, search, content, paid ads) based on audience profiles and campaign goals",
+          "status_conditions": [
+            "channel_strategy_set"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "content-plan",
+          "agent": "agent-content-spec-001",
+          "description": "Develop content calendar and creative brief. Define content types, formats, messaging frameworks, and production schedule",
+          "status_conditions": [
+            "content_plan_ready"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "creative-production",
+          "agent": "agent-designer-001",
+          "description": "Produce visual assets, ad creatives, email templates, and multimedia content according to brand guidelines",
+          "status_conditions": [
+            "assets_ready"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "review-and-approve",
+          "agent": "agent-mkt-mgr-001",
+          "description": "Review all campaign materials for brand compliance, messaging accuracy, and quality. Approve or request revisions",
+          "status_conditions": [
+            "approved",
+            "revisions_requested"
+          ]
+        },
+        {
+          "order": 6,
+          "action": "launch-and-monitor",
+          "agent": "agent-digital-mkt-001",
+          "description": "Launch campaign across all channels. Monitor real-time performance metrics and adjust bids, targeting, or creative as needed",
+          "status_conditions": [
+            "launched",
+            "optimized"
+          ]
+        }
+      ]
+    },
+    {
       "id": "wf-content-creation-001",
-      "name": "Content Creation and Publishing Pipeline",
-      "description": "End-to-end workflow for creating, reviewing, optimizing, and publishing marketing content across channels",
+      "name": "Content Creation Workflow",
+      "description": "Structured content creation process from topic selection through writing, design, review, and publication with SEO optimization.",
+      "triggers": [
+        "content_calendar_schedule",
+        "seo_opportunity",
+        "manual_trigger"
+      ],
       "steps": [
         {
-          "step": 1,
-          "name": "Content Brief and Strategy",
-          "actor": "Marketing Manager",
-          "action": "Define content brief — topic, target audience, keywords, content type (blog/whitepaper/case study), campaign alignment, and goal (awareness, consideration, conversion)",
-          "outputs": [
-            "Content brief document",
-            "SEO keyword targets"
+          "order": 1,
+          "action": "topic-selection",
+          "agent": "agent-content-spec-001",
+          "description": "Select topics based on content calendar, SEO keyword research, audience interests, and business priorities. Define target keywords and search intent",
+          "status_conditions": [
+            "topic_selected"
           ]
         },
         {
-          "step": 2,
-          "name": "Content Writing",
-          "actor": "Content Specialist",
-          "action": "Research topic, write draft following content brief, optimize for target keywords, include internal and external links, add meta description",
-          "outputs": [
-            "Content draft",
-            "SEO optimization applied"
+          "order": 2,
+          "action": "outline-and-research",
+          "agent": "agent-content-spec-001",
+          "description": "Research topic thoroughly, create content outline, identify source materials, and define content structure and key takeaways",
+          "status_conditions": [
+            "outline_ready"
           ]
         },
         {
-          "step": 3,
-          "name": "Review and Edit",
-          "actor": "Marketing Manager",
-          "action": "Review content for brand voice accuracy, messaging alignment, factual accuracy, and strategic fit; request revisions if needed",
-          "outputs": [
-            "Reviewed and approved content",
-            "Revision notes"
+          "order": 3,
+          "action": "draft-creation",
+          "agent": "agent-content-spec-001",
+          "description": "Write content draft following brand voice guidelines. Optimize for SEO with target keywords, meta descriptions, and internal linking",
+          "status_conditions": [
+            "draft_complete"
           ]
         },
         {
-          "step": 4,
-          "name": "Design and Asset Creation",
-          "actor": "Designer/Creator",
-          "action": "Create featured image, supporting graphics, infographics, or video assets for the content piece; ensure brand compliance",
-          "outputs": [
-            "Visual assets created",
-            "Brand-compliant designs"
+          "order": 4,
+          "action": "design-visuals",
+          "agent": "agent-designer-001",
+          "description": "Create supporting visuals, featured images, infographics, or charts. Ensure all visuals follow brand guidelines",
+          "status_conditions": [
+            "visuals_ready"
           ]
         },
         {
-          "step": 5,
-          "name": "Publishing",
-          "actor": "Content Specialist / Digital Marketing Specialist",
-          "action": "Upload and format content in CMS, add meta tags, schedule or publish immediately, distribute via social media channels",
-          "outputs": [
-            "Content live on website",
-            "Social media posts scheduled"
+          "order": 5,
+          "action": "review-and-edit",
+          "agent": "agent-mkt-mgr-001",
+          "description": "Review content for accuracy, tone, brand alignment, and SEO optimization. Request revisions if needed",
+          "status_conditions": [
+            "approved",
+            "revisions_requested"
           ]
         },
         {
-          "step": 6,
-          "name": "Performance Tracking",
-          "actor": "Digital Marketing Specialist",
-          "action": "Monitor content performance — page views, time on page, bounce rate, organic traffic, backlinks; report to Marketing Manager",
-          "outputs": [
-            "Performance report",
-            "Optimization recommendations"
+          "order": 6,
+          "action": "publish-and-promote",
+          "agent": "agent-mkt-gpo-001",
+          "description": "Publish content to CMS, schedule social media promotion, add to email newsletters, and submit to search engines for indexing",
+          "status_conditions": [
+            "published",
+            "promoted"
           ]
         }
-      ],
-      "quality_gates": [
-        "SEO keyword targets met",
-        "Brand voice and messaging approved by Marketing Manager",
-        "Visual assets use approved brand templates",
-        "Content optimized for target keyword and meta description",
-        "Mobile-responsive preview verified before publishing"
-      ],
-      "estimated_duration": "3-7 days per content piece"
+      ]
     },
     {
-      "id": "wf-campaign-001",
-      "name": "Campaign Planning and Execution",
-      "description": "Workflow for planning, building, launching, and analyzing multi-channel marketing campaigns",
+      "id": "wf-social-media-001",
+      "name": "Social Media Publishing Workflow",
+      "description": "Social media content planning, creation, scheduling, and engagement management across multiple platforms.",
+      "triggers": [
+        "content_calendar_schedule",
+        "trending_topic",
+        "campaign_launch",
+        "manual_trigger"
+      ],
       "steps": [
         {
-          "step": 1,
-          "name": "Campaign Strategy",
-          "actor": "Marketing Manager",
-          "action": "Define campaign objectives, target audience, key messaging, channels (email, paid, social, content), budget, timeline, and success metrics",
-          "outputs": [
-            "Campaign brief",
-            "Budget allocation",
-            "Success metrics defined"
+          "order": 1,
+          "action": "plan-content",
+          "agent": "agent-content-spec-001",
+          "description": "Plan social media content calendar across platforms. Determine posting frequency, content mix (educational, promotional, engaging), and optimal posting times",
+          "status_conditions": [
+            "calendar_planned"
           ]
         },
         {
-          "step": 2,
-          "name": "Asset Planning",
-          "actor": "Marketing Manager",
-          "action": "Identify all required assets — ad creatives, email templates, landing pages, blog posts, social media graphics, video content",
-          "outputs": [
-            "Asset production schedule",
-            "Channel-specific requirements"
+          "order": 2,
+          "action": "create-assets",
+          "agent": "agent-designer-001",
+          "description": "Design platform-specific visual assets including images, short-form video, stories, and carousel posts",
+          "status_conditions": [
+            "assets_created"
           ]
         },
         {
-          "step": 3,
-          "name": "Asset Creation",
-          "actor": "Content Specialist / Designer/Creator / Digital Marketing Specialist",
-          "action": "Create all campaign assets — write copy, design visuals, build email templates, set up ad creatives, build landing pages",
-          "outputs": [
-            "All campaign assets produced",
-            "Brand-compliant designs"
+          "order": 3,
+          "action": "write-captions",
+          "agent": "agent-content-spec-001",
+          "description": "Write platform-optimized captions with relevant hashtags, calls-to-action, and engagement hooks. Include UTM parameters for tracking",
+          "status_conditions": [
+            "captions_ready"
           ]
         },
         {
-          "step": 4,
-          "name": "Campaign Setup",
-          "actor": "Digital Marketing Specialist",
-          "action": "Configure campaign in relevant platforms — email automation, ad accounts, social media scheduling, landing page builders; set up tracking and UTM parameters",
-          "outputs": [
-            "Campaigns configured in platforms",
-            "UTM tracking set up",
-            "Conversion tracking enabled"
+          "order": 4,
+          "action": "review-and-approve",
+          "agent": "agent-mkt-mgr-001",
+          "description": "Review social media content for brand compliance, messaging accuracy, and engagement potential. Approve scheduled content",
+          "status_conditions": [
+            "approved",
+            "revisions_requested"
           ]
         },
         {
-          "step": 5,
-          "name": "Launch",
-          "actor": "Digital Marketing Specialist",
-          "action": "Execute launch across all channels according to schedule; verify tracking, test links, confirm audience targeting",
-          "outputs": [
-            "Campaign live across all channels",
-            "Tracking verified"
+          "order": 5,
+          "action": "schedule-publish",
+          "agent": "agent-mkt-gpo-001",
+          "description": "Schedule and publish content across all social media platforms using social media management tools",
+          "status_conditions": [
+            "scheduled",
+            "published"
           ]
         },
         {
-          "step": 6,
-          "name": "Optimization and Reporting",
-          "actor": "Digital Marketing Specialist / Marketing Manager",
-          "action": "Monitor campaign performance daily; A/B test variations; optimize targeting and creative; produce weekly performance report; reallocate budget based on top performers",
-          "outputs": [
-            "Performance report",
-            "Optimization actions taken",
-            "Final campaign report with ROI"
+          "order": 6,
+          "action": "engage-and-monitor",
+          "agent": "agent-mkt-gpo-001",
+          "description": "Monitor comments, messages, and mentions. Respond to audience engagement, manage community, and flag urgent issues to the team",
+          "status_conditions": [
+            "engagement_logged",
+            "issues_escalated"
           ]
         }
-      ],
-      "quality_gates": [
-        "Campaign brief approved by Marketing Manager",
-        "All assets reviewed for brand compliance",
-        "Tracking (UTM, pixels, conversion events) verified before launch",
-        "Budget allocation approved",
-        "A/B tests defined and set up"
-      ],
-      "estimated_duration": "Planning 1-2 weeks; execution 1-4 weeks; reporting ongoing"
+      ]
     },
     {
-      "id": "wf-social-001",
-      "name": "Social Media Management",
-      "description": "Workflow for planning, creating, publishing, and engaging on social media channels",
+      "id": "wf-lead-nurturing-001",
+      "name": "Lead Nurturing Workflow",
+      "description": "Automated lead nurturing sequences that move prospects through the marketing funnel with targeted content and personalized messaging.",
+      "triggers": [
+        "new_lead_captured",
+        "lead_score_threshold",
+        "campaign_enrollment",
+        "manual_trigger"
+      ],
       "steps": [
         {
-          "step": 1,
-          "name": "Content Calendar Planning",
-          "actor": "Digital Marketing Specialist",
-          "action": "Plan social media content calendar — posts, stories, reels across channels (LinkedIn, Twitter/X, Instagram, Facebook); align with content marketing and campaign schedule",
-          "outputs": [
-            "Social media calendar",
-            "Post schedule"
+          "order": 1,
+          "action": "segment-lead",
+          "agent": "agent-mkt-gpo-001",
+          "description": "Classify and segment the lead based on source, industry, company size, behavioral signals, and lead score into appropriate nurturing stream",
+          "status_conditions": [
+            "lead_segmented"
           ]
         },
         {
-          "step": 2,
-          "name": "Content Creation",
-          "actor": "Content Specialist / Designer/Creator",
-          "action": "Write social media copy, create graphics, produce short-form video; ensure brand voice and visual guidelines are followed",
-          "outputs": [
-            "Social posts created",
-            "Visual assets ready"
+          "order": 2,
+          "action": "trigger-sequence",
+          "agent": "agent-digital-mkt-001",
+          "description": "Activate the appropriate lead nurturing email sequence based on the lead segment. Configure timing, content personalization, and trigger conditions",
+          "status_conditions": [
+            "sequence_triggered"
           ]
         },
         {
-          "step": 3,
-          "name": "Review and Scheduling",
-          "actor": "Marketing Manager",
-          "action": "Review social content for brand alignment and messaging consistency; approve and schedule via social media management tool",
-          "outputs": [
-            "Approved and scheduled posts"
+          "order": 3,
+          "action": "deliver-content",
+          "agent": "agent-mkt-gpo-001",
+          "description": "Deliver personalized content through email, retargeting ads, and in-app messages based on lead engagement and behavioral triggers",
+          "status_conditions": [
+            "content_delivered"
           ]
         },
         {
-          "step": 4,
-          "name": "Publishing and Engagement",
-          "actor": "Digital Marketing Specialist",
-          "action": "Publish posts according to schedule; respond to comments and messages within 4 business hours; engage with industry content and influencers",
-          "outputs": [
-            "Posts published",
-            "Engagement activity logged"
+          "order": 4,
+          "action": "track-engagement",
+          "agent": "agent-digital-mkt-001",
+          "description": "Track lead engagement across all touchpoints: email opens, clicks, content downloads, website visits, and content interactions",
+          "status_conditions": [
+            "engagement_tracked"
           ]
         },
         {
-          "step": 5,
-          "name": "Community Management",
-          "actor": "Digital Marketing Specialist",
-          "action": "Monitor mentions, tags, and brand mentions across all platforms; escalate customer concerns and PR issues to Marketing Manager",
-          "outputs": [
-            "Community interactions managed",
-            "Escalations documented"
+          "order": 5,
+          "action": "score-and-route",
+          "agent": "agent-mkt-gpo-001",
+          "description": "Update lead score based on engagement. Route high-scoring leads to sales team. Continue nurturing for lower-scoring leads with additional content",
+          "status_conditions": [
+            "lead_scorred",
+            "lead_routed"
           ]
         },
         {
-          "step": 6,
-          "name": "Performance Reporting",
-          "actor": "Digital Marketing Specialist",
-          "action": "Track social media KPIs — followers, engagement rate, reach, click-through rate, share of voice; monthly report to Marketing Manager",
-          "outputs": [
-            "Monthly social media report",
-            "Optimization recommendations"
+          "order": 6,
+          "action": "analyze-and-optimize",
+          "agent": "agent-digital-mkt-001",
+          "description": "Analyze sequence performance: open rates, click-through rates, conversion rates, and drop-off points. Optimize content and timing through A/B testing",
+          "status_conditions": [
+            "analysis_complete",
+            "optimizations_applied"
           ]
         }
-      ],
-      "quality_gates": [
-        "All posts follow brand voice and visual guidelines",
-        "Social posts approved before scheduling",
-        "Engagement response within 4 business hours",
-        "Community escalations logged and tracked"
-      ],
-      "estimated_duration": "Ongoing daily activity; monthly reporting"
+      ]
     },
     {
-      "id": "wf-email-001",
-      "name": "Email Campaign Management",
-      "description": "Workflow for planning, building, testing, and analyzing email marketing campaigns and automated sequences",
+      "id": "wf-performance-analysis-001",
+      "name": "Performance Analysis Workflow",
+      "description": "Regular performance analysis process to evaluate marketing campaign effectiveness, channel ROI, and identify optimization opportunities.",
+      "triggers": [
+        "weekly_report",
+        "monthly_review",
+        "quarterly_review",
+        "campaign_complete",
+        "manual_trigger"
+      ],
       "steps": [
         {
-          "step": 1,
-          "name": "Campaign Planning",
-          "actor": "Digital Marketing Specialist",
-          "action": "Define email campaign — objective (newsletter, nurture, promotional, event), target audience segment, content brief, and send schedule",
-          "outputs": [
-            "Email campaign brief",
-            "Audience segmentation"
+          "order": 1,
+          "action": "collect-metrics",
+          "agent": "agent-mkt-gpo-001",
+          "description": "Aggregate performance data from all marketing channels: website analytics, ad platforms, email platforms, social media, and CRM",
+          "status_conditions": [
+            "data_collected"
           ]
         },
         {
-          "step": 2,
-          "name": "Email Design and Copy",
-          "actor": "Content Specialist / Designer/Creator",
-          "action": "Write email copy (subject line, preview text, body), design email template in email marketing platform, ensure mobile-responsive layout",
-          "outputs": [
-            "Email copy approved",
-            "Email design ready"
+          "order": 2,
+          "action": "calculate-kpis",
+          "agent": "agent-digital-mkt-001",
+          "description": "Calculate key performance indicators: CAC, ROI, conversion rates, engagement rates, lead volume, funnel metrics, and channel attribution",
+          "status_conditions": [
+            "kpis_calculated"
           ]
         },
         {
-          "step": 3,
-          "name": "List Segmentation",
-            "actor": "Digital Marketing Specialist",
-          "action": "Build audience segment based on criteria — demographics, behavior, engagement history, lifecycle stage; ensure compliance with GDPR and CAN-SPAM",
-          "outputs": [
-            "Segmented audience list",
-            "Compliance verified"
+          "order": 3,
+          "action": "generate-report",
+          "agent": "agent-mkt-gpo-001",
+          "description": "Generate performance report with channel breakdown, campaign results, trend analysis, and comparison against targets",
+          "status_conditions": [
+            "report_generated"
           ]
         },
         {
-          "step": 4,
-          "name": "Testing",
-          "actor": "Digital Marketing Specialist",
-          "action": "Send test email for visual and link verification; perform A/B test on subject line; verify deliverability (spam score, rendering across email clients)",
-          "outputs": [
-            "Test email verified",
-            "A/B test configured",
-            "Deliverability score acceptable"
+          "order": 4,
+          "action": "identify-insights",
+          "agent": "agent-digital-mkt-001",
+          "description": "Analyze report to identify top-performing channels, underperforming areas, successful tactics, and optimization opportunities",
+          "status_conditions": [
+            "insights_identified"
           ]
         },
         {
-          "step": 5,
-          "name": "Send",
-          "actor": "Digital Marketing Specialist",
-          "action": "Execute send at optimal time; monitor send progress, bounce rate, and initial engagement",
-          "outputs": [
-            "Email sent",
-            "Send metrics monitored"
+          "order": 5,
+          "action": "recommend-actions",
+          "agent": "agent-mkt-mgr-001",
+          "description": "Formulate strategic recommendations: reallocate budget, adjust targeting, modify creative, pause underperforming campaigns, or scale winning approaches",
+          "status_conditions": [
+            "recommendations_formulated"
           ]
         },
         {
-          "step": 6,
-          "name": "Analysis and Optimization",
-          "actor": "Digital Marketing Specialist / Marketing Manager",
-          "action": "Analyze results — open rate, click-through rate, conversion rate, unsubscribe rate; document learnings and apply to next campaign",
-          "outputs": [
-            "Campaign performance report",
-            "Optimization notes"
+          "order": 6,
+          "action": "executive-communication",
+          "agent": "agent-mkt-gpo-001",
+          "description": "Present performance summary and recommendations to stakeholders. Update marketing dashboard and archive historical data",
+          "status_conditions": [
+            "communicated",
+            "data_archived"
           ]
         }
-      ],
-      "quality_gates": [
-        "Email copy reviewed for brand voice and compliance",
-        "Subject line A/B test configured",
-        "Mobile-responsive design verified",
-        "GDPR/CAN-SPAM compliance confirmed (opt-out link, physical address)",
-        "Deliverability score above threshold (spam score < 3)"
-      ],
-      "estimated_duration": "3-5 days per campaign"
-    },
-    {
-      "id": "wf-seo-001",
-      "name": "SEO and SEM Strategy Execution",
-      "description": "Workflow for ongoing SEO optimization and search engine marketing management",
-      "steps": [
-        {
-          "step": 1,
-          "name": "Keyword Research and Analysis",
-          "actor": "Digital Marketing Specialist",
-          "action": "Conduct keyword research using tools (Ahrefs, SEMrush, Google Keyword Planner); identify target keywords by intent (informational, commercial, transactional); analyze competitor keyword strategy",
-          "outputs": [
-            "Target keyword list",
-            "Competitor keyword gap analysis"
-          ]
-        },
-        {
-          "step": 2,
-          "name": "On-Page Optimization",
-          "actor": "Content Specialist",
-          "action": "Optimize website pages — title tags, meta descriptions, heading structure, internal linking, image alt text, keyword density; implement technical SEO fixes",
-          "outputs": [
-            "Optimized pages",
-            "Technical SEO improvements"
-          ]
-        },
-        {
-          "step": 3,
-          "name": "Content Creation for SEO",
-          "actor": "Content Specialist",
-          "action": "Develop SEO-focused content — pillar pages, cluster content, blog posts targeting long-tail keywords; follow content brief with SEO targets",
-          "outputs": [
-            "SEO content published",
-            "Keyword targets tracked"
-          ]
-        },
-        {
-          "step": 4,
-          "name": "Link Building",
-          "actor": "Digital Marketing Specialist",
-          "action": "Execute link building strategy — guest posting, digital PR, broken link building, resource page outreach; track backlink profile",
-          "outputs": [
-            "Backlinks acquired",
-            "Link building report"
-          ]
-        },
-        {
-          "step": 5,
-          "name": "SEM Campaign Management",
-          "actor": "Digital Marketing Specialist",
-          "action": "Manage Google Ads and Microsoft Advertising campaigns — keyword bids, ad copy, negative keywords, audience targeting, budget allocation",
-          "outputs": [
-            "Active SEM campaigns",
-            "Ad performance reports"
-          ]
-        },
-        {
-          "step": 6,
-          "name": "Performance Monitoring",
-          "actor": "Digital Marketing Specialist",
-          "action": "Monitor organic and paid search performance — rankings, impressions, clicks, CTR, conversion rate; monthly SEO/SEM report to Marketing Manager",
-          "outputs": [
-            "Monthly SEO/SEM performance report",
-            "Strategy adjustments documented"
-          ]
-        }
-      ],
-      "quality_gates": [
-        "Target keywords have search volume and relevance",
-        "On-page SEO elements optimized for each page",
-        "SEO content follows brand voice and quality standards",
-        "SEM campaigns have defined KPIs and budget caps",
-        "Monthly performance reviews conducted"
-      ],
-      "estimated_duration": "Ongoing; results measured monthly"
-    },
-    {
-      "id": "wf-lead-gen-001",
-      "name": "Lead Generation and Nurturing",
-      "description": "Workflow for capturing, scoring, nurturing, and handoff of marketing-qualified leads to the sales team",
-      "steps": [
-        {
-          "step": 1,
-          "name": "Lead Magnet and Landing Page Creation",
-          "actor": "Content Specialist / Designer/Creator",
-          "action": "Develop lead magnets (ebooks, webinars, templates, toolkits) and create landing pages with forms; ensure branding and messaging consistency",
-          "outputs": [
-            "Lead magnets created",
-            "Landing pages published"
-          ]
-        },
-        {
-          "step": 2,
-          "name": "Traffic Generation",
-          "actor": "Digital Marketing Specialist",
-          "action": "Drive traffic to landing pages through SEO content, paid ads, social media, email campaigns, and partner channels",
-          "outputs": [
-            "Traffic driving campaigns active",
-            "UTM tracking enabled"
-          ]
-        },
-        {
-          "step": 3,
-          "name": "Lead Capture and Scoring",
-            "actor": "Digital Marketing Specialist",
-          "action": "Configure lead capture forms in marketing automation platform; set lead scoring rules based on demographic fit, engagement level, and firmographic data",
-          "outputs": [
-            "Lead scoring model configured",
-            "Leads captured in CRM"
-          ]
-        },
-        {
-          "step": 4,
-          "name": "Nurturing Campaigns",
-          "actor": "Digital Marketing Specialist / Content Specialist",
-          "action": "Build automated nurture email sequences based on lead score and behavior; deliver relevant content to move leads through the funnel",
-          "outputs": [
-            "Nurture sequences configured",
-            "Lead progression tracked"
-          ]
-        },
-        {
-          "step": 5,
-          "name": "Lead Qualification and Handoff",
-          "actor": "Marketing Manager",
-          "action": "Review MQL (marketing-qualified lead) criteria; hand off qualified leads to sales team with full engagement history and context",
-          "outputs": [
-            "MQLs handed off to sales",
-            "Lead context documented"
-          ]
-        },
-        {
-          "step": 6,
-          "name": "Conversion Analysis",
-          "actor": "Marketing Manager / Digital Marketing Specialist",
-          "action": "Track lead-to-customer conversion rate, cost per acquired customer, and campaign attribution; optimize lead generation strategy based on data",
-          "outputs": [
-            "Lead conversion report",
-            "Strategy optimization actions"
-          ]
-        }
-      ],
-      "quality_gates": [
-        "Lead magnets aligned with target audience needs",
-        "Landing pages optimized for conversion (A/B tested)",
-        "Lead scoring model defined and calibrated with sales",
-        "MQL criteria agreed upon with sales leadership",
-        "Attribution model configured in analytics platform"
-      ],
-      "estimated_duration": "Setup 1-2 weeks; nurturing ongoing"
+      ]
     }
   ],
   "memory_topology": {
-    "shared_memory": {
+    "semantic_memory": {
       "enabled": true,
-      "description": "Shared marketing knowledge base for brand guidelines, content templates, campaign insights, and performance benchmarks",
-      "storage": "vector_store",
-      "namespaces": [
-        "brand_guidelines",
-        "content_templates",
-        "campaign_insights",
-        "performance_benchmarks",
-        "copywriting_guidelines"
-      ]
-    },
-    "team_memory": {
-      "enabled": true,
-      "description": "Team-level memory for content calendar, campaign plans, editorial schedules, and creative asset metadata",
-      "storage": "relational_db",
-      "contents": [
-        "content_calendar",
-        "campaign_plans",
-        "editorial_schedule",
-        "creative_asset_metadata",
-        "campaign_reports"
-      ]
-    },
-    "personal_memory": {
-      "enabled": true,
-      "description": "Individual agent memory for skill development, content preferences, audience insights, and personal working patterns",
-      "storage": "vector_store",
+      "description": "Stores brand voice guidelines, content performance data, SEO keyword strategies, and audience insights for informed content decisions",
+      "storage_backend": "vector-store",
+      "retention_days": 365,
       "scopes": [
-        "all_marketing_agents"
-      ],
-      "privacy": "individual_only"
+        "brand-voice",
+        "content-performance",
+        "seo-strategies",
+        "audience-insights",
+        "competitor-analysis",
+        "campaign-learnings"
+      ]
     },
-    "cross_team_knowledge": {
+    "episodic_memory": {
       "enabled": true,
-      "description": "Cross-team knowledge sharing for sales enablement content, product messaging, and customer success stories",
-      "storage": "relational_db",
-      "contents": [
-        "sales_enablement_content",
-        "product_messaging",
-        "customer_stories",
-        "competitive_intelligence"
+      "description": "Records campaign results, content publication history, engagement patterns, and event outcomes for retrospective analysis",
+      "storage_backend": "time-series-db",
+      "retention_days": 730,
+      "scopes": [
+        "campaign-results",
+        "content-publication-history",
+        "engagement-patterns",
+        "event-outcomes",
+        "social-media-performance"
+      ]
+    },
+    "procedural_memory": {
+      "enabled": true,
+      "description": "Caches successful campaign templates, email sequences, content workflows, and operational procedures for repeatable marketing processes",
+      "storage_backend": "file-system",
+      "retention_days": 365,
+      "scopes": [
+        "campaign-templates",
+        "email-sequences",
+        "content-workflows",
+        "social-media-templates",
+        "reporting-templates"
+      ]
+    },
+    "graph_memory": {
+      "enabled": false,
+      "description": "Not used -- audience segments and channel relationships tracked in marketing automation platform",
+      "storage_backend": null,
+      "retention_days": 0,
+      "scopes": []
+    },
+    "immutable_storage": {
+      "enabled": true,
+      "description": "CMS publication history, email send logs, and campaign records serve as the immutable record of all marketing activities",
+      "storage_backend": "cms-database",
+      "retention_days": -1,
+      "scopes": [
+        "cms-history",
+        "email-send-logs",
+        "campaign-records",
+        "compliance-records"
       ]
     }
   },
   "governance_rules": [
     {
-      "id": "gov-mkt-001",
-      "name": "Brand Guidelines Compliance",
-      "description": "All marketing materials must follow approved brand guidelines — logo usage, color palette, typography, tone of voice, and imagery standards",
-      "policy": "required",
-      "scope": "all_marketing_materials",
-      "exceptions": [
-        "Time-sensitive social media posts may use approved template variations"
-      ]
+      "id": "gov-001",
+      "name": "Brand Voice and Visual Standards",
+      "rule": "All marketing content must follow approved brand voice guidelines and visual standards. The Marketing Manager or Designer must review and approve all customer-facing materials before publication.",
+      "scope": "all-marketing-content",
+      "severity": "high",
+      "enforcement": "process-gate"
     },
     {
-      "id": "gov-mkt-002",
-      "name": "Content Review and Approval",
-      "description": "All published content must be reviewed and approved by the Marketing Manager before going live",
-      "policy": "required",
-      "scope": "all_published_content",
-      "exceptions": [
-        "Routine social media posts using pre-approved templates"
-      ]
+      "id": "gov-002",
+      "name": "Campaign Approval Process",
+      "rule": "All paid campaigns must have budget approval from the Marketing Manager before launch. Campaign materials must be reviewed for compliance, accuracy, and brand alignment prior to any public release.",
+      "scope": "paid-campaigns",
+      "severity": "high",
+      "enforcement": "policy-gate"
     },
     {
-      "id": "gov-mkt-003",
-      "name": "Data Privacy and Email Compliance",
-      "description": "All email marketing campaigns must comply with GDPR, CAN-SPAM, and applicable data privacy regulations — including opt-in consent, unsubscribe mechanism, and physical address disclosure",
-      "policy": "required",
-      "scope": "all_email_campaigns",
-      "exceptions": []
+      "id": "gov-003",
+      "name": "Data Privacy and Compliance",
+      "rule": "All lead data must be collected and processed in compliance with GDPR, CAN-SPAM, and relevant data protection regulations. Unsubscribe requests must be honored within 24 hours. Personal data must be stored securely and only used for stated purposes.",
+      "scope": "data-handling",
+      "severity": "critical",
+      "enforcement": "automated"
     },
     {
-      "id": "gov-mkt-004",
-      "name": "Campaign Budget Controls",
-      "description": "All paid campaign budgets must be pre-approved by the Marketing Manager; spending cannot exceed approved budget by more than 10% without escalation",
-      "policy": "required",
-      "scope": "all_paid_campaigns",
-      "exceptions": [
-        "Emergency reallocation approved by Marketing Manager for top-performing campaigns"
-      ]
+      "id": "gov-004",
+      "name": "Content SEO Standards",
+      "rule": "All published content must include SEO optimization: target keywords in title, headers, and first paragraph, meta description under 160 characters, alt text for images, and internal links to relevant pages.",
+      "scope": "content-publishing",
+      "severity": "medium",
+      "enforcement": "process-gate"
     },
     {
-      "id": "gov-mkt-005",
-      "name": "SEO and Content Standards",
-      "description": "All published web content must meet minimum SEO standards — title tag, meta description, heading structure, keyword optimization, and alt text",
-      "policy": "required",
-      "scope": "all_published_content",
-      "exceptions": [
-        "Press releases and legal pages may have modified SEO requirements"
-      ]
+      "id": "gov-005",
+      "name": "Social Media Compliance",
+      "rule": "All social media posts must comply with platform policies, industry regulations (especially for regulated industries), and company social media policy. Financial disclosures and sponsored content tags must be included where required.",
+      "scope": "social-media",
+      "severity": "high",
+      "enforcement": "process-gate"
     }
   ],
   "kpis": [
     {
-      "id": "kpi-mkt-001",
-      "name": "Lead Generation Volume",
-      "description": "Number of marketing-qualified leads generated per month",
-      "target": "Based on company goals — typically 50-200/month depending on product and market",
-      "measurement": "CRM lead reports",
-      "category": "demand_generation"
+      "id": "kpi-001",
+      "name": "Lead Generation",
+      "description": "Number of qualified marketing leads generated per month",
+      "target": "based on revenue targets (typically 100-500/month depending on company)",
+      "measurement": "count per month",
+      "baseline": 100,
+      "target_value": 250,
+      "threshold": 80,
+      "frequency": "monthly",
+      "dashboard": "lead-metrics"
     },
     {
-      "id": "kpi-mkt-002",
-      "name": "Content Performance",
-      "description": "Average organic traffic, engagement rate, and conversion rate from content marketing",
-      "target": "Monthly organic traffic growth 10-15%; content conversion rate > 3%",
-      "measurement": "Google Analytics 4, CMS analytics",
-      "category": "content"
+      "id": "kpi-002",
+      "name": "Conversion Rate",
+      "description": "Percentage of website visitors who complete a desired action (form fill, demo request, purchase)",
+      "target": "2-5% for B2B, 1-3% for e-commerce",
+      "measurement": "percentage",
+      "baseline": 2.5,
+      "target_value": 4,
+      "threshold": 1.5,
+      "frequency": "weekly",
+      "dashboard": "conversion-metrics"
     },
     {
-      "id": "kpi-mkt-003",
-      "name": "Social Media Engagement",
-      "description": "Average engagement rate across all social media channels",
-      "target": "LinkedIn 2-3%, Twitter/X 1-2%, Instagram 3-5%",
-      "measurement": "Social media analytics platform",
-      "category": "social"
-    },
-    {
-      "id": "kpi-mkt-004",
-      "name": "Email Marketing Performance",
-      "description": "Email open rate, click-through rate, and unsubscribe rate across all campaigns",
-      "target": "Open rate > 25%, CTR > 3%, unsubscribe rate < 0.5%",
-      "measurement": "Email marketing platform analytics",
-      "category": "email"
-    },
-    {
-      "id": "kpi-mkt-005",
-      "name": "Campaign ROI",
-      "description": "Return on investment for paid marketing campaigns — revenue attributed to marketing spend",
-      "target": "ROI > 3:1 (for every $1 spent, $3+ in attributed revenue)",
-      "measurement": "Marketing attribution platform and CRM",
-      "category": "roi"
-    },
-    {
-      "id": "kpi-mkt-006",
-      "name": "SEO Performance",
-      "description": "Organic search visibility — keyword rankings, organic traffic, and domain authority",
-      "target": "Top 10 rankings for 50+ target keywords; organic traffic growth 15% quarterly",
-      "measurement": "Ahrefs/SEMrush, Google Search Console",
-      "category": "seo"
-    },
-    {
-      "id": "kpi-mkt-007",
+      "id": "kpi-003",
       "name": "Customer Acquisition Cost (CAC)",
       "description": "Total marketing spend divided by number of new customers acquired",
-      "target": "CAC < company-defined threshold (typically 1/3 of LTV)",
-      "measurement": "Finance + CRM combined data",
-      "category": "roi"
+      "target": "declining or stable trend",
+      "measurement": "currency per customer",
+      "baseline": 150,
+      "target_value": 100,
+      "threshold": 200,
+      "frequency": "monthly",
+      "dashboard": "roi-metrics"
     },
     {
-      "id": "kpi-mkt-008",
-      "name": "Brand Awareness and Share of Voice",
-      "description": "Brand mention volume, social share of voice, and direct traffic as proxy for brand awareness",
-      "target": "Quarterly increase in brand mentions and share of voice vs. competitors",
-      "measurement": "Social listening tools, Google Trends, direct traffic analytics",
-      "category": "brand"
+      "id": "kpi-004",
+      "name": "Marketing ROI",
+      "description": "Revenue attributed to marketing divided by total marketing spend",
+      "target": "4:1 or higher",
+      "measurement": "ratio",
+      "baseline": 3,
+      "target_value": 4,
+      "threshold": 2,
+      "frequency": "quarterly",
+      "dashboard": "roi-metrics"
+    },
+    {
+      "id": "kpi-005",
+      "name": "Engagement Rate",
+      "description": "Average engagement rate across social media platforms (likes, comments, shares, saves)",
+      "target": "above industry average (2-3%)",
+      "measurement": "percentage",
+      "baseline": 2,
+      "target_value": 3.5,
+      "threshold": 1,
+      "frequency": "weekly",
+      "dashboard": "engagement-metrics"
+    },
+    {
+      "id": "kpi-006",
+      "name": "Brand Awareness",
+      "description": "Brand visibility measured by social reach, search volume, direct traffic, and social mentions",
+      "target": "increasing trend",
+      "measurement": "composite score",
+      "baseline": 100,
+      "target_value": 150,
+      "threshold": 80,
+      "frequency": "monthly",
+      "dashboard": "brand-metrics"
+    },
+    {
+      "id": "kpi-007",
+      "name": "Content Performance",
+      "description": "Content engagement metrics including page views, time on page, social shares, and lead generation from content assets",
+      "target": "increasing trend",
+      "measurement": "composite score",
+      "baseline": 500,
+      "target_value": 1000,
+      "threshold": 300,
+      "frequency": "monthly",
+      "dashboard": "content-metrics"
     }
   ],
   "integrations": [
     {
       "id": "int-cms-001",
-      "name": "Content Management System",
-      "category": "content_management",
-      "purpose": "Content creation, editing, publishing, and SEO management for the company website and blog",
-      "direction": "bidirectional",
-      "config": {
-        "supported_platforms": ["WordPress", "Webflow", "Contentful", "Drupal"],
-        "capabilities": ["content_editor", "seo_metadata", "asset_management", "version_control"],
-        "workflow": "draft -> review -> approved -> published"
-      }
+      "name": "Content Management System (WordPress / Contentful / HubSpot CMS)",
+      "purpose": "Content creation, management, and publishing platform with SEO tools, version control, and multi-author collaboration",
+      "type": "cms",
+      "access": "read-write",
+      "events_subscribed": [
+        "content_published",
+        "content_updated",
+        "seo_score_changed"
+      ],
+      "auth_method": "oauth"
     },
     {
       "id": "int-social-001",
-      "name": "Social Media Platforms",
-      "category": "social_media",
-      "purpose": "Social media publishing, scheduling, engagement tracking, and analytics across multiple platforms",
-      "direction": "bidirectional",
-      "config": {
-        "supported_platforms": ["LinkedIn", "Twitter/X", "Instagram", "Facebook", "TikTok", "YouTube"],
-        "management_tools": ["Hootsuite", "Buffer", "Sprout Social", "Later"],
-        "capabilities": ["scheduling", "publishing", "analytics", "engagement", "social_listening"]
-      }
+      "name": "Social Media Management (Buffer / Hootsuite / Sprout Social)",
+      "purpose": "Multi-platform social media scheduling, publishing, engagement management, and performance analytics",
+      "type": "social-media",
+      "access": "read-write",
+      "events_subscribed": [
+        "post_published",
+        "engagement_received",
+        "performance_report"
+      ],
+      "auth_method": "oauth"
     },
     {
       "id": "int-email-001",
-      "name": "Email Marketing Platform",
-      "category": "email_marketing",
-      "purpose": "Email campaign creation, audience segmentation, automation, and performance tracking",
-      "direction": "bidirectional",
-      "config": {
-        "supported_platforms": ["Mailchimp", "SendGrid", "HubSpot Marketing Hub", "ActiveCampaign", "Customer.io"],
-        "capabilities": ["email_builder", "automation", "segmentation", "a_b_testing", "analytics", "compliance_management"]
-      }
+      "name": "Email Marketing (Mailchimp / HubSpot / SendGrid)",
+      "purpose": "Email campaign creation, automated nurture sequences, list management, A/B testing, and performance analytics",
+      "type": "email-marketing",
+      "access": "read-write",
+      "events_subscribed": [
+        "campaign_scheduled",
+        "email_sent",
+        "engagement_event"
+      ],
+      "auth_method": "api-key"
     },
     {
       "id": "int-analytics-001",
-      "name": "Google Analytics 4",
-      "category": "analytics",
-      "purpose": "Website traffic analysis, user behavior tracking, conversion funnel analysis, and attribution modeling",
-      "direction": "bidirectional",
-      "config": {
-        "tracking_scope": ["website_traffic", "user_behavior", "conversion_events", "ecommerce", "content_performance"],
-        "integration": ["Google Ads", "Google Search Console", "Google Data Studio"],
-        "data_retention_days": 14
-      }
+      "name": "Analytics (Google Analytics 4 / Mixpanel)",
+      "purpose": "Website traffic analysis, conversion tracking, user behavior analysis, and funnel visualization",
+      "type": "analytics",
+      "access": "read",
+      "events_subscribed": [
+        "conversion_event",
+        "traffic_spike",
+        "funnel_dropoff"
+      ],
+      "auth_method": "api-key"
     },
     {
       "id": "int-crm-001",
-      "name": "CRM Platform",
-      "category": "crm",
-      "purpose": "Lead management, customer data, sales pipeline tracking, and marketing attribution",
-      "direction": "bidirectional",
-      "config": {
-        "supported_platforms": ["HubSpot CRM", "Salesforce", "Pipedrive", "Zoho CRM"],
-        "sync_fields": ["contact_info", "lead_score", "engagement_history", "campaign_source", "deal_stage"],
-        "lead_routing": "automated_based_on_scoring"
-      }
-    },
-    {
-      "id": "int-seo-001",
-      "name": "SEO Tool Suite",
-      "category": "seo",
-      "purpose": "Keyword research, rank tracking, backlink analysis, competitor analysis, and site audit",
-      "direction": "bidirectional",
-      "config": {
-        "supported_platforms": ["Ahrefs", "SEMrush", "Moz", "Google Search Console"],
-        "features": ["keyword_research", "rank_tracking", "backlink_analysis", "site_audit", "competitor_analysis"]
-      }
+      "name": "CRM (Salesforce / HubSpot CRM)",
+      "purpose": "Lead management, contact tracking, deal pipeline, campaign attribution, and sales-marketing handoff",
+      "type": "crm",
+      "access": "read-write",
+      "events_subscribed": [
+        "lead_created",
+        "lead_qualified",
+        "deal_stage_changed"
+      ],
+      "auth_method": "oauth"
     },
     {
       "id": "int-ads-001",
-      "name": "Paid Advertising Platforms",
-      "category": "paid_advertising",
-      "purpose": "Manage and optimize paid advertising campaigns across search and social platforms",
-      "direction": "bidirectional",
-      "config": {
-        "supported_platforms": ["Google Ads", "Microsoft Advertising", "LinkedIn Ads", "Meta Ads", "Twitter Ads"],
-        "capabilities": ["campaign_management", "bid_optimization", "audience_targeting", "creative_management", "attribution"]
-      }
-    },
-    {
-      "id": "int-dam-001",
-      "name": "Digital Asset Management System",
-      "category": "asset_management",
-      "purpose": "Centralized storage, organization, and retrieval of brand assets, creative files, and marketing collateral",
-      "direction": "bidirectional",
-      "config": {
-        "supported_platforms": ["Bynder", "Dropbox", "Google Drive", "Adobe Asset Link"],
-        "capabilities": ["asset_storage", "metadata_tagging", "version_control", "brand_compliance_checking", "search_and_retrieve"]
-      }
+      "name": "Ad Platforms (Google Ads / Meta Ads / LinkedIn Ads)",
+      "purpose": "Paid advertising campaign management across search, social, and display channels with real-time bid and budget optimization",
+      "type": "ad-platform",
+      "access": "read-write",
+      "events_subscribed": [
+        "campaign_status_changed",
+        "budget_alert",
+        "performance_threshold"
+      ],
+      "auth_method": "oauth"
     }
   ],
   "operational_policies": [
     {
-      "id": "op-mkt-001",
-      "name": "Working Hours and Campaign Availability",
-      "description": "Standard working hours with flexibility for campaign launch timing and event participation",
-      "policy": "Core team works 9am-6pm local time, Monday through Friday. Marketing campaigns may be scheduled for off-hours sends to reach target audiences optimally. Event attendance (trade shows, conferences) may require weekend or evening hours — scheduled in advance with compensatory time. Digital Marketing Specialist may adjust social media engagement schedules to match audience active hours.",
-      "scope": "all_team_members"
+      "id": "policy-001",
+      "name": "Brand Approval Policy",
+      "description": "All customer-facing marketing materials must be reviewed and approved by the Marketing Manager or designated Designer before publication. Emergency content requires post-hoc approval within 4 hours. Brand guideline changes require Marketing Manager approval.",
+      "scope": "content-approval",
+      "effective_from": "2026-07-17",
+      "review_frequency": "quarterly"
     },
     {
-      "id": "op-mkt-002",
-      "name": "Brand and Content Governance",
-      "description": "All public-facing marketing materials must follow brand guidelines and receive Marketing Manager approval",
-      "policy": "Brand guidelines are maintained as living documents. All content — website copy, social posts, email templates, ad creatives, presentation decks — must use approved templates and follow brand voice guidelines. Marketing Manager has final approval on all published content. New team members receive brand guidelines onboarding during their first week.",
-      "scope": "all_marketing_output"
+      "id": "policy-002",
+      "name": "Content Calendar Discipline",
+      "description": "All marketing activities must be planned and tracked in the shared content calendar at least 2 weeks in advance. Emergency content is permitted but should not exceed 10% of total monthly content volume. Content calendar reviews occur weekly on Monday standup.",
+      "scope": "content-planning",
+      "effective_from": "2026-07-17",
+      "review_frequency": "biannually"
     },
     {
-      "id": "op-mkt-003",
+      "id": "policy-003",
       "name": "Data Privacy and Consent Management",
-      "description": "All marketing data collection and email communications must comply with GDPR, CAN-SPAM, and applicable privacy laws",
-      "policy": "All email campaigns include valid physical address, one-click unsubscribe, and clear sender identification. Double opt-in required for newsletter subscriptions. Personal data stored in CRM with access controls — only Marketing Manager and Digital Marketing Specialist can export or delete records. Privacy policy and cookie consent banner maintained on website. Annual compliance audit conducted.",
-      "scope": "all_data_collection_and_email_marketing"
-    },
-    {
-      "id": "op-mkt-004",
-      "name": "Budget Management and Approval",
-      "description": "All marketing spend must be budgeted, tracked, and approved per the defined approval chain",
-      "policy": "Annual marketing budget set by Marketing Manager and approved by CFO/CEO. Monthly spend tracked against budget. Paid advertising budgets require Marketing Manager approval per campaign. Tool subscriptions managed by Marketing GPO with Marketing Manager authorization for purchases over $500/month. Monthly budget vs. actual report provided to leadership.",
-      "scope": "all_marketing_spend"
-    },
-    {
-      "id": "op-mkt-005",
-      "name": "Tool and Platform Access Management",
-      "description": "Controlled access to marketing tools with proper onboarding and offboarding procedures",
-      "policy": "Marketing Manager has admin access to all marketing platforms. Team members have standard user access for their tools. Access provisioning handled by Marketing GPO. Offboarding within 24 hours of role change or departure — tool access revoked, shared assets transferred, campaign ownership reassigned. Quarterly access audit conducted.",
-      "scope": "all_marketing_tools_and_platforms"
-    },
-    {
-      "id": "op-mkt-006",
-      "name": "Vendor and Agency Management",
-      "description": "All external vendors and agencies managed through Marketing Manager with defined SLAs",
-      "policy": "All vendor engagements approved by Marketing Manager. Contracts for agencies or freelancers over $5,000 require additional CFO approval. Vendor SLAs define deliverable timelines, quality standards, and revision policies. Monthly vendor performance reviews. Preferred vendor list maintained for print production, photography, videography, and event management.",
-      "scope": "all_external_partners_and_vendors"
+      "description": "All lead data collection must include clear consent mechanisms. Double opt-in required for email subscriptions. Personal data must be stored in compliance with GDPR/CAN-SPAM. Unsubscribe and data deletion requests must be processed within 24 hours. Quarterly privacy compliance audit required.",
+      "scope": "data-privacy",
+      "effective_from": "2026-07-17",
+      "review_frequency": "quarterly"
     }
   ]
 }

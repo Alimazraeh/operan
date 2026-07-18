@@ -5,55 +5,177 @@
 <title>Operan — Agentic Department Operating System</title>
 <link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
 
-<!-- ═══ LOGIN ═══ -->
-<div id="login" class="login-wrap">
-  <div class="login-card glass">
-    <div class="brand-lg">
-      <span class="logo">O</span>
-      <div><h1>Operan</h1><p>Agentic Department Operating System</p></div>
+<!-- ═══ LANDING PAGE ═══ -->
+<div id="landing" style="display:none">
+  <nav class="landing-nav">
+    <div class="nav-inner">
+      <a class="nav-logo" href="#"><span class="logo">O</span> OPERAN</a>
+      <div class="nav-links">
+        <a href="#platform">Platform</a>
+        <a href="#departments">Departments</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#security">Security</a>
+      </div>
+      <div class="nav-actions">
+        <button class="ghost" id="btnGoLogin">Sign In</button>
+        <button class="primary" id="btnLaunch">Launch Portal</button>
+      </div>
     </div>
-    <label>Admin password</label>
-    <input id="loginSecret" type="password" placeholder="enter the platform admin password" autocomplete="off">
-    <label>Tenant</label>
-    <div class="frow">
-      <input id="loginTenant" placeholder="tenant id">
-      <button class="ghost sm" id="btnNewTenant">New</button>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <h1>Deploy AI Departments<br><span class="accent">in Days, Not Months</span></h1>
+      <p class="hero-sub">Human-governed. Sovereign by design. Deploy small, medium, or enterprise teams with policies, tasks, and full operational visibility.</p>
+      <div class="hero-actions">
+        <button class="primary lg" id="btnHeroLogin">Get Started</button>
+        <button class="ghost lg" id="btnHeroDemo">Watch Demo</button>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><strong>20</strong> modules</div>
+        <div class="hero-stat"><strong>100%</strong> sovereign</div>
+        <div class="hero-stat"><strong>24/7</strong> operations</div>
+      </div>
     </div>
-    <button class="wide lg" id="btnConnect">Enter the platform</button>
-    <div class="err" id="loginMsg"></div>
-    <p class="fine">Your password never leaves this page. A JWT is minted in your browser after authentication.</p>
+  </header>
+
+  <section id="platform" class="section">
+    <div class="section-inner">
+      <h2>Platform Capabilities</h2>
+      <p class="section-sub">Everything you need to run AI-native departments at scale</p>
+      <div class="feature-grid">
+        <div class="feature-card"><div class="f-icon">🏢</div><h3>Department Templates</h3><p>Deploy pre-configured teams: small (3-5), medium (10-25), or enterprise (50-100) with roles, policies, and governance built in.</p></div>
+        <div class="feature-card"><div class="f-icon">🤖</div><h3>Agent Workforce</h3><p>Registry and orchestration for AI agents with capability indexing, versioning, and lifecycle management.</p></div>
+        <div class="feature-card"><div class="f-icon">⚙️</div><h3>Workflow Engine</h3><p> DAG-based orchestration with human-in-the-loop approval gates, retry policies, and live monitoring.</p></div>
+        <div class="feature-card"><div class="f-icon">🛡</div><h3>Policy Governance</h3><p>Enforce compliance rules: GDPR, SOX, NESA, HIPAA with real-time evaluation and audit trails.</p></div>
+        <div class="feature-card"><div class="f-icon">📊</div><h3>Operational Dashboard</h3><p>Hourly, daily, weekly, and monthly reports with SLA tracking, cost monitoring, and KPI dashboards.</p></div>
+        <div class="feature-card"><div class="f-icon">🔌</div><h3>Enterprise Connectors</h3><p>Pre-built connectors for M365, Salesforce, SAP, ServiceNow, and custom APIs.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing" class="section alt">
+    <div class="section-inner">
+      <h2>Team Sizes</h2>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <div class="pricing-header"><h3>Small Team</h3><span class="pricing-tag">Startup / Pilot</span></div>
+          <ul>
+            <li>Up to 5 agents</li>
+            <li>10 workflows</li>
+            <li>3 department templates</li>
+            <li>Basic monitoring</li>
+            <li>Email support</li>
+          </ul>
+        </div>
+        <div class="pricing-card featured">
+          <div class="pricing-header"><h3>Medium Team</h3><span class="pricing-tag">Growing Business</span></div>
+          <ul>
+            <li>Up to 25 agents</li>
+            <li>50 workflows</li>
+            <li>10 department templates</li>
+            <li>Full observability</li>
+            <li>Priority support</li>
+          </ul>
+        </div>
+        <div class="pricing-card">
+          <div class="pricing-header"><h3>Enterprise</h3><span class="pricing-tag">Full Scale</span></div>
+          <ul>
+            <li>Up to 100 agents</li>
+            <li>200 workflows</li>
+            <li>50 department templates</li>
+            <li>Advanced analytics</li>
+            <li>Dedicated support</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div><span class="logo">O</span> OPERAN</div>
+      <div>Agentic Department Operating System</div>
+      <div>Sovereign by design. Built for enterprises that need control, compliance, and scale.</div>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══ LOGIN PAGE ═══ -->
+<div id="login" style="display:none">
+  <div class="login-wrap">
+    <div class="login-card glass">
+      <div class="brand-lg"><span class="logo">O</span><div><h1>Operan</h1><p>Agentic Department Operating System</p></div></div>
+      <label>Admin password</label>
+      <input id="loginSecret" type="password" placeholder="Enter the platform admin password" autocomplete="off">
+      <label>Tenant ID</label>
+      <div class="frow">
+        <input id="loginTenant" placeholder="e.g. acme-corp">
+        <button class="ghost sm" id="btnNewTenant">New</button>
+      </div>
+      <button class="wide lg" id="btnConnect">Enter the platform</button>
+      <div class="err" id="loginMsg"></div>
+      <div class="login-footer">
+        <a class="ghost sm" onclick="renderLandingPage()">← Back to home</a>
+        <span>Need an account? <a href="#" onclick="renderRegisterPage(); return false;">Register</a></span>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- ═══ SHELL ═══ -->
+<!-- ═══ REGISTER PAGE ═══ -->
+<div id="register" style="display:none">
+  <div class="login-wrap">
+    <div class="login-card glass">
+      <div class="brand-lg"><span class="logo">O</span><div><h1>Create Account</h1><p>Set up your Operan tenant</p></div></div>
+      <label>Company name</label>
+      <input id="regName" type="text" placeholder="e.g. Acme Corporation">
+      <label>Subdomain</label>
+      <input id="regSlug" type="text" placeholder="e.g. acme-corp (auto-generated from name)">
+      <label>Plan</label>
+      <select id="regPlan">
+        <option value="small">Small Team — up to 5 agents</option>
+        <option value="medium" selected>Medium Team — up to 25 agents</option>
+        <option value="enterprise">Enterprise — up to 100 agents</option>
+      </select>
+      <button class="wide lg" id="btnRegister">Create Tenant</button>
+      <div class="err" id="regMsg"></div>
+      <div class="login-footer">
+        <a class="ghost sm" onclick="renderLoginPage()">← Back to login</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DASHBOARD SHELL ═══ -->
 <div id="shell" style="display:none">
   <nav id="sidebar">
     <div class="overlay"></div>
     <div class="brand"><span class="logo">O</span><b>Operan</b></div>
-    <div class="tenant-switcher">
-      <button class="tenant-switcher-btn" id="tenantSwitchBtn">⊞ Switch tenant ▾</button>
-      <div class="tenant-dropdown" id="tenantDropdown"></div>
-    </div>
-    <a data-view="overview" class="navlink">⌂ Overview</a>
+    <div class="nav-section">Operations</div>
+    <a data-view="dashboard" class="navlink active">⌂ Dashboard</a>
     <a data-view="departments" class="navlink">🏢 Departments</a>
-    <a data-view="agents" class="navlink">🤖 Agents</a>
+    <a data-view="teams" class="navlink">👥 Teams</a>
+    <a data-view="tasks" class="navlink">📋 Tasks & Projects</a>
     <a data-view="workflows" class="navlink">⚙️ Workflows</a>
     <a data-view="supervision" class="navlink">🧑‍⚖️ Supervision</a>
-    <a data-view="tools" class="navlink">🛠 Tools</a>
-    <a data-view="observability" class="navlink">📡 Observability</a>
-    <div class="navsep"></div>
-    <a data-view="tenants" class="navlink">🏗 Tenants</a>
-    <a data-view="iam" class="navlink">🔐 IAM</a>
+    <div class="nav-section">Governance</div>
+    <a data-view="policies" class="navlink">🛡 Policies</a>
+    <a data-view="reports" class="navlink">📊 Reports</a>
+    <a data-view="cost" class="navlink">💰 Costs</a>
+    <div class="nav-section">Platform</div>
+    <a data-view="agents" class="navlink">🤖 Agents</a>
     <a data-view="ingestion" class="navlink">📚 Knowledge</a>
-    <a data-view="policies" class="navlink">📜 Policies</a>
-    <a data-view="cost" class="navlink">💰 Cost</a>
     <a data-view="connectors" class="navlink">🔌 Connectors</a>
-    <div class="navsep"></div>
-    <a data-view="scenario" class="navlink hot">▶ Run the story</a>
+    <a data-view="settings" class="navlink">⚙️ Settings</a>
     <div class="navfoot">
       <div class="tenantchip" id="tenantChip"></div>
       <a id="btnLogout">Sign out</a>
@@ -64,9 +186,10 @@
     <div id="topbar">
       <div style="display:flex;align-items:center;gap:12px">
         <button class="ghost sm menu-toggle" id="menuToggle">☰</button>
-        <div id="crumb">Overview</div>
+        <div id="crumb">Dashboard</div>
+        <div style="flex:1"></div>
+        <div id="healthdots" class="health-dots"></div>
       </div>
-      <div id="healthdots"></div>
     </div>
     <div id="view"></div>
   </div>

@@ -1,20 +1,19 @@
 {
   "id": "eng-medium-001",
   "name": "Medium Engineering Team",
-  "description": "A medium-scale engineering department optimized for companies with 100-1000 employees and 10-30 engineering FTE. Structured across multiple sub-teams with an Engineering Manager, Tech Lead, Senior Engineers, Junior Engineers, DevOps Engineer, QA Lead, and an Engineering GPO pod. Implements formal agile/scrum processes, multi-team sprint planning, architectural review boards, code review gates with multiple approvers, automated testing frameworks, and on-call rotations. Designed for engineering organizations that require scale, governance, and cross-team coordination while maintaining developer velocity.",
+  "description": "A medium-scale engineering team template for growing companies (100-1000 employees). This template covers a 10-30 FTE engineering department with an Engineering Manager, Tech Lead, 4-8 Senior Engineers, 2-4 Junior Engineers, a DevOps Engineer, a QA Lead, and a GPO pod. It supports multi-team structures with sprint planning, architectural review processes, code review gates, automated testing, and on-call rotations. Designed for organizations that need structure alongside agility, with clear quality gates and cross-team coordination mechanisms.",
   "category": "engineering",
   "version": "1.0.0",
   "metadata": {
     "enterprise_size": "medium",
     "department_size": "10-30 FTE",
     "company_size": "100-1000 employees",
-    "industry": "technology, software, saas, fintech, healthtech",
-    "compliance_level": "moderate",
+    "industry": "Technology, SaaS, E-commerce, Fintech",
+    "compliance_level": "standard",
     "frameworks": [
       "agile/scrum",
-      "safe-lite",
-      "gitops",
-      "sre_principles"
+      "GitOps",
+      "SRE principles"
     ],
     "last_reviewed": "2026-07-17"
   },
@@ -22,1137 +21,943 @@
     "engineering",
     "medium-team",
     "multi-team",
-    "scrum",
-    "devops",
-    "qa",
     "sre",
-    "architectural_review",
-    "code_review_gates",
-    "on_call",
-    "enterprise"
+    "sprint",
+    "quality-gates",
+    "on-call",
+    "qa"
   ],
   "status": "published",
   "created_by": "platform",
   "agents": [
     {
-      "id": "eng-mgr-001",
-      "title": "Engineering Manager",
-      "level": "management",
-      "roles": [
-        "team_leadership",
-        "capacity_planning",
-        "stakeholder_management",
-        "hiring"
+      "id": "agent-eng-mgr-001",
+      "name": "Engineering Manager",
+      "role": "Engineering Manager",
+      "level": "senior",
+      "description": "People manager responsible for team health, capacity planning, performance reviews, and cross-team alignment. Ensures delivery commitments are met and removes organizational blockers.",
+      "capabilities": [
+        "team-management",
+        "capacity-planning",
+        "performance-management",
+        "cross-team-coordination",
+        "hiring",
+        "stakeholder-management"
       ],
-      "responsibilities": [
-        "Manage engineering team size of 10-30 engineers across multiple sub-teams",
-        "Set engineering team OKRs aligned with company objectives",
-        "Run sprint planning, retrospectives, and cross-team standups",
-        "Manage hiring pipeline — interview, onboard, and offboard engineers",
-        "Conduct 1-on-1s with all direct reports (Tech Lead, DevOps Engineer, QA Lead)",
-        "Manage budget for engineering tools, infrastructure, and headcount",
-        "Serve as escalation point for cross-department conflicts",
-        "Report engineering metrics and velocity to executive leadership"
+      "agent_model": "qwen-72b",
+      "memory_profile": "full-retention",
+      "permissions": [
+        "deploy-production",
+        "merge-main",
+        "budget-approve",
+        "hiring-approve",
+        "org-chart-edit"
       ],
-      "skill_matrix": {
-        "technical_architecture": 3,
-        "team_leadership": 5,
-        "capacity_planning": 5,
-        "stakeholder_communication": 5,
-        "incident_management": 3,
-        "ci_cd": 2
-      },
-      "direct_reports": [
-        "Tech Lead",
-        "DevOps Engineer",
-        "QA Lead",
-        "Senior Engineers"
-      ],
-      "availability": "full_time"
+      "schedule": {
+        "availability": "business-hours",
+        "escalation_path": "director-engineering"
+      }
     },
     {
-      "id": "tech-lead-001",
-      "title": "Tech Lead",
-      "level": "principal",
-      "roles": [
-        "technical_architecture",
-        "architectural_review",
+      "id": "agent-tech-lead-001",
+      "name": "Tech Lead",
+      "role": "Tech Lead",
+      "level": "senior",
+      "description": "Senior technical authority who drives architectural decisions, conducts architectural reviews, mentors senior engineers, and ensures technical alignment across teams.",
+      "capabilities": [
+        "architecture",
+        "architectural-review",
+        "code-review",
         "mentoring",
-        "code_review_lead"
+        "technical-strategy",
+        "cross-team-alignment",
+        "code-review-gates"
       ],
-      "responsibilities": [
-        "Define and maintain system architecture and technology roadmap",
-        "Lead architectural review board sessions for major system changes",
-        "Drive technical strategy and make key technology decisions",
-        "Perform final code review approval on critical path changes",
-        "Mentor Senior Engineers and raise engineering standards",
-        "Resolve complex technical challenges and technical spikes",
-        "Ensure architectural alignment across all sub-teams",
-        "Evaluate and pilot new technologies with proof-of-concept projects"
+      "agent_model": "qwen-72b",
+      "memory_profile": "full-retention",
+      "permissions": [
+        "architecture-approve",
+        "code-review-gate",
+        "merge-main",
+        "tech-debt-approve"
       ],
-      "skill_matrix": {
-        "technical_architecture": 5,
-        "coding": 5,
-        "code_review": 5,
-        "mentoring": 5,
-        "incident_management": 4,
-        "ci_cd": 4
-      },
-      "availability": "full_time"
+      "schedule": {
+        "availability": "business-hours",
+        "escalation_path": "agent-eng-mgr-001"
+      }
     },
     {
-      "id": "senior-eng-001",
-      "title": "Senior Software Engineer",
+      "id": "agent-senior-eng-001",
+      "name": "Senior Engineer",
+      "role": "Senior Engineer",
       "level": "senior",
-      "roles": [
-        "feature_development",
-        "code_review",
-        "system_design",
-        "mentoring"
+      "description": "Experienced engineer who owns significant system components, leads feature development, performs code reviews, and contributes to architectural decisions. May serve as team lead for specific subsystems.",
+      "capabilities": [
+        "code-development",
+        "code-review",
+        "debugging",
+        "system-design",
+        "mentoring",
+        "ci-cd",
+        "on-call",
+        "incident-response"
       ],
-      "responsibilities": [
-        "Lead development of complex features and cross-cutting concerns",
-        "Perform code reviews for assigned team members; provide constructive feedback",
-        "Design and implement system components with scalability in mind",
-        "Mentor Junior Engineers through pair programming and code review",
-        "Participate in architectural review board as team representative",
-        "Own critical production services end-to-end",
-        "Drive testing strategies within their sub-team",
-        "Contribute to technical documentation and onboarding materials"
+      "agent_model": "qwen-34b",
+      "memory_profile": "semantic-enabled",
+      "permissions": [
+        "deploy-staging",
+        "deploy-production",
+        "merge-feature",
+        "code-review-approve",
+        "on-call"
       ],
-      "skill_matrix": {
-        "technical_architecture": 4,
-        "coding": 5,
-        "code_review": 4,
-        "mentoring": 3,
-        "incident_management": 4,
-        "ci_cd": 4
-      },
-      "availability": "full_time",
-      "sub_teams": [
-        "frontend",
-        "backend",
-        "platform"
-      ]
+      "schedule": {
+        "availability": "business-hours",
+        "escalation_path": "agent-tech-lead-001"
+      }
     },
     {
-      "id": "senior-eng-002",
-      "title": "Senior Software Engineer",
-      "level": "senior",
-      "roles": [
-        "feature_development",
-        "code_review",
-        "system_design",
-        "mentoring"
-      ],
-      "responsibilities": [
-        "Lead development of complex features and cross-cutting concerns",
-        "Perform code reviews for assigned team members; provide constructive feedback",
-        "Design and implement system components with scalability in mind",
-        "Mentor Junior Engineers through pair programming and code review",
-        "Participate in architectural review board as team representative",
-        "Own critical production services end-to-end",
-        "Drive testing strategies within their sub-team",
-        "Contribute to technical documentation and onboarding materials"
-      ],
-      "skill_matrix": {
-        "technical_architecture": 4,
-        "coding": 5,
-        "code_review": 4,
-        "mentoring": 3,
-        "incident_management": 4,
-        "ci_cd": 4
-      },
-      "availability": "full_time",
-      "sub_teams": [
-        "data_engineering",
-        "api_services",
-        "platform"
-      ]
-    },
-    {
-      "id": "senior-eng-003",
-      "title": "Senior Software Engineer",
-      "level": "senior",
-      "roles": [
-        "feature_development",
-        "code_review",
-        "system_design",
-        "mentoring"
-      ],
-      "responsibilities": [
-        "Lead development of complex features and cross-cutting concerns",
-        "Perform code reviews for assigned team members; provide constructive feedback",
-        "Design and implement system components with scalability in mind",
-        "Mentor Junior Engineers through pair programming and code review",
-        "Participate in architectural review board as team representative",
-        "Own critical production services end-to-end",
-        "Drive testing strategies within their sub-team",
-        "Contribute to technical documentation and onboarding materials"
-      ],
-      "skill_matrix": {
-        "technical_architecture": 4,
-        "coding": 5,
-        "code_review": 4,
-        "mentoring": 3,
-        "incident_management": 4,
-        "ci_cd": 4
-      },
-      "availability": "full_time",
-      "sub_teams": [
-        "mobile",
-        "frontend",
-        "platform"
-      ]
-    },
-    {
-      "id": "senior-eng-004",
-      "title": "Senior Software Engineer",
-      "level": "senior",
-      "roles": [
-        "feature_development",
-        "code_review",
-        "system_design"
-      ],
-      "responsibilities": [
-        "Lead development of complex features and cross-cutting concerns",
-        "Perform code reviews for assigned team members; provide constructive feedback",
-        "Design and implement system components with scalability in mind",
-        "Mentor Junior Engineers through pair programming and code review",
-        "Participate in architectural review board as team representative",
-        "Own critical production services end-to-end",
-        "Drive testing strategies within their sub-team"
-      ],
-      "skill_matrix": {
-        "technical_architecture": 4,
-        "coding": 5,
-        "code_review": 4,
-        "mentoring": 3,
-        "incident_management": 4,
-        "ci_cd": 4
-      },
-      "availability": "full_time",
-      "sub_teams": [
-        "backend",
-        "api_services"
-      ]
-    },
-    {
-      "id": "junior-eng-001",
-      "title": "Junior Software Engineer",
+      "id": "agent-junior-eng-001",
+      "name": "Junior Engineer",
+      "role": "Engineer",
       "level": "junior",
-      "roles": [
-        "feature_development",
-        "bug_fixing",
-        "testing"
+      "description": "Early-career engineer implementing well-scoped features, fixing bugs, writing tests, and growing into system design under the guidance of senior team members.",
+      "capabilities": [
+        "code-development",
+        "testing",
+        "bug-fixing",
+        "documentation",
+        "task-tracking"
       ],
-      "responsibilities": [
-        "Implement well-defined features under guidance of Senior Engineers",
-        "Fix bugs and address technical debt items from the backlog",
-        "Write comprehensive unit and integration tests",
-        "Participate in daily standups, sprint planning, and retrospectives",
-        "Attend code reviews as both reviewer and reviewee for learning",
-        "Follow established GitOps workflow for all code changes",
-        "Document code and maintain inline comments to high standards"
+      "agent_model": "qwen-14b",
+      "memory_profile": "episodic-enabled",
+      "permissions": [
+        "deploy-staging",
+        "merge-feature",
+        "test-execute"
       ],
-      "skill_matrix": {
-        "technical_architecture": 2,
-        "coding": 3,
-        "code_review": 2,
-        "mentoring": 1,
-        "incident_management": 1,
-        "ci_cd": 2
-      },
-      "availability": "full_time"
+      "schedule": {
+        "availability": "business-hours",
+        "escalation_path": "agent-senior-eng-001"
+      }
     },
     {
-      "id": "junior-eng-002",
-      "title": "Junior Software Engineer",
-      "level": "junior",
-      "roles": [
-        "feature_development",
-        "bug_fixing",
-        "testing"
-      ],
-      "responsibilities": [
-        "Implement well-defined features under guidance of Senior Engineers",
-        "Fix bugs and address technical debt items from the backlog",
-        "Write comprehensive unit and integration tests",
-        "Participate in daily standups, sprint planning, and retrospectives",
-        "Attend code reviews as both reviewer and reviewee for learning",
-        "Follow established GitOps workflow for all code changes",
-        "Document code and maintain inline comments to high standards"
-      ],
-      "skill_matrix": {
-        "technical_architecture": 2,
-        "coding": 3,
-        "code_review": 2,
-        "mentoring": 1,
-        "incident_management": 1,
-        "ci_cd": 2
-      },
-      "availability": "full_time"
-    },
-    {
-      "id": "devops-001",
-      "title": "DevOps Engineer",
+      "id": "agent-devops-001",
+      "name": "DevOps Engineer",
+      "role": "DevOps Engineer",
       "level": "senior",
-      "roles": [
-        "infrastructure",
-        "ci_cd",
+      "description": "Infrastructure specialist responsible for CI/CD pipelines, cloud infrastructure, monitoring, and reliability engineering. Manages on-call rotation and implements SLOs.",
+      "capabilities": [
+        "infrastructure-as-code",
+        "ci-cd",
+        "monitoring",
+        "incident-response",
         "sre",
-        "security"
+        "cloud-platform",
+        "security-hardening",
+        "on-call"
       ],
-      "responsibilities": [
-        "Design, build, and maintain CI/CD pipelines across all teams",
-        "Manage cloud infrastructure as code (Terraform, CloudFormation)",
-        "Implement and maintain monitoring, logging, and alerting systems",
-        "Manage container orchestration (Kubernetes) and service mesh",
-        "Implement infrastructure security hardening and compliance",
-        "Maintain disaster recovery plans and conduct periodic DR drills",
-        "Support on-call rotation as secondary incident responder",
-        "Drive Site Reliability Engineering practices across the organization"
+      "agent_model": "qwen-34b",
+      "memory_profile": "procedural-enabled",
+      "permissions": [
+        "deploy-production",
+        "infrastructure-edit",
+        "monitoring-config",
+        "incident-command",
+        "on-call"
       ],
-      "skill_matrix": {
-        "technical_architecture": 4,
-        "coding": 3,
-        "code_review": 2,
-        "mentoring": 3,
-        "incident_management": 5,
-        "ci_cd": 5
-      },
-      "availability": "full_time"
+      "schedule": {
+        "availability": "always-on",
+        "escalation_path": "agent-eng-mgr-001"
+      }
     },
     {
-      "id": "qa-lead-001",
-      "title": "QA Lead",
+      "id": "agent-qa-lead-001",
+      "name": "QA Lead",
+      "role": "QA Lead",
       "level": "senior",
-      "roles": [
-        "test_strategy",
-        "test_automation",
-        "quality_governance",
-        "performance_testing"
+      "description": "Quality assurance leader responsible for testing strategy, test automation, quality gates, and ensuring release readiness. Defines quality standards and manages the QA process across teams.",
+      "capabilities": [
+        "test-strategy",
+        "test-automation",
+        "quality-gates",
+        "performance-testing",
+        "release-testing",
+        "bug-triage",
+        "quality-metrics"
       ],
-      "responsibilities": [
-        "Define and maintain the overall test strategy and quality standards",
-        "Build and maintain automated test frameworks (unit, integration, e2e)",
-        "Establish quality gates in the CI/CD pipeline",
-        "Conduct performance and load testing for critical services",
-        "Track and report quality metrics (defect density, escape rate, coverage)",
-        "Lead bug triage sessions with development team",
-        "Collaborate with Product to define acceptance criteria",
-        "Manage QA environment provisioning and test data"
+      "agent_model": "qwen-34b",
+      "memory_profile": "semantic-enabled",
+      "permissions": [
+        "test-execute",
+        "quality-gate-approve",
+        "release-approve",
+        "test-env-setup"
       ],
-      "skill_matrix": {
-        "technical_architecture": 3,
-        "coding": 4,
-        "code_review": 3,
-        "mentoring": 3,
-        "incident_management": 2,
-        "ci_cd": 4
-      },
-      "availability": "full_time"
+      "schedule": {
+        "availability": "business-hours",
+        "escalation_path": "agent-eng-mgr-001"
+      }
     },
     {
-      "id": "gpo-eng-001",
-      "title": "Engineering GPO Pod",
-      "level": "support",
-      "roles": [
-        "operations_support",
-        "environment_management",
-        "tooling_admin",
-        "compliance",
-        "procurement"
+      "id": "agent-eng-gpo-001",
+      "name": "Engineering GPO Pod",
+      "role": "GPO",
+      "level": "general",
+      "description": "A pod of GPO agents handling operational support across the engineering department. Manages environment provisioning, documentation, reporting, and ad-hoc operational tasks.",
+      "capabilities": [
+        "documentation",
+        "env-setup",
+        "maintenance",
+        "reporting",
+        "task-automation",
+        "knowledge-base",
+        "access-management"
       ],
-      "responsibilities": [
-        "Manage development, staging, and production environment lifecycles",
-        "Administer CI/CD pipeline configurations and related tooling",
-        "Handle user access provisioning across all engineering systems",
-        "Maintain compliance with security policies, deployment gates, and audit requirements",
-        "Track and report on deployment metrics, pipeline health, and infrastructure costs",
-        "Coordinate with procurement for third-party tool licensing and vendor management",
-        "Maintain engineering runbooks, onboarding guides, and operational documentation",
-        "Support cross-team coordination for environment availability and resource allocation"
+      "agent_model": "qwen-14b",
+      "memory_profile": "procedural-enabled",
+      "permissions": [
+        "deploy-staging",
+        "document-edit",
+        "report-generate",
+        "env-manage"
       ],
-      "skill_matrix": {
-        "technical_architecture": 1,
-        "coding": 1,
-        "code_review": 1,
-        "mentoring": 2,
-        "incident_management": 4,
-        "ci_cd": 5
-      },
-      "availability": "full_time",
-      "pod_size": "2-3 members"
+      "schedule": {
+        "availability": "always-on",
+        "escalation_path": "agent-eng-mgr-001"
+      }
     }
   ],
   "workflows": [
     {
       "id": "wf-sprint-planning-001",
-      "name": "Multi-Team Sprint Planning",
-      "description": "Coordinated sprint planning across multiple sub-teams with dependency tracking and cross-team alignment",
+      "name": "Sprint Planning Workflow",
+      "description": "Structured sprint planning process for the engineering team with capacity planning, story estimation, and commitment setting across the iteration.",
+      "triggers": [
+        "sprint_start",
+        "manual_trigger"
+      ],
       "steps": [
         {
-          "step": 1,
-          "name": "Backlog Preparation",
-          "actor": "Senior Engineers / Tech Lead",
-          "action": "Each sub-team refines backlog items, estimates effort, identifies cross-team dependencies, and surfaces blocking items",
-          "outputs": [
-            "Prepared sub-team backlogs",
-            "Dependency map"
+          "order": 1,
+          "action": "backlog-refinement",
+          "agent": "agent-tech-lead-001",
+          "description": "Review and prioritize the product backlog, refine story estimates, ensure acceptance criteria are clear and testable",
+          "status_conditions": [
+            "backlog_refined"
           ]
         },
         {
-          "step": 2,
-          "name": "Capacity Planning",
-          "actor": "Engineering Manager",
-          "action": "Calculate team capacity accounting for PTO, meetings, and known commitments; set sprint velocity targets",
-          "outputs": [
-            "Team capacity estimates",
-            "Sprint velocity targets"
+          "order": 2,
+          "action": "capacity-calculation",
+          "agent": "agent-eng-mgr-001",
+          "description": "Calculate team capacity accounting for PTO, holidays, meetings, and the 20% buffer for unplanned work and on-call duties",
+          "status_conditions": [
+            "capacity_calculated"
           ]
         },
         {
-          "step": 3,
-          "name": "Sprint Planning Meeting",
-          "actor": "All Engineers",
-          "action": "Present company priorities, review capacity, each sub-team commits to sprint goals, identify and resolve cross-team dependencies",
-          "outputs": [
-            "Sprint goals for each sub-team",
-            "Cross-team dependency register"
+          "order": 3,
+          "action": "sprint-commitment",
+          "agent": "agent-senior-eng-001",
+          "description": "Team commits to sprint goals based on capacity. Assign epic-level owners and distribute stories across team members",
+          "status_conditions": [
+            "commitment_set"
           ]
         },
         {
-          "step": 4,
-          "name": "Task Breakdown",
-          "actor": "Senior Engineers",
-          "action": "Break sprint goals into actionable tasks with clear acceptance criteria; assign initial ownership",
-          "outputs": [
-            "Task board populated",
-            "Acceptance criteria documented"
+          "order": 4,
+          "action": "task-breakdown",
+          "agent": "agent-senior-eng-001",
+          "description": "Break stories into subtasks with clear definitions of done. Ensure each task is completable within 1-2 days",
+          "status_conditions": [
+            "tasks_defined"
           ]
         },
         {
-          "step": 5,
-          "name": "Cross-Team Sync Schedule",
-          "actor": "Engineering Manager",
-          "action": "Schedule inter-team sync meetings for shared dependencies; assign integration owners",
-          "outputs": [
-            "Sync schedule",
-            "Integration owners assigned"
+          "order": 5,
+          "action": "risk-assessment",
+          "agent": "agent-tech-lead-001",
+          "description": "Identify technical risks, dependencies on other teams, and items requiring architectural review before sprint start",
+          "status_conditions": [
+            "risks_documented"
           ]
         },
         {
-          "step": 6,
-          "name": "Sprint Kickoff",
-          "actor": "All Engineers",
-          "action": "Finalize sprint backlog in project management tool; all team members confirm understanding of sprint goals",
-          "outputs": [
-            "Sprint backlog locked",
-            "Sprint begins"
+          "order": 6,
+          "action": "sprint-kickoff",
+          "agent": "agent-eng-gpo-001",
+          "description": "Send sprint kickoff with goals, commitments, risk register, and burndown dashboard to the team and stakeholders",
+          "status_conditions": [
+            "sprint_active"
           ]
         }
-      ],
-      "quality_gates": [
-        "All sub-teams have committed sprint goals",
-        "Cross-team dependencies identified and resolved",
-        "Task estimates validated by sub-team leads",
-        "Capacity utilized at 80% or less to account for unplanned work"
-      ],
-      "estimated_duration": "2-4 hours for planning; ongoing daily"
+      ]
     },
     {
-      "id": "wf-arch-review-001",
-      "name": "Architectural Review Board",
-      "description": "Formal review process for significant architectural changes ensuring system integrity, scalability, and alignment with technical strategy",
+      "id": "wf-code-review-gates-001",
+      "name": "Code Review with Quality Gates",
+      "description": "Multi-stage code review process with automated quality gates including security scanning, performance checks, and architectural compliance review.",
+      "triggers": [
+        "pull_request_opened",
+        "pull_request_updated"
+      ],
       "steps": [
         {
-          "step": 1,
-          "name": "RFC Submission",
-          "actor": "Engineer / Senior Engineer",
-          "action": "Submit Architecture RFC with problem statement, proposed solution, alternatives considered, impact analysis, and rollback plan",
-          "outputs": [
-            "RFC document",
-            "Design diagrams"
+          "order": 1,
+          "action": "automated-quality-gates",
+          "agent": "agent-devops-001",
+          "description": "Run automated checks: linting, unit tests, integration tests, SAST security scan, dependency vulnerability scan, and performance benchmark",
+          "status_conditions": [
+            "all_gates_pass"
+          ],
+          "timeout_minutes": 20
+        },
+        {
+          "order": 2,
+          "action": "peer-code-review",
+          "agent": "agent-senior-eng-001",
+          "description": "Peer reviewer examines code for correctness, readability, edge cases, and adherence to coding standards",
+          "status_conditions": [
+            "review_approved",
+            "changes_requested"
           ]
         },
         {
-          "step": 2,
-          "name": "Pre-Review",
-          "actor": "Tech Lead",
-          "action": "Review RFC for completeness; determine if full board review is needed or if it falls under Tech Lead approval",
-          "outputs": [
-            "Routing decision: full review or Tech Lead approval"
+          "order": 3,
+          "action": "architectural-compliance",
+          "agent": "agent-tech-lead-001",
+          "description": "Tech Lead reviews for architectural alignment, pattern consistency, performance implications, and security considerations on non-trivial changes",
+          "status_conditions": [
+            "architecture_approved",
+            "architecture_flagged"
           ]
         },
         {
-          "step": 3,
-          "name": "Board Review Session",
-          "actor": "Architectural Review Board",
-          "action": "Tech Lead, Senior Engineers, DevOps Engineer review RFC for technical soundness, scalability, security, and cost impact",
-          "outputs": [
-            "Board review notes",
-            "Action items"
+          "order": 4,
+          "action": "qa-validation",
+          "agent": "agent-qa-lead-001",
+          "description": "QA Lead validates that automated test coverage meets thresholds, new test cases are included, and no regression detected",
+          "status_conditions": [
+            "qa_approved",
+            "qa_flagged"
           ]
         },
         {
-          "step": 4,
-          "name": "Feedback and Revision",
-          "actor": "RFC Author",
-          "action": "Incorporate board feedback, revise RFC, address all concerns or document rationale for keeping items open",
-          "outputs": [
-            "Revised RFC",
-            "Resolved feedback items"
+          "order": 5,
+          "action": "address-feedback",
+          "agent": "agent-senior-eng-001",
+          "description": "Author addresses all requested changes from peer review, architectural compliance, and QA feedback",
+          "status_conditions": [
+            "feedback_addressed",
+            "ready_for_merge"
           ]
         },
         {
-          "step": 5,
-          "name": "Approval",
-          "actor": "Tech Lead",
-          "action": "Grant architectural approval with any conditions; log decision in architecture decision record (ADR) system",
-          "outputs": [
-            "ADR created",
-            "Implementation approved"
-          ]
-        },
-        {
-          "step": 6,
-          "name": "Implementation Tracking",
-          "actor": "Tech Lead",
-          "action": "Monitor implementation against approved design; flag deviations for re-review",
-          "outputs": [
-            "Implementation progress tracked",
-            "Any deviations escalated"
+          "order": 6,
+          "action": "merge-approval",
+          "agent": "agent-eng-mgr-001",
+          "description": "Engineering Manager grants final merge approval after confirming all gates passed and no outstanding blockers",
+          "status_conditions": [
+            "merged"
           ]
         }
-      ],
-      "quality_gates": [
-        "RFC must include alternatives considered",
-        "Impact assessment on performance, cost, and security",
-        "Rollback plan must be documented",
-        "ADR must be created for all approved changes"
-      ],
-      "estimated_duration": "1-2 weeks from submission to approval"
+      ]
     },
     {
-      "id": "wf-code-review-gate-001",
-      "name": "Multi-Approver Code Review Gate",
-      "description": "Structured multi-level code review process with approver gates based on change criticality and scope",
+      "id": "wf-deployment-pipeline-001",
+      "name": "Deployment Pipeline Workflow",
+      "description": "Automated deployment pipeline with multi-stage promotion from staging to production, including release validation gates.",
+      "triggers": [
+        "merge_to_main",
+        "release_branch_created",
+        "manual_trigger"
+      ],
       "steps": [
         {
-          "step": 1,
-          "name": "PR Creation with Metadata",
-          "actor": "Engineer",
-          "action": "Create PR with detailed description, linked tickets, testing notes, screenshots for UI, and change criticality label (routine, significant, critical)",
-          "outputs": [
-            "PR created with metadata",
-            "Change classified by criticality"
+          "order": 1,
+          "action": "build-and-package",
+          "agent": "agent-devops-001",
+          "description": "Build application artifacts, run security scans, package Docker images, and push to the container registry with version tagging",
+          "status_conditions": [
+            "build_success",
+            "package_tagged"
           ]
         },
         {
-          "step": 2,
-          "name": "Automated Quality Gate",
-          "actor": "Automated",
-          "action": "CI pipeline runs — linting, unit tests, integration tests, SAST, dependency scan, build verification, code coverage report",
-          "outputs": [
-            "Automated check results",
-            "Coverage report"
+          "order": 2,
+          "action": "deploy-staging",
+          "agent": "agent-devops-001",
+          "description": "Deploy to staging environment with canary rollout; run full integration test suite and smoke tests",
+          "status_conditions": [
+            "deployed",
+            "tests_pass"
           ]
         },
         {
-          "step": 3,
-          "name": "Sub-Team Peer Review",
-          "actor": "Peer Engineer (sub-team)",
-          "action": "First-level review for code correctness, test quality, and adherence to sub-team standards",
-          "outputs": [
-            "Peer review comments or approval"
+          "order": 3,
+          "action": "qa-release-validation",
+          "agent": "agent-qa-lead-001",
+          "description": "QA Lead validates release candidates with regression testing, performance testing, and user acceptance criteria check",
+          "status_conditions": [
+            "qa_approved",
+            "qa_rejected"
           ]
         },
         {
-          "step": 4,
-          "name": "Senior Review",
-          "actor": "Senior Engineer",
-          "action": "Second-level review for system design alignment, performance, security, and maintainability. Required for all changes.",
-          "outputs": [
-            "Senior review comments or approval"
+          "order": 4,
+          "action": "staging-sign-off",
+          "agent": "agent-tech-lead-001",
+          "description": "Tech Lead signs off on staging deployment confirming feature completeness, performance, and security compliance",
+          "status_conditions": [
+            "sign_off_granted",
+            "sign_off_with_conditions"
           ]
         },
         {
-          "step": 5,
-          "name": "Critical Path Review",
-          "actor": "Tech Lead",
-          "action": "Required for critical or significant changes. Final approval authority on architectural and security implications.",
-          "outputs": [
-            "Tech Lead approval"
+          "order": 5,
+          "action": "deploy-production",
+          "agent": "agent-devops-001",
+          "description": "Execute production deployment with blue-green or canary strategy; monitor error rates and latency during rollout",
+          "status_conditions": [
+            "deployed",
+            "auto_rollback_triggered"
           ]
         },
         {
-          "step": 6,
-          "name": "Merge and Deploy",
-          "actor": "DevOps Engineer / GPO",
-          "action": "Merge to target branch after all gates pass; automated deployment to staging, manual promotion to production",
-          "outputs": [
-            "Code merged",
-            "Deployment initiated"
+          "order": 6,
+          "action": "post-deployment-validation",
+          "agent": "agent-eng-gpo-001",
+          "description": "Run post-deployment verification: health checks, synthetic transactions, and alert monitoring; notify stakeholders of deployment status",
+          "status_conditions": [
+            "validated",
+            "issue_detected"
           ]
         }
-      ],
-      "quality_gates": [
-        "All automated checks pass",
-        "Peer review approval (all changes)",
-        "Senior engineer approval (all changes)",
-        "Tech Lead approval (critical path changes)",
-        "Test coverage not decreased",
-        "No open security vulnerabilities"
-      ],
-      "estimated_duration": "4-48 hours depending on change criticality"
+      ]
     },
     {
-      "id": "wf-automated-testing-001",
-      "name": "Automated Testing Pipeline",
-      "description": "Comprehensive automated testing workflow managed by QA Lead with quality gates integrated into CI/CD",
+      "id": "wf-incident-response-001",
+      "name": "Incident Response with Severity Levels",
+      "description": "Structured incident response process with severity-based escalation paths, on-call management, and post-mortem culture.",
+      "triggers": [
+        "alert_critical",
+        "alert_warning",
+        "user_report",
+        "sla_breach"
+      ],
       "steps": [
         {
-          "step": 1,
-          "name": "Test Strategy Definition",
-          "actor": "QA Lead",
-          "action": "Define test strategy — unit test thresholds, integration test scope, e2e test priorities, performance testing schedule",
-          "outputs": [
-            "Test strategy document",
-            "Test coverage targets"
+          "order": 1,
+          "action": "detect-and-classify",
+          "agent": "agent-eng-gpo-001",
+          "description": "Automated monitoring or user report triggers incident classification by severity: P1 (complete outage), P2 (major degradation), P3 (minor issue), P4 (cosmetic)",
+          "status_conditions": [
+            "severity_classified"
+          ],
+          "timeout_minutes": 5
+        },
+        {
+          "order": 2,
+          "action": "activate-response",
+          "agent": "agent-devops-001",
+          "description": "On-call engineer acknowledges and activates the incident response channel. For P1/P2, Engineering Manager is paged and assigned as incident commander",
+          "status_conditions": [
+            "response_active",
+            "commander_assigned"
           ]
         },
         {
-          "step": 2,
-          "name": "Test Framework Setup",
-          "actor": "QA Lead / Senior Engineer",
-          "action": "Set up or update automated test frameworks, configure test environments, prepare test data",
-          "outputs": [
-            "Test frameworks configured",
-            "Environments ready"
+          "order": 3,
+          "action": "investigate-and-mitigate",
+          "agent": "agent-senior-eng-001",
+          "description": "Investigation team diagnoses root cause using logs, metrics, and traces. Implements immediate mitigation (rollback, feature flag, scaling) while deeper investigation continues",
+          "status_conditions": [
+            "mitigated",
+            "root_cause_found",
+            "escalated"
           ]
         },
         {
-          "step": 3,
-          "name": "Feature Test Development",
-          "actor": "Engineer",
-          "action": "Write unit and integration tests alongside feature development; QA Lead reviews e2e test plans",
-          "outputs": [
-            "Feature tests committed",
-            "E2e test plans reviewed"
+          "order": 4,
+          "action": "communication-update",
+          "agent": "agent-eng-gpo-001",
+          "description": "Send status updates to stakeholders at regular intervals (P1: every 15 minutes, P2: every 30 minutes, P3: every hour) with current status, impact, and ETA",
+          "status_conditions": [
+            "updates_sent"
           ]
         },
         {
-          "step": 4,
-          "name": "CI-Integrated Testing",
-          "actor": "Automated",
-          "action": "Tests run in CI pipeline — unit, integration, and security tests execute on every PR; e2e runs nightly",
-          "outputs": [
-            "Test results",
-            "Coverage reports",
-            "Performance benchmarks"
+          "order": 5,
+          "action": "resolve-and-verify",
+          "agent": "agent-devops-001",
+          "description": "Implement permanent fix, deploy to production, verify service health through automated checks and manual validation",
+          "status_conditions": [
+            "resolved",
+            "persisting"
           ]
         },
         {
-          "step": 5,
-          "name": "Quality Gate Evaluation",
-          "actor": "QA Lead",
-          "action": "Review quality gate results; determine if the change passes the quality threshold for deployment",
-          "outputs": [
-            "Quality gate pass/fail decision",
-            "Quality report"
-          ]
-        },
-        {
-          "step": 6,
-          "name": "Release Testing",
-          "actor": "QA Lead",
-          "action": "Perform final release validation on staging — regression tests, smoke tests, and performance validation",
-          "outputs": [
-            "Release validation passed",
-            "Go/no-go recommendation"
+          "order": 6,
+          "action": "post-mortem-schedule",
+          "agent": "agent-eng-mgr-001",
+          "description": "Schedule blameless post-mortem within 5 business days for P1/P2 incidents. Assign action items with owners and due dates",
+          "status_conditions": [
+            "postmortem_scheduled",
+            "actions_assigned"
           ]
         }
-      ],
-      "quality_gates": [
-        "Unit test coverage >= 80%",
-        "Integration tests pass for changed components",
-        "No critical or high severity defects",
-        "Performance tests within SLA thresholds",
-        "E2e regression suite passes"
-      ],
-      "estimated_duration": "20-40 minutes CI pipeline; release testing 2-4 hours"
+      ]
     },
     {
-      "id": "wf-oncall-001",
-      "name": "On-Call Rotation and Incident Management",
-      "description": "Structured on-call rotation for the engineering team with clear escalation paths and incident management procedures",
+      "id": "wf-postmortem-001",
+      "name": "Post-Mortem Workflow",
+      "description": "Blameless post-incident review process that drives learning and prevents recurrence through actionable follow-up items.",
+      "triggers": [
+        "incident_resolved_p1",
+        "incident_resolved_p2"
+      ],
       "steps": [
         {
-          "step": 1,
-          "name": "Rotation Schedule",
-          "actor": "DevOps Engineer",
-          "action": "Maintain on-call rotation schedule — primary and secondary on-call engineers rotate weekly; published to team calendar and PagerDuty",
-          "outputs": [
-            "Rotation schedule",
-            "PagerDuty configuration"
+          "order": 1,
+          "action": "gather-data",
+          "agent": "agent-eng-gpo-001",
+          "description": "Collect all incident data: timeline from monitoring, chat logs, deployment records, metrics snapshots, and user impact reports",
+          "status_conditions": [
+            "data_collected"
           ]
         },
         {
-          "step": 2,
-          "name": "Alert Configuration",
-          "actor": "DevOps Engineer",
-          "action": "Configure monitoring alerts with proper severity levels; ensure alerts route to correct team channels and PagerDuty services",
-          "outputs": [
-            "Alert rules configured",
-            "Notification channels set"
+          "order": 2,
+          "action": "schedule-postmortem",
+          "agent": "agent-eng-mgr-001",
+          "description": "Schedule blameless post-mortem meeting with all involved parties within 5 business days. Send pre-read with incident timeline",
+          "status_conditions": [
+            "meeting_scheduled",
+            "pre_read_sent"
           ]
         },
         {
-          "step": 3,
-          "name": "Incident Detection and Triage",
-          "actor": "On-Call Engineer",
-          "action": "Receive PagerDuty alert or Slack notification; assess severity (P1-P4); acknowledge within 15 minutes for P1/P2",
-          "outputs": [
-            "Alert acknowledged",
-            "Severity determined"
+          "order": 3,
+          "action": "conduct-review",
+          "agent": "agent-eng-mgr-001",
+          "description": "Facilitate blameless post-mortem: review timeline, identify contributing factors, discuss what went well and what did not, focus on system issues not individual blame",
+          "status_conditions": [
+            "review_completed"
           ]
         },
         {
-          "step": 4,
-          "name": "Incident Response",
-          "actor": "On-Call Engineer",
-          "action": "Open incident channel, assess impact, implement mitigation or rollback, communicate status updates every 30 minutes for P1",
-          "outputs": [
-            "Incident channel open",
-            "Status updates",
-            "Mitigation applied"
+          "order": 4,
+          "action": "document-findings",
+          "agent": "agent-eng-gpo-001",
+          "description": "Write post-mortem document with root cause analysis, timeline, impact assessment, contributing factors, and actionable recommendations",
+          "status_conditions": [
+            "document_published"
           ]
         },
         {
-          "step": 5,
-          "name": "Escalation",
-          "actor": "Engineering Manager / Tech Lead",
-          "action": "Escalate to Engineering Manager (P1) or Tech Lead (P2) if incident not resolved within SLA; activate additional resources as needed",
-          "outputs": [
-            "Escalation executed",
-            "Additional resources engaged"
+          "order": 5,
+          "action": "create-action-items",
+          "agent": "agent-tech-lead-001",
+          "description": "Convert recommendations into specific action items with owners, priority levels, and due dates. Categorize as prevent, detect, respond, or recover",
+          "status_conditions": [
+            "actions_created"
           ]
         },
         {
-          "step": 6,
-          "name": "Post-Incident Review",
-          "actor": "Engineering Manager",
-          "action": "Conduct blameless post-incident review within 72 hours; document timeline, root cause, impact, and action items; track to completion",
-          "outputs": [
-            "Post-incident report",
-            "Action items tracked"
+          "order": 6,
+          "action": "track-remediation",
+          "agent": "agent-eng-mgr-001",
+          "description": "Track all action items to completion. Review progress in regular team meetings. Report on post-mortem closure rate in monthly quality review",
+          "status_conditions": [
+            "tracking_active",
+            "items_closed"
           ]
         }
-      ],
-      "quality_gates": [
-        "P1 alerts acknowledged within 15 minutes",
-        "P2 alerts acknowledged within 30 minutes",
-        "Post-incident review within 72 hours of P1, 5 business days for P2",
-        "All action items assigned with deadlines"
-      ],
-      "estimated_duration": "Varies by incident severity"
+      ]
     },
     {
-      "id": "wf-techdebt-002",
-      "name": "Enterprise Technical Debt Management",
-      "description": "Systematic technical debt tracking and reduction program with quarterly debt sprints and ongoing sprint allocation",
+      "id": "wf-architectural-review-001",
+      "name": "Architectural Review Workflow",
+      "description": "Formal architectural review process for significant design changes, new system integrations, and infrastructure modifications.",
+      "triggers": [
+        "esignal_created",
+        "new_system_integrating",
+        "infrastructure_change",
+        "manual_trigger"
+      ],
       "steps": [
         {
-          "step": 1,
-          "name": "Debt Discovery",
-          "actor": "Senior Engineers / DevOps Engineer",
-          "action": "Run automated code quality tools (SonarQube, CodeClimate), review CI warnings, gather developer feedback on pain points",
-          "outputs": [
-            "Technical debt inventory"
+          "order": 1,
+          "action": "esignal-submission",
+          "agent": "agent-senior-eng-001",
+          "description": "Submit EDesign Artifact (eSignal) with proposed change description, alternatives considered, impact analysis, and rollback plan",
+          "status_conditions": [
+            "esignal_submitted"
           ]
         },
         {
-          "step": 2,
-          "name": "Debt Classification",
-          "actor": "Tech Lead",
-          "action": "Classify debt by category (security, performance, maintainability, scalability) and business impact; assign priority scores",
-          "outputs": [
-            "Prioritized debt backlog",
-            "Classification report"
+          "order": 2,
+          "action": "initial-review",
+          "agent": "agent-tech-lead-001",
+          "description": "Tech Lead performs initial review for completeness, feasibility, and alignment with architectural principles",
+          "status_conditions": [
+            "review_passed",
+            "revision_requested"
           ]
         },
         {
-          "step": 3,
-          "name": "Sprint Allocation",
-          "actor": "Engineering Manager",
-          "action": "Allocate 15-20% of sprint capacity per sub-team to tech debt; ensure critical items get priority in next available sprint",
-          "outputs": [
-            "Tech debt items in sprint backlog"
+          "order": 3,
+          "action": "peer-review",
+          "agent": "agent-senior-eng-001",
+          "description": "Two senior engineers review the design for technical soundness, scalability, security implications, and performance considerations",
+          "status_conditions": [
+            "peer_approved",
+            "concerns_raised"
           ]
         },
         {
-          "step": 4,
-          "name": "Quarterly Debt Sprint",
-          "actor": "All Engineers",
-          "action": "Dedicated sprint (or week) focused entirely on technical debt — dependency updates, infrastructure improvements, test coverage",
-          "outputs": [
-            "Major debt items resolved",
-            "Debt sprint report"
+          "order": 4,
+          "action": "review-meeting",
+          "agent": "agent-tech-lead-001",
+          "description": "Conduct architectural review meeting with stakeholders. Present design, discuss concerns, and document decisions and trade-offs",
+          "status_conditions": [
+            "approved",
+            "approved_with_conditions",
+            "rejected"
           ]
         },
         {
-          "step": 5,
-          "name": "Implementation",
-          "actor": "Engineer",
-          "action": "Execute refactoring, test expansion, and infrastructure improvements following standard development workflow with code review",
-          "outputs": [
-            "Code changes merged",
-            "Debt items closed"
+          "order": 5,
+          "action": "implement-approved-design",
+          "agent": "agent-senior-eng-001",
+          "description": "Implement the approved design following standard feature development workflow with regular sync-ups on architectural concerns",
+          "status_conditions": [
+            "implementation_complete"
           ]
         },
         {
-          "step": 6,
-          "name": "Health Metrics Reporting",
-          "actor": "Engineering Manager",
-          "action": "Report on technical debt health metrics to leadership — debt ratio trends, resolution rate, and outstanding critical debt",
-          "outputs": [
-            "Debt health dashboard",
-            "Leadership report"
+          "order": 6,
+          "action": "verify-implementation",
+          "agent": "agent-tech-lead-001",
+          "description": "Verify that the implementation matches the approved architectural design. Close the eSignal with implementation notes and lessons learned",
+          "status_conditions": [
+            "verified",
+            "deviations_documented"
           ]
         }
-      ],
-      "quality_gates": [
-        "Critical security debt addressed within 7 days",
-        "Tech debt allocation tracked per sprint",
-        "Quarterly debt sprint conducted",
-        "Debt metrics reported monthly to leadership"
-      ],
-      "estimated_duration": "Ongoing; quarterly deep-dive sprint"
+      ]
     }
   ],
   "memory_topology": {
-    "shared_memory": {
+    "semantic_memory": {
       "enabled": true,
-      "description": "Organization-wide shared knowledge base for architecture decisions, coding standards, patterns, and operational runbooks",
-      "storage": "vector_store",
-      "namespaces": [
-        "architecture_decisions",
-        "coding_standards",
-        "known_issues",
-        "runbooks",
-        "architecture_patterns"
-      ],
-      "access_control": "read_write_all_engineers"
-    },
-    "team_memory": {
-      "enabled": true,
-      "description": "Team-level memory for sprint artifacts, project plans, meeting notes, and decision logs",
-      "storage": "relational_db",
-      "contents": [
-        "sprint_backlog",
-        "project_roadmaps",
-        "meeting_notes",
-        "decision_logs",
-        "dependency_tracker"
+      "description": "Stores structured knowledge about architecture decisions, coding standards, debugging patterns, and system behavior across the engineering organization",
+      "storage_backend": "vector-store",
+      "retention_days": 365,
+      "scopes": [
+        "architecture-decisions",
+        "coding-standards",
+        "debugging-patterns",
+        "system-knowledge",
+        "dependency-maps",
+        "api-contracts"
       ]
     },
-    "personal_memory": {
+    "episodic_memory": {
       "enabled": true,
-      "description": "Individual agent memory for skill development, task history, learning preferences, and personal working patterns",
-      "storage": "vector_store",
+      "description": "Records incident timelines, deployment histories, sprint outcomes, and review decisions for retrospectives and learning",
+      "storage_backend": "time-series-db",
+      "retention_days": 730,
       "scopes": [
-        "all_engineers"
-      ],
-      "privacy": "individual_only"
+        "incidents",
+        "deployments",
+        "sprint-outcomes",
+        "post-mortems",
+        "on-call-rotations",
+        "review-decisions"
+      ]
     },
-    "cross_team_knowledge": {
+    "procedural_memory": {
       "enabled": true,
-      "description": "Cross-team knowledge sharing for API contracts, integration points, shared libraries, and cross-cutting concerns",
-      "storage": "relational_db",
-      "contents": [
-        "api_contracts",
-        "shared_libraries",
-        "integration_points",
-        "cross_team_decisions",
-        "service_catalog"
-      ],
-      "update_frequency": "per_release"
+      "description": "Caches successful operational procedures, deployment scripts, troubleshooting sequences, and automation patterns",
+      "storage_backend": "file-system",
+      "retention_days": 365,
+      "scopes": [
+        "deployment-scripts",
+        "troubleshooting-sequences",
+        "setup-procedures",
+        "runbooks",
+        "incident-procedures"
+      ]
     },
-    "archival_memory": {
+    "graph_memory": {
       "enabled": true,
-      "description": "Long-term archival of completed sprints, deprecated decisions, and historical incident data",
-      "storage": "data_warehouse",
-      "retention_policy": "2_years_active_5_years_archive"
+      "description": "Maps service dependencies, team ownership boundaries, and knowledge relationships for understanding blast radius and escalation paths",
+      "storage_backend": "graph-db",
+      "retention_days": -1,
+      "scopes": [
+        "service-dependencies",
+        "team-ownership",
+        "knowledge-graph",
+        "blast-radius-maps"
+      ]
+    },
+    "immutable_storage": {
+      "enabled": true,
+      "description": "Git commit history, deployment audit logs, and architectural decision records provide the immutable record of all changes",
+      "storage_backend": "git",
+      "retention_days": -1,
+      "scopes": [
+        "git-history",
+        "deployment-audit",
+        "adr-library",
+        "incident-records"
+      ]
     }
   },
   "governance_rules": [
     {
-      "id": "gov-eng-med-001",
-      "name": "Multi-Approver Code Review",
-      "description": "All code changes require peer review + senior engineer approval; critical changes also require Tech Lead approval before merging",
-      "policy": "required",
-      "scope": "all_branches_to_main",
-      "exceptions": [
-        "Hotfix branch requires all approvals but can merge with Engineering Manager emergency override (retroactive review within 4 hours)"
-      ]
+      "id": "gov-001",
+      "name": "Multi-Gate Code Review",
+      "rule": "All production code must pass peer code review, architectural compliance check (for non-trivial changes), and QA validation before merging to main. No exceptions.",
+      "scope": "all-production-code",
+      "severity": "high",
+      "enforcement": "automated"
     },
     {
-      "id": "gov-eng-med-002",
-      "name": "CI/CD Quality Gates",
-      "description": "All CI/CD quality gates must pass — automated tests, security scans, and QA review — before any code reaches production",
-      "policy": "required",
-      "scope": "all_code_changes",
-      "exceptions": [
-        "P1 incident hotfix with Engineering Manager override (all other gates retroactive within 4 hours)"
-      ]
+      "id": "gov-002",
+      "name": "SLO-Driven Deployment",
+      "rule": "No production deployment may violate defined Service Level Objectives. If SLO error budgets are exhausted, deployments pause until budget is replenished or risk is accepted by Engineering Manager.",
+      "scope": "production-deployment",
+      "severity": "high",
+      "enforcement": "policy-gate"
     },
     {
-      "id": "gov-eng-med-003",
-      "name": "Architectural Review Board",
-      "description": "Any change affecting system architecture, data models, or public APIs must go through the Architectural Review Board process with RFC",
-      "policy": "required",
-      "scope": "architectural_changes",
-      "exceptions": [
-        "Bug fixes that do not change architecture",
-        "Minor configuration changes within approved patterns"
-      ]
+      "id": "gov-003",
+      "name": "Incident Post-Mortem Requirement",
+      "rule": "All P1 and P2 incidents must have a blameless post-mortem within 5 business days. Action items must be assigned, tracked, and closed. Post-mortem reports are archived and reviewed quarterly.",
+      "scope": "incident-management",
+      "severity": "high",
+      "enforcement": "process-gate"
     },
     {
-      "id": "gov-eng-med-004",
-      "name": "Branching and Release Management",
-      "description": "GitOps model with protected main branch, feature branches, release branches for each major/minor version, and hotfix branches for production emergencies",
-      "policy": "required",
-      "scope": "all_version_control",
-      "exceptions": []
+      "id": "gov-004",
+      "name": "Test Coverage and Quality Gates",
+      "rule": "Minimum 80% test coverage for new code and 75% for existing code. PRs that reduce coverage below baseline are rejected. Performance benchmarks must not regress.",
+      "scope": "testing",
+      "severity": "medium",
+      "enforcement": "ci-gate"
     },
     {
-      "id": "gov-eng-med-005",
-      "name": "On-Call and Incident Protocol",
-      "description": "All production incidents must follow the incident response protocol with proper acknowledgment, escalation, documentation, and post-incident review",
-      "policy": "required",
-      "scope": "production_incidents",
-      "exceptions": []
+      "id": "gov-005",
+      "name": "Secrets and Credential Management",
+      "rule": "No secrets stored in version control. All credentials managed through a secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault). Quarterly credential rotation required. Exposure triggers immediate rotation and incident.",
+      "scope": "security",
+      "severity": "critical",
+      "enforcement": "automated"
     },
     {
-      "id": "gov-eng-med-006",
-      "name": "Dependency and Security Policy",
-      "description": "Critical security patches must be applied within 7 days of disclosure; general dependency updates reviewed monthly with vendor risk assessment",
-      "policy": "required",
-      "scope": "all_dependencies_and_security",
-      "exceptions": [
-        "Vendor-locked dependencies documented with risk acceptance signed by Engineering Manager"
-      ]
+      "id": "gov-006",
+      "name": "On-Call Rotation Coverage",
+      "rule": "Every member of the engineering team participates in the on-call rotation. P1 incidents must be acknowledged within 15 minutes. No unassigned on-call shifts allowed.",
+      "scope": "incident-management",
+      "severity": "high",
+      "enforcement": "policy-gate"
     }
   ],
   "kpis": [
     {
-      "id": "kpi-eng-med-001",
+      "id": "kpi-001",
       "name": "Deployment Frequency",
-      "description": "Number of successful production deployments per week across all sub-teams",
-      "target": "10-20",
-      "measurement": "CI/CD deployment logs aggregated by sub-team",
-      "category": "delivery"
+      "description": "How often the team successfully deploys to production",
+      "target": "on-demand (multiple per day)",
+      "measurement": "count per week",
+      "baseline": 8,
+      "target_value": 15,
+      "threshold": 5,
+      "frequency": "weekly",
+      "dashboard": "delivery-metrics"
     },
     {
-      "id": "kpi-eng-med-002",
+      "id": "kpi-002",
       "name": "Lead Time for Changes",
-      "description": "Average time from code commit to production deployment",
-      "target": "under 2 days",
-      "measurement": "Git commit to deployment timestamp tracking",
-      "category": "delivery"
+      "description": "Time from code commit to production deployment",
+      "target": "less than 1 day",
+      "measurement": "median hours",
+      "baseline": 18,
+      "target_value": 6,
+      "threshold": 24,
+      "frequency": "weekly",
+      "dashboard": "delivery-metrics"
     },
     {
-      "id": "kpi-eng-med-003",
-      "name": "Mean Time to Recovery (MTTR)",
-      "description": "Average time from incident detection to full service restoration",
-      "target": "under 1 hour for P1, under 4 hours for P2",
-      "measurement": "Incident management system (PagerDuty) timestamps",
-      "category": "reliability"
-    },
-    {
-      "id": "kpi-eng-med-004",
+      "id": "kpi-003",
       "name": "Change Failure Rate",
-      "description": "Percentage of production deployments that cause incidents or require rollback",
-      "target": "under 5%",
-      "measurement": "Deployments vs. incidents requiring deployment fix",
-      "category": "quality"
+      "description": "Percentage of deployments causing a P2 or higher production incident",
+      "target": "less than 10%",
+      "measurement": "percentage",
+      "baseline": 8,
+      "target_value": 5,
+      "threshold": 15,
+      "frequency": "weekly",
+      "dashboard": "quality-metrics"
     },
     {
-      "id": "kpi-eng-med-005",
-      "name": "Test Coverage and Quality",
-      "description": "Automated test coverage percentage and defect escape rate to production",
-      "target": "80%+ coverage, under 2 defects/escape per sprint",
-      "measurement": "CI/CD coverage reports and production bug tracking",
-      "category": "quality"
+      "id": "kpi-004",
+      "name": "Mean Time to Recovery (MTTR)",
+      "description": "Average time to restore service after a production incident",
+      "target": "less than 1 hour for P1, 4 hours for P2",
+      "measurement": "minutes",
+      "baseline": 90,
+      "target_value": 45,
+      "threshold": 180,
+      "frequency": "per-incident",
+      "dashboard": "reliability-metrics"
     },
     {
-      "id": "kpi-eng-med-006",
-      "name": "Engineering Velocity",
-      "description": "Sprint story points completed vs. planned, aggregated across all sub-teams",
-      "target": "85%+ sprint goal completion",
-      "measurement": "Project management tool sprint board metrics",
-      "category": "efficiency"
+      "id": "kpi-005",
+      "name": "Sprint Velocity",
+      "description": "Average story points completed per sprint, tracking team delivery predictability",
+      "target": "consistent within 15% variance",
+      "measurement": "story points per sprint",
+      "baseline": 40,
+      "target_value": 50,
+      "threshold": 30,
+      "frequency": "per-sprint",
+      "dashboard": "delivery-metrics"
     },
     {
-      "id": "kpi-eng-med-007",
-      "name": "On-Call Health",
-      "description": "Average response time to on-call alerts and frequency of page fatigue (excessive pings)",
-      "target": "P1 response under 15 min, < 10 pings/week per engineer",
-      "measurement": "PagerDuty response and paging metrics",
-      "category": "wellbeing"
+      "id": "kpi-006",
+      "name": "Test Coverage",
+      "description": "Percentage of codebase covered by automated tests",
+      "target": "at least 80% new code, 75% existing code",
+      "measurement": "percentage",
+      "baseline": 65,
+      "target_value": 80,
+      "threshold": 70,
+      "frequency": "weekly",
+      "dashboard": "quality-metrics"
     },
     {
-      "id": "kpi-eng-med-008",
-      "name": "Technical Debt Trend",
-      "description": "Monthly trend of technical debt indicators — CI warnings, code complexity, outdated dependencies",
-      "target": "Stable or decreasing trend",
-      "measurement": "Code quality tool reports (SonarQube) and dependency audit",
-      "category": "health"
+      "id": "kpi-007",
+      "name": "Bug Escape Rate",
+      "description": "Percentage of defects found by users vs. caught by automated testing",
+      "target": "less than 5%",
+      "measurement": "percentage",
+      "baseline": 12,
+      "target_value": 5,
+      "threshold": 15,
+      "frequency": "monthly",
+      "dashboard": "quality-metrics"
     }
   ],
   "integrations": [
     {
-      "id": "int-github-002",
+      "id": "int-github-001",
       "name": "GitHub Enterprise",
-      "category": "source_control",
-      "purpose": "Version control, code review, project management (Projects), and automation triggers",
-      "direction": "bidirectional",
-      "config": {
-        "repository_visibility": "private",
-        "branches_protected": true,
-        "required_reviews": 2,
-        "required_status_checks": true,
-        "branch_protection_rule": "main, release/*, hotfix/*",
-        "enforce_admin_stale": true
-      }
+      "purpose": "Source code repository, pull request management, code review, and issue tracking with enterprise security features",
+      "type": "version-control",
+      "access": "read-write",
+      "events_subscribed": [
+        "pull_request",
+        "push",
+        "issue",
+        "deployment",
+        "code_scanning_alert"
+      ],
+      "auth_method": "oauth"
     },
     {
-      "id": "int-cicd-002",
-      "name": "CI/CD Platform",
-      "category": "ci_cd",
-      "purpose": "Automated build, test, security scanning, artifact management, and deployment across environments",
-      "direction": "bidirectional",
-      "config": {
-        "supported_platforms": ["GitHub Actions Enterprise", "GitLab CI/CD", "Jenkins"],
-        "pipeline_stages": ["lint", "unit_test", "integration_test", "build", "security_scan", "e2e_test", "staging_deploy", "performance_test", "production_deploy"],
-        "artifact_retention_days": 30
-      }
+      "id": "int-gitlab-001",
+      "name": "GitLab CI/CD",
+      "purpose": "CI/CD pipeline with integrated security scanning, container registry, and environment management",
+      "type": "ci-cd",
+      "access": "read-write",
+      "events_subscribed": [
+        "pipeline_status",
+        "deployment_status",
+        "security_report"
+      ],
+      "auth_method": "token"
     },
     {
-      "id": "int-prometheus-001",
-      "name": "Prometheus and Grafana",
-      "category": "monitoring",
-      "purpose": "Infrastructure and application metrics collection, visualization, alerting, and SLO tracking",
-      "direction": "bidirectional",
-      "config": {
-        "metrics_collections": ["application_metrics", "infrastructure_metrics", "business_metrics"],
-        "alerting_rules": ["error_rate", "latency_p99", "saturation", "slo_burn_rate"],
-        "dashboards": ["service_health", "deployment_status", "resource_utilization", "slo_tracker"]
-      }
+      "id": "int-monitor-001",
+      "name": "Monitoring (Prometheus / Grafana)",
+      "purpose": "Application and infrastructure monitoring with real-time dashboards, alerting, and SLO tracking",
+      "type": "monitoring",
+      "access": "read",
+      "events_subscribed": [
+        "alert",
+        "slo_breach",
+        "metric_anomaly"
+      ],
+      "auth_method": "api-key"
     },
     {
-      "id": "int-pagerduty-001",
-      "name": "PagerDuty",
-      "category": "incident_management",
-      "purpose": "On-call rotation management, incident alerting, escalation policies, and incident response tracking",
-      "direction": "bidirectional",
-      "config": {
-        "services": ["production", "staging", "monitoring"],
-        "escalation_policies": ["2-tier"],
-        "integration_channels": ["slack", "email"],
-        "on_call_rotation": "weekly"
-      }
+      "id": "int-incident-001",
+      "name": "Incident Management (PagerDuty / Opsgenie)",
+      "purpose": "Incident detection, on-call scheduling, alert routing, and incident timeline capture",
+      "type": "incident-management",
+      "access": "read-write",
+      "events_subscribed": [
+        "incident_created",
+        "incident_resolved",
+        "schedule_change"
+      ],
+      "auth_method": "api-key"
     },
     {
-      "id": "int-deploy-002",
-      "name": "Deployment Platform",
-      "category": "deployment",
-      "purpose": "Cloud infrastructure deployment and environment management with multi-environment support",
-      "direction": "bidirectional",
-      "config": {
-        "supported_platforms": ["AWS ECS/EKS", "GCP Cloud Run", "Azure AKS", "Kubernetes"],
-        "environments": ["development", "staging", "production", "disaster_recovery"],
-        "deployment_strategy": "blue_green_or_canary",
-        "rollback_enabled": true,
-        "auto_rollback_on_failure": true
-      }
+      "id": "int-deploy-001",
+      "name": "Deployment Platform (Kubernetes / Terraform Cloud)",
+      "purpose": "Container orchestration and infrastructure-as-code platform for deploying and managing all application instances",
+      "type": "deployment",
+      "access": "read-write",
+      "events_subscribed": [
+        "deployment_status",
+        "infrastructure_change",
+        "pod_health"
+      ],
+      "auth_method": "iam-role"
     },
     {
-      "id": "int-comm-002",
-      "name": "Team Communication Platform",
-      "category": "communication",
-      "purpose": "Team communication, incident response channels, deployment notifications, and cross-team coordination",
-      "direction": "bidirectional",
-      "config": {
-        "supported_platforms": ["Slack Enterprise Grid", "Microsoft Teams"],
-        "webhook_destinations": ["deployments", "incidents", "alerts", "sprint_updates"],
-        "incident_channels": true,
-        "channel_routing": "by_service_and_severity"
-      }
-    },
-    {
-      "id": "int-sast-001",
-      "name": "Security Scanning Platform",
-      "category": "security",
-      "purpose": "Static application security testing, dependency vulnerability scanning, and secret detection",
-      "direction": "bidirectional",
-      "config": {
-        "supported_platforms": ["GitHub Advanced Security", "Snyk", "Veracode"],
-        "scan_types": ["sast", "dependency_scan", "secret_detection", "container_scan"],
-        "blocking_threshold": "critical_and_high"
-      }
+      "id": "int-slack-001",
+      "name": "Slack",
+      "purpose": "Team communication, incident notifications, deployment updates, and bot-driven workflow automation",
+      "type": "communication",
+      "access": "read-write",
+      "events_subscribed": [
+        "message",
+        "reaction",
+        "channel_created"
+      ],
+      "auth_method": "oauth"
     }
   ],
   "operational_policies": [
     {
-      "id": "op-eng-med-001",
-      "name": "Engineering Working Hours and Coverage",
-      "description": "Standard working hours with structured on-call rotation and defined coverage windows",
-      "policy": "Core team works 9am-6pm local time, Monday through Friday. On-call rotation provides 24/7 coverage for P1/P2 incidents. Primary on-call is paged first; secondary on-call escalates after 15 minutes. All engineers participate in on-call rotation (2-3 weeks per engineer). On-call engineers get compensatory time off the following week.",
-      "scope": "all_team_members"
+      "id": "policy-001",
+      "name": "On-Call Rotation Policy",
+      "description": "All senior engineers and the DevOps Engineer participate in a weekly on-call rotation. P1 incidents require acknowledgment within 15 minutes. On-call engineers are compensated with time-off in lieu. Escalation to Engineering Manager after 30 minutes for P1.",
+      "scope": "incident-management",
+      "effective_from": "2026-07-17",
+      "review_frequency": "quarterly"
     },
     {
-      "id": "op-eng-med-002",
-      "name": "Access Management and Privilege Escalation",
-      "description": "Role-based access control with principle of least privilege across all engineering systems",
-      "policy": "Standard engineers have read access to production with time-limited write access (just-in-time) requiring approval. DevOps Engineer has standard write access to all environments. Production database write access requires Tech Lead and Engineering Manager dual approval. All access reviews conducted quarterly.",
-      "scope": "all_team_members_and_systems"
+      "id": "policy-002",
+      "name": "Branching and Release Strategy",
+      "description": "Use trunk-based development with short-lived feature branches. Main branch is protected and requires all quality gates. Release branches created from main for versioned releases. Hotfix branches for critical production fixes with expedited review.",
+      "scope": "version-control",
+      "effective_from": "2026-07-17",
+      "review_frequency": "biannually"
     },
     {
-      "id": "op-eng-med-003",
-      "name": "Change Management and Release Process",
-      "description": "All production changes follow defined release process with quality gates and approval chains",
-      "policy": "Standard changes go through full development lifecycle with multi-approver code review and CI/CD gates. Release candidates are deployed to staging for QA validation. Production releases follow a change advisory process — minor releases automated, major releases require Engineering Manager approval. Hotfixes follow emergency change process with retroactive review.",
-      "scope": "all_production_changes"
-    },
-    {
-      "id": "op-eng-med-004",
-      "name": "Data Security and Privacy",
-      "description": "Comprehensive data protection policies for development, staging, and production data handling",
-      "policy": "Production data must never enter development or staging without full anonymization. Secrets managed via centralized secrets manager (AWS Secrets Manager, HashiCorp Vault). API keys rotated every 90 days. PII data handled according to company data classification policy. Quarterly security audits conducted by InfoSec team. All engineers complete annual security training.",
-      "scope": "all_data_access_and_handling"
-    },
-    {
-      "id": "op-eng-med-005",
-      "name": "Service Ownership and Responsibility",
-      "description": "Clear service ownership model with defined responsibilities and escalation paths",
-      "policy": "Every production service has a designated owner (Senior Engineer) and a backup owner. Owners are responsible for incident response, feature development, and operational health. Service owners maintain up-to-date runbooks and on-call procedures. No service exists without an assigned owner and backup — the Tech Lead enforces this during architecture reviews.",
-      "scope": "all_production_services"
-    },
-    {
-      "id": "op-eng-med-006",
-      "name": "Documentation and Knowledge Standards",
-      "description": "Mandatory documentation standards ensuring knowledge sharing and operational resilience",
-      "policy": "Every service must have a runbook, architecture diagram, and API documentation. New features require updated documentation before merge. Architecture changes require Architecture Decision Records. Documentation reviewed quarterly. Onboarding guide maintained and updated by each sub-team lead.",
-      "scope": "all_services_and_features"
-    },
-    {
-      "id": "op-eng-med-007",
-      "name": "Capacity Planning and Resource Management",
-      "description": "Structured approach to capacity planning, velocity tracking, and resource allocation",
-      "policy": "Sprint capacity planned at 80% to account for unplanned work, incidents, and meetings. Engineering Manager reviews velocity trends monthly and adjusts capacity. Budget for tools and infrastructure reviewed quarterly. Hiring pipeline reviewed bi-weekly to ensure adequate resourcing for roadmap.",
-      "scope": "team_management"
+      "id": "policy-003",
+      "name": "Incident Severity and Response SLAs",
+      "description": "P1 (Critical): Complete outage affecting all users -- respond within 15 minutes, resolve within 8 hours. P2 (High): Major feature degraded for significant users -- respond within 30 minutes, resolve within 8 hours. P3 (Medium): Minor issue with workaround -- respond within 4 hours, resolve within 2 business days. P4 (Low): Cosmetic or minor -- respond within 1 business day.",
+      "scope": "incident-management",
+      "effective_from": "2026-07-17",
+      "review_frequency": "annually"
     }
   ]
 }

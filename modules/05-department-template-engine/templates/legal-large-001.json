@@ -773,7 +773,7 @@
           "id": "emp-05",
           "type": "approval",
           "name": "Action Authorization",
-          {
+          "config": {
             "required_by": "legal-employment-counsel-01",
             "timeout_hours": 48
           }

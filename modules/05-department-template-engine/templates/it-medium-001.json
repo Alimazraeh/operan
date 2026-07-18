@@ -1,0 +1,405 @@
+{
+  "id": "it-medium-001",
+  "name": "Medium IT Department",
+  "description": "4–15 person IT department for mid-market companies (50–500 employees). Dedicated roles for network, systems, security, and helpdesk with ITIL-aligned processes.",
+  "category": "it",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "medium",
+    "department_size": "4-15 FTE",
+    "company_size": "50-500 employees",
+    "industry": "general",
+    "compliance_level": "formalized",
+    "frameworks": ["ITIL-v4", "NIST-CSF", "COBIT"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["it", "medium", "infrastructure", "security", "helpdesk"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "it-manager-01",
+      "role": "IT Manager",
+      "capabilities": [
+        "it-strategy",
+        "infrastructure-management",
+        "security-overview",
+        "budget-management",
+        "vendor-management",
+        "project-management"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "semantic-enabled, graph-enabled",
+      "tool_requirements": ["monitoring-dashboard", "ticketing-system", "project-management", "email", "budget-tool"],
+      "system_prompt": "You are the IT Manager for a mid-market company. You oversee infrastructure, security, helpdesk, and vendor relationships. You manage IT projects and align technology with business goals.",
+      "constraints": {"max_tokens_per_request": 8192},
+      "access_control": {
+        "all-it-data": "read-write",
+        "budget-data": "read-write",
+        "infrastructure": "read-write",
+        "security-data": "read-write"
+      }
+    },
+    {
+      "id": "sys-admin-01",
+      "role": "Systems Administrator",
+      "capabilities": [
+        "server-management",
+        "virtualization",
+        "backup-management",
+        "patch-management",
+        "dns-dhcp"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["remote-access", "monitoring-system", "backup-system", "documentation"],
+      "system_prompt": "You are a Systems Administrator managing servers, virtualization, and backup systems. You perform patch management, monitor system health, and ensure business continuity.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "server-admin": "read-write",
+        "backup-system": "read-write",
+        "monitoring": "read-write"
+      }
+    },
+    {
+      "id": "network-admin-01",
+      "role": "Network Administrator",
+      "capabilities": [
+        "network-design",
+        "firewall-management",
+        "vpn-configuration",
+        "wireless-management",
+        "network-security"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["network-monitoring", "firewall-console", "documentation"],
+      "system_prompt": "You are a Network Administrator managing network infrastructure, firewalls, VPN, and wireless systems. You ensure network availability, security, and performance.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "network-config": "read-write",
+        "firewall": "read-write",
+        "monitoring": "read-write"
+      }
+    },
+    {
+      "id": "helpdesk-lead-01",
+      "role": "Helpdesk Lead",
+      "capabilities": [
+        "ticket-management",
+        "user-support",
+        "onboarding",
+        "knowledge-base",
+        "vendor-coordination"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["ticketing-system", "remote-support", "knowledge-base", "asset-management"],
+      "system_prompt": "You lead the helpdesk team. You manage tickets, handle escalated issues, coordinate user onboarding/offboarding, and maintain the knowledge base.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "ticketing": "read-write",
+        "user-accounts": "read-write",
+        "asset-management": "read-write",
+        "knowledge-base": "read-write"
+      }
+    },
+    {
+      "id": "it-gpo-01",
+      "role": "GPO Pod — IT Support",
+      "capabilities": [
+        "ticket-routing",
+        "faq-response",
+        "user-support",
+        "documentation",
+        "report-generation"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["ticketing-system", "knowledge-base", "email", "remote-access"],
+      "system_prompt": "You are an IT GPO pod member. You handle user support tickets, provide FAQ answers, maintain documentation, and generate reports. Always escalate infrastructure issues and security incidents to the appropriate specialist.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["security-incident", "infrastructure-outage", "data-breach"]
+      },
+      "access_control": {
+        "ticketing": "read-write",
+        "knowledge-base": "read-write",
+        "infrastructure": "read-only",
+        "network-config": "none",
+        "security-data": "read-only"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-ticket-001",
+      "name": "ITSM Ticket Management",
+      "description": "ITIL-aligned ticket lifecycle: create, triage, assign, resolve, close.",
+      "triggers": ["manual", "event:ticket-created", "event:email-received"],
+      "steps": [
+        {
+          "id": "ticket-01",
+          "type": "agent_call",
+          "name": "Auto-Triage",
+          "config": {"agent": "it-gpo-01", "task": "Categorize ticket, assign priority, attempt auto-resolution"}
+        },
+        {
+          "id": "ticket-02",
+          "type": "tool_call",
+          "name": "Route Ticket",
+          "config": {"tool": "ticketing-system", "action": "assign-to-team", "teams": ["infrastructure", "security", "helpdesk", "network"]}
+        },
+        {
+          "id": "ticket-03",
+          "type": "transformation",
+          "name": "Resolve Issue",
+          "config": {"agent": "assigned-technician", "task": "Diagnose, resolve, document solution"}
+        },
+        {
+          "id": "ticket-04",
+          "type": "approval",
+          "name": "User Confirmation",
+          "config": {"required_by": "ticket-requester", "task": "Confirm resolution and satisfaction"}
+        },
+        {
+          "id": "ticket-05",
+          "type": "tool_call",
+          "name": "Close Ticket",
+          "config": {"tool": "ticketing-system", "status": "closed", "metrics": ["resolution-time", "satisfaction"]}
+        }
+      ]
+    },
+    {
+      "id": "wf-change-001",
+      "name": "Change Management Process",
+      "description": "ITIL-aligned change management for infrastructure changes.",
+      "triggers": ["manual", "event:change-request"],
+      "steps": [
+        {
+          "id": "change-01",
+          "type": "agent_call",
+          "name": "Change Request",
+          "config": {"agent": "sys-admin-01", "task": "Submit change request with risk assessment and rollback plan"}
+        },
+        {
+          "id": "change-02",
+          "type": "approval",
+          "name": "CAB Review",
+          "config": {"required_by": "it-manager-01", "if": "standard-change", "escalate_if": "high-risk"}
+        },
+        {
+          "id": "change-03",
+          "type": "transformation",
+          "name": "Implement Change",
+          "config": {"agent": "sys-admin-01", "task": "Implement change during maintenance window"}
+        },
+        {
+          "id": "change-04",
+          "type": "tool_call",
+          "name": "Verify Change",
+          "config": {"tools": ["health-check", "monitoring", "user-testing"]}
+        }
+      ]
+    },
+    {
+      "id": "wf-incident-001",
+      "name": "Incident Management",
+      "description": "Structured incident response for IT outages and service disruptions.",
+      "triggers": ["manual", "event:system-alert"],
+      "steps": [
+        {
+          "id": "incident-01",
+          "type": "tool_call",
+          "name": "Detect & Classify",
+          "config": {"tools": ["monitoring-system"], "action": "classify-severity"}
+        },
+        {
+          "id": "incident-02",
+          "type": "agent_call",
+          "name": "Initial Response",
+          "config": {"agent": "network-admin-01", "task": "Assess impact, communicate status, begin remediation"}
+        },
+        {
+          "id": "incident-03",
+          "type": "conditional",
+          "name": "Severity Check",
+          "config": {
+            "condition": "incident.severity in ['critical', 'major']",
+            "true_path": "escalate-to-it-manager",
+            "false_path": "continue-resolution"
+          }
+        },
+        {
+          "id": "incident-04",
+          "type": "transformation",
+          "name": "Resolve & Document",
+          "config": {"agent": "it-gpo-01", "task": "Document root cause, resolution, and preventive measures"}
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": true,
+    "procedural_enabled": true,
+    "graph_enabled": false,
+    "memory_profiles": {
+      "it-manager-01": "semantic-enabled, graph-enabled",
+      "sys-admin-01": "semantic-enabled, procedural-enabled",
+      "network-admin-01": "semantic-enabled, procedural-enabled",
+      "helpdesk-lead-01": "semantic-enabled, procedural-enabled",
+      "it-gpo-01": "semantic-enabled"
+    },
+    "retention_policy": {
+      "ticket-history": "2-years",
+      "incident-reports": "5-years",
+      "change-logs": "3-years",
+      "backup-logs": "1-year"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-it-m-001",
+      "name": "Change Management",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"change_type": "production-configuration"},
+      "actions": ["require-change-request", "require-approval", "maintain-audit-trail"]
+    },
+    {
+      "id": "gov-it-m-002",
+      "name": "Access Review",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"review_period": "quarterly"},
+      "actions": ["review-permissions", "remove-dormant-access", "log-changes"]
+    },
+    {
+      "id": "gov-it-m-003",
+      "name": "Backup Verification",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"data_type": "critical-data"},
+      "actions": ["verify-daily", "test-restores-quarterly", "document-results"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "it-kpi-m-001",
+      "name": "First Contact Resolution",
+      "description": "Percentage of tickets resolved on first contact",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 75, "warning": 60, "critical": 45},
+      "aggregation_period": "week"
+    },
+    {
+      "id": "it-kpi-m-002",
+      "name": "Average Resolution Time",
+      "description": "Average time to resolve all ticket categories",
+      "metric_type": "gauge",
+      "unit": "hours",
+      "thresholds": {"target": 8, "warning": 16, "critical": 24},
+      "aggregation_period": "week"
+    },
+    {
+      "id": "it-kpi-m-003",
+      "name": "System Uptime",
+      "description": "Percentage of time critical systems are operational",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 99.9, "warning": 99.5, "critical": 99},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "it-kpi-m-004",
+      "name": "Change Success Rate",
+      "description": "Percentage of changes implemented without rollback",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 95, "warning": 90, "critical": 80},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "it-kpi-m-005",
+      "name": "User Satisfaction Score",
+      "description": "Average user satisfaction rating for support",
+      "metric_type": "gauge",
+      "unit": "score",
+      "thresholds": {"target": 4.5, "warning": 4.0, "critical": 3.5},
+      "aggregation_period": "month"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-it-m-001",
+      "type": "custom",
+      "name": "Monitoring System",
+      "provider": "nagios",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-it-m-002",
+      "type": "custom",
+      "name": "Ticketing System",
+      "provider": "servicenow",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-it-m-003",
+      "type": "custom",
+      "name": "Project Management",
+      "provider": "jira",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-it-m-004",
+      "type": "custom",
+      "name": "Asset Management",
+      "provider": "snipe-it",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-it-m-005",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active"
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-it-m-001",
+      "name": "Agent Autonomy",
+      "scope": "agent",
+      "rules": [
+        {"agent": "it-gpo-01", "allowed": ["ticket-handling", "user-support", "documentation", "reporting"], "denied": ["change-infrastructure", "modify-security-settings", "deploy-to-production", "approve-changes"]}
+      ]
+    },
+    {
+      "id": "pol-it-m-002",
+      "name": "Data Retention",
+      "scope": "system",
+      "rules": [
+        {"data_type": "ticket-history", "retention": "2-years", "disposal": "archive"},
+        {"data_type": "incident-reports", "retention": "5-years", "disposal": "archive"},
+        {"data_type": "change-logs", "retention": "3-years", "disposal": "delete"}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "medium",
+    "department_size": "4-15 FTE",
+    "company_size": "50-500 employees",
+    "industry": "general",
+    "compliance_level": "formalized",
+    "frameworks": ["ITIL-v4", "NIST-CSF", "COBIT"],
+    "last_reviewed": "2026-07-17"
+  }
+}

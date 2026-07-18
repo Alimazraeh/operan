@@ -1,0 +1,450 @@
+{
+  "id": "software-development-medium-001",
+  "name": "Medium Software Development Team",
+  "description": "10–30 person software development team for mid-market companies (100–1000 employees). Multiple development teams with tech leads, specialized roles (frontend, backend, mobile, QA), and structured delivery processes.",
+  "category": "software-development",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "medium",
+    "department_size": "10-30 FTE",
+    "company_size": "100-1000 employees",
+    "industry": "general",
+    "compliance_level": "formalized",
+    "frameworks": ["agile/scrum", "GitOps", "DevOps", "TDD"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["software-development", "medium", "team-based", "delivery"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "dev-director-01",
+      "role": "Engineering Director — Software Development",
+      "capabilities": [
+        "delivery-strategy",
+        "team-structure",
+        "hiring",
+        "budget-management",
+        "stakeholder-management",
+        "technical-roadmap"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "semantic-enabled, graph-enabled",
+      "tool_requirements": ["analytics-dashboard", "project-management", "email", "budget-tool"],
+      "system_prompt": "You are the Engineering Director for Software Development. You lead 2-3 development teams, manage delivery, plan the technical roadmap, and report to the VP of Engineering or CTO.",
+      "constraints": {"max_tokens_per_request": 8192},
+      "access_control": {
+        "all-dev-data": "read-write",
+        "budget-data": "read-write",
+        "project-management": "read-write",
+        "code-repos": "read-only"
+      }
+    },
+    {
+      "id": "tech-lead-01",
+      "role": "Tech Lead",
+      "capabilities": [
+        "technical-design",
+        "code-review",
+        "sprint-planning",
+        "feature-development",
+        "mentoring",
+        "tech-debt-management"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["git-repo", "project-management", "code-review-tools", "ci-cd"],
+      "system_prompt": "You are a Tech Lead for a development team. You design technical solutions, review code, plan sprints, mentor junior developers, and manage technical debt.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "code-repos": "read-write",
+        "ci-cd": "read-write",
+        "project-management": "read-write"
+      }
+    },
+    {
+      "id": "frontend-dev-01",
+      "role": "Frontend Developer",
+      "capabilities": [
+        "ui-development",
+        "component-architecture",
+        "responsive-design",
+        "performance-optimization",
+        "accessibility",
+        "cross-browser-testing"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["git-repo", "code-editor", "testing-tools", "design-tools"],
+      "system_prompt": "You are a Frontend Developer building user interfaces. You create components, optimize performance, ensure accessibility, and implement designs from the UX team.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "code-repos": "read-write",
+        "production": "read-only"
+      }
+    },
+    {
+      "id": "backend-dev-01",
+      "role": "Backend Developer",
+      "capabilities": [
+        "api-development",
+        "database-design",
+        "system-architecture",
+        "performance-optimization",
+        "security-implementation",
+        "microservices"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["git-repo", "code-editor", "testing-tools", "database-tools"],
+      "system_prompt": "You are a Backend Developer building APIs and services. You design databases, implement APIs, optimize performance, and ensure system security.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "code-repos": "read-write",
+        "databases": "read-write",
+        "production": "read-only"
+      }
+    },
+    {
+      "id": "qa-lead-01",
+      "role": "QA Lead",
+      "capabilities": [
+        "test-strategy",
+        "test-automation",
+        "performance-testing",
+        "release-validation",
+        "quality-metrics",
+        "bug-tracking"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["test-frameworks", "ci-cd", "bug-tracking", "performance-tools"],
+      "system_prompt": "You lead QA for the development team. You design test strategies, build automation frameworks, validate releases, and track quality metrics.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "test-results": "read-write",
+        "bug-tracking": "read-write",
+        "ci-cd": "read-write"
+      }
+    },
+    {
+      "id": "dev-gpo-pod-01",
+      "role": "GPO Pod — Development Support",
+      "capabilities": [
+        "documentation",
+        "report-generation",
+        "scheduling",
+        "project-tracking",
+        "meeting-minutes"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["document-storage", "email", "project-management", "templates-library"],
+      "system_prompt": "You are a Dev GPO pod member. You maintain documentation, generate reports, track project milestones, and schedule meetings. Always route technical decisions and code changes to human developers.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["security-vulnerabilities", "production-issues", "code-reviews"]
+      },
+      "access_control": {
+        "code-repos": "read-only",
+        "documentation": "read-write",
+        "project-management": "read-only",
+        "security-data": "none"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-feature-001",
+      "name": "Feature Development Lifecycle",
+      "description": "End-to-end feature development from requirement to production deployment.",
+      "triggers": ["manual", "event:sprint-planning"],
+      "steps": [
+        {
+          "id": "feat-01",
+          "type": "agent_call",
+          "name": "Gather Requirements",
+          "config": {"agent": "tech-lead-01", "task": "Gather requirements from product, assess technical feasibility"}
+        },
+        {
+          "id": "feat-02",
+          "type": "agent_call",
+          "name": "Design Solution",
+          "config": {"agent": "tech-lead-01", "task": "Design technical solution, create implementation plan, identify dependencies"}
+        },
+        {
+          "id": "feat-03",
+          "type": "transformation",
+          "name": "Implement Feature",
+          "config": {"agent": "developer", "task": "Write code, write tests, create pull request"}
+        },
+        {
+          "id": "feat-04",
+          "type": "approval",
+          "name": "Code Review",
+          "config": {"required_by": "tech-lead-01", "task": "Review code for quality, security, and design alignment"}
+        },
+        {
+          "id": "feat-05",
+          "type": "tool_call",
+          "name": "Run CI Pipeline",
+          "config": {"tools": ["lint", "test", "build", "security-scan"]}
+        },
+        {
+          "id": "feat-06",
+          "type": "tool_call",
+          "name": "Deploy to Staging",
+          "config": {"tool": "ci-cd", "environment": "staging"}
+        },
+        {
+          "id": "feat-07",
+          "type": "approval",
+          "name": "QA Sign-off",
+          "config": {"required_by": "qa-lead-01", "task": "Verify feature meets requirements and passes tests"}
+        },
+        {
+          "id": "feat-08",
+          "type": "tool_call",
+          "name": "Deploy to Production",
+          "config": {"tool": "ci-cd", "environment": "production"}
+        }
+      ]
+    },
+    {
+      "id": "wf-bugfix-001",
+      "name": "Bug Fix Process",
+      "description": "Triage, fix, and verify bug fixes with regression testing.",
+      "triggers": ["manual", "event:bug-reported"],
+      "steps": [
+        {
+          "id": "bug-01",
+          "type": "agent_call",
+          "name": "Triage Bug",
+          "config": {"agent": "tech-lead-01", "task": "Assess severity, priority, and reproduce bug"}
+        },
+        {
+          "id": "bug-02",
+          "type": "transformation",
+          "name": "Fix Bug",
+          "config": {"agent": "developer", "task": "Fix bug, write regression test"}
+        },
+        {
+          "id": "bug-03",
+          "type": "approval",
+          "name": "Code Review",
+          "config": {"required_by": "tech-lead-01"}
+        },
+        {
+          "id": "bug-04",
+          "type": "tool_call",
+          "name": "Verify Fix",
+          "config": {"tool": "qa", "task": "Verify fix and regression test pass"}
+        }
+      ]
+    },
+    {
+      "id": "wf-sprint-001",
+      "name": "Sprint Planning & Execution",
+      "description": "Bi-weekly sprint cycle with planning, daily standups, review, and retro.",
+      "triggers": ["schedule:bi-weekly"],
+      "steps": [
+        {
+          "id": "sprint-01",
+          "type": "agent_call",
+          "name": "Sprint Planning",
+          "config": {"agent": "tech-lead-01", "task": "Plan sprint backlog, estimate stories, assign to developers"}
+        },
+        {
+          "id": "sprint-02",
+          "type": "transformation",
+          "name": "Daily Standup Tracking",
+          "config": {"agent": "dev-gpo-pod-01", "task": "Track daily standup notes, blockers, and progress"}
+        },
+        {
+          "id": "sprint-03",
+          "type": "agent_call",
+          "name": "Sprint Review",
+          "config": {"agent": "tech-lead-01", "task": "Review completed work, demo to stakeholders"}
+        },
+        {
+          "id": "sprint-04",
+          "type": "agent_call",
+          "name": "Retrospective",
+          "config": {"agent": "tech-lead-01", "task": "Conduct retro, identify improvements, update process"}
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": true,
+    "procedural_enabled": true,
+    "graph_enabled": false,
+    "memory_profiles": {
+      "dev-director-01": "semantic-enabled, graph-enabled",
+      "tech-lead-01": "semantic-enabled, procedural-enabled",
+      "frontend-dev-01": "semantic-enabled",
+      "backend-dev-01": "semantic-enabled",
+      "qa-lead-01": "semantic-enabled, procedural-enabled",
+      "dev-gpo-pod-01": "semantic-enabled"
+    },
+    "retention_policy": {
+      "code-reviews": "6-months",
+      "deployment-logs": "3-months",
+      "bug-reports": "1-year",
+      "sprint-artifacts": "2-years"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-dev-m-001",
+      "name": "Code Review Gate",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"change_type": "production-code"},
+      "actions": ["require-minimum-1-approval", "block-merge-without-review"]
+    },
+    {
+      "id": "gov-dev-m-002",
+      "name": "Test Coverage Gate",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"change_type": "new-feature"},
+      "actions": ["require-minimum-coverage-80", "block-merge-if-below"]
+    },
+    {
+      "id": "gov-dev-m-003",
+      "name": "Security Scan Gate",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"change_type": "any"},
+      "actions": ["mandatory-security-scan", "block-merge-if-critical-findings"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "dev-kpi-m-001",
+      "name": "Sprint Velocity",
+      "description": "Average story points completed per sprint",
+      "metric_type": "counter",
+      "unit": "points",
+      "thresholds": {"target": 40, "warning": 25, "critical": 15},
+      "aggregation_period": "sprint"
+    },
+    {
+      "id": "dev-kpi-m-002",
+      "name": "Bug Escape Rate",
+      "description": "Percentage of bugs found in production vs caught in testing",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 8, "warning": 15, "critical": 25},
+      "aggregation_period": "sprint"
+    },
+    {
+      "id": "dev-kpi-m-003",
+      "name": "Code Coverage",
+      "description": "Percentage of code covered by automated tests",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 80, "warning": 65, "critical": 50},
+      "aggregation_period": "sprint"
+    },
+    {
+      "id": "dev-kpi-m-004",
+      "name": "Deployment Frequency",
+      "description": "Number of production deployments per sprint",
+      "metric_type": "counter",
+      "unit": "per-sprint",
+      "thresholds": {"target": 4, "warning": 2, "critical": 1},
+      "aggregation_period": "sprint"
+    },
+    {
+      "id": "dev-kpi-m-005",
+      "name": "Lead Time for Changes",
+      "description": "Average time from code commit to production deployment",
+      "metric_type": "gauge",
+      "unit": "hours",
+      "thresholds": {"target": 24, "warning": 48, "critical": 96},
+      "aggregation_period": "sprint"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-dev-m-001",
+      "type": "custom",
+      "name": "Git Repository",
+      "provider": "github",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-dev-m-002",
+      "type": "custom",
+      "name": "CI/CD",
+      "provider": "gitlab-ci",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-dev-m-003",
+      "type": "custom",
+      "name": "Project Management",
+      "provider": "jira",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-dev-m-004",
+      "type": "custom",
+      "name": "Bug Tracking",
+      "provider": "jira",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-dev-m-005",
+      "type": "custom",
+      "name": "Testing Framework",
+      "provider": "jest",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-dev-m-006",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active"
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-dev-m-001",
+      "name": "Agent Autonomy",
+      "scope": "agent",
+      "rules": [
+        {"agent": "dev-gpo-pod-01", "allowed": ["documentation", "reporting", "scheduling", "project-tracking"], "denied": ["write-code", "merge-pull-requests", "deploy-to-production", "approve-code-reviews"]}
+      ]
+    },
+    {
+      "id": "pol-dev-m-002",
+      "name": "Data Retention",
+      "scope": "system",
+      "rules": [
+        {"data_type": "code-reviews", "retention": "6-months", "disposal": "delete"},
+        {"data_type": "bug-reports", "retention": "1-year", "disposal": "anonymize"},
+        {"data_type": "sprint-artifacts", "retention": "2-years", "disposal": "archive"}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "medium",
+    "department_size": "10-30 FTE",
+    "company_size": "100-1000 employees",
+    "industry": "general",
+    "compliance_level": "formalized",
+    "frameworks": ["agile/scrum", "GitOps", "DevOps", "TDD"],
+    "last_reviewed": "2026-07-17"
+  }
+}

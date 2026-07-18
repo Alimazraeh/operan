@@ -1,0 +1,234 @@
+{
+  "id": "procurement-small-001",
+  "name": "Small Business Procurement",
+  "description": "1–3 person procurement function for small businesses (up to 50 employees). Handles purchasing, vendor management, and basic contract administration.",
+  "category": "procurement",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "small",
+    "department_size": "1-3 FTE",
+    "company_size": "up to 50 employees",
+    "industry": "general",
+    "compliance_level": "basic",
+    "frameworks": ["basic-procurement", "cost-control"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["procurement", "small-business", "purchasing", "vendor-management"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "procurement-lead-01",
+      "role": "Procurement Lead / Operations Manager",
+      "capabilities": [
+        "purchasing",
+        "vendor-management",
+        "cost-control",
+        "contract-administration",
+        "inventory-management"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["procurement-system", "email", "spreadsheet-tools", "budget-tool"],
+      "system_prompt": "You are the Procurement Lead for a small business. You manage purchasing, maintain vendor relationships, control costs, and handle basic contract administration.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "procurement-system": "read-write",
+        "vendor-data": "read-write",
+        "contracts": "read-write",
+        "budget-data": "read-only"
+      }
+    },
+    {
+      "id": "procurement-gpo-01",
+      "role": "GPO Pod — Procurement Support",
+      "capabilities": [
+        "purchase-order-generation",
+        "vendor-comparison",
+        "reorder-automation",
+        "document-management"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["procurement-system", "email", "templates-library"],
+      "system_prompt": "You are a Procurement GPO pod member. You generate purchase orders, compare vendor quotes, automate reorder triggers, and manage procurement documents. Always escalate contract negotiations and vendor disputes to the Procurement Lead.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["vendor-contracts", "budget-approval", "procurement-policy"]
+      },
+      "access_control": {
+        "procurement-system": "read-write",
+        "vendor-data": "read-only",
+        "contracts": "read-only"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-purchase-001",
+      "name": "Purchase Order Process",
+      "description": "Receive requisition, approve, create PO, receive goods, and process payment.",
+      "triggers": ["manual", "event:requisition-received"],
+      "steps": [
+        {
+          "id": "purchase-01",
+          "type": "agent_call",
+          "name": "Review Requisition",
+          "config": {"agent": "procurement-lead-01", "task": "Review requisition, verify budget availability"}
+        },
+        {
+          "id": "purchase-02",
+          "type": "approval",
+          "name": "Budget Approval",
+          "config": {"required_by": "department-head", "if": "amount_above_threshold"}
+        },
+        {
+          "id": "purchase-03",
+          "type": "transformation",
+          "name": "Create PO",
+          "config": {"agent": "procurement-gpo-01", "task": "Generate purchase order, send to vendor"}
+        },
+        {
+          "id": "purchase-04",
+          "type": "tool_call",
+          "name": "Track Delivery",
+          "config": {"tool": "procurement-system", "action": "monitor-delivery-status"}
+        },
+        {
+          "id": "purchase-05",
+          "type": "approval",
+          "name": "Receive & Verify",
+          "config": {"agent": "procurement-lead-01", "task": "Verify delivered goods against PO"}
+        }
+      ]
+    },
+    {
+      "id": "wf-vendor-001",
+      "name": "Vendor Management",
+      "description": "Vendor evaluation, selection, and performance monitoring.",
+      "triggers": ["manual", "schedule:annual"],
+      "steps": [
+        {
+          "id": "vendor-01",
+          "type": "agent_call",
+          "name": "Vendor Evaluation",
+          "config": {"agent": "procurement-lead-01", "task": "Evaluate vendor performance, pricing, and compliance"}
+        },
+        {
+          "id": "vendor-02",
+          "type": "transformation",
+          "name": "Update Vendor Records",
+          "config": {"agent": "procurement-gpo-01", "task": "Update vendor database with performance ratings"}
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": false,
+    "procedural_enabled": true,
+    "graph_enabled": false,
+    "memory_profiles": {
+      "procurement-lead-01": "semantic-enabled, procedural-enabled",
+      "procurement-gpo-01": "semantic-enabled"
+    },
+    "retention_policy": {
+      "purchase-orders": "5-years",
+      "vendor-contracts": "7-years",
+      "vendor-evaluations": "3-years"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-proc-s-001",
+      "name": "Purchase Approval",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"amount_above": "threshold"},
+      "actions": ["require-approval", "log-purchase", "check-budget"]
+    },
+    {
+      "id": "gov-proc-s-002",
+      "name": "Vendor Selection",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"new-vendor": true},
+      "actions": ["request-multiple-quotes", "document-selection", "verify-vendor"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "proc-kpi-s-001",
+      "name": "Purchase Order Cycle Time",
+      "description": "Average time from requisition to PO issuance",
+      "metric_type": "gauge",
+      "unit": "days",
+      "thresholds": {"target": 2, "warning": 5, "critical": 10},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "proc-kpi-s-002",
+      "name": "Cost Savings",
+      "description": "Percentage cost savings vs. market average",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 10, "warning": 5, "critical": 0},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "proc-kpi-s-003",
+      "name": "Vendor Compliance Rate",
+      "description": "Percentage of vendors meeting compliance requirements",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 95, "warning": 85, "critical": 70},
+      "aggregation_period": "quarter"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-proc-s-001",
+      "type": "custom",
+      "name": "Procurement System",
+      "provider": "quickbooks",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-proc-s-002",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active"
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-proc-s-001",
+      "name": "Agent Autonomy",
+      "scope": "agent",
+      "rules": [
+        {"agent": "procurement-gpo-01", "allowed": ["purchase-orders", "reorder-automation", "document-management"], "denied": ["negotiate-contracts", "approve-vendors", "access-budget-data"]}
+      ]
+    },
+    {
+      "id": "pol-proc-s-002",
+      "name": "Data Retention",
+      "scope": "system",
+      "rules": [
+        {"data_type": "purchase-orders", "retention": "5-years", "disposal": "archive"},
+        {"data_type": "vendor-contracts", "retention": "7-years", "disposal": "secure-delete"}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "small",
+    "department_size": "1-3 FTE",
+    "company_size": "up to 50 employees",
+    "industry": "general",
+    "compliance_level": "basic",
+    "frameworks": ["basic-procurement", "cost-control"],
+    "last_reviewed": "2026-07-17"
+  }
+}

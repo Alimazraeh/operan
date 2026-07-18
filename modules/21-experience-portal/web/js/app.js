@@ -1,182 +1,280 @@
-// Operan portal: login, router, shell, multi-tenant switcher.
-import { SVC, session, mintJWT, get, uuid4 } from "./api.js";
+// Operan Portal — Main App Router & Auth
+import { SVC, session, uuid4, login, registerTenant, probeService } from "./api.js";
 import { $, esc, toast } from "./ui.js";
-import { viewOverview } from "./views/overview.js";
+
+// ── Import new views ───────────────────────────────────────
+import viewDashboard from "./views/dashboard.js";
+import viewTeams from "./views/teams.js";
+import viewTasks from "./views/tasks.js";
+import viewReports from "./views/reports.js";
+import viewSettings from "./views/settings.js";
+
+// ── Import existing views (named exports) ──────────────────
 import { viewDepartments, viewDepartment } from "./views/departments.js";
-import { viewAgents, viewAgent } from "./views/agents.js";
 import { viewWorkflows } from "./views/workflows.js";
 import { viewSupervision } from "./views/supervision.js";
-import { viewTools } from "./views/tools.js";
-import { viewObservability } from "./views/observability.js";
-import { viewScenario } from "./views/scenario.js";
-import { viewTenants } from "./views/tenants.js";
-import { viewIAM } from "./views/iam.js";
+import { viewAgents } from "./views/agents.js";
 import { viewIngestion } from "./views/ingestion.js";
+import { viewConnectors } from "./views/connectors.js";
 import { viewPolicies } from "./views/policies.js";
 import { viewCost } from "./views/cost.js";
-import { viewConnectors } from "./views/connectors.js";
+import { viewObservability } from "./views/observability.js";
 
+// ── View registry ──────────────────────────────────────────
 const VIEWS = {
-  overview:     { title: "Overview",    render: viewOverview },
-  departments:  { title: "Departments", render: viewDepartments },
-  department:   { title: "Department",  render: viewDepartment, parent: "departments" },
-  agents:       { title: "Agents",      render: viewAgents },
-  agent:        { title: "Agent",       render: viewAgent, parent: "agents" },
-  workflows:    { title: "Workflows",   render: viewWorkflows },
-  supervision:  { title: "Supervision", render: viewSupervision },
-  tools:        { title: "Tools",       render: viewTools },
-  observability:{ title: "Observability",render: viewObservability },
-  scenario:     { title: "The Story",   render: viewScenario },
-  tenants:      { title: "Tenants",     render: viewTenants },
-  iam:          { title: "Identity & Access", render: viewIAM },
-  ingestion:    { title: "Knowledge",   render: viewIngestion },
-  policies:     { title: "Policies",    render: viewPolicies },
-  cost:         { title: "Cost Governance", render: viewCost },
-  connectors:   { title: "Connectors",  render: viewConnectors },
+  dashboard:    { title: "Dashboard",     render: viewDashboard },
+  departments:  { title: "Departments",   render: viewDepartments },
+  department:   { title: "Department",    render: viewDepartment, parent: "departments" },
+  teams:        { title: "Teams",         render: viewTeams },
+  tasks:        { title: "Tasks & Projects", render: viewTasks },
+  workflows:    { title: "Workflows",     render: viewWorkflows },
+  supervision:  { title: "Supervision",   render: viewSupervision },
+  policies:     { title: "Policies",      render: viewPolicies },
+  reports:      { title: "Reports",       render: viewReports },
+  cost:         { title: "Costs",         render: viewCost },
+  agents:       { title: "Agents",        render: viewAgents },
+  ingestion:    { title: "Knowledge",     render: viewIngestion },
+  connectors:   { title: "Connectors",    render: viewConnectors },
+  settings:     { title: "Settings",      render: viewSettings },
+  observability:{ title: "Observability", render: viewObservability },
 };
 
-let currentView = "overview";
+// Register views (some export both function and register)
+if (typeof viewDashboard === 'function' && viewDashboard.length === 0) {
+  // Already a render function, good
+}
+if (VIEWS.dashboard && VIEWS.dashboard.render.register) {
+  VIEWS.dashboard.render = VIEWS.dashboard.render.register;
+}
 
-// ── View router ────────────────────────────────────────────
+// ── Auth state ─────────────────────────────────────────────
+function isAuthenticated() {
+  return session.active && localStorage.getItem("operan.jwt");
+}
+
+async function restoreSession() {
+  const jwt = localStorage.getItem("operan.jwt");
+  const tenant = localStorage.getItem("operan.tenant");
+  const userId = localStorage.getItem("operan.userId");
+  const email = localStorage.getItem("operan.email");
+  if (jwt && tenant) {
+    session.jwt = jwt;
+    session.tenant = tenant;
+    session.userId = userId || "";
+    session.email = email || "";
+    return true;
+  }
+  return false;
+}
+
+// ── Render pages ──────────────────────────────────────────
+window.renderLoginPage = function() {
+  document.getElementById("shell").style.display = "none";
+  document.getElementById("landing").style.display = "none";
+  document.getElementById("register").style.display = "none";
+  document.getElementById("login").style.display = "flex";
+};
+
+window.renderLandingPage = function() {
+  document.getElementById("login").style.display = "none";
+  document.getElementById("register").style.display = "none";
+  document.getElementById("shell").style.display = "none";
+  document.getElementById("landing").style.display = "block";
+};
+
+window.renderRegisterPage = function() {
+  document.getElementById("login").style.display = "none";
+  document.getElementById("landing").style.display = "none";
+  document.getElementById("shell").style.display = "none";
+  document.getElementById("register").style.display = "flex";
+};
+
+function renderDashboard() {
+  document.getElementById("login").style.display = "none";
+  document.getElementById("landing").style.display = "none";
+  document.getElementById("register").style.display = "none";
+  document.getElementById("shell").style.display = "flex";
+}
+
+// ── Router ─────────────────────────────────────────────────
+let currentView = "dashboard";
+
 window.go = async function (name, ...args) {
   if (!VIEWS[name]) return;
   currentView = name;
   const v = VIEWS[name];
   document.querySelectorAll(".navlink").forEach(el =>
     el.classList.toggle("active", el.dataset.view === (v.parent || name)));
-  $("crumb").textContent = v.title;
-  $("view").innerHTML = `<div class="card"><div class="skel-line w60"></div><div class="skel-line w80"></div><div class="skel-line"></div></div>`;
-  try { $("view").innerHTML = await v.render(...args); }
-  catch (e) {
-    console.error(e);
-    $("view").innerHTML = `<div class="error-box"><div class="err-title">Error</div><div class="err-msg">${esc(String(e))}</div><button onclick="window.go('${name}')">Retry</button></div>`;
+
+  const crumb = $("crumb");
+  if (crumb) crumb.textContent = v.title;
+
+  const viewEl = $("view");
+  if (viewEl) {
+    viewEl.innerHTML = `<div class="card"><div class="skel-line w60"></div><div class="skel-line w80"></div><div class="skel-line"></div></div>`;
+    try {
+      viewEl.innerHTML = await v.render(...args);
+    } catch (e) {
+      console.error(e);
+      viewEl.innerHTML = `<div class="error-box"><h3>Error</h3><p>${esc(String(e))}</p><button class="ghost" onclick="window.go('${name}')">Retry</button></div>`;
+    }
   }
 };
 
-// ── Health dots ────────────────────────────────────────────
-const PROBES = [
-  ["tenant", "/svc/tenant/health"], ["orchestr", "/svc/orchestration/health"],
-  ["registry", "/svc/registry/health"], ["templates", "/svc/templates/health"],
-  ["knowledge", "/svc/knowledge/health"],
-  ["memory", "/svc/memory/health"], ["tools", "/svc/tools/health"],
-  ["supervision", "/svc/supervision/health"], ["policies", "/svc/policies/health"],
-  ["observab", "/svc/observability/healthz"], ["cost", "/svc/cost/health"],
-  ["conn", "/svc/connectors/health"], ["iam", "/svc/iam/health"],
-];
+// ── Login handler ──────────────────────────────────────────
+async function handleLogin() {
+  const password = $("#loginSecret").value.trim();
+  const tenantId = $("#loginTenant").value.trim();
+  const msg = $("#loginMsg");
 
-async function checkHealth() {
-  PROBES.forEach(async ([n, path]) => {
-    const el = $("dot-" + n); if (!el) return;
-    try { const r = await fetch(path); el.className = "dot " + (r.ok ? "ok" : "bad"); }
-    catch (_) { el.className = "dot bad"; }
-  });
+  if (!password) { msg.textContent = "Enter the admin password."; msg.className = "err"; return; }
+  if (!tenantId) { msg.textContent = "Enter a tenant ID or click New."; msg.className = "err"; return; }
+
+  msg.textContent = "Authenticating…";
+  msg.className = "err loading";
+
+  try {
+    await login(password, tenantId);
+    localStorage.setItem("operan.jwt", session.jwt);
+    localStorage.setItem("operan.tenant", session.tenant);
+    localStorage.setItem("operan.userId", session.userId);
+    localStorage.setItem("operan.email", session.email);
+    msg.textContent = "";
+    renderDashboard();
+    setupShell();
+    await window.go("dashboard");
+  } catch (e) {
+    msg.textContent = e.message || "Authentication failed";
+    msg.className = "err";
+  }
 }
 
-// ── Login ──────────────────────────────────────────────────
-async function connect() {
-  const password = $("loginSecret").value.trim();
-  const msg = $("loginMsg");
-  if (!password) { msg.textContent = "Enter the admin password first."; return; }
-  if (!$("loginTenant").value.trim()) $("loginTenant").value = uuid4();
-  session.tenant = $("loginTenant").value.trim();
+// ── Shell setup (after login) ──────────────────────────────
+function setupShell() {
+  renderDashboard();
 
-  // Authenticate against M02 admin login endpoint
-  msg.textContent = "Authenticating…";
-  try {
-    const resp = await fetch(SVC.iam + "/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password, tenant: session.tenant }),
+  // Nav link clicks
+  document.querySelectorAll(".navlink").forEach(el => {
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      window.go(el.dataset.view);
     });
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      msg.textContent = err.error?.message || `Auth failed (${resp.status})`;
-      return;
-    }
-    const data = await resp.json();
-    session.jwt = data.token;
-  } catch (e) {
-    msg.textContent = "Auth error: " + e.message;
-    return;
-  }
-  localStorage.setItem("operan.tenant", session.tenant);
-
-  // Health probe to verify everything is up
-  const probe = await get(SVC.supervision + "/queue?page_size=1");
-  if (probe.status === 401) {
-    session.jwt = "";
-    msg.textContent = "Token rejected (401). Check IAM_TOKEN_SECRET.";
-    return;
-  }
-
-  $("healthdots").innerHTML = PROBES.map(([n]) => `<span class="dot" id="dot-${n}"><i></i>${n}</span>`).join("");
-  PROBES.forEach(async ([n, path]) => {
-    try { const r = await fetch(path); $("dot-"+n).className = "dot "+(r.ok?"ok":"bad"); }
-    catch(_) { $("dot-"+n).className = "dot bad"; }
   });
-  checkHealth();
 
-  $("tenantChip").textContent = "tenant " + session.tenant;
-  $("login").style.display = "none";
-  $("shell").style.display = "flex";
+  // Logout
+  const btnLogout = $("btnLogout");
+  if (btnLogout) {
+    btnLogout.addEventListener("click", () => {
+      localStorage.removeItem("operan.jwt");
+      localStorage.removeItem("operan.tenant");
+      localStorage.removeItem("operan.userId");
+      localStorage.removeItem("operan.email");
+      session.jwt = "";
+      session.tenant = "";
+      session.userId = "";
+      session.email = "";
+      renderLandingPage();
+    });
+  }
 
-  document.querySelectorAll(".navlink").forEach(el =>
-    el.addEventListener("click", () => window.go(el.dataset.view)));
-
-  // Mobile sidebar toggle
-  const menuBtn = $("menuToggle");
+  // Mobile sidebar
+  const menuToggle = $("menuToggle");
   const sidebar = $("sidebar");
-  if (menuBtn && sidebar) {
-    menuBtn.addEventListener("click", () => sidebar.classList.toggle("open"));
+  if (menuToggle && sidebar) {
+    menuToggle.addEventListener("click", () => sidebar.classList.toggle("open"));
     const overlay = sidebar.querySelector(".overlay");
     if (overlay) overlay.addEventListener("click", () => sidebar.classList.remove("open"));
   }
 
-  // Tenant switcher
-  setupTenantSwitcher();
-
-  window.go("overview");
-  setInterval(() => {
-    if (["overview","observability","supervision","cost","connectors","policies"].includes(currentView)) window.go(currentView);
-  }, 12000);
+  // Health dots
+  updateHealthDots();
 }
 
-// ── Multi-tenant switcher ──────────────────────────────────
-const TENANT_HISTORY = [];
-function setupTenantSwitcher() {
-  const btn = $("tenantSwitchBtn");
-  const dd = $("tenantDropdown");
-  if (!btn || !dd) return;
-  btn.addEventListener("click", () => dd.classList.toggle("open"));
-
-  const stored = localStorage.getItem("operan.tenants");
-  let tenants = stored ? JSON.parse(stored) : [];
-  if (!tenants.includes(session.tenant)) {
-    tenants.push(session.tenant);
-    if (tenants.length > 20) tenants = tenants.slice(-20);
-    localStorage.setItem("operan.tenants", JSON.stringify(tenants));
+async function updateHealthDots() {
+  const probes = [
+    ["tenant", "/svc/tenant/health"], ["iam", "/svc/iam/health"],
+    ["templates", "/svc/templates/health"], ["registry", "/svc/registry/health"],
+    ["orchestr", "/svc/orchestration/health"], ["supervision", "/svc/supervision/health"],
+    ["observab", "/svc/observability/healthz"], ["cost", "/svc/cost/health"],
+  ];
+  const container = $("healthdots");
+  if (!container) return;
+  container.innerHTML = "";
+  for (const [name, path] of probes) {
+    const dot = document.createElement("span");
+    dot.className = "dot"; dot.id = "dot-" + name;
+    dot.innerHTML = `<i></i>${name}`;
+    container.appendChild(dot);
+    const ok = await probeService(path);
+    dot.className = "dot " + (ok ? "ok" : "bad");
   }
-
-  dd.innerHTML = tenants.map(t =>
-    `<div class="tenant-item${t===session.tenant?' active':''}" data-tenant="${esc(t)}">${t===session.tenant?"▸ ":""}${esc(t)}</div>`
-  ).join("");
-
-  dd.querySelectorAll(".tenant-item").forEach(el => {
-    el.addEventListener("click", () => {
-      localStorage.setItem("operan.tenant", el.dataset.tenant);
-      location.reload();
-    });
-  });
-  document.addEventListener("click", e => {
-    if (!dd.contains(e.target) && e.target !== btn) dd.classList.remove("open");
-  });
 }
 
 // ── Init ───────────────────────────────────────────────────
-document.querySelectorAll(".navlink").forEach(el =>
-  el.addEventListener("click", () => window.go(el.dataset.view)));
-$("btnConnect").addEventListener("click", connect);
-$("btnNewTenant").addEventListener("click", () => { $("loginTenant").value = uuid4(); });
-$("loginSecret").addEventListener("keydown", e => { if (e.key === "Enter") connect(); });
-$("btnLogout").addEventListener("click", () => location.reload());
-$("loginTenant").value = localStorage.getItem("operan.tenant") || "";
+document.addEventListener("DOMContentLoaded", () => {
+  // Login page
+  const btnConnect = $("#btnConnect");
+  if (btnConnect) btnConnect.addEventListener("click", handleLogin);
+  const loginSecret = $("#loginSecret");
+  if (loginSecret) loginSecret.addEventListener("keydown", e => { if (e.key === "Enter") handleLogin(); });
+
+  const btnNewTenant = $("#btnNewTenant");
+  if (btnNewTenant) btnNewTenant.addEventListener("click", () => {
+    $("#loginTenant").value = uuid4();
+  });
+  const loginTenant = $("#loginTenant");
+  if (loginTenant) loginTenant.value = localStorage.getItem("operan.tenant") || "";
+
+  // Landing page
+  const btnGoLogin = $("#btnGoLogin");
+  if (btnGoLogin) btnGoLogin.addEventListener("click", () => renderLoginPage());
+  const btnLaunch = $("#btnLaunch");
+  if (btnLaunch) btnLaunch.addEventListener("click", () => {
+    if (isAuthenticated()) { renderDashboard(); setupShell(); window.go("dashboard"); }
+    else renderLoginPage();
+  });
+  const btnHeroLogin = $("#btnHeroLogin");
+  if (btnHeroLogin) btnHeroLogin.addEventListener("click", () => {
+    if (isAuthenticated()) { renderDashboard(); setupShell(); window.go("dashboard"); }
+    else renderLoginPage();
+  });
+  const btnHeroDemo = $("#btnHeroDemo");
+  if (btnHeroDemo) btnHeroDemo.addEventListener("click", () => {
+    toast("Demo video coming soon", "info");
+  });
+
+  // Register page
+  const btnRegister = $("#btnRegister");
+  if (btnRegister) btnRegister.addEventListener("click", handleRegister);
+
+  // Check for existing session
+  if (isAuthenticated()) {
+    renderDashboard();
+    setupShell();
+    window.go("dashboard");
+  } else {
+    renderLandingPage();
+  }
+});
+
+// ── Register handler ───────────────────────────────────────
+async function handleRegister() {
+  const name = $("#regName").value.trim();
+  const slug = $("#regSlug").value.trim();
+  const plan = $("#regPlan").value;
+  const msg = $("#regMsg");
+
+  if (!name) { msg.textContent = "Enter your company name."; return; }
+
+  msg.textContent = "Provisioning…";
+  msg.className = "err loading";
+
+  try {
+    await registerTenant(name, slug || name.toLowerCase().replace(/\s+/g, "-"), plan);
+    msg.textContent = "Tenant created! Now login with your admin password.";
+    msg.className = "err ok";
+  } catch (e) {
+    msg.textContent = e.message || "Failed to create tenant";
+    msg.className = "err";
+  }
+}

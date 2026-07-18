@@ -1,0 +1,248 @@
+{
+  "id": "ops-small-001",
+  "name": "Small IT Operations",
+  "description": "1–3 person IT operations team for small businesses (up to 50 employees). Handles day-to-day IT operations, monitoring, and incident response.",
+  "category": "it-operations",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "small",
+    "department_size": "1-3 FTE",
+    "company_size": "up to 50 employees",
+    "industry": "general",
+    "compliance_level": "basic",
+    "frameworks": ["ITIL-v4-lite", "SRE-lite"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["it-operations", "small-business", "monitoring", "incident-response"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "sys-admin-01",
+      "role": "Systems Administrator / IT Ops",
+      "capabilities": [
+        "system-administration",
+        "network-management",
+        "monitoring",
+        "incident-response",
+        "backup-management",
+        "patch-management"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["monitoring-system", "remote-access", "backup-system", "ticketing-system"],
+      "system_prompt": "You are the Systems Administrator for a small business. You manage servers, network, monitoring, backups, and handle incident response.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "infrastructure": "read-write",
+        "monitoring": "read-write",
+        "backup-system": "read-write",
+        "network-config": "read-write"
+      }
+    },
+    {
+      "id": "ops-gpo-01",
+      "role": "GPO Pod — IT Ops Support",
+      "capabilities": [
+        "alert-monitoring",
+        "log-analysis",
+        "report-generation",
+        "documentation"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["monitoring-system", "log-aggregator", "documentation"],
+      "system_prompt": "You are an IT Ops GPO pod member. You monitor alerts, analyze logs, generate reports, and maintain operational documentation. Always escalate critical incidents to the Systems Administrator.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["security-incident", "infrastructure-outage", "data-loss"]
+      },
+      "access_control": {
+        "monitoring": "read-only",
+        "log-aggregator": "read-only",
+        "infrastructure": "read-only",
+        "network-config": "none"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-monitor-001",
+      "name": "System Monitoring",
+      "description": "Continuous monitoring of systems, infrastructure, and services.",
+      "triggers": ["continuous"],
+      "steps": [
+        {
+          "id": "monitor-01",
+          "type": "tool_call",
+          "name": "Collect Metrics",
+          "config": {"tools": ["monitoring-system"], "action": "collect-all-metrics"}
+        },
+        {
+          "id": "monitor-02",
+          "type": "agent_call",
+          "name": "Analyze Alerts",
+          "config": {"agent": "ops-gpo-01", "task": "Analyze alerts, filter false positives, categorize severity"}
+        },
+        {
+          "id": "monitor-03",
+          "type": "conditional",
+          "name": "Escalation Check",
+          "config": {
+            "condition": "alert.severity in ['critical', 'high']",
+            "true_path": "notify-admin",
+            "false_path": "log-and-monitor"
+          }
+        }
+      ]
+    },
+    {
+      "id": "wf-incident-001",
+      "name": "Incident Response",
+      "description": "Detect, respond, resolve, and document incidents.",
+      "triggers": ["manual", "event:system-alert"],
+      "steps": [
+        {
+          "id": "incident-01",
+          "type": "tool_call",
+          "name": "Detect Incident",
+          "config": {"tools": ["monitoring-system"], "action": "classify-incident"}
+        },
+        {
+          "id": "incident-02",
+          "type": "agent_call",
+          "name": "Initial Response",
+          "config": {"agent": "sys-admin-01", "task": "Assess impact, communicate status, begin remediation"}
+        },
+        {
+          "id": "incident-03",
+          "type": "transformation",
+          "name": "Resolve Issue",
+          "config": {"agent": "sys-admin-01", "task": "Diagnose and resolve the issue"}
+        },
+        {
+          "id": "incident-04",
+          "type": "transformation",
+          "name": "Post-Incident Review",
+          "config": {"agent": "ops-gpo-01", "task": "Document root cause, resolution, and preventive measures"}
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": false,
+    "procedural_enabled": true,
+    "graph_enabled": false,
+    "memory_profiles": {
+      "sys-admin-01": "semantic-enabled, procedural-enabled",
+      "ops-gpo-01": "semantic-enabled"
+    },
+    "retention_policy": {
+      "incident-reports": "3-years",
+      "alert-logs": "6-months",
+      "operational-docs": "2-years"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-ops-s-001",
+      "name": "Change Control",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"change_type": "production-configuration"},
+      "actions": ["require-change-request", "log-all-changes"]
+    },
+    {
+      "id": "gov-ops-s-002",
+      "name": "Backup Verification",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"data_type": "critical-data"},
+      "actions": ["verify-daily", "test-restores-regularly"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "ops-kpi-s-001",
+      "name": "System Uptime",
+      "description": "Percentage of time critical systems are operational",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 99.5, "warning": 98, "critical": 95},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "ops-kpi-s-002",
+      "name": "Mean Time to Resolve (MTTR)",
+      "description": "Average time to resolve incidents",
+      "metric_type": "gauge",
+      "unit": "hours",
+      "thresholds": {"target": 4, "warning": 8, "critical": 24},
+      "aggregation_period": "week"
+    },
+    {
+      "id": "ops-kpi-s-003",
+      "name": "Backup Success Rate",
+      "description": "Percentage of successful backup operations",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 100, "warning": 95, "critical": 90},
+      "aggregation_period": "week"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-ops-s-001",
+      "type": "custom",
+      "name": "Monitoring System",
+      "provider": "pnp4nagios",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-ops-s-002",
+      "type": "custom",
+      "name": "Backup System",
+      "provider": "restic",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-ops-s-003",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active"
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-ops-s-001",
+      "name": "Agent Autonomy",
+      "scope": "agent",
+      "rules": [
+        {"agent": "ops-gpo-01", "allowed": ["alert-monitoring", "log-analysis", "reporting", "documentation"], "denied": ["change-infrastructure", "modify-security-settings", "access-production-data"]}
+      ]
+    },
+    {
+      "id": "pol-ops-s-002",
+      "name": "Data Retention",
+      "scope": "system",
+      "rules": [
+        {"data_type": "incident-reports", "retention": "3-years", "disposal": "archive"},
+        {"data_type": "alert-logs", "retention": "6-months", "disposal": "delete"}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "small",
+    "department_size": "1-3 FTE",
+    "company_size": "up to 50 employees",
+    "industry": "general",
+    "compliance_level": "basic",
+    "frameworks": ["ITIL-v4-lite", "SRE-lite"],
+    "last_reviewed": "2026-07-17"
+  }
+}
