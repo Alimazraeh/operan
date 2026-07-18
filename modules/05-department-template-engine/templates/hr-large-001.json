@@ -459,7 +459,7 @@
           "id": "perf-05",
           "type": "approval",
           "name": "Calibration at Scale",
-          {
+          "config": {
             "required_by": "hr-vp-01",
             "task": "Review rating distribution across all business units for consistency, fairness, and DEI compliance"
           }

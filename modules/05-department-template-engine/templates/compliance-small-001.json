@@ -1,0 +1,231 @@
+{
+  "id": "compliance-small-001",
+  "name": "Small Business Compliance",
+  "description": "1–2 person compliance function for small businesses (up to 50 employees). Combined with legal or operations. Handles basic regulatory compliance, policy administration, and risk monitoring.",
+  "category": "compliance",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "small",
+    "department_size": "1-2 FTE",
+    "company_size": "up to 50 employees",
+    "industry": "general",
+    "compliance_level": "lightweight",
+    "frameworks": ["basic-ISO-37301", "GDPR-lite", "local-labor-laws"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["compliance", "small-business", "lightweight", "generalist"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "compliance-lead-01",
+      "role": "Compliance Lead / General Counsel",
+      "capabilities": [
+        "regulatory-monitoring",
+        "policy-administration",
+        "basic-risk-assessment",
+        "compliance-training",
+        "incident-documentation"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["document-storage", "email", "policy-system"],
+      "system_prompt": "You are the Compliance Lead for a small business. You handle regulatory compliance, policy management, and basic risk assessment. You ensure the company meets legal obligations and maintain employee training records.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "policies": "read-write",
+        "compliance-data": "read-write",
+        "employee-data": "read-only"
+      }
+    },
+    {
+      "id": "compliance-gpo-01",
+      "role": "General Purpose Agent — Compliance Support",
+      "capabilities": [
+        "policy-retrieval",
+        "document-drafting",
+        "report-generation",
+        "training-coordination",
+        "faq-response"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["document-storage", "email", "templates-library"],
+      "system_prompt": "You are a Compliance GPO handling routine tasks: retrieving policies, drafting documents, generating reports, coordinating training. Always escalate incidents and regulatory changes to the Compliance Lead.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["incident-report", "regulatory-violation"]
+      },
+      "access_control": {
+        "policies": "read-only",
+        "compliance-data": "read-only"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-policy-001",
+      "name": "Policy Management",
+      "description": "Draft, publish, and track policy acknowledgments.",
+      "triggers": ["manual", "schedule:annual"],
+      "steps": [
+        {
+          "id": "pol-01",
+          "type": "agent_call",
+          "name": "Draft Policy",
+          "config": {"agent": "compliance-lead-01", "task": "Draft or update policy based on regulatory changes or business needs"}
+        },
+        {
+          "id": "pol-02",
+          "type": "transformation",
+          "name": "Publish Policy",
+          "config": {"agent": "compliance-gpo-01", "task": "Publish to policy system, notify employees, require acknowledgment"}
+        },
+        {
+          "id": "pol-03",
+          "type": "notification",
+          "name": "Track Acknowledgments",
+          "config": {"deadline": "14-days", "escalate_if": "no_completion"}
+        }
+      ]
+    },
+    {
+      "id": "wf-risk-001",
+      "name": "Basic Risk Assessment",
+      "description": "Quarterly review of operational and compliance risks.",
+      "triggers": ["schedule:quarterly"],
+      "steps": [
+        {
+          "id": "risk-01",
+          "type": "agent_call",
+          "name": "Identify Risks",
+          "config": {"agent": "compliance-lead-01", "task": "Review operational risks, compliance gaps, and incident logs"}
+        },
+        {
+          "id": "risk-02",
+          "type": "transformation",
+          "name": "Document Findings",
+          "config": {"agent": "compliance-gpo-01", "task": "Document risks, assign severity, recommend mitigations"}
+        }
+      ]
+    },
+    {
+      "id": "wf-incident-001",
+      "name": "Compliance Incident Response",
+      "description": "Document and escalate compliance incidents.",
+      "triggers": ["manual", "event:incident-detected"],
+      "steps": [
+        {
+          "id": "inc-01",
+          "type": "agent_call",
+          "name": "Document Incident",
+          "config": {"agent": "compliance-lead-01", "task": "Document incident details, classify severity"}
+        },
+        {
+          "id": "inc-02",
+          "type": "approval",
+          "name": "Escalate if Needed",
+          "config": {"required_by": "department-head", "if": "severity in ['high', 'critical']"}
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": false,
+    "procedural_enabled": false,
+    "graph_enabled": false,
+    "memory_profiles": {
+      "compliance-lead-01": "semantic-enabled",
+      "compliance-gpo-01": "semantic-enabled"
+    },
+    "retention_policy": {
+      "policies": "5-years",
+      "incident-reports": "3-years"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-comp-s-001",
+      "name": "Incident Documentation",
+      "type": "audit",
+      "enforcement": "enforce",
+      "conditions": {"record_type": "incident"},
+      "actions": ["log-all-incidents", "retain-for-audit"]
+    },
+    {
+      "id": "gov-comp-s-002",
+      "name": "Policy Access Control",
+      "type": "access_control",
+      "enforcement": "enforce",
+      "conditions": {"data_classification": "policy"},
+      "actions": ["restrict-access", "log-access"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "comp-kpi-s-001",
+      "name": "Policy Acknowledgment Rate",
+      "description": "Percentage of employees who have acknowledged current policies",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 95, "warning": 85, "critical": 70},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "comp-kpi-s-002",
+      "name": "Compliance Training Completion",
+      "description": "Percentage of employees completing mandatory training",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 95, "warning": 85, "critical": 70},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "comp-kpi-s-003",
+      "name": "Incident Response Time",
+      "description": "Average time from incident detection to response",
+      "metric_type": "gauge",
+      "unit": "hours",
+      "thresholds": {"target": 24, "warning": 48, "critical": 72},
+      "aggregation_period": "quarter"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-comp-s-001",
+      "type": "document",
+      "name": "Policy System",
+      "provider": "sharepoint",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-comp-s-002",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active"
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-comp-s-001",
+      "name": "Agent Autonomy",
+      "scope": "agent",
+      "rules": [
+        {"agent": "compliance-gpo-01", "allowed": ["retrieval", "drafting", "reporting"], "denied": ["make-compliance-determination", "escalate-without-notice"]}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "small",
+    "department_size": "1-2 FTE",
+    "company_size": "up to 50 employees",
+    "industry": "general",
+    "compliance_level": "lightweight",
+    "frameworks": ["basic-ISO-37301", "GDPR-lite", "local-labor-laws"],
+    "last_reviewed": "2026-07-17"
+  }
+}

@@ -1,0 +1,423 @@
+{
+  "id": "procurement-large-001",
+  "name": "Large Enterprise Procurement Department",
+  "description": "10–30+ person procurement department for large enterprises (500+ employees). Strategic procurement with category management, global sourcing, contract management, and supply chain risk management.",
+  "category": "procurement",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "large",
+    "department_size": "10-30+ FTE",
+    "company_size": "500+ employees",
+    "industry": "global",
+    "compliance_level": "enterprise",
+    "frameworks": ["strategic-procurement", "supply-chain", "contract-lifecycle", "esg-sourcing"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["procurement", "enterprise", "strategic-sourcing", "category-management", "global"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "cpo-01",
+      "role": "Chief Procurement Officer",
+      "capabilities": [
+        "procurement-strategy",
+        "global-sourcing",
+        "cost-reduction",
+        "supply-chain-management",
+        "vendor-strategy",
+        "esg-sourcing",
+        "risk-management"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "semantic-enabled, graph-enabled, full-retention",
+      "tool_requirements": ["procurement-analytics", "contract-management", "budget-tool", "email", "reporting"],
+      "system_prompt": "You are the CPO for a global enterprise. You set procurement strategy, manage global sourcing, drive cost reduction, oversee supply chain risk, and lead ESG sourcing initiatives.",
+      "constraints": {"max_tokens_per_request": 8192},
+      "access_control": {
+        "all-procurement-data": "read-write",
+        "budget-data": "read-write",
+        "contract-data": "read-write",
+        "analytics": "read-write",
+        "board-reports": "read-write"
+      }
+    },
+    {
+      "id": "category-lead-01",
+      "role": "Category Manager",
+      "capabilities": [
+        "category-strategy",
+        "market-analysis",
+        "negotiation",
+        "supplier-development",
+        "cost-modeling"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["market-intelligence", "procurement-system", "cost-tools", "email"],
+      "system_prompt": "You manage a procurement category. You develop category strategy, analyze market trends, negotiate contracts, and develop supplier relationships.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "market-intelligence": "read-write",
+        "procurement-system": "read-write",
+        "contracts": "read-write"
+      }
+    },
+    {
+      "id": "global-sourcing-lead-01",
+      "role": "Global Sourcing Lead",
+      "capabilities": [
+        "global-sourcing",
+        "supplier-evaluation",
+        "international-trade",
+        "logistics",
+        "tariff-management"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["sourcing-platform", "trade-tools", "logistics-tracking", "email"],
+      "system_prompt": "You lead Global Sourcing. You identify international suppliers, manage trade compliance, optimize logistics, and handle tariff strategies.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "sourcing-platform": "read-write",
+        "trade-tools": "read-write",
+        "logistics-tracking": "read-write"
+      }
+    },
+    {
+      "id": "contract-manager-01",
+      "role": "Contract Manager",
+      "capabilities": [
+        "contract-lifecycle",
+        "contract-negotiation",
+        "compliance-management",
+        "risk-assessment",
+        "renewal-management"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["contract-management", "legal-database", "email", "document-storage"],
+      "system_prompt": "You manage the contract lifecycle. You negotiate contracts, ensure compliance, assess risk, and manage renewals and amendments.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "contract-management": "read-write",
+        "legal-database": "read-only",
+        "contracts": "read-write"
+      }
+    },
+    {
+      "id": "supply-chain-analyst-01",
+      "role": "Supply Chain Analyst",
+      "capabilities": [
+        "supply-chain-analytics",
+        "risk-assessment",
+        "forecasting",
+        "inventory-optimization",
+        "supplier-performance"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["analytics", "erp", "forecasting-tools", "email"],
+      "system_prompt": "You are a Supply Chain Analyst. You analyze supply chain data, assess risk, forecast demand, optimize inventory, and monitor supplier performance.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "analytics": "read-write",
+        "erp": "read-only",
+        "forecasting-tools": "read-only"
+      }
+    },
+    {
+      "id": "procurement-gpo-pod-01",
+      "role": "GPO Pod — Procurement Support",
+      "capabilities": [
+        "purchase-order-processing",
+        "vendor-onboarding",
+        "document-management",
+        "report-generation",
+        "faq-response"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["procurement-system", "email", "contract-management", "templates-library"],
+      "system_prompt": "You are a Procurement GPO pod member. You process purchase orders, manage vendor onboarding, handle procurement documents, generate reports, and answer procurement questions. Always escalate contract negotiations, supplier disputes, and strategic decisions to qualified team members.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["contract-negotiation", "vendor-selection", "budget-approval", "esg-compliance"]
+      },
+      "access_control": {
+        "procurement-system": "read-write",
+        "contract-management": "read-only",
+        "vendor-data": "read-only",
+        "contracts": "read-only"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-sourcing-001",
+      "name": "Strategic Sourcing Process",
+      "description": "End-to-end strategic sourcing: requirement, market analysis, RFP, selection, contract.",
+      "triggers": ["manual", "event:category-review"],
+      "steps": [
+        {
+          "id": "sourcing-01",
+          "type": "agent_call",
+          "name": "Requirement Definition",
+          "config": {"agent": "category-lead-01", "task": "Define sourcing requirements, budget, and evaluation criteria"}
+        },
+        {
+          "id": "sourcing-02",
+          "type": "agent_call",
+          "name": "Market Analysis",
+          "config": {"agent": "global-sourcing-lead-01", "task": "Analyze market, identify potential suppliers, develop RFP"}
+        },
+        {
+          "id": "sourcing-03",
+          "type": "tool_call",
+          "name": "Issue RFP",
+          "config": {"tool": "sourcing-platform", "action": "issue-rfp-to-shortlisted-suppliers"}
+        },
+        {
+          "id": "sourcing-04",
+          "type": "transformation",
+          "name": "Evaluate Proposals",
+          "config": {"agent": "category-lead-01", "task": "Evaluate proposals, score suppliers, recommend selection"}
+        },
+        {
+          "id": "sourcing-05",
+          "type": "approval",
+          "name": "CPO Approval",
+          "config": {"required_by": "cpo-01", "if": "high-value-contract"}
+        },
+        {
+          "id": "sourcing-06",
+          "type": "transformation",
+          "name": "Negotiate & Contract",
+          "config": {"agent": "contract-manager-01", "task": "Negotiate terms, finalize contract, execute"}
+        }
+      ]
+    },
+    {
+      "id": "wf-risk-001",
+      "name": "Supply Chain Risk Management",
+      "description": "Continuous monitoring and mitigation of supply chain risks.",
+      "triggers": ["schedule:weekly", "event:supply-chain-disruption"],
+      "steps": [
+        {
+          "id": "risk-01",
+          "type": "agent_call",
+          "name": "Risk Assessment",
+          "config": {"agent": "supply-chain-analyst-01", "task": "Assess supply chain risks: geopolitical, financial, operational"}
+        },
+        {
+          "id": "risk-02",
+          "type": "transformation",
+          "name": "Mitigation Planning",
+          "config": {"agent": "global-sourcing-lead-01", "task": "Develop mitigation strategies, identify alternative suppliers"}
+        },
+        {
+          "id": "risk-03",
+          "type": "notification",
+          "name": "Report to CPO",
+          "config": {"recipients": ["cpo-01"], "template": "supply-chain-risk-report"}
+        }
+      ]
+    },
+    {
+      "id": "wf-contract-001",
+      "name": "Contract Lifecycle Management",
+      "description": "End-to-end contract management: creation, execution, compliance, renewal.",
+      "triggers": ["manual", "schedule:renewal"],
+      "steps": [
+        {
+          "id": "contract-01",
+          "type": "agent_call",
+          "name": "Contract Review",
+          "config": {"agent": "contract-manager-01", "task": "Review contract terms, identify risks and obligations"}
+        },
+        {
+          "id": "contract-02",
+          "type": "tool_call",
+          "name": "Compliance Check",
+          "config": {"tool": "contract-management", "action": "verify-compliance"}
+        },
+        {
+          "id": "contract-03",
+          "type": "transformation",
+          "name": "Execute & Archive",
+          "config": {"tool": "contract-management", "action": "execute-and-archive"}
+        },
+        {
+          "id": "contract-04",
+          "type": "notification",
+          "name": "Track Renewals",
+          "config": {"agent": "procurement-gpo-pod-01", "task": "Monitor renewal dates, send reminders 90/60/30 days before"}
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": true,
+    "procedural_enabled": true,
+    "graph_enabled": true,
+    "memory_profiles": {
+      "cpo-01": "semantic-enabled, graph-enabled, full-retention",
+      "category-lead-01": "semantic-enabled, procedural-enabled",
+      "global-sourcing-lead-01": "semantic-enabled, procedural-enabled",
+      "contract-manager-01": "semantic-enabled, procedural-enabled",
+      "supply-chain-analyst-01": "semantic-enabled, procedural-enabled",
+      "procurement-gpo-pod-01": "semantic-enabled"
+    },
+    "retention_policy": {
+      "contracts": "7-years-post-termination",
+      "purchase-orders": "7-years",
+      "vendor-evaluations": "5-years",
+      "market-intelligence": "3-years"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-proc-l-001",
+      "name": "Procurement Policy Compliance",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"purchase_type": "above-threshold"},
+      "actions": ["require-competitive-bidding", "document-selection", "cfo-approval"]
+    },
+    {
+      "id": "gov-proc-l-002",
+      "name": "ESG Compliance",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"vendor_type": "strategic"},
+      "actions": ["verify-esg-certification", "annual-review", "report-progress"]
+    },
+    {
+      "id": "gov-proc-l-003",
+      "name": "Conflict of Interest",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"relationship_type": "vendor"},
+      "actions": ["disclose-relationships", "independent-review", "document-decision"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "proc-kpi-l-001",
+      "name": "Cost Savings Achievement",
+      "description": "Percentage of target cost savings achieved",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 100, "warning": 85, "critical": 70},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "proc-kpi-l-002",
+      "name": "Spend Under Management",
+      "description": "Percentage of total spend managed through procurement",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 95, "warning": 90, "critical": 80},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "proc-kpi-l-003",
+      "name": "Contract Compliance Rate",
+      "description": "Percentage of purchases made under contract",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 95, "warning": 90, "critical": 80},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "proc-kpi-l-004",
+      "name": "Supply Chain Risk Index",
+      "description": "Composite score of supply chain risks",
+      "metric_type": "gauge",
+      "unit": "score",
+      "thresholds": {"target": 20, "warning": 40, "critical": 60},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "proc-kpi-l-005",
+      "name": "Supplier Performance Score",
+      "description": "Average supplier performance score",
+      "metric_type": "gauge",
+      "unit": "score",
+      "thresholds": {"target": 90, "warning": 80, "critical": 70},
+      "aggregation_period": "quarter"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-proc-l-001",
+      "type": "custom",
+      "name": "Enterprise Procurement",
+      "provider": "sap-ariba",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-proc-l-002",
+      "type": "custom",
+      "name": "Contract Management",
+      "provider": "contractfox",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-proc-l-003",
+      "type": "custom",
+      "name": "ERP",
+      "provider": "sap",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-proc-l-004",
+      "type": "custom",
+      "name": "Analytics",
+      "provider": "tableau",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-proc-l-005",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active"
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-proc-l-001",
+      "name": "Agent Autonomy",
+      "scope": "agent",
+      "rules": [
+        {"agent": "procurement-gpo-pod-01", "allowed": ["purchase-order-processing", "vendor-onboarding", "document-management", "reporting"], "denied": ["negotiate-contracts", "select-suppliers", "approve-budgets", "access-contract-terms"]}
+      ]
+    },
+    {
+      "id": "pol-proc-l-002",
+      "name": "Data Retention",
+      "scope": "system",
+      "rules": [
+        {"data_type": "contracts", "retention": "7-years-post-termination", "disposal": "secure-delete"},
+        {"data_type": "purchase-orders", "retention": "7-years", "disposal": "archive"},
+        {"data_type": "vendor-evaluations", "retention": "5-years", "disposal": "anonymize"}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "large",
+    "department_size": "10-30+ FTE",
+    "company_size": "500+ employees",
+    "industry": "global",
+    "compliance_level": "enterprise",
+    "frameworks": ["strategic-procurement", "supply-chain", "contract-lifecycle", "esg-sourcing"],
+    "last_reviewed": "2026-07-17"
+  }
+}

@@ -1,0 +1,396 @@
+{
+  "id": "mkt-medium-001",
+  "name": "Medium Marketing Department",
+  "description": "5–15 person marketing department for mid-market companies (100–500 employees). Multi-channel marketing with content, demand generation, brand, and marketing operations teams.",
+  "category": "marketing",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "medium",
+    "department_size": "5-15 FTE",
+    "company_size": "100-500 employees",
+    "industry": "general",
+    "compliance_level": "formalized",
+    "frameworks": ["growth-marketing", "demand-generation", "content-strategy"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["marketing", "medium", "multi-channel", "demand-gen", "content", "brand"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "cmo-01",
+      "role": "Chief Marketing Officer",
+      "capabilities": [
+        "marketing-strategy",
+        "brand-management",
+        "budget-allocation",
+        "team-leadership",
+        "market-analysis",
+        "partnership-development"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "semantic-enabled, graph-enabled, full-retention",
+      "tool_requirements": ["analytics-dashboard", "crm", "email", "budget-tool", "presentation-tools"],
+      "system_prompt": "You are the CMO for a mid-market company. You set marketing strategy, manage the brand, allocate budget, and drive growth through multi-channel marketing.",
+      "constraints": {"max_tokens_per_request": 8192},
+      "access_control": {
+        "all-marketing-data": "read-write",
+        "budget-data": "read-write",
+        "analytics": "read-write",
+        "crm": "read-write"
+      }
+    },
+    {
+      "id": "content-lead-01",
+      "role": "Content Marketing Lead",
+      "capabilities": [
+        "content-strategy",
+        "copywriting",
+        "seo",
+        "content-operations",
+        "editorial-planning"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["cms", "seo-tools", "analytics", "content-calendar"],
+      "system_prompt": "You lead content marketing. You develop content strategy, manage the editorial calendar, optimize for SEO, and oversee content production.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "cms": "read-write",
+        "content-calendar": "read-write",
+        "analytics": "read-only"
+      }
+    },
+    {
+      "id": "demand-gen-lead-01",
+      "role": "Demand Generation Lead",
+      "capabilities": [
+        "campaign-management",
+        "lead-generation",
+        "marketing-automation",
+        "ab-testing",
+        "conversion-optimization"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["marketing-automation", "crm", "analytics", "email-platform"],
+      "system_prompt": "You lead demand generation. You create campaigns, manage marketing automation, optimize conversion funnels, and drive lead generation.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "marketing-automation": "read-write",
+        "crm": "read-write",
+        "analytics": "read-only"
+      }
+    },
+    {
+      "id": "brand-designer-01",
+      "role": "Brand Designer",
+      "capabilities": [
+        "visual-design",
+        "brand-guidelines",
+        "creative-direction",
+        "video-production",
+        "graphic-design"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["design-tools", "asset-management", "brand-guide"],
+      "system_prompt": "You are a Brand Designer. You create visual assets, maintain brand guidelines, produce video content, and ensure creative consistency.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "asset-management": "read-write",
+        "design-tools": "read-write",
+        "brand-guide": "read-write"
+      }
+    },
+    {
+      "id": "marketing-ops-01",
+      "role": "Marketing Operations Specialist",
+      "capabilities": [
+        "campaign-reporting",
+        "data-analysis",
+        "tool-management",
+        "process-optimization",
+        "roi-analysis"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["analytics", "crm", "reporting-tools", "excel"],
+      "system_prompt": "You manage marketing operations. You generate reports, analyze campaign performance, manage marketing tools, and optimize processes.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "analytics": "read-write",
+        "crm": "read-write",
+        "reporting-tools": "read-write"
+      }
+    },
+    {
+      "id": "marketing-gpo-01",
+      "role": "GPO Pod — Marketing Support",
+      "capabilities": [
+        "content-research",
+        "report-generation",
+        "social-media-monitoring",
+        "event-coordination",
+        "faq-response"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["social-listening", "email", "calendar", "templates-library"],
+      "system_prompt": "You are a Marketing GPO pod member. You conduct content research, generate reports, monitor social media, coordinate events, and answer marketing questions. Always route campaign strategy and brand decisions to qualified team members.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["campaign-strategy", "budget-approval", "brand-guidelines"]
+      },
+      "access_control": {
+        "analytics": "read-only",
+        "cms": "read-only",
+        "social-listening": "read-only",
+        "crm": "read-only"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-campaign-001",
+      "name": "Campaign Development & Execution",
+      "description": "End-to-end campaign lifecycle: strategy, creative, execution, measurement.",
+      "triggers": ["manual", "schedule:quarterly"],
+      "steps": [
+        {
+          "id": "campaign-01",
+          "type": "agent_call",
+          "name": "Campaign Strategy",
+          "config": {"agent": "demand-gen-lead-01", "task": "Define campaign objectives, target audience, channels, and KPIs"}
+        },
+        {
+          "id": "campaign-02",
+          "type": "agent_call",
+          "name": "Content Creation",
+          "config": {"agent": "content-lead-01", "task": "Develop content plan, brief designers, create copy"}
+        },
+        {
+          "id": "campaign-03",
+          "type": "transformation",
+          "name": "Creative Production",
+          "config": {"agent": "brand-designer-01", "task": "Create visual assets, video, and creative materials"}
+        },
+        {
+          "id": "campaign-04",
+          "type": "tool_call",
+          "name": "Launch Campaign",
+          "config": {"tool": "marketing-automation", "action": "deploy-to-channels"}
+        },
+        {
+          "id": "campaign-05",
+          "type": "transformation",
+          "name": "Monitor & Optimize",
+          "config": {"agent": "marketing-ops-01", "task": "Monitor performance, A/B test, optimize"}
+        }
+      ]
+    },
+    {
+      "id": "wf-content-001",
+      "name": "Content Pipeline",
+      "description": "Content creation workflow: ideation, creation, review, publish, promote.",
+      "triggers": ["manual", "schedule:weekly"],
+      "steps": [
+        {
+          "id": "content-01",
+          "type": "agent_call",
+          "name": "Content Ideation",
+          "config": {"agent": "content-lead-01", "task": "Research topics, plan editorial calendar, prioritize"}
+        },
+        {
+          "id": "content-02",
+          "type": "transformation",
+          "name": "Create Content",
+          "config": {"agent": "content-lead-01", "task": "Write, design, and produce content assets"}
+        },
+        {
+          "id": "content-03",
+          "type": "approval",
+          "name": "Content Review",
+          "config": {"required_by": "cmo-01", "task": "Review for brand alignment and quality"}
+        },
+        {
+          "id": "content-04",
+          "type": "tool_call",
+          "name": "Publish Content",
+          "config": {"tool": "cms", "action": "publish-and-distribute"}
+        }
+      ]
+    },
+    {
+      "id": "wf-analytics-001",
+      "name": "Marketing Performance Reporting",
+      "description": "Monthly marketing performance review and reporting.",
+      "triggers": ["schedule:monthly"],
+      "steps": [
+        {
+          "id": "analytics-01",
+          "type": "agent_call",
+          "name": "Collect Metrics",
+          "config": {"agent": "marketing-ops-01", "task": "Collect campaign metrics, ROI, and KPI data"}
+        },
+        {
+          "id": "analytics-02",
+          "type": "transformation",
+          "name": "Generate Report",
+          "config": {"agent": "marketing-ops-01", "task": "Create performance report with insights and recommendations"}
+        },
+        {
+          "id": "analytics-03",
+          "type": "notification",
+          "name": "Share with Leadership",
+          "config": {"recipients": ["cmo-01", "executive-team"], "template": "monthly-marketing-report"}
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": true,
+    "procedural_enabled": true,
+    "graph_enabled": false,
+    "memory_profiles": {
+      "cmo-01": "semantic-enabled, graph-enabled, full-retention",
+      "content-lead-01": "semantic-enabled, procedural-enabled",
+      "demand-gen-lead-01": "semantic-enabled, procedural-enabled",
+      "brand-designer-01": "semantic-enabled",
+      "marketing-ops-01": "semantic-enabled, procedural-enabled",
+      "marketing-gpo-01": "semantic-enabled"
+    },
+    "retention_policy": {
+      "campaign-data": "2-years",
+      "analytics": "3-years",
+      "content-assets": "indefinite"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-mkt-m-001",
+      "name": "Brand Approval",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"asset_type": "public-facing"},
+      "actions": ["require-brand-review", "check-guidelines", "log-usage"]
+    },
+    {
+      "id": "gov-mkt-m-002",
+      "name": "Data Privacy",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"data_type": "personal-data"},
+      "actions": ["gdpr-compliant", "consent-management", "data-minimization"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "mkt-kpi-m-001",
+      "name": "Marketing Qualified Leads (MQLs)",
+      "description": "Number of MQLs generated per month",
+      "metric_type": "counter",
+      "unit": "leads",
+      "thresholds": {"target": 200, "warning": 150, "critical": 100},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "mkt-kpi-m-002",
+      "name": "Cost Per Acquisition (CPA)",
+      "description": "Average cost to acquire a customer",
+      "metric_type": "gauge",
+      "unit": "currency",
+      "thresholds": {"target": 100, "warning": 150, "critical": 200},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "mkt-kpi-m-003",
+      "name": "Content Engagement Rate",
+      "description": "Average engagement rate across content assets",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 8, "warning": 5, "critical": 3},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "mkt-kpi-m-004",
+      "name": "Marketing ROI",
+      "description": "Return on marketing investment",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 300, "warning": 200, "critical": 100},
+      "aggregation_period": "quarter"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-mkt-m-001",
+      "type": "custom",
+      "name": "Marketing Automation",
+      "provider": "hubspot",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-mkt-m-002",
+      "type": "custom",
+      "name": "CMS",
+      "provider": "wordpress",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-mkt-m-003",
+      "type": "custom",
+      "name": "Analytics",
+      "provider": "google-analytics",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-mkt-m-004",
+      "type": "custom",
+      "name": "CRM",
+      "provider": "salesforce",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-mkt-m-005",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active"
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-mkt-m-001",
+      "name": "Agent Autonomy",
+      "scope": "agent",
+      "rules": [
+        {"agent": "marketing-gpo-01", "allowed": ["research", "reporting", "scheduling", "monitoring"], "denied": ["launch-campaigns", "approve-brand-usage", "access-budget-data"]}
+      ]
+    },
+    {
+      "id": "pol-mkt-m-002",
+      "name": "Data Retention",
+      "scope": "system",
+      "rules": [
+        {"data_type": "campaign-data", "retention": "2-years", "disposal": "archive"},
+        {"data_type": "analytics", "retention": "3-years", "disposal": "anonymize"}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "medium",
+    "department_size": "5-15 FTE",
+    "company_size": "100-500 employees",
+    "industry": "general",
+    "compliance_level": "formalized",
+    "frameworks": ["growth-marketing", "demand-generation", "content-strategy"],
+    "last_reviewed": "2026-07-17"
+  }
+}

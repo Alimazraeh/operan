@@ -285,7 +285,7 @@
           "id": "close-08",
           "type": "approval",
           "name": "Manager Final Sign-Off",
-          {
+          "config": {
             "required_by": "finance-manager-01",
             "task": "Final review of financial statements, variance analysis, and commentary for management pack",
             "timeout_hours": 24
@@ -346,7 +346,7 @@
           "id": "bud-04",
           "type": "approval",
           "name": "Finance Manager Review",
-          {
+          "config": {
             "required_by": "finance-manager-01",
             "task": "Review consolidated budget for reasonableness, alignment with strategy, and risk factors"
           }

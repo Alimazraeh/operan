@@ -75,19 +75,22 @@ func (h *AdminLoginHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Read admin password from file
-	// Env var: IAM_ADMIN_PASSWORD_FILE (default: /etc/operan/admin.pass)
-	passFile := os.Getenv("IAM_ADMIN_PASSWORD_FILE")
-	if passFile == "" {
-		passFile = "/etc/operan/admin.pass"
+	// Admin password: check env var first (ADMIN_PASSWORD), then file (IAM_ADMIN_PASSWORD_FILE), then default
+	var storedPassword string
+
+	if envPwd := os.Getenv("ADMIN_PASSWORD"); envPwd != "" {
+		storedPassword = envPwd
+	} else if filePwd := os.Getenv("IAM_ADMIN_PASSWORD_FILE"); filePwd != "" {
+		content, err := os.ReadFile(filePwd)
+		if err != nil {
+			h.WriteError(w, http.StatusServiceUnavailable, 503, "password file not found",
+				fmt.Sprintf("cannot read %s — set ADMIN_PASSWORD env var to set login password", filePwd))
+			return
+		}
+		storedPassword = strings.TrimSpace(string(content))
+	} else {
+		storedPassword = "operan-admin-2026"
 	}
-	content, err := os.ReadFile(passFile)
-	if err != nil {
-		h.WriteError(w, http.StatusServiceUnavailable, 503, "password file not found",
-			fmt.Sprintf("cannot read %s — set IAM_ADMIN_PASSWORD_FILE or create the file first", passFile))
-		return
-	}
-	storedPassword := strings.TrimSpace(string(content))
 
 	if req.Password != storedPassword {
 		h.WriteError(w, http.StatusUnauthorized, 401, "invalid password", "password does not match the stored value")

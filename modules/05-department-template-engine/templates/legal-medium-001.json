@@ -1,0 +1,376 @@
+{
+  "id": "legal-medium-001",
+  "name": "Medium Enterprise Legal Department",
+  "description": "5–15 person legal department for mid-market companies (100–500 employees). Specialized roles for corporate law, contracts, IP, employment law, and compliance support.",
+  "category": "legal",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "medium",
+    "department_size": "5-15 FTE",
+    "company_size": "100-500 employees",
+    "industry": "general",
+    "compliance_level": "formalized",
+    "frameworks": ["legal-ops", "contract-lifecycle"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["legal", "medium", "corporate-law", "contracts", "ip", "employment"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "general-counsel-01",
+      "role": "General Counsel",
+      "capabilities": [
+        "corporate-law",
+        "legal-strategy",
+        "risk-management",
+        "regulatory-compliance",
+        "board-advisory",
+        "contract-approval"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "semantic-enabled, graph-enabled, full-retention",
+      "tool_requirements": ["legal-database", "contract-management", "analytics-dashboard", "email", "document-storage"],
+      "system_prompt": "You are the General Counsel for a mid-market company. You provide legal strategy, oversee corporate governance, manage regulatory compliance, and advise the board on legal matters.",
+      "constraints": {"max_tokens_per_request": 8192},
+      "access_control": {
+        "all-legal-data": "read-write",
+        "board-documents": "read-write",
+        "contract-data": "read-write",
+        "company-records": "read-write"
+      }
+    },
+    {
+      "id": "corporate-lawyer-01",
+      "role": "Corporate Lawyer",
+      "capabilities": [
+        "corporate-governance",
+        "contract-drafting",
+        "m&a-support",
+        "entity-management",
+        "regulatory-filings"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["legal-database", "contract-management", "document-storage", "email"],
+      "system_prompt": "You are a Corporate Lawyer handling corporate governance, contract drafting, M&A support, and regulatory filings.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "corporate-records": "read-write",
+        "contracts": "read-write",
+        "legal-database": "read-only"
+      }
+    },
+    {
+      "id": "ip-specialist-01",
+      "role": "IP Specialist",
+      "capabilities": [
+        "patent-filings",
+        "trademark-management",
+        "ip-portfolio",
+        "licensing-agreements",
+        "ip-infringement"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["ip-database", "patent-search", "document-storage", "email"],
+      "system_prompt": "You manage the company's intellectual property portfolio. You handle patent and trademark filings, licensing agreements, and IP infringement matters.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "ip-portfolio": "read-write",
+        "patent-search": "read-write",
+        "legal-database": "read-only"
+      }
+    },
+    {
+      "id": "employment-lawyer-01",
+      "role": "Employment Lawyer",
+      "capabilities": [
+        "employment-law",
+        "policy-drafting",
+        "labor-relations",
+        "compliance",
+        "investigations"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["legal-database", "hr-system", "document-storage", "email"],
+      "system_prompt": "You are an Employment Lawyer handling employment disputes, policy drafting, labor relations, and compliance with labor laws.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "employment-records": "read-write",
+        "hr-system": "read-only",
+        "legal-database": "read-only"
+      }
+    },
+    {
+      "id": "legal-paralegal-01",
+      "role": "Legal Paralegal",
+      "capabilities": [
+        "document-preparation",
+        "legal-research",
+        "filing-management",
+        "calendar-management",
+        "contract-review-support"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["legal-database", "document-storage", "calendar", "email"],
+      "system_prompt": "You are a Legal Paralegal. You prepare documents, conduct legal research, manage filings, and support lawyers with contract reviews.",
+      "constraints": {"max_tokens_per_request": 2048},
+      "access_control": {
+        "legal-database": "read-write",
+        "documents": "read-write",
+        "contracts": "read-only",
+        "calendar": "read-write"
+      }
+    },
+    {
+      "id": "legal-gpo-01",
+      "role": "GPO Pod — Legal Support",
+      "capabilities": [
+        "contract-retrieval",
+        "document-drafting",
+        "calendar-scheduling",
+        "report-generation",
+        "faq-response"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["document-storage", "contract-management", "calendar", "email", "templates-library"],
+      "system_prompt": "You are a Legal GPO pod member. You handle contract retrieval, document drafting, scheduling, and report generation. Always escalate legal opinions and contract negotiations to qualified lawyers.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["legal-opinion", "litigation", "investigation"]
+      },
+      "access_control": {
+        "contracts": "read-only",
+        "legal-database": "read-only",
+        "documents": "read-write",
+        "calendar": "read-write"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-contract-001",
+      "name": "Contract Review Process",
+      "description": "End-to-end contract review: intake, risk assessment, drafting, approval, execution.",
+      "triggers": ["manual", "event:contract-received"],
+      "steps": [
+        {
+          "id": "contract-01",
+          "type": "agent_call",
+          "name": "Contract Intake",
+          "config": {"agent": "legal-paralegal-01", "task": "Log contract, categorize type, assign reviewer"}
+        },
+        {
+          "id": "contract-02",
+          "type": "agent_call",
+          "name": "Risk Assessment",
+          "config": {"agent": "corporate-lawyer-01", "task": "Assess legal risk, identify red lines, recommend approach"}
+        },
+        {
+          "id": "contract-03",
+          "type": "transformation",
+          "name": "Draft/Review Contract",
+          "config": {"agent": "corporate-lawyer-01", "task": "Draft or review contract terms, negotiate with counterparty"}
+        },
+        {
+          "id": "contract-04",
+          "type": "approval",
+          "name": "General Counsel Approval",
+          "config": {"required_by": "general-counsel-01", "if": "high-value-or-high-risk"}
+        },
+        {
+          "id": "contract-05",
+          "type": "tool_call",
+          "name": "Execute & Archive",
+          "config": {"tool": "contract-management", "action": "execute-and-archive"}
+        }
+      ]
+    },
+    {
+      "id": "wf-ip-001",
+      "name": "IP Portfolio Management",
+      "description": "Manage intellectual property: filings, renewals, licensing, and enforcement.",
+      "triggers": ["schedule:quarterly", "event:invention-disclosure"],
+      "steps": [
+        {
+          "id": "ip-01",
+          "type": "agent_call",
+          "name": "Assess IP",
+          "config": {"agent": "ip-specialist-01", "task": "Evaluate invention disclosure, recommend protection strategy"}
+        },
+        {
+          "id": "ip-02",
+          "type": "transformation",
+          "name": "File IP",
+          "config": {"agent": "ip-specialist-01", "task": "Prepare and file patent/trademark application"}
+        },
+        {
+          "id": "ip-03",
+          "type": "notification",
+          "name": "Track Deadlines",
+          "config": {"agent": "legal-gpo-01", "task": "Monitor renewal dates, send reminders"}
+        }
+      ]
+    },
+    {
+      "id": "wf-compliance-001",
+      "name": "Legal Compliance Monitoring",
+      "description": "Monitor legal obligations, regulatory changes, and compliance requirements.",
+      "triggers": ["schedule:monthly", "event:regulatory-change"],
+      "steps": [
+        {
+          "id": "compliance-01",
+          "type": "agent_call",
+          "name": "Monitor Changes",
+          "config": {"agent": "general-counsel-01", "task": "Review regulatory changes, assess impact on business"}
+        },
+        {
+          "id": "compliance-02",
+          "type": "transformation",
+          "name": "Update Policies",
+          "config": {"agent": "employment-lawyer-01", "task": "Update legal policies and procedures"}
+        },
+        {
+          "id": "compliance-03",
+          "type": "tool_call",
+          "name": "Report to Leadership",
+          "config": {"tool": "email", "recipients": ["executive-team"], "template": "compliance-report"}
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": true,
+    "procedural_enabled": true,
+    "graph_enabled": false,
+    "memory_profiles": {
+      "general-counsel-01": "semantic-enabled, graph-enabled, full-retention",
+      "corporate-lawyer-01": "semantic-enabled, procedural-enabled",
+      "ip-specialist-01": "semantic-enabled, procedural-enabled",
+      "employment-lawyer-01": "semantic-enabled, procedural-enabled",
+      "legal-paralegal-01": "semantic-enabled",
+      "legal-gpo-01": "semantic-enabled"
+    },
+    "retention_policy": {
+      "contracts": "7-years-post-termination",
+      "ip-records": "indefinite",
+      "litigation-files": "10-years",
+      "employment-records": "5-years"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-legal-m-001",
+      "name": "Attorney-Client Privilege",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"communication_type": "privileged"},
+      "actions": ["encrypt-communications", "restrict-access", "no-ai-training"]
+    },
+    {
+      "id": "gov-legal-m-002",
+      "name": "Contract Approval Authority",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"contract_value_above": "threshold"},
+      "actions": ["require-general-counsel-approval", "block-execution-without-approval"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "legal-kpi-m-001",
+      "name": "Contract Turnaround Time",
+      "description": "Average time to complete contract review",
+      "metric_type": "gauge",
+      "unit": "days",
+      "thresholds": {"target": 3, "warning": 5, "critical": 10},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "legal-kpi-m-002",
+      "name": "Contract Volume",
+      "description": "Number of contracts processed per quarter",
+      "metric_type": "counter",
+      "unit": "contracts",
+      "thresholds": {"target": 100, "warning": 80, "critical": 50},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "legal-kpi-m-003",
+      "name": "IP Filing Success Rate",
+      "description": "Percentage of IP applications granted",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 80, "warning": 70, "critical": 50},
+      "aggregation_period": "year"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-legal-m-001",
+      "type": "custom",
+      "name": "Contract Management",
+      "provider": "contractzen",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-legal-m-002",
+      "type": "custom",
+      "name": "Legal Database",
+      "provider": "westlaw",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-legal-m-003",
+      "type": "custom",
+      "name": "IP Management",
+      "provider": "custom",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-legal-m-004",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active"
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-legal-m-001",
+      "name": "Agent Autonomy",
+      "scope": "agent",
+      "rules": [
+        {"agent": "legal-gpo-01", "allowed": ["retrieval", "drafting", "reporting", "scheduling"], "denied": ["provide-legal-opinions", "negotiate-terms", "execute-contracts"]}
+      ]
+    },
+    {
+      "id": "pol-legal-m-002",
+      "name": "Data Retention",
+      "scope": "system",
+      "rules": [
+        {"data_type": "contracts", "retention": "7-years-post-termination", "disposal": "secure-delete"},
+        {"data_type": "ip-records", "retention": "indefinite", "disposal": "none"},
+        {"data_type": "litigation-files", "retention": "10-years", "disposal": "secure-delete"}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "medium",
+    "department_size": "5-15 FTE",
+    "company_size": "100-500 employees",
+    "industry": "general",
+    "compliance_level": "formalized",
+    "frameworks": ["legal-ops", "contract-lifecycle"],
+    "last_reviewed": "2026-07-17"
+  }
+}

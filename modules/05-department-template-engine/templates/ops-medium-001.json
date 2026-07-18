@@ -1,0 +1,398 @@
+{
+  "id": "ops-medium-001",
+  "name": "Medium IT Operations",
+  "description": "4–15 person IT operations team for mid-market companies (50–500 employees). Dedicated operations with monitoring, incident management, capacity planning, and infrastructure automation.",
+  "category": "it-operations",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "medium",
+    "department_size": "4-15 FTE",
+    "company_size": "50-500 employees",
+    "industry": "general",
+    "compliance_level": "formalized",
+    "frameworks": ["ITIL-v4", "SRE", "devops", "infrastructure-as-code"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["it-operations", "medium", "monitoring", "incident-management", "automation"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "ops-manager-01",
+      "role": "IT Operations Manager",
+      "capabilities": [
+        "operations-strategy",
+        "incident-management",
+        "capacity-planning",
+        "vendor-management",
+        "team-leadership",
+        "budget-management",
+        "business-continuity"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "semantic-enabled, graph-enabled",
+      "tool_requirements": ["operations-dashboard", "ticketing-system", "monitoring", "budget-tool", "email"],
+      "system_prompt": "You are the IT Operations Manager for a mid-market company. You oversee operations strategy, incident management, capacity planning, and business continuity. You manage the operations team and coordinate with other departments.",
+      "constraints": {"max_tokens_per_request": 8192},
+      "access_control": {
+        "all-ops-data": "read-write",
+        "budget-data": "read-write",
+        "monitoring": "read-write",
+        "infrastructure": "read-write"
+      }
+    },
+    {
+      "id": "senior-sys-admin-01",
+      "role": "Senior Systems Administrator",
+      "capabilities": [
+        "system-administration",
+        "infrastructure-automation",
+        "cloud-management",
+        "security-hardening",
+        "performance-optimization"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["infrastructure-as-code", "cloud-console", "monitoring", "remote-access"],
+      "system_prompt": "You are a Senior Systems Administrator. You manage infrastructure, implement automation, maintain cloud systems, and optimize performance.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "infrastructure": "read-write",
+        "cloud-console": "read-write",
+        "monitoring": "read-write"
+      }
+    },
+    {
+      "id": "network-engineer-01",
+      "role": "Network Engineer",
+      "capabilities": [
+        "network-design",
+        "firewall-management",
+        "vpn-configuration",
+        "network-automation",
+        "performance-tuning"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["network-monitoring", "firewall-console", "network-automation", "documentation"],
+      "system_prompt": "You are a Network Engineer. You design network architecture, manage firewalls, automate network operations, and optimize network performance.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "network-config": "read-write",
+        "firewall": "read-write",
+        "monitoring": "read-write"
+      }
+    },
+    {
+      "id": "devops-engineer-01",
+      "role": "DevOps Engineer",
+      "capabilities": [
+        "ci-cd-pipeline",
+        "infrastructure-as-code",
+        "container-orchestration",
+        "monitoring-setup",
+        "automation"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["ci-cd", "terraform", "kubernetes", "monitoring", "logging"],
+      "system_prompt": "You are a DevOps Engineer. You build CI/CD pipelines, manage infrastructure as code, orchestrate containers, and implement monitoring.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "ci-cd": "read-write",
+        "terraform": "read-write",
+        "kubernetes": "read-write",
+        "monitoring": "read-write"
+      }
+    },
+    {
+      "id": "ops-gpo-pod-01",
+      "role": "GPO Pod — IT Ops Support",
+      "capabilities": [
+        "alert-monitoring",
+        "log-analysis",
+        "report-generation",
+        "documentation",
+        "on-call-scheduling"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["monitoring-system", "log-aggregator", "ticketing-system", "documentation"],
+      "system_prompt": "You are an IT Ops GPO pod member. You monitor alerts, analyze logs, generate reports, maintain operational documentation, and manage on-call schedules. Always escalate critical incidents and infrastructure failures to the appropriate specialist.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["security-incident", "infrastructure-outage", "data-loss", "performance-degradation"]
+      },
+      "access_control": {
+        "monitoring": "read-only",
+        "log-aggregator": "read-only",
+        "infrastructure": "read-only",
+        "network-config": "none",
+        "ticketing-system": "read-write"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-monitor-001",
+      "name": "Infrastructure Monitoring",
+      "description": "Continuous monitoring of all infrastructure components and services.",
+      "triggers": ["continuous"],
+      "steps": [
+        {
+          "id": "monitor-01",
+          "type": "tool_call",
+          "name": "Collect Metrics",
+          "config": {"tools": ["monitoring-system", "log-aggregator"], "action": "collect-all-metrics-and-logs"}
+        },
+        {
+          "id": "monitor-02",
+          "type": "agent_call",
+          "name": "Analyze & Triage",
+          "config": {"agent": "ops-gpo-pod-01", "task": "Analyze alerts, triage severity, filter noise"}
+        },
+        {
+          "id": "monitor-03",
+          "type": "conditional",
+          "name": "Route Alerts",
+          "config": {
+            "condition": "alert.severity in ['critical', 'high']",
+            "true_path": "page-on-call",
+            "false_path": "route-to-ticket"
+          }
+        }
+      ]
+    },
+    {
+      "id": "wf-incident-001",
+      "name": "Incident Management",
+      "description": "Structured incident response following ITIL best practices.",
+      "triggers": ["manual", "event:incident-detected"],
+      "steps": [
+        {
+          "id": "incident-01",
+          "type": "tool_call",
+          "name": "Detect & Classify",
+          "config": {"tools": ["monitoring-system"], "action": "classify-incident-severity"}
+        },
+        {
+          "id": "incident-02",
+          "type": "agent_call",
+          "name": "Initial Response",
+          "config": {"agent": "senior-sys-admin-01", "task": "Assess impact, communicate status, begin remediation"}
+        },
+        {
+          "id": "incident-03",
+          "type": "conditional",
+          "name": "Severity Escalation",
+          "config": {
+            "condition": "incident.severity in ['critical', 'major']",
+            "true_path": "escalate-to-ops-manager",
+            "false_path": "continue-resolution"
+          }
+        },
+        {
+          "id": "incident-04",
+          "type": "transformation",
+          "name": "Resolve & Document",
+          "config": {"agent": "senior-sys-admin-01", "task": "Resolve incident, document root cause and remediation"}
+        },
+        {
+          "id": "incident-05",
+          "type": "agent_call",
+          "name": "Post-Incident Review",
+          "config": {"agent": "ops-manager-01", "task": "Conduct post-mortem, identify improvements"}
+        }
+      ]
+    },
+    {
+      "id": "wf-automation-001",
+      "name": "Infrastructure Automation",
+      "description": "Automate routine operations, deployments, and configurations.",
+      "triggers": ["manual", "schedule:daily"],
+      "steps": [
+        {
+          "id": "automation-01",
+          "type": "agent_call",
+          "name": "Identify Automation Opportunities",
+          "config": {"agent": "devops-engineer-01", "task": "Identify manual tasks suitable for automation"}
+        },
+        {
+          "id": "automation-02",
+          "type": "transformation",
+          "name": "Build Automation",
+          "config": {"agent": "devops-engineer-01", "task": "Develop automation scripts, test, and deploy"}
+        },
+        {
+          "id": "automation-03",
+          "type": "tool_call",
+          "name": "Deploy & Monitor",
+          "config": {"tool": "ci-cd", "action": "deploy-automation-and-monitor"}
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": true,
+    "procedural_enabled": true,
+    "graph_enabled": false,
+    "memory_profiles": {
+      "ops-manager-01": "semantic-enabled, graph-enabled",
+      "senior-sys-admin-01": "semantic-enabled, procedural-enabled",
+      "network-engineer-01": "semantic-enabled, procedural-enabled",
+      "devops-engineer-01": "semantic-enabled, procedural-enabled",
+      "ops-gpo-pod-01": "semantic-enabled"
+    },
+    "retention_policy": {
+      "incident-reports": "5-years",
+      "alert-logs": "1-year",
+      "operational-docs": "3-years",
+      "automation-scripts": "indefinite"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-ops-m-001",
+      "name": "Change Management",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"change_type": "production-configuration"},
+      "actions": ["require-change-request", "maintain-audit-trail", "rollback-plan"]
+    },
+    {
+      "id": "gov-ops-m-002",
+      "name": "Access Control",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"action_type": "production-access"},
+      "actions": ["require-approval", "log-all-access", "periodic-review"]
+    },
+    {
+      "id": "gov-ops-m-003",
+      "name": "Backup Verification",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"data_type": "critical-data"},
+      "actions": ["verify-daily", "test-restores-quarterly", "document-results"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "ops-kpi-m-001",
+      "name": "System Uptime",
+      "description": "Percentage of time critical systems are operational",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 99.9, "warning": 99.5, "critical": 99},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "ops-kpi-m-002",
+      "name": "Mean Time to Detect (MTTD)",
+      "description": "Average time to detect incidents",
+      "metric_type": "gauge",
+      "unit": "minutes",
+      "thresholds": {"target": 5, "warning": 15, "critical": 30},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "ops-kpi-m-003",
+      "name": "Mean Time to Resolve (MTTR)",
+      "description": "Average time to resolve incidents",
+      "metric_type": "gauge",
+      "unit": "hours",
+      "thresholds": {"target": 2, "warning": 4, "critical": 8},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "ops-kpi-m-004",
+      "name": "Automation Coverage",
+      "description": "Percentage of routine tasks automated",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 80, "warning": 65, "critical": 50},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "ops-kpi-m-005",
+      "name": "Backup Success Rate",
+      "description": "Percentage of successful backup operations",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 100, "warning": 95, "critical": 90},
+      "aggregation_period": "week"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-ops-m-001",
+      "type": "custom",
+      "name": "Monitoring System",
+      "provider": "nagios",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-ops-m-002",
+      "type": "custom",
+      "name": "Log Aggregator",
+      "provider": "elk-stack",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-ops-m-003",
+      "type": "custom",
+      "name": "Ticketing System",
+      "provider": "servicenow",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-ops-m-004",
+      "type": "custom",
+      "name": "CI/CD",
+      "provider": "gitlab-ci",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-ops-m-005",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active"
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-ops-m-001",
+      "name": "Agent Autonomy",
+      "scope": "agent",
+      "rules": [
+        {"agent": "ops-gpo-pod-01", "allowed": ["alert-monitoring", "log-analysis", "reporting", "documentation", "scheduling"], "denied": ["change-infrastructure", "modify-security-settings", "access-production-data", "deploy-to-production"]}
+      ]
+    },
+    {
+      "id": "pol-ops-m-002",
+      "name": "Data Retention",
+      "scope": "system",
+      "rules": [
+        {"data_type": "incident-reports", "retention": "5-years", "disposal": "archive"},
+        {"data_type": "alert-logs", "retention": "1-year", "disposal": "delete"},
+        {"data_type": "automation-scripts", "retention": "indefinite", "disposal": "none"}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "medium",
+    "department_size": "4-15 FTE",
+    "company_size": "50-500 employees",
+    "industry": "general",
+    "compliance_level": "formalized",
+    "frameworks": ["ITIL-v4", "SRE", "devops", "infrastructure-as-code"],
+    "last_reviewed": "2026-07-17"
+  }
+}

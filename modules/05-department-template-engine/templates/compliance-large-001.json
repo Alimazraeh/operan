@@ -1,0 +1,421 @@
+{
+  "id": "compliance-large-001",
+  "name": "Large Enterprise Compliance Department",
+  "description": "15–40 person compliance department for enterprise organizations (500+ employees). Multi-layered structure with Chief Compliance Officer, Regulatory Affairs, Risk Management, Internal Audit, and dedicated compliance specialists for each regulatory domain.",
+  "category": "compliance",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "large",
+    "department_size": "15-40 FTE",
+    "company_size": "500+ employees",
+    "industry": "global",
+    "compliance_level": "full-regulatory",
+    "frameworks": ["ISO-37301", "ISO-31000", "COSO-ERM", "SOC-2", "GDPR", "CCPA", "SOX", "FCPA"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["compliance", "enterprise", "regulatory", "audit", "governance", "global"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "cco-01",
+      "role": "Chief Compliance Officer",
+      "capabilities": [
+        "compliance-strategy",
+        "regulatory-program",
+        "board-reporting",
+        "policy-governance",
+        "risk-framework",
+        "compliance-training",
+        "incident-response",
+        "external-audit-coordination"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "semantic-enabled, graph-enabled, full-retention",
+      "tool_requirements": ["compliance-system", "analytics-dashboard", "email", "board-reporting", "policy-management"],
+      "system_prompt": "You are the Chief Compliance Officer for a large enterprise. You lead the global compliance organization, report to the board, and ensure compliance across all jurisdictions. You manage regulatory relations, internal audit coordination, and compliance culture.",
+      "constraints": {
+        "max_tokens_per_request": 8192,
+        "compliance-data": "immutable, audit-trail"
+      },
+      "access_control": {
+        "all-compliance-data": "read-write",
+        "board-reports": "read-write",
+        "audit-files": "read-write",
+        "incident-reports": "read-write",
+        "company-wide-data": "read-only"
+      }
+    },
+    {
+      "id": "regulatory-lead-01",
+      "role": "Regulatory Affairs Lead",
+      "capabilities": [
+        "regulatory-monitoring",
+        "licensing",
+        "regulatory-filings",
+        "government-relations",
+        "policy-interpretation"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["regulatory-database", "document-storage", "email"],
+      "system_prompt": "You lead Regulatory Affairs. You monitor regulatory changes, manage licenses and permits, prepare regulatory filings, and liaise with government agencies.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "regulatory-database": "read-write",
+        "filings": "read-write",
+        "government-communications": "read-write"
+      }
+    },
+    {
+      "id": "risk-lead-01",
+      "role": "Risk Management Lead",
+      "capabilities": [
+        "risk-assessment",
+        "risk-framework",
+        "scenario-analysis",
+        "risk-reporting",
+        "business-continuity"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["risk-register", "analytics-dashboard", "email"],
+      "system_prompt": "You lead Risk Management. You design the risk framework, conduct enterprise risk assessments, perform scenario analysis, and prepare risk reports for leadership.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "risk-register": "read-write",
+        "risk-reports": "read-write",
+        "company-data": "read-only"
+      }
+    },
+    {
+      "id": "internal-audit-lead-01",
+      "role": "Internal Audit Lead",
+      "capabilities": [
+        "internal-audit",
+        "controls-testing",
+        "investigations",
+        "audit-reporting",
+        "sox-testing"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, immutable-storage",
+      "tool_requirements": ["audit-management", "document-storage", "email"],
+      "system_prompt": "You lead Internal Audit. You conduct risk-based audits, test controls, investigate fraud, and report to the Audit Committee.",
+      "constraints": {"max_tokens_per_request": 4096, "audit-files": "immutable, privileged"},
+      "access_control": {
+        "audit-files": "read-write",
+        "investigation-files": "read-write-privileged",
+        "company-data": "read-only-audit"
+      }
+    },
+    {
+      "id": "compliance-analyst-01",
+      "role": "Compliance Analyst",
+      "capabilities": [
+        "compliance-testing",
+        "policy-administration",
+        "report-generation",
+        "training-coordination",
+        "data-collection"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["compliance-system", "document-storage", "email"],
+      "system_prompt": "You are a Compliance Analyst. You test controls, administer policies, generate reports, coordinate training, and collect compliance data.",
+      "constraints": {"max_tokens_per_request": 2048},
+      "access_control": {
+        "compliance-data": "read-write",
+        "policies": "read-write",
+        "incident-reports": "read-write"
+      }
+    },
+    {
+      "id": "compliance-gpo-01",
+      "role": "GPO Pod — Compliance Support",
+      "capabilities": [
+        "policy-retrieval",
+        "document-drafting",
+        "report-generation",
+        "training-coordination",
+        "faq-response"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["document-storage", "email", "templates-library"],
+      "system_prompt": "You are a Compliance GPO pod member. You handle policy retrieval, document drafting, report generation, and training coordination. Always escalate incidents and regulatory changes to the appropriate specialist.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["incident-report", "regulatory-violation", "investigation"]
+      },
+      "access_control": {
+        "policies": "read-only",
+        "compliance-data": "read-only",
+        "incident-reports": "read-only"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-risk-001",
+      "name": "Quarterly Risk Assessment",
+      "description": "Comprehensive enterprise risk assessment across all domains.",
+      "triggers": ["schedule:quarterly"],
+      "steps": [
+        {
+          "id": "risk-01",
+          "type": "agent_call",
+          "name": "Identify Risks",
+          "config": {"agent": "risk-lead-01", "task": "Survey all departments for new risks, review incident logs, update risk register"}
+        },
+        {
+          "id": "risk-02",
+          "type": "transformation",
+          "name": "Score & Prioritize",
+          "config": {"agent": "risk-lead-01", "task": "Score risks using probability-impact matrix, prioritize for treatment"}
+        },
+        {
+          "id": "risk-03",
+          "type": "approval",
+          "name": "CCO Review",
+          "config": {"required_by": "cco-01", "task": "Review risk assessment results, approve treatment plans"}
+        },
+        {
+          "id": "risk-04",
+          "type": "notification",
+          "name": "Report to Leadership",
+          "config": {"recipients": ["executive-team", "board"], "template": "quarterly-risk-report"}
+        }
+      ]
+    },
+    {
+      "id": "wf-incident-001",
+      "name": "Compliance Incident Response",
+      "description": "Structured incident response for compliance violations and regulatory incidents.",
+      "triggers": ["manual", "event:incident-detected"],
+      "steps": [
+        {
+          "id": "inc-01",
+          "type": "agent_call",
+          "name": "Initial Triage",
+          "config": {"agent": "compliance-analyst-01", "task": "Document incident, classify severity, identify affected systems"}
+        },
+        {
+          "id": "inc-02",
+          "type": "conditional",
+          "name": "Severity Assessment",
+          "config": {
+            "condition": "incident.severity in ['critical', 'high']",
+            "true_path": "immediate-escalation",
+            "false_path": "standard-response"
+          }
+        },
+        {
+          "id": "inc-03",
+          "type": "approval",
+          "name": "CCO Authorization",
+          "config": {"required_by": "cco-01", "timeout_hours": 4}
+        },
+        {
+          "id": "inc-04",
+          "type": "agent_call",
+          "name": "Investigate",
+          "config": {"agent": "internal-audit-lead-01", "task": "Conduct investigation, collect evidence, document findings"}
+        },
+        {
+          "id": "inc-05",
+          "type": "notification",
+          "name": "Regulatory Notification",
+          "config": {"if_required": "incident.reports_to_regulator", "timeline": "per-regulatory-requirement"}
+        },
+        {
+          "id": "inc-06",
+          "type": "transformation",
+          "name": "Post-Incident Review",
+          "config": {"agent": "compliance-analyst-01", "task": "Document lessons learned, update controls"}
+        }
+      ]
+    },
+    {
+      "id": "wf-policy-001",
+      "name": "Policy Lifecycle Management",
+      "description": "End-to-end policy lifecycle: draft, review, approve, publish, acknowledge, review.",
+      "triggers": ["manual", "schedule:annual", "event:regulatory-change"],
+      "steps": [
+        {
+          "id": "pol-01",
+          "type": "agent_call",
+          "name": "Draft Policy",
+          "config": {"agent": "compliance-analyst-01", "task": "Draft policy based on regulatory changes or business needs"}
+        },
+        {
+          "id": "pol-02",
+          "type": "approval",
+          "name": "Legal Review",
+          "config": {"required_by": "cco-01", "task": "Review for regulatory compliance and legal adequacy"}
+        },
+        {
+          "id": "pol-03",
+          "type": "transformation",
+          "name": "Publish & Distribute",
+          "config": {"agent": "compliance-gpo-01", "task": "Publish to policy system, notify employees, require acknowledgment"}
+        },
+        {
+          "id": "pol-04",
+          "type": "notification",
+          "name": "Track Acknowledgments",
+          "config": {"deadline": "14-days", "escalate_if": "no_completion"}
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": true,
+    "procedural_enabled": true,
+    "graph_enabled": true,
+    "memory_profiles": {
+      "cco-01": "semantic-enabled, graph-enabled, full-retention, immutable",
+      "regulatory-lead-01": "semantic-enabled, procedural-enabled",
+      "risk-lead-01": "semantic-enabled, procedural-enabled",
+      "internal-audit-lead-01": "semantic-enabled, immutable-storage",
+      "compliance-analyst-01": "semantic-enabled",
+      "compliance-gpo-01": "semantic-enabled"
+    },
+    "retention_policy": {
+      "incident-reports": "7-years",
+      "audit-files": "10-years",
+      "policies": "5-years-post-revision",
+      "risk-register": "indefinite",
+      "investigation-files": "indefinite"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-comp-l-001",
+      "name": "Incident Record Integrity",
+      "type": "audit",
+      "enforcement": "enforce",
+      "conditions": {"record_type": "incident-report", "legal_hold": true},
+      "actions": ["immutable-records", "chain-of-custody", "no-deletion", "legal-hold"]
+    },
+    {
+      "id": "gov-comp-l-002",
+      "name": "Regulatory Filing Accuracy",
+      "type": "audit",
+      "enforcement": "enforce",
+      "conditions": {"filing_type": "regulatory-submission"},
+      "actions": ["dual-review-required", "retain-drafts", "audit-trail"]
+    },
+    {
+      "id": "gov-comp-l-003",
+      "name": "Whistleblower Protection",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"report_type": "whistleblower"},
+      "actions": ["anonymize-reporter", "immediate-escalation", "no-retaliation", "independent-review"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "comp-kpi-l-001",
+      "name": "Policy Acknowledgment Rate",
+      "description": "Percentage of employees who have acknowledged current policies",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 100, "warning": 95, "critical": 85},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "comp-kpi-l-002",
+      "name": "Incident Response Time",
+      "description": "Average time from incident detection to initial response",
+      "metric_type": "gauge",
+      "unit": "hours",
+      "thresholds": {"target": 4, "warning": 12, "critical": 24},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "comp-kpi-l-003",
+      "name": "Regulatory Filing Compliance",
+      "description": "Percentage of regulatory filings submitted on time",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 100, "warning": 95, "critical": 85},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "comp-kpi-l-004",
+      "name": "Risk Mitigation Completion",
+      "description": "Percentage of identified risks with approved mitigations implemented on time",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 90, "warning": 80, "critical": 65},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "comp-kpi-l-005",
+      "name": "Compliance Training Completion",
+      "description": "Percentage of employees completing mandatory compliance training",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 98, "warning": 90, "critical": 80},
+      "aggregation_period": "quarter"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-comp-l-001",
+      "type": "document",
+      "name": "Compliance Management System",
+      "provider": "navex-governance",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-comp-l-002",
+      "type": "document",
+      "name": "Risk Register",
+      "provider": "custom",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-comp-l-003",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active"
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-comp-l-001",
+      "name": "Agent Autonomy",
+      "scope": "agent",
+      "rules": [
+        {"agent": "compliance-gpo-01", "allowed": ["retrieval", "drafting", "reporting", "scheduling"], "denied": ["make-compliance-determination", "approve-policies", "escalate-without-notice"]}
+      ]
+    },
+    {
+      "id": "pol-comp-l-002",
+      "name": "Data Retention",
+      "scope": "system",
+      "rules": [
+        {"data_type": "incident-reports", "retention": "7-years", "disposal": "secure-delete"},
+        {"data_type": "audit-files", "retention": "10-years", "disposal": "secure-delete"},
+        {"data_type": "investigation-files", "retention": "indefinite", "disposal": "none"}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "large",
+    "department_size": "15-40 FTE",
+    "company_size": "500+ employees",
+    "industry": "global",
+    "compliance_level": "full-regulatory",
+    "frameworks": ["ISO-37301", "ISO-31000", "COSO-ERM", "SOC-2", "GDPR", "CCPA", "SOX", "FCPA"],
+    "last_reviewed": "2026-07-17"
+  }
+}

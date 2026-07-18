@@ -245,7 +245,7 @@
           "id": "comp-04",
           "type": "approval",
           "name": "Compliance Assessment Sign-Off",
-          {
+          "config": {
             "required_by": "legal-general-counsel-01",
             "task": "Review and approve compliance assessment findings and remediation plan"
           }
@@ -287,7 +287,7 @@
           "type": "conditional",
           "name": "Severity Classification",
           "config": {
-            "condition": "issue.category in ['harassment', 'discrimination', "whistleblower", "retaliation", "safety-violation']",
+            "condition": "issue.category in ['harassment', 'discrimination', 'whistleblower', 'retaliation', 'safety-violation']",
             "true_path": "immediate-escalation-and-investigation",
             "false_path": "standard-advisory-path"
           }
@@ -460,7 +460,7 @@
           "id": "vn-04",
           "type": "approval",
           "name": "Final Terms Approval",
-          {
+          "config": {
             "required_by": "legal-general-counsel-01",
             "timeout_hours": 48
           }

@@ -1,0 +1,488 @@
+{
+  "id": "it-large-001",
+  "name": "Large Enterprise IT Department",
+  "description": "15–50+ person IT department for large enterprises (500+ employees). Enterprise IT with dedicated teams for infrastructure, security, cloud, network, helpdesk, and project management. Follows ITIL v4 and enterprise frameworks.",
+  "category": "it",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "large",
+    "department_size": "15-50+ FTE",
+    "company_size": "500+ employees",
+    "industry": "global",
+    "compliance_level": "enterprise",
+    "frameworks": ["ITIL-v4", "NIST-CSF", "COBIT", "ISO-27001", "SOC-2"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["it", "enterprise", "infrastructure", "security", "cloud", "multiple-teams"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "it-director-01",
+      "role": "IT Director",
+      "capabilities": [
+        "it-strategy",
+        "enterprise-architecture",
+        "budget-management",
+        "vendor-management",
+        "project-portfolio",
+        "risk-management",
+        "digital-transformation"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "semantic-enabled, graph-enabled, full-retention",
+      "tool_requirements": ["enterprise-dashboard", "project-portfolio", "budget-tool", "email", "reporting"],
+      "system_prompt": "You are the IT Director for a large enterprise. You set IT strategy, manage the IT budget, oversee enterprise architecture, and lead digital transformation initiatives. You report to the CIO or CTO.",
+      "constraints": {"max_tokens_per_request": 8192},
+      "access_control": {
+        "all-it-data": "read-write",
+        "budget-data": "read-write",
+        "enterprise-architecture": "read-write",
+        "project-portfolio": "read-write"
+      }
+    },
+    {
+      "id": "infrastructure-lead-01",
+      "role": "Infrastructure Lead",
+      "capabilities": [
+        "infrastructure-design",
+        "cloud-architecture",
+        "virtualization",
+        "disaster-recovery",
+        "capacity-planning"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["infrastructure-monitoring", "cloud-console", "documentation", "backup-system"],
+      "system_prompt": "You lead the Infrastructure team. You design infrastructure architecture, manage cloud migration, oversee disaster recovery, and plan capacity for enterprise systems.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "infrastructure": "read-write",
+        "cloud-console": "read-write",
+        "monitoring": "read-write",
+        "backup-system": "read-write"
+      }
+    },
+    {
+      "id": "security-admin-01",
+      "role": "Security Administrator",
+      "capabilities": [
+        "security-monitoring",
+        "vulnerability-management",
+        "incident-response",
+        "compliance-auditing",
+        "security-awareness"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled, immutable-storage",
+      "tool_requirements": ["siem", "vulnerability-scanner", "ticketing-system", "compliance-system"],
+      "system_prompt": "You manage IT security operations. You monitor security events, manage vulnerabilities, lead incident response, and support compliance audits.",
+      "constraints": {"max_tokens_per_request": 4096, "security-logs": "immutable"},
+      "access_control": {
+        "security-data": "read-write",
+        "siem": "read-write",
+        "vulnerability-scanner": "read-write",
+        "incident-reports": "read-write-privileged"
+      }
+    },
+    {
+      "id": "network-lead-01",
+      "role": "Network Lead",
+      "capabilities": [
+        "network-architecture",
+        "firewall-management",
+        "vpn-configuration",
+        "sd-wan",
+        "network-automation"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["network-monitoring", "firewall-console", "network-automation", "documentation"],
+      "system_prompt": "You lead the Network team. You design network architecture, manage firewalls, implement SD-WAN, and automate network operations.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "network-config": "read-write",
+        "firewall": "read-write",
+        "monitoring": "read-write",
+        "automation": "read-write"
+      }
+    },
+    {
+      "id": "helpdesk-manager-01",
+      "role": "Helpdesk Manager",
+      "capabilities": [
+        "team-management",
+        "sla-management",
+        "knowledge-management",
+        "user-experience",
+        "onboarding-optimization"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["ticketing-system", "monitoring-dashboard", "knowledge-base", "asset-management"],
+      "system_prompt": "You manage the helpdesk team. You oversee SLAs, manage the knowledge base, optimize user experience, and lead onboarding/offboarding processes.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "ticketing": "read-write",
+        "user-accounts": "read-write",
+        "asset-management": "read-write",
+        "knowledge-base": "read-write"
+      }
+    },
+    {
+      "id": "cloud-engineer-01",
+      "role": "Cloud Engineer",
+      "capabilities": [
+        "cloud-deployment",
+        "ci-cd-pipeline",
+        "infrastructure-as-code",
+        "cost-optimization",
+        "cloud-security"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["cloud-console", "terraform", "ci-cd", "cost-monitoring"],
+      "system_prompt": "You are a Cloud Engineer. You manage cloud deployments, build CI/CD pipelines, implement infrastructure as code, and optimize cloud costs.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "cloud-console": "read-write",
+        "ci-cd": "read-write",
+        "terraform": "read-write"
+      }
+    },
+    {
+      "id": "it-gpo-pod-01",
+      "role": "GPO Pod — IT Support",
+      "capabilities": [
+        "ticket-routing",
+        "faq-response",
+        "user-support",
+        "documentation",
+        "report-generation",
+        "sla-monitoring"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["ticketing-system", "knowledge-base", "email", "monitoring-dashboard"],
+      "system_prompt": "You are an IT GPO pod member. You handle user support tickets, provide FAQ answers, maintain documentation, generate reports, and monitor SLAs. Always escalate infrastructure issues and security incidents to the appropriate specialist.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["security-incident", "infrastructure-outage", "data-breach", "compliance-violation"]
+      },
+      "access_control": {
+        "ticketing": "read-write",
+        "knowledge-base": "read-write",
+        "infrastructure": "read-only",
+        "network-config": "none",
+        "security-data": "read-only",
+        "sla-dashboard": "read-only"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-itsm-001",
+      "name": "Enterprise ITSM Process",
+      "description": "End-to-end IT service management: incident, problem, change, and request fulfillment.",
+      "triggers": ["manual", "event:ticket-created", "event:system-alert"],
+      "steps": [
+        {
+          "id": "itsm-01",
+          "type": "tool_call",
+          "name": "Auto-Triage",
+          "config": {"tool": "ticketing-system", "action": "auto-categorize-priority"}
+        },
+        {
+          "id": "itsm-02",
+          "type": "agent_call",
+          "name": "Route to Team",
+          "config": {"agent": "it-gpo-pod-01", "task": "Route ticket to appropriate team: infrastructure, security, network, or helpdesk"}
+        },
+        {
+          "id": "itsm-03",
+          "type": "transformation",
+          "name": "Resolve Issue",
+          "config": {"agent": "assigned-team", "task": "Diagnose, resolve, document solution per ITIL standards"}
+        },
+        {
+          "id": "itsm-04",
+          "type": "approval",
+          "name": "SLA Verification",
+          "config": {"check": "resolution-within-sla", "if_fail": "escalate-to-manager"}
+        },
+        {
+          "id": "itsm-05",
+          "type": "tool_call",
+          "name": "Close & Report",
+          "config": {"tool": "ticketing-system", "action": "close-and-generate-report"}
+        }
+      ]
+    },
+    {
+      "id": "wf-change-001",
+      "name": "Enterprise Change Management",
+      "description": "Formal change management with CAB approval for production changes.",
+      "triggers": ["manual", "event:change-request"],
+      "steps": [
+        {
+          "id": "change-01",
+          "type": "agent_call",
+          "name": "Change Request",
+          "config": {"agent": "infrastructure-lead-01", "task": "Submit change request with risk assessment, rollback plan, and testing strategy"}
+        },
+        {
+          "id": "change-02",
+          "type": "approval",
+          "name": "CAB Review",
+          "config": {"required_by": "it-director-01", "if": "standard-change", "escalate_if": "high-risk"}
+        },
+        {
+          "id": "change-03",
+          "type": "transformation",
+          "name": "Implement Change",
+          "config": {"agent": "infrastructure-lead-01", "task": "Implement change during approved maintenance window"}
+        },
+        {
+          "id": "change-04",
+          "type": "tool_call",
+          "name": "Post-Implementation Review",
+          "config": {"tools": ["health-check", "monitoring", "user-testing"]}
+        }
+      ]
+    },
+    {
+      "id": "wf-security-001",
+      "name": "Security Incident Response",
+      "description": "Enterprise security incident response following NIST framework.",
+      "triggers": ["manual", "event:security-alert", "event:siem-detection"],
+      "steps": [
+        {
+          "id": "sec-01",
+          "type": "tool_call",
+          "name": "Detect & Classify",
+          "config": {"tools": ["siem", "endpoint-detection"], "action": "classify-severity"}
+        },
+        {
+          "id": "sec-02",
+          "type": "agent_call",
+          "name": "Initial Assessment",
+          "config": {"agent": "security-admin-01", "task": "Assess scope, impact, and containment requirements"}
+        },
+        {
+          "id": "sec-03",
+          "type": "conditional",
+          "name": "Severity Escalation",
+          "config": {
+            "condition": "incident.severity in ['critical', 'high']",
+            "true_path": "immediate-escalation-to-director",
+            "false_path": "standard-response"
+          }
+        },
+        {
+          "id": "sec-04",
+          "type": "transformation",
+          "name": "Contain & Remediate",
+          "config": {"agent": "security-admin-01", "task": "Contain threat, remediate, preserve evidence"}
+        },
+        {
+          "id": "sec-05",
+          "type": "notification",
+          "name": "Stakeholder Communication",
+          "config": {"recipients": ["it-director-01", "legal", "executive-team"], "if": "critical-severity"}
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": true,
+    "procedural_enabled": true,
+    "graph_enabled": true,
+    "memory_profiles": {
+      "it-director-01": "semantic-enabled, graph-enabled, full-retention",
+      "infrastructure-lead-01": "semantic-enabled, procedural-enabled",
+      "security-admin-01": "semantic-enabled, procedural-enabled, immutable-storage",
+      "network-lead-01": "semantic-enabled, procedural-enabled",
+      "helpdesk-manager-01": "semantic-enabled, procedural-enabled",
+      "cloud-engineer-01": "semantic-enabled",
+      "it-gpo-pod-01": "semantic-enabled"
+    },
+    "retention_policy": {
+      "ticket-history": "5-years",
+      "incident-reports": "indefinite",
+      "change-logs": "5-years",
+      "security-logs": "indefinite",
+      "backup-logs": "3-years"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-it-l-001",
+      "name": "Change Advisory Board",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"change_type": "production-configuration"},
+      "actions": ["require-cab-approval", "maintain-audit-trail", "rollback-plan-required"]
+    },
+    {
+      "id": "gov-it-l-002",
+      "name": "Security Event Logging",
+      "type": "audit",
+      "enforcement": "enforce",
+      "conditions": {"event_type": "security-relevant"},
+      "actions": ["immutable-logging", "siem-forwarding", "quarterly-review"]
+    },
+    {
+      "id": "gov-it-l-003",
+      "name": "Access Review & Certification",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"review_period": "quarterly"},
+      "actions": ["review-all-permissions", "certify-access", "remove-dormant"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "it-kpi-l-001",
+      "name": "SLA Compliance Rate",
+      "description": "Percentage of tickets resolved within SLA",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 95, "warning": 90, "critical": 85},
+      "aggregation_period": "week"
+    },
+    {
+      "id": "it-kpi-l-002",
+      "name": "System Uptime (Core Systems)",
+      "description": "Percentage of time core systems are operational",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 99.99, "warning": 99.9, "critical": 99.5},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "it-kpi-l-003",
+      "name": "Mean Time to Resolve (MTTR)",
+      "description": "Average time to resolve critical incidents",
+      "metric_type": "gauge",
+      "unit": "hours",
+      "thresholds": {"target": 2, "warning": 4, "critical": 8},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "it-kpi-l-004",
+      "name": "Security Incident Count",
+      "description": "Number of security incidents per quarter",
+      "metric_type": "counter",
+      "unit": "incidents",
+      "thresholds": {"target": 0, "warning": 3, "critical": 10},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "it-kpi-l-005",
+      "name": "User Satisfaction Score",
+      "description": "Average user satisfaction rating for IT services",
+      "metric_type": "gauge",
+      "unit": "score",
+      "thresholds": {"target": 4.5, "warning": 4.0, "critical": 3.5},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "it-kpi-l-006",
+      "name": "Infrastructure Cost per User",
+      "description": "Average IT infrastructure cost per employee",
+      "metric_type": "gauge",
+      "unit": "currency",
+      "thresholds": {"target": 2000, "warning": 2500, "critical": 3000},
+      "aggregation_period": "quarter"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-it-l-001",
+      "type": "custom",
+      "name": "Enterprise Monitoring",
+      "provider": "datadog",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-it-l-002",
+      "type": "custom",
+      "name": "ITSM Platform",
+      "provider": "servicenow",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-it-l-003",
+      "type": "custom",
+      "name": "SIEM",
+      "provider": "splunk",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-it-l-004",
+      "type": "custom",
+      "name": "Cloud Console",
+      "provider": "aws",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-it-l-005",
+      "type": "custom",
+      "name": "Project Portfolio",
+      "provider": "jira",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-it-l-006",
+      "type": "custom",
+      "name": "Asset Management",
+      "provider": "servicenow",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-it-l-007",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active"
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-it-l-001",
+      "name": "Agent Autonomy",
+      "scope": "agent",
+      "rules": [
+        {"agent": "it-gpo-pod-01", "allowed": ["ticket-handling", "user-support", "documentation", "reporting", "sla-monitoring"], "denied": ["change-infrastructure", "modify-security-settings", "deploy-to-production", "approve-changes", "access-security-logs"]}
+      ]
+    },
+    {
+      "id": "pol-it-l-002",
+      "name": "Data Retention",
+      "scope": "system",
+      "rules": [
+        {"data_type": "ticket-history", "retention": "5-years", "disposal": "archive"},
+        {"data_type": "incident-reports", "retention": "indefinite", "disposal": "none"},
+        {"data_type": "security-logs", "retention": "indefinite", "disposal": "none"},
+        {"data_type": "change-logs", "retention": "5-years", "disposal": "archive"}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "large",
+    "department_size": "15-50+ FTE",
+    "company_size": "500+ employees",
+    "industry": "global",
+    "compliance_level": "enterprise",
+    "frameworks": ["ITIL-v4", "NIST-CSF", "COBIT", "ISO-27001", "SOC-2"],
+    "last_reviewed": "2026-07-17"
+  }
+}

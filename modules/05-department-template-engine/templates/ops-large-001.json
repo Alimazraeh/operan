@@ -1,0 +1,525 @@
+{
+  "id": "ops-large-001",
+  "name": "Large Enterprise IT Operations",
+  "description": "15–50+ person IT operations team for large enterprises (500+ employees). Enterprise operations with NOC/SOC, SRE, infrastructure automation, capacity planning, and business continuity. Follows ITIL v4 and SRE practices.",
+  "category": "it-operations",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "large",
+    "department_size": "15-50+ FTE",
+    "company_size": "500+ employees",
+    "industry": "global",
+    "compliance_level": "enterprise",
+    "frameworks": ["ITIL-v4", "SRE", "devops", "infrastructure-as-code", "zero-trust"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["it-operations", "enterprise", "noc", "soc", "sre", "multiple-teams"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "it-ops-director-01",
+      "role": "IT Operations Director",
+      "capabilities": [
+        "operations-strategy",
+        "enterprise-architecture",
+        "business-continuity",
+        "disaster-recovery",
+        "vendor-management",
+        "budget-management",
+        "team-leadership",
+        "digital-transformation"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "semantic-enabled, graph-enabled, full-retention",
+      "tool_requirements": ["enterprise-dashboard", "budget-tool", "reporting", "email", "project-management"],
+      "system_prompt": "You are the IT Operations Director for a global enterprise. You set operations strategy, oversee business continuity, manage disaster recovery, and lead the operations organization. You report to the CIO or CTO.",
+      "constraints": {"max_tokens_per_request": 8192},
+      "access_control": {
+        "all-ops-data": "read-write",
+        "budget-data": "read-write",
+        "enterprise-architecture": "read-write",
+        "business-continuity": "read-write",
+        "board-reports": "read-write"
+      }
+    },
+    {
+      "id": "noc-lead-01",
+      "role": "NOC Lead",
+      "capabilities": [
+        "network-operations",
+        "monitoring",
+        "incident-management",
+        "service-level-management",
+        "team-coordination"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["monitoring-dashboard", "ticketing-system", "network-tools", "communication-platform"],
+      "system_prompt": "You lead the Network Operations Center. You oversee 24/7 monitoring, manage incidents, ensure SLAs, and coordinate the NOC team.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "monitoring": "read-write",
+        "ticketing-system": "read-write",
+        "network-tools": "read-write",
+        "communication-platform": "read-write"
+      }
+    },
+    {
+      "id": "soc-lead-01",
+      "role": "SOC Lead",
+      "capabilities": [
+        "security-monitoring",
+        "incident-response",
+        "threat-intelligence",
+        "vulnerability-management",
+        "forensics"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled, immutable-storage",
+      "tool_requirements": ["siem", "endpoint-detection", "threat-intelligence", "forensics-tools"],
+      "system_prompt": "You lead the Security Operations Center. You monitor security events, manage incidents, analyze threats, and coordinate incident response.",
+      "constraints": {"max_tokens_per_request": 4096, "security-logs": "immutable"},
+      "access_control": {
+        "siem": "read-write",
+        "endpoint-detection": "read-write",
+        "threat-intelligence": "read-write",
+        "forensics-tools": "read-write",
+        "security-logs": "read-write-privileged"
+      }
+    },
+    {
+      "id": "sre-lead-01",
+      "role": "SRE Lead",
+      "capabilities": [
+        "reliability-engineering",
+        "capacity-planning",
+        "performance-optimization",
+        "chaos-engineering",
+        "error-budget-management"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["reliability-dashboard", "capacity-tools", "monitoring", "automation"],
+      "system_prompt": "You lead Site Reliability Engineering. You ensure system reliability, plan capacity, optimize performance, run chaos engineering experiments, and manage error budgets.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "reliability-dashboard": "read-write",
+        "capacity-tools": "read-write",
+        "monitoring": "read-write",
+        "automation": "read-write"
+      }
+    },
+    {
+      "id": "infrastructure-lead-01",
+      "role": "Infrastructure Lead",
+      "capabilities": [
+        "infrastructure-design",
+        "cloud-architecture",
+        "infrastructure-as-code",
+        "network-architecture",
+        "disaster-recovery"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["infrastructure-as-code", "cloud-console", "network-tools", "backup-system"],
+      "system_prompt": "You lead Infrastructure. You design infrastructure architecture, manage cloud systems, implement infrastructure as code, and maintain disaster recovery.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "infrastructure-as-code": "read-write",
+        "cloud-console": "read-write",
+        "network-tools": "read-write",
+        "backup-system": "read-write"
+      }
+    },
+    {
+      "id": "devops-lead-01",
+      "role": "DevOps Lead",
+      "capabilities": [
+        "ci-cd-pipeline",
+        "container-orchestration",
+        "automation",
+        "monitoring-setup",
+        "release-management"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["ci-cd", "kubernetes", "terraform", "monitoring", "logging"],
+      "system_prompt": "You lead DevOps. You build CI/CD pipelines, manage container orchestration, implement automation, and ensure smooth releases.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "ci-cd": "read-write",
+        "kubernetes": "read-write",
+        "terraform": "read-write",
+        "monitoring": "read-write",
+        "logging": "read-only"
+      }
+    },
+    {
+      "id": "ops-gpo-pod-01",
+      "role": "GPO Pod — IT Ops Support",
+      "capabilities": [
+        "alert-monitoring",
+        "log-analysis",
+        "report-generation",
+        "documentation",
+        "on-call-scheduling",
+        "sla-monitoring",
+        "change-tracking"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["monitoring-system", "log-aggregator", "ticketing-system", "documentation", "calendar"],
+      "system_prompt": "You are an IT Ops GPO pod member. You monitor alerts, analyze logs, generate reports, maintain operational documentation, manage on-call schedules, monitor SLAs, and track changes. Always escalate critical incidents, security events, and infrastructure failures to the appropriate specialist.",
+      "constraints": {
+        "max_tokens_per_request": 2048,
+        "sensitive_topics": ["security-incident", "infrastructure-outage", "data-loss", "performance-degradation", "compliance-violation"]
+      },
+      "access_control": {
+        "monitoring": "read-only",
+        "log-aggregator": "read-only",
+        "infrastructure": "read-only",
+        "network-config": "none",
+        "ticketing-system": "read-write",
+        "siem": "read-only",
+        "sla-dashboard": "read-only"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-monitor-001",
+      "name": "Enterprise Infrastructure Monitoring",
+      "description": "24/7 monitoring of all enterprise infrastructure, services, and security events.",
+      "triggers": ["continuous"],
+      "steps": [
+        {
+          "id": "monitor-01",
+          "type": "tool_call",
+          "name": "Collect All Metrics",
+          "config": {"tools": ["monitoring-system", "log-aggregator", "siem"], "action": "collect-all-metrics-logs-and-security-events"}
+        },
+        {
+          "id": "monitor-02",
+          "type": "agent_call",
+          "name": "AI-Powered Analysis",
+          "config": {"agent": "ops-gpo-pod-01", "task": "Analyze alerts with AI, triage severity, correlate events, filter noise"}
+        },
+        {
+          "id": "monitor-03",
+          "type": "conditional",
+          "name": "Intelligent Routing",
+          "config": {
+            "condition": "alert.severity in ['critical', 'high']",
+            "true_path": "page-on-call-and-escalate",
+            "false_path": "route-to-ticket"
+          }
+        }
+      ]
+    },
+    {
+      "id": "wf-incident-001",
+      "name": "Enterprise Incident Management",
+      "description": "Structured incident response with severity levels, escalation, and post-incident review.",
+      "triggers": ["manual", "event:incident-detected", "event:sla-breach"],
+      "steps": [
+        {
+          "id": "incident-01",
+          "type": "tool_call",
+          "name": "Auto-Detect & Classify",
+          "config": {"tools": ["monitoring-system", "siem"], "action": "classify-incident-severity-and-domain"}
+        },
+        {
+          "id": "incident-02",
+          "type": "agent_call",
+          "name": "Triage & Response",
+          "config": {"agent": "noc-lead-01", "task": "Triage incident, assign responders, communicate status to stakeholders"}
+        },
+        {
+          "id": "incident-03",
+          "type": "conditional",
+          "name": "Severity Escalation",
+          "config": {
+            "condition": "incident.severity in ['critical']",
+            "true_path": "escalate-to-it-ops-director-and-soc",
+            "false_path": "continue-resolution"
+          }
+        },
+        {
+          "id": "incident-04",
+          "type": "transformation",
+          "name": "Resolve & Remediate",
+          "config": {"agent": "assigned-team", "task": "Resolve incident, remediate root cause, verify recovery"}
+        },
+        {
+          "id": "incident-05",
+          "type": "agent_call",
+          "name": "Post-Incident Review",
+          "config": {"agent": "it-ops-director-01", "task": "Conduct blameless post-mortem, document lessons learned, identify improvements"}
+        }
+      ]
+    },
+    {
+      "id": "wf-reliability-001",
+      "name": "Reliability Engineering Program",
+      "description": "SRE practices: error budgets, SLOs, capacity planning, and chaos engineering.",
+      "triggers": ["schedule:monthly", "schedule:quarterly"],
+      "steps": [
+        {
+          "id": "reliability-01",
+          "type": "agent_call",
+          "name": "Review SLOs",
+          "config": {"agent": "sre-lead-01", "task": "Review service level objectives, analyze error budget consumption"}
+        },
+        {
+          "id": "reliability-02",
+          "type": "transformation",
+          "name": "Capacity Planning",
+          "config": {"agent": "sre-lead-01", "task": "Analyze trends, forecast capacity needs, plan scaling"}
+        },
+        {
+          "id": "reliability-03",
+          "type": "tool_call",
+          "name": "Chaos Experiment",
+          "config": {"tool": "chaos-engineering", "action": "run-fault-injection-test"}
+        }
+      ]
+    },
+    {
+      "id": "wf-automation-001",
+      "name": "Infrastructure Automation Program",
+      "description": "Continuous automation of infrastructure, deployments, and operations.",
+      "triggers": ["manual", "schedule:monthly"],
+      "steps": [
+        {
+          "id": "automation-01",
+          "type": "agent_call",
+          "name": "Identify Automation Opportunities",
+          "config": {"agent": "devops-lead-01", "task": "Identify manual tasks and processes suitable for automation"}
+        },
+        {
+          "id": "automation-02",
+          "type": "transformation",
+          "name": "Build & Test Automation",
+          "config": {"agent": "devops-lead-01", "task": "Develop automation, write tests, review, and deploy"}
+        },
+        {
+          "id": "automation-03",
+          "type": "tool_call",
+          "name": "Deploy & Monitor",
+          "config": {"tool": "ci-cd", "action": "deploy-automation-and-monitor-effectiveness"}
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": true,
+    "procedural_enabled": true,
+    "graph_enabled": true,
+    "memory_profiles": {
+      "it-ops-director-01": "semantic-enabled, graph-enabled, full-retention",
+      "noc-lead-01": "semantic-enabled, procedural-enabled",
+      "soc-lead-01": "semantic-enabled, procedural-enabled, immutable-storage",
+      "sre-lead-01": "semantic-enabled, procedural-enabled",
+      "infrastructure-lead-01": "semantic-enabled, procedural-enabled",
+      "devops-lead-01": "semantic-enabled, procedural-enabled",
+      "ops-gpo-pod-01": "semantic-enabled"
+    },
+    "retention_policy": {
+      "incident-reports": "indefinite",
+      "alert-logs": "2-years",
+      "operational-docs": "5-years",
+      "security-logs": "indefinite",
+      "automation-scripts": "indefinite",
+      "slo-reports": "5-years"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-ops-l-001",
+      "name": "Change Advisory Board",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"change_type": "production-configuration"},
+      "actions": ["require-cab-approval", "maintain-audit-trail", "rollback-plan-required", "change-window-restriction"]
+    },
+    {
+      "id": "gov-ops-l-002",
+      "name": "Security Event Logging",
+      "type": "audit",
+      "enforcement": "enforce",
+      "conditions": {"event_type": "security-relevant"},
+      "actions": ["immutable-logging", "siem-forwarding", "quarterly-review", "compliance-reporting"]
+    },
+    {
+      "id": "gov-ops-l-003",
+      "name": "Access Control & Certification",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"review_period": "quarterly"},
+      "actions": ["review-all-permissions", "certify-access", "remove-dormant", "document-justification"]
+    },
+    {
+      "id": "gov-ops-l-004",
+      "name": "Backup & Disaster Recovery",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"data_type": "critical-data"},
+      "actions": ["verify-daily", "test-restores-quarterly", "document-results", "dr-exercise-annually"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "ops-kpi-l-001",
+      "name": "System Uptime (Core Systems)",
+      "description": "Percentage of time core systems are operational",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 99.99, "warning": 99.9, "critical": 99.5},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "ops-kpi-l-002",
+      "name": "Mean Time to Detect (MTTD)",
+      "description": "Average time to detect incidents across all systems",
+      "metric_type": "gauge",
+      "unit": "minutes",
+      "thresholds": {"target": 2, "warning": 5, "critical": 15},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "ops-kpi-l-003",
+      "name": "Mean Time to Resolve (MTTR)",
+      "description": "Average time to resolve critical incidents",
+      "metric_type": "gauge",
+      "unit": "hours",
+      "thresholds": {"target": 1, "warning": 2, "critical": 4},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "ops-kpi-l-004",
+      "name": "SLO Compliance Rate",
+      "description": "Percentage of services meeting their SLO targets",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 99, "warning": 95, "critical": 90},
+      "aggregation_period": "month"
+    },
+    {
+      "id": "ops-kpi-l-005",
+      "name": "Automation Coverage",
+      "description": "Percentage of routine operations tasks automated",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 90, "warning": 80, "critical": 65},
+      "aggregation_period": "quarter"
+    },
+    {
+      "id": "ops-kpi-l-006",
+      "name": "Security Incident Count",
+      "description": "Number of security incidents per quarter",
+      "metric_type": "counter",
+      "unit": "incidents",
+      "thresholds": {"target": 0, "warning": 2, "critical": 5},
+      "aggregation_period": "quarter"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-ops-l-001",
+      "type": "custom",
+      "name": "Enterprise Monitoring",
+      "provider": "datadog",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-ops-l-002",
+      "type": "custom",
+      "name": "SIEM",
+      "provider": "splunk",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-ops-l-003",
+      "type": "custom",
+      "name": "Log Aggregator",
+      "provider": "elk-stack",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-ops-l-004",
+      "type": "custom",
+      "name": "ITSM Platform",
+      "provider": "servicenow",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-ops-l-005",
+      "type": "custom",
+      "name": "Cloud Console",
+      "provider": "aws",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-ops-l-006",
+      "type": "custom",
+      "name": "CI/CD Platform",
+      "provider": "jenkins",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-ops-l-007",
+      "type": "custom",
+      "name": "Infrastructure as Code",
+      "provider": "terraform",
+      "auth_method": "api_key",
+      "status": "active"
+    },
+    {
+      "id": "int-ops-l-008",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active"
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-ops-l-001",
+      "name": "Agent Autonomy",
+      "scope": "agent",
+      "rules": [
+        {"agent": "ops-gpo-pod-01", "allowed": ["alert-monitoring", "log-analysis", "reporting", "documentation", "scheduling", "sla-monitoring", "change-tracking"], "denied": ["change-infrastructure", "modify-security-settings", "access-production-data", "deploy-to-production", "access-security-logs"]}
+      ]
+    },
+    {
+      "id": "pol-ops-l-002",
+      "name": "Data Retention",
+      "scope": "system",
+      "rules": [
+        {"data_type": "incident-reports", "retention": "indefinite", "disposal": "none"},
+        {"data_type": "alert-logs", "retention": "2-years", "disposal": "archive"},
+        {"data_type": "security-logs", "retention": "indefinite", "disposal": "none"},
+        {"data_type": "automation-scripts", "retention": "indefinite", "disposal": "none"},
+        {"data_type": "slo-reports", "retention": "5-years", "disposal": "archive"}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "large",
+    "department_size": "15-50+ FTE",
+    "company_size": "500+ employees",
+    "industry": "global",
+    "compliance_level": "enterprise",
+    "frameworks": ["ITIL-v4", "SRE", "devops", "infrastructure-as-code", "zero-trust"],
+    "last_reviewed": "2026-07-17"
+  }
+}

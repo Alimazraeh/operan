@@ -1,0 +1,298 @@
+{
+  "id": "software-development-small-001",
+  "name": "Small Software Development Team",
+  "description": "2-4 person software development team for small companies (up to 100 employees). Full-stack developers building a single product or application. Agile delivery with minimal overhead.",
+  "category": "software-development",
+  "version": "1.0.0",
+  "metadata": {
+    "enterprise_size": "small",
+    "department_size": "2-4 FTE",
+    "company_size": "up to 100 employees",
+    "industry": "general",
+    "compliance_level": "lightweight",
+    "frameworks": ["agile", "GitOps", "lean"],
+    "last_reviewed": "2026-07-17"
+  },
+  "tags": ["software-development", "small", "full-stack", "product-development"],
+  "status": "published",
+  "created_by": "platform",
+  "agents": [
+    {
+      "id": "tech-lead-01",
+      "role": "Tech Lead / Engineering Manager",
+      "capabilities": [
+        "technical-architecture",
+        "code-review",
+        "sprint-planning",
+        "feature-development",
+        "mentoring",
+        "technical-decision-making"
+      ],
+      "model": "qwen-72b",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": ["git-repo", "project-management", "code-review-tools"],
+      "system_prompt": "You are the Tech Lead for a small software development team. You build features alongside your team, review code, plan sprints, and make technical decisions. You balance hands-on coding with team leadership.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "code-repos": "read-write",
+        "project-management": "read-write",
+        "ci-cd": "read-write",
+        "production": "read-only"
+      }
+    },
+    {
+      "id": "developer-01",
+      "role": "Software Developer",
+      "capabilities": [
+        "feature-development",
+        "bug-fixing",
+        "unit-testing",
+        "code-review",
+        "documentation"
+      ],
+      "model": "qwen-34b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["git-repo", "code-editor", "testing-tools"],
+      "system_prompt": "You are a Software Developer building product features. You write code, write tests, fix bugs, and collaborate with your teammates on feature delivery.",
+      "constraints": {"max_tokens_per_request": 4096},
+      "access_control": {
+        "code-repos": "read-write",
+        "production": "read-only"
+      }
+    },
+    {
+      "id": "dev-gpo-01",
+      "role": "General Purpose Agent — Dev Support",
+      "capabilities": [
+        "documentation",
+        "report-generation",
+        "scheduling",
+        "faq-response"
+      ],
+      "model": "qwen-14b",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": ["document-storage", "project-management", "email"],
+      "system_prompt": "You are a Dev GPO handling routine tasks: maintaining documentation, generating reports, scheduling meetings, answering developer questions. Always route technical decisions and code changes to human developers.",
+      "constraints": {"max_tokens_per_request": 2048},
+      "access_control": {
+        "code-repos": "read-only",
+        "documentation": "read-write",
+        "project-management": "read-only"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-feature-001",
+      "name": "Feature Development",
+      "description": "End-to-end feature development from planning to deployment.",
+      "triggers": ["manual", "event:sprint-planning"],
+      "steps": [
+        {
+          "id": "feat-01",
+          "type": "agent_call",
+          "name": "Gather Requirements",
+          "config": {"agent": "tech-lead-01", "task": "Gather feature requirements from stakeholders, assess technical feasibility"}
+        },
+        {
+          "id": "feat-02",
+          "type": "agent_call",
+          "name": "Design Solution",
+          "config": {"agent": "tech-lead-01", "task": "Design technical solution, create implementation plan"}
+        },
+        {
+          "id": "feat-03",
+          "type": "transformation",
+          "name": "Implement Feature",
+          "config": {"agent": "developer-01", "task": "Write code, write tests, create pull request"}
+        },
+        {
+          "id": "feat-04",
+          "type": "approval",
+          "name": "Code Review",
+          "config": {"required_by": "tech-lead-01", "auto_approve_if": "ci_passes_and_tests_covered"}
+        },
+        {
+          "id": "feat-05",
+          "type": "tool_call",
+          "name": "Deploy to Production",
+          "config": {"tool": "ci-cd", "environment": "production"}
+        }
+      ]
+    },
+    {
+      "id": "wf-bugfix-001",
+      "name": "Bug Fix Process",
+      "description": "Triage, fix, and verify bug fixes.",
+      "triggers": ["manual", "event:bug-reported"],
+      "steps": [
+        {
+          "id": "bug-01",
+          "type": "agent_call",
+          "name": "Triage Bug",
+          "config": {"agent": "tech-lead-01", "task": "Assess severity, priority, and assign to developer"}
+        },
+        {
+          "id": "bug-02",
+          "type": "transformation",
+          "name": "Fix Bug",
+          "config": {"agent": "developer-01", "task": "Fix bug, write regression test"}
+        },
+        {
+          "id": "bug-03",
+          "type": "approval",
+          "name": "Verify Fix",
+          "config": {"required_by": "tech-lead-01", "task": "Review fix and regression test"}
+        }
+      ]
+    },
+    {
+      "id": "wf-deploy-001",
+      "name": "Deployment Process",
+      "description": "Deploy code changes to production with CI/CD.",
+      "triggers": ["manual", "schedule:daily"],
+      "steps": [
+        {
+          "id": "deploy-01",
+          "type": "tool_call",
+          "name": "Run CI Pipeline",
+          "config": {"tools": ["lint", "test", "build", "security-scan"]}
+        },
+        {
+          "id": "deploy-02",
+          "type": "approval",
+          "name": "Deployment Approval",
+          "config": {"required_by": "tech-lead-01", "auto_approve_if": "all_checks_pass"}
+        },
+        {
+          "id": "deploy-03",
+          "type": "tool_call",
+          "name": "Deploy to Staging",
+          "config": {"tool": "ci-cd", "environment": "staging"}
+        },
+        {
+          "id": "deploy-04",
+          "type": "transformation",
+          "name": "Verify Deployment",
+          "config": {"agent": "dev-gpo-01", "task": "Monitor deployment, verify health checks pass"}
+        }
+      ]
+    }
+  ],
+  "memory_topology": {
+    "semantic_enabled": true,
+    "episodic_enabled": false,
+    "procedural_enabled": true,
+    "graph_enabled": false,
+    "memory_profiles": {
+      "tech-lead-01": "semantic-enabled, procedural-enabled",
+      "developer-01": "semantic-enabled",
+      "dev-gpo-01": "semantic-enabled"
+    },
+    "retention_policy": {
+      "code-reviews": "6-months",
+      "deployment-logs": "3-months",
+      "bug-reports": "1-year"
+    }
+  },
+  "governance_rules": [
+    {
+      "id": "gov-dev-001",
+      "name": "Code Review Requirement",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"change_type": "production-code"},
+      "actions": ["require-approval", "block-merge-without-review"]
+    },
+    {
+      "id": "gov-dev-002",
+      "name": "Test Coverage Gate",
+      "type": "compliance",
+      "enforcement": "enforce",
+      "conditions": {"change_type": "new-feature"},
+      "actions": ["require-minimum-coverage-80", "block-merge-if-below"]
+    }
+  ],
+  "kpis": [
+    {
+      "id": "dev-kpi-001",
+      "name": "Feature Delivery Time",
+      "description": "Average time from requirement to deployed feature",
+      "metric_type": "gauge",
+      "unit": "days",
+      "thresholds": {"target": 5, "warning": 10, "critical": 20},
+      "aggregation_period": "sprint"
+    },
+    {
+      "id": "dev-kpi-002",
+      "name": "Bug Escape Rate",
+      "description": "Percentage of bugs found in production vs caught in testing",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 10, "warning": 20, "critical": 35},
+      "aggregation_period": "sprint"
+    },
+    {
+      "id": "dev-kpi-003",
+      "name": "Code Coverage",
+      "description": "Percentage of code covered by automated tests",
+      "metric_type": "gauge",
+      "unit": "percent",
+      "thresholds": {"target": 80, "warning": 60, "critical": 40},
+      "aggregation_period": "sprint"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "int-dev-001",
+      "type": "custom",
+      "name": "Git Repository",
+      "provider": "github",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-dev-002",
+      "type": "custom",
+      "name": "CI/CD",
+      "provider": "github-actions",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-dev-003",
+      "type": "custom",
+      "name": "Project Management",
+      "provider": "github-projects",
+      "auth_method": "oauth2",
+      "status": "active"
+    },
+    {
+      "id": "int-dev-004",
+      "type": "email",
+      "name": "Company Email",
+      "provider": "google_workspace",
+      "auth_method": "oauth2",
+      "status": "active"
+    }
+  ],
+  "operational_policies": [
+    {
+      "id": "pol-dev-001",
+      "name": "Agent Autonomy in Development",
+      "scope": "agent",
+      "rules": [
+        {"agent": "dev-gpo-01", "allowed": ["documentation", "reporting", "scheduling"], "denied": ["write-code", "merge-pull-requests", "deploy-to-production"]}
+      ]
+    }
+  ],
+  "metadata": {
+    "enterprise_size": "small",
+    "department_size": "2-4 FTE",
+    "company_size": "up to 100 employees",
+    "industry": "general",
+    "compliance_level": "lightweight",
+    "frameworks": ["agile", "GitOps", "lean"],
+    "last_reviewed": "2026-07-17"
+  }
+}
