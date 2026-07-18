@@ -15,6 +15,9 @@ type Config struct {
 	TracerEnabled    bool
 	OtelCollectorURL string
 
+	// Database persistence
+	DatabaseURL string // PostgreSQL DSN — if set, users/audit are persisted
+
 	// Rate limiting
 	RateLimitRPS   float64
 	RateLimitBurst int
@@ -47,6 +50,9 @@ func Load() *Config {
 		AuthentikTokenTTL:  getEnvInt("AUTHENTIK_TOKEN_TTL_MIN", 0),
 		ProvisioningMethod: getEnvString("AUTHENTIK_PROVISIONING_METHOD", "none"),
 		IngressDomain:      getEnvString("AUTHENTIK_INGRESS_DOMAIN", "auth.operan.internal"),
+
+		// Database persistence
+		DatabaseURL: getEnvString("IAM_DATABASE_URL", ""),
 	}
 
 	// Validate Authentik config if integration is expected

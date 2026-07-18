@@ -194,6 +194,13 @@ func (s *AuditStore) GetByID(id string) (*models.AuditEvent, error) {
 	return nil, fmt.Errorf("audit event not found")
 }
 
+// CountTotal returns the total number of audit events in the store.
+func (s *AuditStore) CountTotal() (int, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return len(s.events), nil
+}
+
 // ParseFilter parses the query parameters for GetAuditTrailsRequest.
 func ParseFilter(raw string) map[string]string {
 	result := make(map[string]string)
