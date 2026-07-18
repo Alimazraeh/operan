@@ -38,7 +38,7 @@ var serviceTargets = map[string]string{
 	"observability": "http://observability.operan.svc.cluster.local:8011",
 	"cost":          "http://cost-governance.operan.svc.cluster.local:8017",
 	"connectors":    "http://enterprise-connectors.operan.svc.cluster.local:8018",
-	"iam":           "http://identity-access.operan.svc.cluster.local:8080",
+	"iam":           "http://identity-access.operan.svc.cluster.local:8002",
 }
 
 // pathPrefixes maps service names to extra path prefixes to prepend after stripping /svc/<name>.
