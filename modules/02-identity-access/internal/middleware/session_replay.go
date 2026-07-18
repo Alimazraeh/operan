@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,6 +16,7 @@ type SessionReplayCaptureConfig struct {
 	MaxRequests   int           // Max requests per session (0 = unlimited, default: 5000)
 	CleanupInterval time.Duration // How often background cleanup runs (0 = disabled, default: 5m)
 	MaxSessionAge time.Duration // Sessions older than this are evicted during cleanup (0 = disabled, default: 24h)
+	MaxBodySize   int64         // Maximum request body size to capture (0 = no limit, default: 1MB)
 }
 
 // SessionReplayCapture stores captured HTTP request/response details
@@ -45,6 +48,9 @@ func NewSessionReplayCaptureWithConfig(cfg SessionReplayCaptureConfig) *SessionR
 	}
 	if cfg.MaxSessionAge == 0 {
 		cfg.MaxSessionAge = 24 * time.Hour
+	}
+	if cfg.MaxBodySize == 0 {
+		cfg.MaxBodySize = 1 * 1024 * 1024 // 1MB default
 	}
 
 	c := &SessionReplayCapture{
@@ -129,7 +135,7 @@ type ReplayRequest struct {
 }
 
 // Capture creates and returns a ReplayRequest from the incoming HTTP request.
-// The caller populates StatusCode, Duration, and Response after the handler runs.
+// Reads and captures the request body (up to MaxBodySize bytes) for replay context.
 func (c *SessionReplayCapture) Capture(r *http.Request) *ReplayRequest {
 	req := &ReplayRequest{
 		Timestamp: time.Now().UTC(),
@@ -137,7 +143,18 @@ func (c *SessionReplayCapture) Capture(r *http.Request) *ReplayRequest {
 		Path:      r.URL.Path,
 		Query:     r.URL.RawQuery,
 		Headers:   make(map[string]string),
-		Body:      nil, // body not read here — client code should inject if needed
+	}
+
+	// Read and capture request body if content length is set and within limit
+	if r.Body != nil && r.ContentLength > 0 && r.ContentLength <= c.config.MaxBodySize {
+		bodyBytes, err := io.ReadAll(io.LimitReader(r.Body, c.config.MaxBodySize))
+		if err == nil {
+			req.Body = bodyBytes
+		}
+		// Restore the body reader for downstream handlers
+		if r.Body != nil {
+			r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		}
 	}
 
 	// Copy relevant headers for replay context.
