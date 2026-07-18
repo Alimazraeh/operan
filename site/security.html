@@ -1,283 +1,200 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Security — Operan | Sovereign by Design</title>
-  <meta name="description" content="Operan's security architecture: data sovereignty, private deployment, air-gapped support, auditability, human approval workflows, and compliance — all built into the platform.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security — Operan | Human-Governed. Sovereign. Auditable.</title>
+<meta name="description" content="Operan's security architecture: data sovereignty, private deployment, air-gapped support, auditability, human governance, and compliance.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
 </head>
 <body>
+<canvas id="rain-canvas" class="rain-canvas"></canvas>
 
-  <nav class="nav" id="nav">
-    <div class="nav__inner">
-      <a href="index.html" class="nav__logo">
-        <svg><use href="assets/svg/logo.svg#icon-logo"/></svg>
-        OPERAN
-      </a>
-      <div class="nav__links" id="navLinks">
-        <a href="index.html" class="nav__link">Home</a>
-        <a href="platform.html" class="nav__link">Platform</a>
-        <a href="departments.html" class="nav__link">Departments</a>
-        <a href="industries.html" class="nav__link">Industries</a>
-        <a href="security.html" class="nav__link nav__link--active">Security</a>
-        <a href="about.html" class="nav__link">About</a>
-        <a href="private-cloud.html" class="nav__link">Private Cloud</a>
-        <a href="briefing.html" class="btn btn--primary nav__cta">Request Executive Briefing</a>
-      </div>
-      <div class="nav__toggle" id="navToggle"><span></span><span></span><span></span></div>
+<!-- ═══ Navigation ═══ -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">OPERAN</a>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="platform.html" class="nav-link">Platform</a>
+      <a href="departments.html" class="nav-link">Departments</a>
+      <a href="industries.html" class="nav-link">Industries</a>
+      <a href="security.html" class="nav-link active">Security</a>
+      <a href="about.html" class="nav-link">About</a>
+      <a href="briefing.html" class="nav-cta">Request Briefing</a>
     </div>
-  </nav>
+    <div class="nav-toggle" id="navToggle"><span></span><span></span><span></span></div>
+  </div>
+</nav>
 
-  <!-- Page Header -->
-  <section class="section" style="padding-top:calc(var(--header-height) + var(--space-4xl));padding-bottom:var(--space-4xl);">
-    <div class="container">
-      <div class="reveal" style="max-width:720px;margin:0 auto;text-align:center;">
-        <p class="section-label" style="justify-content:center;">Security & Compliance</p>
-        <h1 class="text-gradient">Sovereign by Design. Governed by Default.</h1>
-        <p style="color:var(--color-gray-400);font-size:var(--text-lg);margin-top:var(--space-xl);line-height:1.8;">
-          Every security capability is built into the platform fabric — not layered on top. Six pillars of protection, eight governance mechanisms, complete auditability at every level.
-        </p>
-      </div>
+<div class="page-canvas">
+
+<!-- ═══ PAGE HEADER ═══ -->
+<section class="section" style="padding-top:calc(var(--nav-h) + var(--space-3xl));padding-bottom:var(--space-3xl);">
+  <div class="section-inner">
+    <div class="reveal" style="max-width:720px;margin:0 auto;text-align:center;">
+      <div class="section-label" style="justify-content:center;">Security &amp; Compliance</div>
+      <h1 class="section-title" style="font-size:var(--text-4xl);">Human-Governed. <span class="accent">Sovereign.</span> Auditable.</h1>
+      <p class="section-subtitle" style="margin:var(--space-md) auto 0;">Every security capability is built into the platform&mdash;not layered on top. Seven pillars of protection. Eight governance mechanisms. Complete auditability at every level.</p>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- Security Pillars -->
-  <section class="section section--darker">
-    <div class="container">
-      <div class="section-header reveal">
-        <p class="section-label">Foundation</p>
-        <h2>Six Security Pillars</h2>
-        <p>Operan's security architecture is structured around six foundational pillars — each designed to meet the most demanding public-sector requirements.</p>
-      </div>
+<div class="section-divider"></div>
 
-      <div class="pillar-grid">
-        <div class="pillar reveal">
-          <svg class="pillar__icon"><use href="assets/svg/icons.svg#icon-globe"/></svg>
-          <h3 class="pillar__title">Data Sovereignty</h3>
-          <p class="pillar__desc">
-            Complete control over where data resides, who accesses it, and how it flows. Tenant-isolated at every layer with cryptographic separation. Your data never leaves your infrastructure.
-          </p>
-        </div>
-
-        <div class="pillar reveal" style="transition-delay:100ms;">
-          <svg class="pillar__icon"><use href="assets/svg/icons.svg#icon-server"/></svg>
-          <h3 class="pillar__title">Private Deployment</h3>
-          <p class="pillar__desc">
-            Deploy entirely within your own data center or sovereign cloud. No third-party data processing. No external dependencies. Full operational independence from day one.
-          </p>
-        </div>
-
-        <div class="pillar reveal" style="transition-delay:200ms;">
-          <svg class="pillar__icon"><use href="assets/svg/icons.svg#icon-lock"/></svg>
-          <h3 class="pillar__title">Air-Gapped Support</h3>
-          <p class="pillar__desc">
-            Operate in classified environments with full air-gapped deployment capability. Offline updates, isolated data pipelines, and complete network segregation support.
-          </p>
-        </div>
-
-        <div class="pillar reveal" style="transition-delay:300ms;">
-          <svg class="pillar__icon"><use href="assets/svg/icons.svg#icon-file"/></svg>
-          <h3 class="pillar__title">Complete Auditability</h3>
-          <p class="pillar__desc">
-            Every agent action, every decision, every data access — logged, timestamped, and immutable. Full audit trails support regulatory compliance and forensic investigation.
-          </p>
-        </div>
-
-        <div class="pillar reveal" style="transition-delay:400ms;">
-          <svg class="pillar__icon"><use href="assets/svg/icons.svg#icon-hand"/></svg>
-          <h3 class="pillar__title">Human Approval Workflows</h3>
-          <p class="pillar__desc">
-            Critical decisions require human authorization. Configurable approval gates at every sensitive operation. Digital workers execute autonomously within defined boundaries.
-          </p>
-        </div>
-
-        <div class="pillar reveal" style="transition-delay:500ms;">
-          <svg class="pillar__icon"><use href="assets/svg/icons.svg#icon-users"/></svg>
-          <h3 class="pillar__title">Role-Based Access Control</h3>
-          <p class="pillar__desc">
-            Granular RBAC with multi-dimensional access controls. Role, department, project, and data-class based permissions. Every action validated at runtime.
-          </p>
-        </div>
-      </div>
+<!-- ═══ SECURITY PILLARS ═══ -->
+<section class="section section--dark">
+  <div class="section-inner">
+    <div class="section-header reveal">
+      <div class="section-label">Foundation</div>
+      <h2 class="section-title">Seven <span class="accent">Security Pillars</span></h2>
+      <p class="section-subtitle">Each pillar meets the most demanding public-sector requirements. Human empowerment leads the way.</p>
     </div>
-  </section>
+    <div class="pillar-grid">
 
-  <!-- Compliance Grid -->
-  <section class="section">
-    <div class="container">
-      <div class="section-header reveal">
-        <p class="section-label">Compliance Frameworks</p>
-        <h2>Built-In Compliance</h2>
-        <p>Operan's architecture encodes compliance requirements — reducing the gap between operational reality and regulatory obligation.</p>
+      <div class="pillar-card reveal" style="transition-delay:0ms;">
+        <span class="pillar-number">0</span>
+        <div style="font-size:28px;margin-bottom:var(--space-sm);">&#x1F4AA;</div>
+        <h3 class="pillar-name" style="color:var(--cyan-bright);">Human Empowerment</h3>
+        <p class="pillar-desc">Operan is designed to empower workers, not replace them. Every department is structured so AI handles repetitive, error-prone tasks and humans handle strategic, creative work. Aligned with Saudi Arabia's national AI ethics and UAE's human-centric AI principles.</p>
       </div>
 
-      <div class="compliance-grid reveal">
-        <div class="card card--glow" style="padding:var(--space-lg);text-align:center;">
-          <div style="font-size:var(--text-2xl);margin-bottom:var(--space-sm);">🏛️</div>
-          <div style="font-weight:600;color:var(--color-white);font-size:var(--text-sm);margin-bottom:var(--space-2xs);">FedRAMP</div>
-          <div style="font-size:var(--text-xs);color:var(--color-gray-500);">Government Cloud Security</div>
+      <div class="pillar-card reveal" style="transition-delay:80ms;">
+        <span class="pillar-number">1</span>
+        <div style="font-size:28px;margin-bottom:var(--space-sm);">&#x1F310;</div>
+        <h3 class="pillar-name">Data Sovereignty</h3>
+        <p class="pillar-desc">Your data never leaves your jurisdiction. Regional deployment isolation, private model hosting, private vector stores. Complete control over data residency and cross-border data flows.</p>
+      </div>
+
+      <div class="pillar-card reveal" style="transition-delay:160ms;">
+        <span class="pillar-number">2</span>
+        <div style="font-size:28px;margin-bottom:var(--space-sm);">&#x1F5FB;&#xFE0F;</div>
+        <h3 class="pillar-name">On-Prem &amp; Air-Gapped Deployment</h3>
+        <p class="pillar-desc">Operan runs behind your firewall. No cloud dependency. No external data flow. Deployable in classified environments. Offline updates, isolated data pipelines, complete network segregation support.</p>
+      </div>
+
+      <div class="pillar-card reveal" style="transition-delay:0ms;">
+        <span class="pillar-number">3</span>
+        <div style="font-size:28px;margin-bottom:var(--space-sm);">&#x1F9CD;&#xFE0F;</div>
+        <h3 class="pillar-name">Human-Governed Autonomy</h3>
+        <p class="pillar-desc">Every critical action requires human approval. Humans can override any agent at any time. Approval workflows for high-risk operations. This is not "set it and forget it." This is human judgment, multiplied by AI capability.</p>
+      </div>
+
+      <div class="pillar-card reveal" style="transition-delay:80ms;">
+        <span class="pillar-number">4</span>
+        <div style="font-size:28px;margin-bottom:var(--space-sm);">&#x1F4C4;</div>
+        <h3 class="pillar-name">Complete Audit Trail</h3>
+        <p class="pillar-desc">Every agent action becomes an event on Kafka. Distributed tracing. Per-tenant metrics. Immutable logs. Every decision logged, timestamped, and fully auditable for regulatory compliance and forensic investigation.</p>
+      </div>
+
+      <div class="pillar-card reveal" style="transition-delay:160ms;">
+        <span class="pillar-number">5</span>
+        <div style="font-size:28px;margin-bottom:var(--space-sm);">&#x1F510;</div>
+        <h3 class="pillar-name">Enterprise Encryption</h3>
+        <p class="pillar-desc">Encryption at rest and in transit. Enterprise-grade key management. Multi-tenant cryptographic isolation. JWT-based auth + X-Tenant-ID. RBAC + ABAC access controls.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ═══ COMPLIANCE FRAMEWORKS ═══ -->
+<section class="section">
+  <div class="section-inner">
+    <div class="section-header reveal">
+      <div class="section-label">Compliance</div>
+      <h2 class="section-title">Regulatory <span class="accent">Frameworks</span></h2>
+      <p class="section-subtitle">Operan speaks the language of compliance. Nine frameworks, fully aligned.</p>
+    </div>
+    <div style="max-width:800px;margin:0 auto;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-md);">
+        <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:0ms;">
+          <div style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--space-xs);">NCA</div>
+          <div style="font-size:var(--text-xs);color:var(--gray-400);">National Cybersecurity Authority</div>
         </div>
-        <div class="card card--glow" style="padding:var(--space-lg);text-align:center;">
-          <div style="font-size:var(--text-2xl);margin-bottom:var(--space-sm);">🔒</div>
-          <div style="font-weight:600;color:var(--color-white);font-size:var(--text-sm);margin-bottom:var(--space-2xs);">HIPAA</div>
-          <div style="font-size:var(--text-xs);color:var(--color-gray-500);">Healthcare Data Privacy</div>
+        <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:50ms;">
+          <div style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--space-xs);">SDAIA</div>
+          <div style="font-size:var(--text-xs);color:var(--gray-400);">Saudi Data &amp; AI Authority</div>
         </div>
-        <div class="card card--glow" style="padding:var(--space-lg);text-align:center;">
-          <div style="font-size:var(--text-2xl);margin-bottom:var(--space-sm);">💰</div>
-          <div style="font-weight:600;color:var(--color-white);font-size:var(--text-sm);margin-bottom:var(--space-2xs);">SOX</div>
-          <div style="font-size:var(--text-xs);color:var(--color-gray-500);">Financial Governance</div>
+        <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:100ms;">
+          <div style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--space-xs);">UAE IA</div>
+          <div style="font-size:var(--text-xs);color:var(--gray-400);">UAE Information Assurance</div>
         </div>
-        <div class="card card--glow" style="padding:var(--space-lg);text-align:center;">
-          <div style="font-size:var(--text-2xl);margin-bottom:var(--space-sm);">🏦</div>
-          <div style="font-weight:600;color:var(--color-white);font-size:var(--text-sm);margin-bottom:var(--space-2xs);">PCI DSS</div>
-          <div style="font-size:var(--text-xs);color:var(--color-gray-500);">Payment Card Security</div>
+        <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:150ms;">
+          <div style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--space-xs);">GDPR</div>
+          <div style="font-size:var(--text-xs);color:var(--gray-400);">General Data Protection Reg.</div>
         </div>
-        <div class="card card--glow" style="padding:var(--space-lg);text-align:center;">
-          <div style="font-size:var(--text-2xl);margin-bottom:var(--space-sm);">🌐</div>
-          <div style="font-weight:600;color:var(--color-white);font-size:var(--text-sm);margin-bottom:var(--space-2xs);">GDPR</div>
-          <div style="font-size:var(--text-xs);color:var(--color-gray-500);">Data Protection & Privacy</div>
+        <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:200ms;">
+          <div style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--space-xs);">ISO 27001</div>
+          <div style="font-size:var(--text-xs);color:var(--gray-400);">Information Security Mgmt</div>
         </div>
-        <div class="card card--glow" style="padding:var(--space-lg);text-align:center;">
-          <div style="font-size:var(--text-2xl);margin-bottom:var(--space-sm);">🔐</div>
-          <div style="font-weight:600;color:var(--color-white);font-size:var(--text-sm);margin-bottom:var(--space-2xs);">ISO 27001</div>
-          <div style="font-size:var(--text-xs);color:var(--color-gray-500);">Information Security Mgmt</div>
-        </div>
-        <div class="card card--glow" style="padding:var(--space-lg);text-align:center;">
-          <div style="font-size:var(--text-2xl);margin-bottom:var(--space-sm);">📋</div>
-          <div style="font-weight:600;color:var(--color-white);font-size:var(--text-sm);margin-bottom:var(--space-2xs);">NIST CSF</div>
-          <div style="font-size:var(--text-xs);color:var(--color-gray-500);">Cybersecurity Framework</div>
-        </div>
-        <div class="card card--glow" style="padding:var(--space-lg);text-align:center;">
-          <div style="font-size:var(--text-2xl);margin-bottom:var(--space-sm);">📜</div>
-          <div style="font-weight:600;color:var(--color-white);font-size:var(--text-sm);margin-bottom:var(--space-2xs);">SOC 2</div>
-          <div style="font-size:var(--text-xs);color:var(--color-gray-500);">Service Organization Controls</div>
+        <div class="card reveal" style="text-align:center;padding:var(--space-lg);transition-delay:250ms;">
+          <div style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--space-xs);">SOX</div>
+          <div style="font-size:var(--text-xs);color:var(--gray-400);">Sarbanes-Oxley Compliance</div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- Human-Governed Autonomy Deep Dive -->
-  <section class="section section--darker">
-    <div class="container">
-      <div class="section-header reveal">
-        <p class="section-label">Governance in Action</p>
-        <h2>Human-Governed Autonomy</h2>
-        <p>Operan's digital workers operate autonomously within defined boundaries — but critical decisions always require human authorization. This is not black-box automation.</p>
+<!-- ═══ FINAL CTA ═══ -->
+<section class="section section--dark">
+  <div class="section-inner">
+    <div style="max-width:640px;margin:0 auto;text-align:center;" class="reveal">
+      <h2 style="font-size:var(--text-3xl);margin-bottom:var(--space-lg);">Need a Custom Security Review?</h2>
+      <p style="color:var(--gray-300);font-size:var(--text-lg);line-height:1.7;margin-bottom:var(--space-xl);">Our security team can walk through your specific compliance requirements and demonstrate how Operan meets or exceeds them.</p>
+      <a href="briefing.html" class="btn btn-primary btn-lg">Request Security Briefing</a>
+    </div>
+  </div>
+</section>
+
+</div><!-- /page-canvas -->
+
+<!-- ═══ Footer ═══ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">OPERAN</div>
+        <p class="footer-tagline">The Operating System for Digital Departments.<br>Enterprise Agentic Workforce Infrastructure.</p>
       </div>
-
-      <div class="grid grid--2">
-        <div class="reveal">
-          <h3 style="margin-bottom:var(--space-xl);">Approval Workflow Engine</h3>
-          <div class="feature-list" style="margin-bottom:var(--space-2xl);">
-            <div class="feature-list__item">
-              <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-              <span><strong style="color:var(--color-white);">Threshold-based gates</strong> — Define risk thresholds automatically requiring human approval</span>
-            </div>
-            <div class="feature-list__item">
-              <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-              <span><strong style="color:var(--color-white);">Role-gated authorization</strong> — Only designated personnel can approve sensitive operations</span>
-            </div>
-            <div class="feature-list__item">
-              <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-              <span><strong style="color:var(--color-white);">Multi-step approvals</strong> — Sequential or parallel approval workflows for complex decisions</span>
-            </div>
-            <div class="feature-list__item">
-              <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-              <span><strong style="color:var(--color-white);">Full context provision</strong> — Humans receive complete rationale, evidence, and risk assessment</span>
-            </div>
-            <div class="feature-list__item">
-              <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-              <span><strong style="color:var(--color-white);">Audit trail preservation</strong> — Every approval or rejection is permanently logged</span>
-            </div>
-          </div>
+      <div>
+        <div class="footer-heading">Platform</div>
+        <div class="footer-links">
+          <a href="platform.html" class="footer-link">Architecture</a>
+          <a href="platform.html#modules" class="footer-link">Modules</a>
         </div>
-
-        <div class="reveal" style="transition-delay:200ms;">
-          <h3 style="margin-bottom:var(--space-xl);">Explainability & Transparency</h3>
-          <div class="feature-list">
-            <div class="feature-list__item">
-              <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-              <span><strong style="color:var(--color-white);">Decision traceability</strong> — Every agent output links to its source data and reasoning chain</span>
-            </div>
-            <div class="feature-list__item">
-              <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-              <span><strong style="color:var(--color-white);">Policy enforcement logging</strong> — All policy checks, passes, and denials are recorded</span>
-            </div>
-            <div class="feature-list__item">
-              <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-              <span><strong style="color:var(--color-white);">Model transparency</strong> — Know which model processed each request and why</span>
-            </div>
-            <div class="feature-list__item">
-              <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-              <span><strong style="color:var(--color-white);">Change management</strong> — Every configuration change is versioned and attributed</span>
-            </div>
-            <div class="feature-list__item">
-              <svg class="feature-list__check"><use href="assets/svg/icons.svg#icon-check"/></svg>
-              <span><strong style="color:var(--color-white);">Real-time monitoring</strong> — Live dashboards showing agent activity, approvals, and policy violations</span>
-            </div>
-          </div>
+      </div>
+      <div>
+        <div class="footer-heading">Solutions</div>
+        <div class="footer-links">
+          <a href="departments.html" class="footer-link">Departments</a>
+          <a href="industries.html" class="footer-link">Industries</a>
+          <a href="security.html" class="footer-link">Security</a>
+          <a href="private-cloud.html" class="footer-link">Private Cloud</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-heading">Company</div>
+        <div class="footer-links">
+          <a href="about.html" class="footer-link">About</a>
+          <a href="briefing.html" class="footer-link">Request Briefing</a>
         </div>
       </div>
     </div>
-  </section>
-
-  <!-- CTA -->
-  <section class="section">
-    <div class="container">
-      <div class="reveal" style="max-width:720px;margin:0 auto;text-align:center;">
-        <h2 style="margin-bottom:var(--space-xl);">Ready to Discuss Your Security Requirements?</h2>
-        <p style="color:var(--color-gray-400);margin-bottom:var(--space-2xl);">Schedule a strategic assessment to review how Operan's security architecture maps to your organization's compliance and data sovereignty requirements.</p>
-        <a href="briefing.html" class="btn btn--primary btn--lg">
-          Schedule Strategic Assessment
-          <svg><use href="assets/svg/icons.svg#icon-arrow-right"/></svg>
-        </a>
-      </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Operan. All rights reserved.</span>
+      <span>Empower Your Workforce. Replace Broken Work. Not People.</span>
     </div>
-  </section>
+  </div>
+</footer>
 
-  <footer class="footer">
-    <div class="container">
-      <div class="footer__grid">
-        <div>
-          <div class="footer__brand-name">OPERAN</div>
-          <p class="footer__brand-tagline">The Operating System for Digital Departments.</p>
-        </div>
-        <div>
-          <h4 class="footer__heading">Platform</h4>
-          <div class="footer__links">
-            <a href="platform.html" class="footer__link">Architecture</a>
-            <a href="platform.html#modules" class="footer__link">Modules</a>
-          </div>
-        </div>
-        <div>
-          <h4 class="footer__heading">Solutions</h4>
-          <div class="footer__links">
-            <a href="departments.html" class="footer__link">Digital Departments</a>
-            <a href="industries.html" class="footer__link">Industries</a>
-            <a href="security.html" class="footer__link">Security</a>
-            <a href="private-cloud.html" class="footer__link">Private Cloud</a>
-          </div>
-        </div>
-        <div>
-          <h4 class="footer__heading">Company</h4>
-          <div class="footer__links">
-            <a href="about.html" class="footer__link">About</a>
-            <a href="briefing.html" class="footer__link">Request Briefing</a>
-          </div>
-        </div>
-      </div>
-      <div class="footer__bottom">
-        <span>© 2026 Operan. All rights reserved.</span>
-        <span>Enterprise Agentic Workforce Infrastructure</span>
-      </div>
-    </div>
-  </footer>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="js/main.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>

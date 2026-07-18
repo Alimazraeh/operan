@@ -1,511 +1,606 @@
-// Operan Website — Main JavaScript
-// Enterprise Agentic Workforce Infrastructure
+// OPERAN — Shared JavaScript
+// ═══════════════════════════════════════════════════════════
+// DATA VISUALIZATION NETWORK (Real-time event stream — Canvas 2D)
+// ═══════════════════════════════════════════════════════════
+const OperanDataVisual = {
+  canvas: null, ctx: null, running: false,
+  rows: [],
 
-/* ============================================================
-   Scroll-triggered header
-   ============================================================ */
-(function initNavScroll() {
-  const nav = document.querySelector('.nav');
-  if (!nav) return;
+  // ── Simulated Operan platform data ──────────────────────────
+  _modules: [
+    { id: 'M01', name: 'Tenant CP', color: '#00B4D8' },
+    { id: 'M02', name: 'IAM', color: '#0077B6' },
+    { id: 'M03', name: 'Orchestrator', color: '#00D4FF' },
+    { id: 'M04', name: 'Agent Reg', color: '#11999E' },
+    { id: 'M05', name: 'Dept Templ', color: '#D4A853' },
+    { id: 'M06', name: 'Knowledge', color: '#38B000' },
+    { id: 'M07', name: 'Memory', color: '#8338EC' },
+    { id: 'M08', name: 'Tool Exec', color: '#FF006E' },
+    { id: 'M09', name: 'Supervise', color: '#3A86FF' },
+    { id: 'M10', name: 'Policy', color: '#FB5607' },
+    { id: 'M11', name: 'Observability', color: '#06D6A0' },
+    { id: 'M12', name: 'Model Abs', color: '#FFD166' },
+    { id: 'M13', name: 'Model Route', color: '#EF476F' },
+    { id: 'M14', name: 'Collaboration', color: '#118AB2' },
+    { id: 'M15', name: 'Marketplace', color: '#073B4C' },
+    { id: 'M16', name: 'Sandbox', color: '#94D2BD' },
+    { id: 'M17', name: 'Cost Gov', color: '#A8DADC' },
+    { id: 'M18', name: 'Connectors', color: '#E63946' },
+    { id: 'M19', name: 'Arabic NLP', color: '#F4A261' },
+    { id: 'M20', name: 'Sovereign', color: '#2B2D42' }
+  ],
+  _eventTypes: [
+    'CREATE', 'UPDATE', 'DEPLOY', 'SCALED', 'APPROVED',
+    'AUDIT', 'SCAN', 'SYNC', 'ROUTED', 'EXECUTED'
+  ],
+  _statuses: ['success', 'success', 'success', 'success', 'success', 'warning', 'error'],
 
-  const onScroll = () => {
-    if (window.scrollY > 50) {
-      nav.classList.add('nav--scrolled');
-    } else {
-      nav.classList.remove('nav--scrolled');
+  init(canvasId, options) {
+    options = options || {};
+    var rowCount = options.rowCount || 5;
+
+    this.canvas = document.getElementById(canvasId);
+    if (!this.canvas) return;
+    this.ctx = this.canvas.getContext('2d');
+    if (!this.ctx) return;
+    this.running = true;
+
+    var self = this;
+    this.canvas.addEventListener('mousemove', function(e) {
+      var rect = self.canvas.getBoundingClientRect();
+      self.mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    });
+    this.canvas.addEventListener('mouseleave', function() {
+      self.mouse = { x: -9999, y: -9999 };
+    });
+
+    // Card dimensions
+    var cardW = 180;
+    var gap = 8;
+    var cardSpace = cardW + gap;
+
+    // Only place 4-5 cards per row initially
+    var initialCards = 4;
+
+    // Create rows with independent speeds
+    this.rows = [];
+    for (var r = 0; r < rowCount; r++) {
+      var row = {
+        y: 0,
+        speed: 0.35 + r * 0.04,
+        events: [],
+        cardSpace: cardSpace
+      };
+
+      // Place cards sequentially with fixed gaps
+      for (var i = 0; i < initialCards; i++) {
+        var evt = self._spawnEvent();
+        evt.x = i * 238; // matches draw card width (230) + gap (8)
+        row.events.push(evt);
+      }
+
+      this.rows.push(row);
     }
-  };
 
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
-})();
+    self._resize();
+    window.addEventListener('resize', function() { self._resize(); });
 
-/* ============================================================
-   Mobile nav toggle
-   ============================================================ */
-(function initMobileNav() {
-  const toggle = document.querySelector('.nav__toggle');
-  const links = document.querySelector('.nav__links');
-  if (!toggle || !links) return;
+    self._animate();
+  },
 
-  toggle.addEventListener('click', () => {
-    toggle.classList.toggle('nav__toggle--active');
-    links.classList.toggle('nav__links--open');
-  });
-
-  // Close on link click
-  links.querySelectorAll('.nav__link').forEach(link => {
-    link.addEventListener('click', () => {
-      toggle.classList.remove('nav__toggle--active');
-      links.classList.remove('nav__links--open');
-    });
-  });
-})();
-
-/* ============================================================
-   Scroll reveal
-   ============================================================ */
-(function initScrollReveal() {
-  const reveals = document.querySelectorAll('.reveal');
-  if (!reveals.length) return;
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('reveal--visible');
-        observer.unobserve(entry.target);
-      }
-    });
-  }, {
-    threshold: 0.1,
-    rootMargin: '0px 0px -60px 0px'
-  });
-
-  reveals.forEach(el => observer.observe(el));
-})();
-
-/* ============================================================
-   Counter animation
-   ============================================================ */
-(function initCounters() {
-  const counters = document.querySelectorAll('.stat__value');
-  if (!counters.length) return;
-
-  const animate = (el) => {
-    const target = parseInt(el.dataset.target, 10);
-    const suffix = el.textContent.replace(/[0-9]/g, '');
-    const duration = 2000;
-    const start = performance.now();
-
-    const step = (now) => {
-      const progress = Math.min((now - start) / duration, 1);
-      // Ease out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const current = Math.round(eased * target);
-      el.textContent = current.toLocaleString() + suffix;
-      if (progress < 1) {
-        requestAnimationFrame(step);
-      }
+  _spawnEvent: function() {
+    var mod = this._modules[Math.floor(Math.random() * this._modules.length)];
+    var type = this._eventTypes[Math.floor(Math.random() * this._eventTypes.length)];
+    var status = this._statuses[Math.floor(Math.random() * this._statuses.length)];
+    var now = new Date();
+    return {
+      module: mod,
+      type: type,
+      status: status,
+      timestamp: now,
+      x: window.innerWidth + 50
     };
+  },
 
-    requestAnimationFrame(step);
-  };
+  _formatTime: function(d) {
+    return d.getHours().toString().padStart(2, '0') + ':' +
+           d.getMinutes().toString().padStart(2, '0') + ':' +
+           d.getSeconds().toString().padStart(2, '0') + '.' +
+           d.getMilliseconds().toString().padStart(3, '0');
+  },
 
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        animate(entry.target);
-        observer.unobserve(entry.target);
+  _resize: function() {
+    var canvas = this.canvas;
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var rowH = window.innerHeight / this.rows.length;
+    for (var i = 0; i < this.rows.length; i++) {
+      this.rows[i].y = rowH * i + rowH / 2;
+      this.rows[i].height = rowH;
+    }
+  },
+
+  _animate: function() {
+    if (!this.running) return;
+    var ctx = this.ctx;
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    var now = Date.now();
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Draw subtle row guides
+    for (var r = 0; r < this.rows.length; r++) {
+      var row = this.rows[r];
+      ctx.strokeStyle = 'rgba(0, 180, 216, 0.04)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, row.y);
+      ctx.lineTo(w, row.y);
+      ctx.stroke();
+    }
+
+    // Update and draw events
+    for (var r = 0; r < this.rows.length; r++) {
+      this._updateRow(ctx, this.rows[r], w, now);
+    }
+
+    requestAnimationFrame(function() { this._animate(); }.bind(this));
+  },
+
+  _updateRow: function(ctx, row, w, now) {
+    // Remove events that scrolled off the left
+    row.events = row.events.filter(function(e) {
+      return e.x > -500;
+    });
+
+    // Move events left
+    for (var i = 0; i < row.events.length; i++) {
+      row.events[i].x -= row.speed;
+      row.events[i].timestamp = new Date(now);
+    }
+
+    // Spawn new events at the right edge of the row
+    var lastEvent = row.events[row.events.length - 1];
+    if (!lastEvent || lastEvent.x < w - 200) {
+      var evt = this._spawnEvent();
+      // Position after last event (card width 230 + gap 8)
+      evt.x = lastEvent ? lastEvent.x + 238 : w;
+      row.events.push(evt);
+    }
+
+    this._drawRowEvents(ctx, row);
+  },
+
+  _drawRowEvents: function(ctx, row) {
+    for (var i = 0; i < row.events.length; i++) {
+      var e = row.events[i];
+      if (e.x < -200 || e.x > window.innerWidth + 100) continue;
+
+      var y = row.y - 16;
+      var h = 32;
+      var eventW = 230;
+      var rx = e.x;
+      var ry = y;
+
+      // ── Event card background ──
+      var statusColor = e.status === 'success' ? '0, 180, 216' :
+                        e.status === 'warning' ? '212, 168, 83' : '255, 0, 50';
+      ctx.fillStyle = 'rgba(' + statusColor + ', 0.08)';
+      ctx.strokeStyle = 'rgba(' + statusColor + ', 0.2)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(rx + 6, ry);
+      ctx.lineTo(rx + eventW - 6, ry);
+      ctx.quadraticCurveTo(rx + eventW, ry, rx + eventW, ry + 6);
+      ctx.lineTo(rx + eventW, ry + h - 6);
+      ctx.quadraticCurveTo(rx + eventW, ry + h, rx + eventW - 6, ry + h);
+      ctx.lineTo(rx + 6, ry + h);
+      ctx.quadraticCurveTo(rx, ry + h, rx, ry + h - 6);
+      ctx.lineTo(rx, ry + 6);
+      ctx.quadraticCurveTo(rx, ry, rx + 6, ry);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // ── Module badge ──
+      var badgeX = rx + 4;
+      var badgeY = ry + 4;
+      var badgeW = 32;
+      var badgeH = h - 8;
+      ctx.fillStyle = e.module.color + '30';
+      ctx.strokeStyle = e.module.color + '60';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(badgeX + 3, badgeY);
+      ctx.lineTo(badgeX + badgeW - 3, badgeY);
+      ctx.quadraticCurveTo(badgeX + badgeW, badgeY, badgeX + badgeW, badgeY + 3);
+      ctx.lineTo(badgeX + badgeW, badgeY + badgeH - 3);
+      ctx.quadraticCurveTo(badgeX + badgeW, badgeY + badgeH, badgeX + badgeW - 3, badgeY + badgeH);
+      ctx.lineTo(badgeX + 3, badgeY + badgeH);
+      ctx.quadraticCurveTo(badgeX, badgeY + badgeH, badgeX, badgeY + badgeH - 3);
+      ctx.lineTo(badgeX, badgeY + 3);
+      ctx.quadraticCurveTo(badgeX, badgeY, badgeX + 3, badgeY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Module text in badge
+      ctx.fillStyle = e.module.color;
+      ctx.font = 'bold 9px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(e.module.id, badgeX + badgeW / 2, badgeY + badgeH / 2);
+
+      // ── Event type ──
+      ctx.fillStyle = 'rgba(240, 244, 248, 0.85)';
+      ctx.font = '10px "Inter", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(e.type, badgeX + badgeW + 10, badgeY + badgeH / 2);
+
+      // ── Status dot ──
+      var dotX = badgeX + badgeW + 80;
+      var dotY = badgeY + badgeH / 2;
+      ctx.beginPath();
+      ctx.arc(dotX + 4, dotY, 3, 0, Math.PI * 2);
+      ctx.fillStyle = e.status === 'success' ? '#06D6A0' :
+                      e.status === 'warning' ? '#FFD166' : '#FF006E';
+      ctx.fill();
+
+      // Status label
+      ctx.fillStyle = 'rgba(240, 244, 248, 0.5)';
+      ctx.font = '8px "JetBrains Mono", monospace';
+      ctx.fillText(e.status.toUpperCase(), dotX + 10, dotY);
+
+      // ── Timestamp ──
+      ctx.fillStyle = 'rgba(148, 163, 184, 0.7)';
+      ctx.font = '9px "JetBrains Mono", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(this._formatTime(e.timestamp), rx + eventW - 4, badgeY + badgeH / 2);
+    }
+  },
+
+  stop: function() { this.running = false; }
+};
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+const OperanNav = {
+  init: function() {
+    var nav = document.getElementById('nav');
+    if (!nav) return;
+    window.addEventListener('scroll', function() {
+      nav.classList.toggle('scrolled', window.scrollY > 40);
+    });
+    var toggle = document.getElementById('navToggle');
+    var links = document.getElementById('navLinks');
+    if (toggle && links) {
+      toggle.addEventListener('click', function() {
+        links.classList.toggle('open');
+        toggle.classList.toggle('active');
+      });
+      var linkEls = links.querySelectorAll('.nav-link');
+      for (var i = 0; i < linkEls.length; i++) {
+        linkEls[i].addEventListener('click', function() {
+          links.classList.remove('open');
+          toggle.classList.remove('active');
+        });
+      }
+    }
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// SCROLL REVEAL
+// ═══════════════════════════════════════════════════════════
+const OperanReveal = {
+  init: function() {
+    var obs = new IntersectionObserver(function(entries) {
+      for (var i = 0; i < entries.length; i++) {
+        if (entries[i].isIntersecting) {
+          entries[i].target.classList.add('visible');
+          obs.unobserve(entries[i].target);
+        }
+      }
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(function(el) { obs.observe(el); });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// ANIMATED COUNTERS
+// ═══════════════════════════════════════════════════════════
+const OperanCounters = {
+  init: function() {
+    var obs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting && !entry.target.dataset.counted) {
+          entry.target.dataset.counted = '1';
+          var target = parseInt(entry.target.dataset.target);
+          if (isNaN(target)) return;
+          var duration = 2000;
+          var start = performance.now();
+          function animate(now) {
+            var progress = Math.min((now - start) / duration, 1);
+            var eased = 1 - Math.pow(1 - progress, 3);
+            entry.target.textContent = Math.floor(eased * target).toLocaleString();
+            if (progress < 1) requestAnimationFrame(animate);
+            else entry.target.textContent = target.toLocaleString();
+          }
+          requestAnimationFrame(animate);
+        }
+      });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('[data-target]').forEach(function(el) { obs.observe(el); });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// 3D CARD TILT
+// ═══════════════════════════════════════════════════════════
+const Operan3DCards = {
+  init: function(sel) {
+    sel = sel || '.tilt-card';
+    document.querySelectorAll(sel).forEach(function(card) {
+      card.style.perspective = '1000px';
+      card.style.transformStyle = 'preserve-3d';
+      card.addEventListener('mousemove', function(e) {
+        var rect = card.getBoundingClientRect();
+        var x = (e.clientX - rect.left) / rect.width;
+        var y = (e.clientY - rect.top) / rect.height;
+        var tiltX = (y - 0.5) * -12;
+        var tiltY = (x - 0.5) * 12;
+        card.style.transform = 'rotateX(' + tiltX + 'deg) rotateY(' + tiltY + 'deg) scale(1.02)';
+        card.style.setProperty('--mx', (x*100)+'%');
+        card.style.setProperty('--my', (y*100)+'%');
+      });
+      card.addEventListener('mouseleave', function() {
+        card.style.transform = 'rotateX(0) rotateY(0) scale(1)';
+      });
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════
+const OperanTabs = {
+  init: function(groupId) {
+    var container = document.getElementById(groupId);
+    if (!container) return;
+    var btns = container.querySelectorAll('.tab-btn');
+    var panels = container.querySelectorAll('.tab-panel');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener('click', function() {
+        var tabId = this.dataset.tab;
+        for (var j = 0; j < btns.length; j++) btns[j].classList.remove('active');
+        this.classList.add('active');
+        for (var k = 0; k < panels.length; k++) panels[k].classList.remove('active');
+        var target = container.querySelector('[data-panel="' + tabId + '"]');
+        if (target) target.classList.add('active');
+      });
+    }
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// MAGNETIC CURSOR GLOW
+// ═══════════════════════════════════════════════════════════
+const OperanCursorGlow = {
+  init: function() {
+    var glow = document.getElementById('cursor-glow');
+    if (!glow) return;
+    var x = 0, y = 0, cx = 0, cy = 0;
+    document.addEventListener('mousemove', function(e) { x = e.clientX; y = e.clientY; });
+    (function animate() {
+      cx += (x - cx) * 0.12;
+      cy += (y - cy) * 0.12;
+      glow.style.left = cx + 'px';
+      glow.style.top = cy + 'px';
+      requestAnimationFrame(animate);
+    })();
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// SMOOTH SCROLL
+// ═══════════════════════════════════════════════════════════
+const OperanSmoothScroll = {
+  init: function() {
+    document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+      a.addEventListener('click', function(e) {
+        var href = this.getAttribute('href');
+        if (href === '#') return;
+        var target = document.querySelector(href);
+        if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      });
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// FLOATING DOTS
+// ═══════════════════════════════════════════════════════════
+const OperanFloatingDots = {
+  init: function(containerId) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    for (var i = 0; i < 15; i++) {
+      var d = document.createElement('div');
+      d.className = 'floating-dot';
+      d.style.left = Math.random()*100+'%';
+      d.style.animationDuration = (8+Math.random()*12)+'s';
+      d.style.animationDelay = (Math.random()*10)+'s';
+      d.style.width = d.style.height = (1+Math.random()*2)+'px';
+      container.appendChild(d);
+    }
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// HERO PARALLAX LAYERS
+// ═══════════════════════════════════════════════════════════
+const OperanParallax = {
+  init: function() {
+    var layers = document.querySelectorAll('[data-parallax]');
+    if (layers.length === 0) return;
+    var ticking = false;
+    window.addEventListener('scroll', function() {
+      if (!ticking) {
+        requestAnimationFrame(function() {
+          var scrollY = window.scrollY;
+          layers.forEach(function(layer) {
+            var speed = parseFloat(layer.dataset.parallax);
+            layer.style.transform = 'translateY(' + (scrollY * speed) + 'px)';
+          });
+          ticking = false;
+        });
+        ticking = true;
       }
     });
-  }, { threshold: 0.5 });
-
-  counters.forEach(el => observer.observe(el));
-})();
-
-/* ============================================================
-   Tab navigation
-   ============================================================ */
-(function initTabs() {
-  const tabs = document.querySelectorAll('.tab-btn');
-  const panels = document.querySelectorAll('.tab-panel');
-  if (!tabs.length || !panels.length) return;
-
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      const target = tab.dataset.tab;
-
-      // Deactivate all
-      tabs.forEach(t => t.classList.remove('tab-btn--active'));
-      panels.forEach(p => p.classList.remove('tab-panel--active'));
-
-      // Activate selected
-      tab.classList.add('tab-btn--active');
-      const panel = document.querySelector(`.tab-panel[data-panel="${target}"]`);
-      if (panel) panel.classList.add('tab-panel--active');
-    });
-  });
-})();
-
-/* ============================================================
-   Form handling
-   ============================================================ */
-(function initForms() {
-  const form = document.querySelector('.briefing-form');
-  if (!form) return;
-
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    const btn = form.querySelector('button[type="submit"]');
-    const originalText = btn.innerHTML;
-
-    btn.innerHTML = '<span>Sending...</span>';
-    btn.disabled = true;
-
-    // Simulate submission
-    setTimeout(() => {
-      btn.innerHTML = '<span>Request Sent ✓</span>';
-      btn.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
-
-      setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.style.background = '';
-        btn.disabled = false;
-        form.reset();
-      }, 3000);
-    }, 1500);
-  });
-})();
-
-/* ============================================================
-   Three.js Hero Scene — Operan Digital Workforce
-   Impressive 3D visualization: glowing department nodes,
-   orbital networks, data streams, and particle fields
-   ============================================================ */
-(function initHeroScene() {
-  const canvas = document.querySelector('.hero__canvas');
-  if (!canvas) return;
-
-  if (typeof THREE === 'undefined') {
-    console.warn('Three.js not loaded — hero canvas disabled');
-    return;
   }
+};
 
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.set(0, 0, 28);
+// ═══════════════════════════════════════════════════════════
+// RAIN ANIMATION (shared, all pages)
+// ═══════════════════════════════════════════════════════════
+const OperanRain = {
+  canvas: null, ctx: null, w: 0, h: 0,
+  drops: [], raf: null, active: false,
 
-  const renderer = new THREE.WebGLRenderer({
-    canvas: canvas,
-    antialias: true,
-    alpha: true
-  });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  init(canvasId) {
+    this.canvas = document.getElementById(canvasId);
+    if (!this.canvas) return;
+    this.ctx = this.canvas.getContext('2d');
+    this.active = true;
+    this.resize();
+    this.initDrops();
+    this.animate();
+  },
 
-  // ── Central Core (glowing department nexus) ──────────────
-  const coreGroup = new THREE.Group();
+  resize() {
+    this.w = this.canvas.width = window.innerWidth;
+    this.h = this.canvas.height = window.innerHeight;
+    this.initDrops();
+  },
 
-  // Inner core — bright glowing sphere
-  const coreGeo = new THREE.IcosahedronGeometry(4.4, 2);
-  const coreMat = new THREE.MeshBasicMaterial({
-    color: 0x00D4FF,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.35
-  });
-  const core = new THREE.Mesh(coreGeo, coreMat);
-  coreGroup.add(core);
+  initDrops() {
+    var count = Math.floor(this.w / 4);
+    this.drops = [];
+    for (var i = 0; i < count; i++) {
+      this.drops.push({
+        x: Math.random() * this.w,
+        y: Math.random() * this.h,
+        speed: 2 + Math.random() * 6,
+        length: 8 + Math.random() * 20,
+        opacity: 0.05 + Math.random() * 0.15
+      });
+    }
+  },
 
-  // Outer core shell
-  const outerCoreGeo = new THREE.IcosahedronGeometry(6.4, 1);
-  const outerCoreMat = new THREE.MeshBasicMaterial({
-    color: 0x3B82F6,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.15
-  });
-  const outerCore = new THREE.Mesh(outerCoreGeo, outerCoreMat);
-  coreGroup.add(outerCore);
-
-  // Energy shell
-  const energyGeo = new THREE.IcosahedronGeometry(9.0, 1);
-  const energyMat = new THREE.MeshBasicMaterial({
-    color: 0x00D4FF,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.06
-  });
-  const energyShell = new THREE.Mesh(energyGeo, energyMat);
-  coreGroup.add(energyShell);
-
-  coreGroup.position.set(4, 0, -2);
-  scene.add(coreGroup);
-
-  // ── Department Orbital Rings + Nodes ─────────────────────
-  const departments = [
-    { name: 'Human Resources', color: 0x00D4FF },
-    { name: 'Finance', color: 0x3B82F6 },
-    { name: 'Legal', color: 0x8B5CF6 },
-    { name: 'Engineering', color: 0x10B981 },
-    { name: 'Research', color: 0xF59E0B },
-    { name: 'Compliance', color: 0xEF4444 }
-  ];
-
-  const deptNodes = [];
-  const deptOrbits = [];
-
-  departments.forEach((dept, i) => {
-    const radius = 14 + i * 1.6;
-    const tilt = 0.3 + (i % 3) * 0.2;
-
-    // Orbital ring
-    const orbitGeo = new THREE.TorusGeometry(radius, 0.008, 4, 128);
-    const orbitMat = new THREE.MeshBasicMaterial({
-      color: dept.color,
-      transparent: true,
-      opacity: 0.12
-    });
-    const orbit = new THREE.Mesh(orbitGeo, orbitMat);
-    orbit.position.copy(coreGroup.position);
-    orbit.rotation.x = Math.PI / 2 + tilt;
-    orbit.rotation.z = (i / departments.length) * Math.PI;
-    scene.add(orbit);
-    deptOrbits.push(orbit);
-
-    // Glowing node on orbit
-    const nodeGeo = new THREE.OctahedronGeometry(0.24, 0);
-    const nodeMat = new THREE.MeshBasicMaterial({
-      color: dept.color,
-      transparent: true,
-      opacity: 0.9
-    });
-    const node = new THREE.Mesh(nodeGeo, nodeMat);
-    const angle = (i / departments.length) * Math.PI * 2;
-    node.position.set(
-      coreGroup.position.x + Math.cos(angle) * radius,
-      Math.sin(angle) * radius * 0.6,
-      coreGroup.position.z + Math.sin(angle) * radius
-    );
-    node.userData = {
-      orbitRadius: radius,
-      angle: angle,
-      speed: 0.15 + i * 0.03,
-      tilt: tilt,
-      center: coreGroup.position.clone(),
-      tiltAngle: (i / departments.length) * Math.PI,
-      orbitIndex: i
-    };
-    scene.add(node);
-    deptNodes.push(node);
-
-    // Node glow ring
-    const ringGeo = new THREE.RingGeometry(0.25, 0.35, 32);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: dept.color,
-      transparent: true,
-      opacity: 0.15,
-      side: THREE.DoubleSide
-    });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.position.copy(node.position);
-    ring.lookAt(camera.position);
-    node.userData.ring = ring;
-    scene.add(ring);
-  });
-
-  // ── Network Connections (data streams) ───────────────────
-  const connectionGroup = new THREE.Group();
-  const lineMaterial = new THREE.LineBasicMaterial({
-    color: 0x00D4FF,
-    transparent: true,
-    opacity: 0.04
-  });
-
-  // Connect department nodes to core
-  deptNodes.forEach((node, i) => {
-    const points = [coreGroup.position.clone(), node.position.clone()];
-    const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-    const line = new THREE.Line(lineGeo, lineMaterial.clone());
-    line.userData = { nodeIndex: i };
-    connectionGroup.add(line);
-  });
-
-  // Connect adjacent department nodes
-  for (let i = 0; i < deptNodes.length; i++) {
-    const next = (i + 1) % deptNodes.length;
-    const points = [deptNodes[i].position.clone(), deptNodes[next].position.clone()];
-    const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-    const line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({
-      color: 0x3B82F6,
-      transparent: true,
-      opacity: 0.03
-    }));
-    connectionGroup.add(line);
-  }
-
-  scene.add(connectionGroup);
-
-  // ── Data Flow Particles (moving along connections) ───────
-  const dataParticles = [];
-  const dataParticleMat = new THREE.PointsMaterial({
-    color: 0x00D4FF,
-    size: 0.12,
-    transparent: true,
-    opacity: 0.8
-  });
-
-  deptNodes.forEach((node, i) => {
-    const geo = new THREE.BufferGeometry();
-    const positions = new Float32Array(3);
-    positions[0] = coreGroup.position.x;
-    positions[1] = coreGroup.position.y;
-    positions[2] = coreGroup.position.z;
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const particle = new THREE.Points(geo, dataParticleMat.clone());
-    particle.userData = {
-      target: node.position.clone(),
-      progress: Math.random(),
-      speed: 0.3 + Math.random() * 0.4
-    };
-    scene.add(particle);
-    dataParticles.push(particle);
-  });
-
-  // ── Floating Network Nodes ───────────────────────────────
-  const nodeCount = 80;
-  const networkNodes = [];
-  const networkNodeMat = new THREE.MeshBasicMaterial({
-    color: 0x00D4FF,
-    transparent: true,
-    opacity: 0.5
-  });
-
-  for (let i = 0; i < nodeCount; i++) {
-    const phi = Math.acos(-1 + (2 * i) / nodeCount);
-    const theta = Math.sqrt(nodeCount * Math.PI) * phi;
-    const radius = 8 + Math.random() * 6;
-
-    const geo = new THREE.SphereGeometry(0.04 + Math.random() * 0.05, 6, 6);
-    const node = new THREE.Mesh(geo, networkNodeMat.clone());
-    node.position.set(
-      coreGroup.position.x + radius * Math.cos(theta) * Math.sin(phi),
-      radius * Math.sin(theta) * Math.sin(phi),
-      coreGroup.position.z + radius * Math.cos(phi)
-    );
-    node.userData = {
-      baseOpacity: 0.2 + Math.random() * 0.4,
-      phase: Math.random() * Math.PI * 2,
-      speed: 0.3 + Math.random() * 0.6
-    };
-    scene.add(node);
-    networkNodes.push(node);
-  }
-
-  // ── Connection Lines (network mesh) ──────────────────────
-  const meshMat = new THREE.LineBasicMaterial({
-    color: 0x00D4FF,
-    transparent: true,
-    opacity: 0.025
-  });
-
-  for (let i = 0; i < 100; i++) {
-    const idxA = Math.floor(Math.random() * nodeCount);
-    const idxB = Math.floor(Math.random() * nodeCount);
-    if (idxA === idxB) continue;
-    const points = [networkNodes[idxA].position, networkNodes[idxB].position];
-    const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-    const line = new THREE.Line(lineGeo, meshMat.clone());
-    scene.add(line);
-  }
-
-  // ── Ambient Particle Field ───────────────────────────────
-  const particleCount = 300;
-  const particleGeo = new THREE.BufferGeometry();
-  const positions = new Float32Array(particleCount * 3);
-
-  for (let i = 0; i < particleCount; i++) {
-    positions[i * 3] = (Math.random() - 0.5) * 80;
-    positions[i * 3 + 1] = (Math.random() - 0.5) * 50;
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 40 - 5;
-  }
-
-  particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  const particleMat = new THREE.PointsMaterial({
-    color: 0x00D4FF,
-    size: 0.04,
-    transparent: true,
-    opacity: 0.25
-  });
-  const particles = new THREE.Points(particleGeo, particleMat);
-  scene.add(particles);
-
-  // ── Mouse tracking ───────────────────────────────────────
-  let mouseX = 0;
-  let mouseY = 0;
-
-  document.addEventListener('mousemove', (e) => {
-    mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-    mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
-  });
-
-  // ── Animation loop ───────────────────────────────────────
-  const clock = new THREE.Clock();
-
-  function animate() {
-    requestAnimationFrame(animate);
-    const elapsed = clock.getElapsedTime();
-
-    // Core rotations
-    core.rotation.y = elapsed * 0.3;
-    core.rotation.x = elapsed * 0.15;
-    outerCore.rotation.y = -elapsed * 0.2;
-    outerCore.rotation.z = elapsed * 0.1;
-    energyShell.rotation.y = elapsed * 0.1;
-    energyShell.rotation.x = elapsed * 0.05;
-
-    // Pulsing energy shell
-    const pulse = 1 + 0.15 * Math.sin(elapsed * 2);
-    energyShell.scale.set(pulse, pulse, pulse);
-
-    // Department nodes orbiting
-    deptNodes.forEach((node) => {
-      const d = node.userData;
-      d.angle += d.speed * 0.008;
-
-      const x = d.center.x + Math.cos(d.angle) * d.orbitRadius;
-      const y = Math.sin(d.angle) * d.orbitRadius * 0.6;
-      const z = d.center.z + Math.sin(d.angle) * d.orbitRadius;
-
-      node.position.set(x, y, z);
-
-      // Ring faces camera
-      if (d.ring) {
-        d.ring.position.copy(node.position);
-        d.ring.lookAt(camera.position);
+  animate() {
+    if (!this.active) return;
+    this.raf = requestAnimationFrame(this.animate.bind(this));
+    this.ctx.clearRect(0, 0, this.w, this.h);
+    for (var i = 0; i < this.drops.length; i++) {
+      var d = this.drops[i];
+      this.ctx.beginPath();
+      this.ctx.moveTo(d.x, d.y);
+      this.ctx.lineTo(d.x + 0.5, d.y + d.length);
+      this.ctx.strokeStyle = 'rgba(100, 160, 200, ' + d.opacity + ')';
+      this.ctx.lineWidth = 0.8;
+      this.ctx.stroke();
+      d.y += d.speed;
+      if (d.y > this.h) {
+        d.y = -d.length;
+        d.x = Math.random() * this.w;
       }
-    });
+    }
+  },
 
-    // Data flow particles
-    dataParticles.forEach((p) => {
-      p.userData.progress += p.userData.speed * 0.005;
-      if (p.userData.progress > 1) p.userData.progress = 0;
-      const t = p.userData.progress;
-      const pos = p.geometry.attributes.position;
-      pos.array[0] = coreGroup.position.x + (p.userData.target.x - coreGroup.position.x) * t;
-      pos.array[1] = coreGroup.position.y + (p.userData.target.y - coreGroup.position.y) * t;
-      pos.array[2] = coreGroup.position.z + (p.userData.target.z - coreGroup.position.z) * t;
-      pos.needsUpdate = true;
-    });
+  stop() {
+    this.active = false;
+    if (this.raf) cancelAnimationFrame(this.raf);
+  }
+};
 
-    // Network nodes pulse
-    networkNodes.forEach((node) => {
-      if (node.userData.phase !== undefined) {
-        node.material.opacity = node.userData.baseOpacity * (0.5 + 0.5 * Math.sin(elapsed * node.userData.speed + node.userData.phase));
-      }
-    });
+// ═══════════════════════════════════════════════════════════
+// HERO SLIDESHOW (shared, all pages)
+// ═══════════════════════════════════════════════════════════
+const OperanSlideshow = {
+  container: null, slides: [], dots: [], current: 0, timer: null, fading: false,
+  init(containerId, interval) {
+    this.container = document.getElementById(containerId);
+    if (!this.container) return;
+    this.slides = this.container.querySelectorAll('.slide');
+    this.dots = document.querySelectorAll('.slide-dot');
+    if (this.slides.length === 0) return;
+    var iv = interval || 5000;
+    this.slides[0].classList.add('active');
+    if (this.dots.length) this.dots[0].classList.add('active');
+    this.cycle(iv);
+  },
+  cycle: function(iv) {
+    var self = this;
+    this.timer = setInterval(function() { self.next(); }, iv);
+  },
+  next: function() {
+    if (this.fading) return;
+    this.fading = true;
+    var cur = this.slides[this.current];
+    if (this.dots[this.current]) this.dots[this.current].classList.remove('active');
+    this.current = (this.current + 1) % this.slides.length;
+    var nxt = this.slides[this.current];
+    cur.classList.remove('active');
+    var self = this;
+    setTimeout(function() {
+      nxt.classList.add('active');
+      if (self.dots[self.current]) self.dots[self.current].classList.add('active');
+      self.fading = false;
+    }, 800);
+  },
+  pause: function() { clearInterval(this.timer); },
+  resume: function(iv) { this.cycle(iv); }
+};
 
-    // Slow rotation
-    particles.rotation.y = elapsed * 0.005;
-    connectionGroup.rotation.y = elapsed * 0.02;
+// ═══════════════════════════════════════════════════════════
+// INIT ON DOM READY
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  OperanNav.init();
+  OperanReveal.init();
+  OperanCounters.init();
+  Operan3DCards.init('.tilt-card');
+  OperanTabs.init('industryTabs');
+  OperanCursorGlow.init();
+  OperanSmoothScroll.init();
+  OperanFloatingDots.init('floating-dots');
+  OperanParallax.init();
 
-    // Mouse parallax
-    const targetX = mouseX * 2;
-    const targetY = mouseY * 1.5;
-    camera.position.x += (targetX - camera.position.x) * 0.03;
-    camera.position.y += (targetY - camera.position.y) * 0.03;
-    camera.lookAt(coreGroup.position);
-
-    renderer.render(scene, camera);
+  // Rain on all pages
+  var rainCanvas = document.getElementById('rain-canvas');
+  if (rainCanvas) {
+    OperanRain.init('rain-canvas');
+    rainCanvas.classList.add('active');
   }
 
-  animate();
+  // Real-time event stream (index only, if canvas exists)
+  if (document.getElementById('webgl-canvas')) {
+    OperanDataVisual.init('webgl-canvas', {
+      rowCount: 5,
+      eventCount: 25
+    });
+  }
 
-  // ── Resize ───────────────────────────────────────────────
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+  // Slideshow
+  if (document.getElementById('hero-slider')) {
+    OperanSlideshow.init('hero-slider', 5000);
+  }
+
+  window.addEventListener('resize', function() {
+    if (OperanRain.canvas) OperanRain.resize();
   });
-})();
+});
