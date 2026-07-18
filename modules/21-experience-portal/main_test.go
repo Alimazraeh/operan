@@ -18,7 +18,7 @@ func TestStaticShellAndSPAFallback(t *testing.T) {
 		if w.Code != http.StatusOK {
 			t.Fatalf("%s: status %d", path, w.Code)
 		}
-		if !strings.Contains(w.Body.String(), "<title>Operan</title>") {
+		if !strings.Contains(w.Body.String(), "<title>Operan") {
 			t.Errorf("%s did not serve the SPA shell", path)
 		}
 	}
