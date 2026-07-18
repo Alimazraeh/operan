@@ -30,10 +30,22 @@ var serviceTargets = map[string]string{
 	"orchestration": "http://agent-orchestration.operan.svc.cluster.local:8080",
 	"registry":      "http://agent-registry.operan.svc.cluster.local:8083",
 	"templates":     "http://department-templates.operan.svc.cluster.local:8005",
+	"knowledge":     "http://knowledge-ingestion.operan.svc.cluster.local:8006",
 	"memory":        "http://memory-fabric.operan.svc.cluster.local:8007",
 	"tools":         "http://tool-execution.operan.svc.cluster.local:8008",
 	"supervision":   "http://human-supervision.operan.svc.cluster.local:8009",
+	"policies":      "http://policy-governance.operan.svc.cluster.local:8010",
 	"observability": "http://observability.operan.svc.cluster.local:8011",
+	"cost":          "http://cost-governance.operan.svc.cluster.local:8017",
+	"connectors":    "http://enterprise-connectors.operan.svc.cluster.local:8018",
+	"iam":           "http://identity-access.operan.svc.cluster.local:8080",
+}
+
+// pathPrefixes maps service names to extra path prefixes to prepend after stripping /svc/<name>.
+// M02 uses /api/v1/iam/ as its route base, M06 uses /v1/, M10 has no common prefix.
+var pathPrefixes = map[string]string{
+	"iam":       "/api/v1/iam",
+	"knowledge": "/v1",
 }
 
 func env(key, fallback string) string {
@@ -43,7 +55,8 @@ func env(key, fallback string) string {
 	return fallback
 }
 
-// newProxy strips /svc/<name> and forwards the rest to the target.
+// newProxy strips /svc/<name> and forwards the rest to the target,
+// optionally prepending a path prefix (e.g. /api/v1/iam for M02).
 func newProxy(name, target string) http.Handler {
 	u, err := url.Parse(target)
 	if err != nil {
@@ -52,11 +65,17 @@ func newProxy(name, target string) http.Handler {
 	prefix := "/svc/" + name
 	p := httputil.NewSingleHostReverseProxy(u)
 	director := p.Director
+	extraPrefix := pathPrefixes[name]
 	p.Director = func(r *http.Request) {
 		director(r)
 		r.URL.Path = strings.TrimPrefix(r.URL.Path, prefix)
 		if r.URL.Path == "" {
 			r.URL.Path = "/"
+		}
+		if extraPrefix != "" && r.URL.Path != "/" {
+			r.URL.Path = extraPrefix + r.URL.Path
+		} else if extraPrefix != "" {
+			r.URL.Path = extraPrefix + "/"
 		}
 		r.Host = u.Host
 	}

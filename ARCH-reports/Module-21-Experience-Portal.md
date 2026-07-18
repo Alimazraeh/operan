@@ -11,21 +11,26 @@
 Module 21 is the **Experience Layer** of the Operan platform (per PRD section 5). It is a single Go binary that:
 
 1. **Serves the SPA** — Static HTML/CSS/JS embedded via `go:embed web`
-2. **Reverse-proxies to backend services** — `/svc/<name>/` → platform service, stripping the prefix
+2. **Reverse-proxies to backend services** — `/svc/<name>/` → platform service, stripping the prefix and prepending module-specific path prefixes (M02: `/api/v1/iam`, M06: `/v1`)
 3. **Mints JWTs client-side** — No secret leaves the browser; HMAC-SHA256 signed with the tenant's signing secret
 
 ### Service Proxy Mapping
 
-| Route prefix | Backing module | Service name |
-|-------------|---------------|-------------|
-| `/svc/tenant/` | M01 Tenant Control Plane | tenant |
-| `/svc/orchestration/` | M03 Agent Orchestration | orchestration |
-| `/svc/registry/` | M04 Agent Registry | registry |
-| `/svc/templates/` | M05 Department Templates | templates |
-| `/svc/memory/` | M07 Memory Fabric | memory |
-| `/svc/tools/` | M08 Tool Execution | tools |
-| `/svc/supervision/` | M09 Human Supervision | supervision |
-| `/svc/observability/` | M11 Observability | observability |
+| Route prefix | Backing module | Port | Path prefix after strip |
+|-------------|---------------|------|------------------------|
+| `/svc/tenant/` | M01 Tenant Control Plane | 8080 | (none) |
+| `/svc/orchestration/` | M03 Agent Orchestration | 8080 | `/api/v1/orchestration` |
+| `/svc/registry/` | M04 Agent Registry | 8083 | (none) |
+| `/svc/templates/` | M05 Department Templates | 8005 | (none) |
+| `/svc/knowledge/` | M06 Knowledge Ingestion | 8006 | `/v1` |
+| `/svc/memory/` | M07 Memory Fabric | 8007 | (none) |
+| `/svc/tools/` | M08 Tool Execution | 8008 | (none) |
+| `/svc/supervision/` | M09 Human Supervision | 8009 | (none) |
+| `/svc/policies/` | M10 Policy Governance | 8010 | (none) |
+| `/svc/observability/` | M11 Observability | 8011 | (none) |
+| `/svc/cost/` | M17 Cost Governance | 8017 | (none) |
+| `/svc/connectors/` | M18 Enterprise Connectors | 8018 | (none) |
+| `/svc/iam/` | M02 Identity & Access | 8080 | `/api/v1/iam` |
 
 ### Auth Flow
 
@@ -41,14 +46,14 @@ The JWT contains `role: "admin"` and is valid for 4 hours. JWTs are created usin
 |-----------|-------------|
 | **Login screen** | Glassmorphism card, signing secret input, tenant ID with auto-uuid, "New tenant" button |
 | **Shell layout** | Sticky sidebar (240px), topbar with crumb + health dots, dynamic view container |
-| **Health dots** | Real-time up/down status of all 8 backend services, auto-checked on connect |
+| **Health dots** | Real-time up/down status of all 14 backend services, auto-checked on connect |
 | **Multi-tenant switcher** | Dropdown of previously used tenants, stored in localStorage |
 | **Mobile responsive** | Sidebar collapses to overlay on mobile, hamburger toggle |
 | **Toasts** | Success/error/warning notifications |
 | **Loading skeletons** | Shimmer animation while views load |
 | **Error states** | Error boxes with retry buttons on every view |
 
-## Views (8 total)
+## Views (14 total)
 
 | View | Module deps | Key features |
 |------|-------------|-------------|
@@ -59,6 +64,12 @@ The JWT contains `role: "admin"` and is valid for 4 hours. JWTs are created usin
 | **Supervision** | M09 | Manager inbox with approve/reject, escalations (severity/category), interventions, risk dashboard |
 | **Tools** | M08 | Tool registry, execution log, register/execute tools |
 | **Observability** | M11 | Span count, event consumption, component health, alerts, trace list, live activity stream |
+| **Tenants** | M01 | Tenant CRUD, quota management (max agents/tokens/storage/workflows), resource usage tracking |
+| **IAM** | M02 | 3-principal system (user/service/agent), RBAC roles with `resource.action` permissions, delegation with scope/depth, ABAC policies (time/ip/ownership/department/custom), live permission evaluation, immutable audit log |
+| **Knowledge** | M06 | Data source configuration (SharePoint, Confluence, Jira, files, DB, API, Git), ingestion job monitoring, knowledge coverage metrics, deduplication |
+| **Policies** | M10 | Policy CRUD (allow/deny rules), policy groups with scope assignment, real-time policy evaluation with result/agent/role context, audit log |
+| **Cost** | M17 | Budget management with utilization progress bars, cost event tracking by provider/model/agent, threshold alerts, emergency spending throttle |
+| **Connectors** | M18 | Enterprise connector management (M365, Salesforce, SAP, HubSpot, REST, SMTP), sync triggers, health checks, exposed tools catalog |
 | **The Story** | All | 8-step guided end-to-end demo: deploy → hire agents → teach memory → semantic recall → draft → gate → approve → tool execution |
 
 ## Test Summary
@@ -95,13 +106,18 @@ Unlike mock/demo UIs, **every action in this portal makes real API calls against
 | Caller | Callee | Protocol | SLA |
 |--------|--------|----------|-----|
 | Portal (browser) | M01 Tenant | HTTP/REST + JWT | - |
+| Portal (browser) | M02 IAM | HTTP/REST + JWT (+ path prefix `/api/v1/iam`) | <500ms |
 | Portal (browser) | M03 Orchestration | HTTP/REST + JWT | <500ms |
 | Portal (browser) | M04 Registry | HTTP/REST + JWT | <500ms |
 | Portal (browser) | M05 Templates | HTTP/REST + JWT | <1000ms |
+| Portal (browser) | M06 Knowledge | HTTP/REST + JWT (+ path prefix `/v1`) | <1000ms |
 | Portal (browser) | M07 Memory | HTTP/REST + JWT | <500ms |
 | Portal (browser) | M08 Tools | HTTP/REST + JWT | <500ms |
 | Portal (browser) | M09 Supervision | HTTP/REST + JWT | <500ms |
+| Portal (browser) | M10 Policy Governance | HTTP/REST + JWT | <500ms |
 | Portal (browser) | M11 Observability | HTTP/REST + JWT | <500ms |
+| Portal (browser) | M17 Cost Governance | HTTP/REST + JWT | <500ms |
+| Portal (browser) | M18 Enterprise Connectors | HTTP/REST + JWT | <500ms |
 
 ## Known Limitations
 
@@ -119,16 +135,20 @@ Unlike mock/demo UIs, **every action in this portal makes real API calls against
 | Aspect | Before | After |
 |--------|--------|-------|
 | CSS | ~250 lines, basic dark theme | ~650 lines, full design system with glassmorphism |
-| Views | 8 views, basic cards/rows | 8 views, rich components with error states, skeletons, toasts |
+| Views | 8 views, basic cards/rows | 14 views, rich components with error states, skeletons, toasts |
 | Login | Basic form, no tenant management | Tenant history, auto-uuid, security hint |
-| Shell | Static sidebar | Multi-tenant switcher, mobile responsive, health dots |
+| Shell | Static sidebar | Multi-tenant switcher, mobile responsive, 14 health dots |
+| Proxy targets | 8 services | 14 services with module-specific path prefixing |
 | Error handling | None | Error boxes with retry on every view |
 | Loading states | None | Shimmer skeletons on every view transition |
 | Documentation | 1-page README | Comprehensive README with architecture, API table, file tree |
+| ARCH report | — | Full architecture doc with service proxy mapping, integration edges |
 | Tests | 4 tests | 4 tests (unchanged, all passing) |
 
 ## Recommendation
 
-**APPROVED** — Module 21 is a complete, functional Experience Portal that serves as the operational dashboard for the entire Operan platform. It successfully bridges all 8 backend modules through a single browser session with JWT-based multi-tenant isolation.
+**APPROVED** — Module 21 is a complete, functional Experience Portal that serves as the operational dashboard for the entire Operan platform. It successfully bridges all 14 backend modules (M01–M11, M17–M18, plus M02 IAM) through a single browser session with JWT-based multi-tenant isolation.
 
-The UI is production-ready for internal/demo use. The main gaps (SSO integration, WebSocket real-time, search/filter, pagination, Arabic translation) are low/medium priority improvements that can be addressed iteratively.
+The new views add critical enterprise capabilities: tenant lifecycle management (M01), full IAM with 3-principal system and RBAC/ABAC (M02), knowledge ingestion pipelines (M06), policy governance with real-time evaluation (M10), cost governance with budget controls (M17), and enterprise connector management (M18).
+
+The UI is production-ready for internal/demo use. The main gaps (WebSocket real-time, search/filter, pagination, Arabic translation) are low/medium priority improvements that can be addressed iteratively.

@@ -17,6 +17,12 @@ signing secret — the secret never leaves the page.
 | Supervision | 09 (→ 03 via Kafka) | Manager inbox: approve/reject gates, escalations, interventions, risk score |
 | Tools | 08 | Tool registry, execution log, register/execute |
 | Observability | 11 | Traces, component health, alerts, live activity stream |
+| Tenants | 01 | Tenant lifecycle, quota management (max agents/tokens/storage/workflows), resource usage tracking |
+| IAM | 02 | 3-principal system (user/service/agent), RBAC roles, delegation, ABAC policies, audit log, permission evaluation |
+| Knowledge | 06 | Data source configuration (SharePoint, Confluence, Jira, files, DB, API, Git), ingestion job monitoring, knowledge coverage metrics |
+| Policies | 10 | Policy CRUD (allow/deny rules), policy groups, real-time policy evaluation, audit log |
+| Cost | 17 | Budget management with utilization progress bars, cost event tracking, threshold alerts, emergency spending throttle |
+| Connectors | 18 | Enterprise connector management (M365, Salesforce, SAP, HubSpot, REST, SMTP), sync triggers, health checks, exposed tools |
 | The Story | all | Guided 8-step end-to-end scenario, every step a real API call |
 
 ## UI Features
@@ -30,7 +36,7 @@ signing secret — the secret never leaves the page.
 - **Real-time activity stream** — auto-refreshes every 12s in Overview, Observability, Supervision
 - **Arabic RTL support** — CSS hooks for `dir="rtl"` (full Arabic layout mirroring)
 - **Toast notifications** — success/error/warning toasts for all actions
-- **Health dots** — real-time up/down status of all 8 backend services in the topbar
+- **Health dots** — real-time up/down status of all 14 backend services in the topbar
 
 ## Architecture
 
@@ -49,7 +55,7 @@ Browser → / (SPA shell + views) ← Go binary → /svc/<name>/ → platform se
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `MODULE21_PORT` | `8021` | HTTP listen port |
-| `MODULE21_SVC_<NAME>` | in-cluster DNS | Override proxy target (TENANT, ORCHESTRATION, REGISTRY, TEMPLATES, MEMORY, TOOLS, SUPERVISION, OBSERVABILITY) |
+| `MODULE21_SVC_<NAME>` | in-cluster DNS | Override proxy target (TENANT, ORCHESTRATION, REGISTRY, TEMPLATES, KNOWLEDGE, MEMORY, TOOLS, SUPERVISION, POLICIES, OBSERVABILITY, COST, CONNECTORS, IAM) |
 
 ## Build & run
 
@@ -73,14 +79,20 @@ modules/21-experience-portal/
 │   ├── js/api.js        # API client + in-browser JWT minting (WebCrypto + JS fallback)
 │   ├── js/ui.js         # DOM helpers, toast, timestamps, badges, event rows
 │   └── js/views/
-│       ├── overview.js       # KPI dashboard, activity feed
-│       ├── departments.js    # Catalog, deploy pipeline, department detail
-│       ├── agents.js         # Workforce registry, agent profiles, memory teach/ask
-│       ├── workflows.js      # Pipelines, executions, human tasks
-│       ├── supervision.js    # Manager inbox, approvals, escalations, interventions
-│       ├── tools.js          # Tool registry, execution log
-│       ├── observability.js  # Traces, health, alerts, activity stream
-│       └── scenario.js       # 8-step guided end-to-end demo
+│       ├── overview.js          # KPI dashboard, activity feed
+│       ├── departments.js       # Catalog, deploy pipeline, department detail
+│       ├── agents.js            # Workforce registry, agent profiles, memory teach/ask
+│       ├── workflows.js         # Pipelines, executions, human tasks
+│       ├── supervision.js       # Manager inbox, approvals, escalations, interventions
+│       ├── tools.js             # Tool registry, execution log
+│       ├── observability.js     # Traces, health, alerts, activity stream
+│       ├── scenario.js          # 8-step guided end-to-end demo
+│       ├── tenants.js           # Tenant CRUD, quota management, resource usage
+│       ├── iam.js               # 3-principal IAM, RBAC, delegation, ABAC, audit
+│       ├── ingestion.js         # Knowledge ingestion: sources, jobs, coverage metrics
+│       ├── policies.js          # Policy CRUD, groups, evaluation, audit log
+│       ├── cost.js              # Budgets, cost events, alerts, spending throttle
+│       └── connectors.js        # Enterprise connectors, sync, tools, health
 └── README.md
 ```
 

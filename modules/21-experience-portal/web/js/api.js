@@ -8,10 +8,15 @@ export const SVC = {
   orchestration: "/svc/orchestration/api/v1/orchestration",
   registry: "/svc/registry",
   templates: "/svc/templates",
+  knowledge: "/svc/knowledge",
   memory: "/svc/memory",
   tools: "/svc/tools",
   supervision: "/svc/supervision",
+  policies: "/svc/policies",
   observability: "/svc/observability",
+  cost: "/svc/cost",
+  connectors: "/svc/connectors",
+  iam: "/svc/iam",
 };
 
 export const session = {
