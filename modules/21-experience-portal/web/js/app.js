@@ -74,21 +74,38 @@ async function checkHealth() {
 
 // ── Login ──────────────────────────────────────────────────
 async function connect() {
-  const secret = $("loginSecret").value.trim();
+  const password = $("loginSecret").value.trim();
   const msg = $("loginMsg");
-  if (!secret) { msg.textContent = "Enter the signing secret first."; return; }
-  if (/^[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/.test(secret)) {
-    msg.innerHTML = "That looks like a JWT token — paste the <b>signing secret</b> instead."; return;
-  }
+  if (!password) { msg.textContent = "Enter the admin password first."; return; }
   if (!$("loginTenant").value.trim()) $("loginTenant").value = uuid4();
   session.tenant = $("loginTenant").value.trim();
-  session.jwt = await mintJWT(secret);
+
+  // Authenticate against M02 admin login endpoint
+  msg.textContent = "Authenticating…";
+  try {
+    const resp = await fetch(SVC.iam + "/admin/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password, tenant: session.tenant }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      msg.textContent = err.error?.message || `Auth failed (${resp.status})`;
+      return;
+    }
+    const data = await resp.json();
+    session.jwt = data.token;
+  } catch (e) {
+    msg.textContent = "Auth error: " + e.message;
+    return;
+  }
   localStorage.setItem("operan.tenant", session.tenant);
 
+  // Health probe to verify everything is up
   const probe = await get(SVC.supervision + "/queue?page_size=1");
   if (probe.status === 401) {
     session.jwt = "";
-    msg.innerHTML = "<b>Secret rejected (401).</b> Paste the output of <code>kubectl -n operan get secret operan-jwt -o jsonpath=\"{.data.secret}\" | base64 -d</code>";
+    msg.textContent = "Token rejected (401). Check IAM_TOKEN_SECRET.";
     return;
   }
 
