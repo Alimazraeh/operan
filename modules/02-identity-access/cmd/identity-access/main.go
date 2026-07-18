@@ -667,11 +667,11 @@ func main() {
 	})
 	chain = rateLimiter.Chain(chain)
 
-	// Liveness/readiness probes bypass auth and tenant middleware so
-	// orchestrator health checks succeed without credentials.
+	// Liveness/readiness probes AND bootstrap login bypass auth and tenant middleware.
 	protected := chain
 	chain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/health" || r.URL.Path == "/ready" {
+		if r.URL.Path == "/health" || r.URL.Path == "/ready" ||
+			r.URL.Path == "/api/v1/iam/admin/login" || r.URL.Path == "/api/v1/iam/admin/generate-password" {
 			mux.ServeHTTP(w, r)
 			return
 		}
