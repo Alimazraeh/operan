@@ -934,12 +934,91 @@ func TestEvaluateDepartmentPolicy(t *testing.T) {
 // ---------- evaluateCustomPolicy tests ----------
 
 func TestEvaluateCustomPolicy(t *testing.T) {
-	attrs := map[string]interface{}{"key": "value"}
-	cond := map[string]interface{}{"rule": "test"}
+	tests := []struct {
+		name    string
+		attrs   map[string]interface{}
+		cond    map[string]interface{}
+		want    bool
+		wantErr string
+	}{
+		{
+			name:    "no expression — deny by default",
+			attrs:   map[string]interface{}{"key": "value"},
+			cond:    map[string]interface{}{"rule": "test"},
+			want:    false,
+			wantErr: "no expression defined",
+		},
+		{
+			name:    "empty expression — deny by default",
+			attrs:   map[string]interface{}{"key": "value"},
+			cond:    map[string]interface{}{"expression": ""},
+			want:    false,
+			wantErr: "empty expression",
+		},
+		{
+			name:    "eq operator — match",
+			attrs:   map[string]interface{}{"region": "us-east-1"},
+			cond:    map[string]interface{}{"expression": "region eq us-east-1"},
+			want:    true,
+		},
+		{
+			name:    "eq operator — mismatch",
+			attrs:   map[string]interface{}{"region": "us-west-2"},
+			cond:    map[string]interface{}{"expression": "region eq us-east-1"},
+			want:    false,
+		},
+		{
+			name:    "neq operator — match",
+			attrs:   map[string]interface{}{"role": "viewer"},
+			cond:    map[string]interface{}{"expression": "role neq admin"},
+			want:    true,
+		},
+		{
+			name:    "in operator — match",
+			attrs:   map[string]interface{}{"env": "staging"},
+			cond:    map[string]interface{}{"expression": "env in production,staging,dev"},
+			want:    true,
+		},
+		{
+			name:    "in operator — no match",
+			attrs:   map[string]interface{}{"env": "production"},
+			cond:    map[string]interface{}{"expression": "env in staging,dev"},
+			want:    false,
+		},
+		{
+			name:    "not_in operator — match",
+			attrs:   map[string]interface{}{"env": "staging"},
+			cond:    map[string]interface{}{"expression": "env not_in production"},
+			want:    true,
+		},
+		{
+			name:    "not_in operator — no match",
+			attrs:   map[string]interface{}{"env": "production"},
+			cond:    map[string]interface{}{"expression": "env not_in production"},
+			want:    false,
+		},
+		{
+			name:    "unknown operator — deny",
+			attrs:   map[string]interface{}{"region": "us-east-1"},
+			cond:    map[string]interface{}{"expression": "region unknown us-east-1"},
+			want:    false,
+		},
+		{
+			name:    "missing attribute — deny",
+			attrs:   map[string]interface{}{},
+			cond:    map[string]interface{}{"expression": "region eq us-east-1"},
+			want:    false,
+		},
+	}
 
-	got := evaluateCustomPolicy(context.Background(), attrs, cond)
-	if !got {
-		t.Errorf("evaluateCustomPolicy() = %v, want true (default pass)", got)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := evaluateCustomPolicy(context.Background(), tt.attrs, tt.cond)
+			if got != tt.want {
+				t.Errorf("evaluateCustomPolicy(%v, %v) = %v, want %v",
+					tt.attrs, tt.cond, got, tt.want)
+			}
+		})
 	}
 }
 

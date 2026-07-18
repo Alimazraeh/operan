@@ -198,7 +198,6 @@ func (h *DelegationHandler) findUserUUID(ctx context.Context, identifier string)
 
 func (h *DelegationHandler) Create(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
-	fmt.Printf("DEBUG Create: tenantID=%q\n", tenantID)
 
 	var req models.CreateDelegationRoleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
