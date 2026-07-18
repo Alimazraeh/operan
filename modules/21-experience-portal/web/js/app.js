@@ -9,6 +9,12 @@ import { viewSupervision } from "./views/supervision.js";
 import { viewTools } from "./views/tools.js";
 import { viewObservability } from "./views/observability.js";
 import { viewScenario } from "./views/scenario.js";
+import { viewTenants } from "./views/tenants.js";
+import { viewIAM } from "./views/iam.js";
+import { viewIngestion } from "./views/ingestion.js";
+import { viewPolicies } from "./views/policies.js";
+import { viewCost } from "./views/cost.js";
+import { viewConnectors } from "./views/connectors.js";
 
 const VIEWS = {
   overview:     { title: "Overview",    render: viewOverview },
@@ -21,6 +27,12 @@ const VIEWS = {
   tools:        { title: "Tools",       render: viewTools },
   observability:{ title: "Observability",render: viewObservability },
   scenario:     { title: "The Story",   render: viewScenario },
+  tenants:      { title: "Tenants",     render: viewTenants },
+  iam:          { title: "Identity & Access", render: viewIAM },
+  ingestion:    { title: "Knowledge",   render: viewIngestion },
+  policies:     { title: "Policies",    render: viewPolicies },
+  cost:         { title: "Cost Governance", render: viewCost },
+  connectors:   { title: "Connectors",  render: viewConnectors },
 };
 
 let currentView = "overview";
@@ -45,8 +57,11 @@ window.go = async function (name, ...args) {
 const PROBES = [
   ["tenant", "/svc/tenant/health"], ["orchestr", "/svc/orchestration/health"],
   ["registry", "/svc/registry/health"], ["templates", "/svc/templates/health"],
+  ["knowledge", "/svc/knowledge/health"],
   ["memory", "/svc/memory/health"], ["tools", "/svc/tools/health"],
-  ["supervision", "/svc/supervision/health"], ["observab", "/svc/observability/healthz"],
+  ["supervision", "/svc/supervision/health"], ["policies", "/svc/policies/health"],
+  ["observab", "/svc/observability/healthz"], ["cost", "/svc/cost/health"],
+  ["conn", "/svc/connectors/health"], ["iam", "/svc/iam/health"],
 ];
 
 async function checkHealth() {
@@ -105,7 +120,7 @@ async function connect() {
 
   window.go("overview");
   setInterval(() => {
-    if (["overview","observability","supervision"].includes(currentView)) window.go(currentView);
+    if (["overview","observability","supervision","cost","connectors","policies"].includes(currentView)) window.go(currentView);
   }, 12000);
 }
 
