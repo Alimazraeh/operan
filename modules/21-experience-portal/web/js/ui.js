@@ -110,3 +110,40 @@ export function pagination(page, total, pageSize) {
 export function spinner(size = "24px") {
   return `<div class="spinner" style="width:${size};height:${size};border-width:2px"></div>`;
 }
+
+// ── Row item card (used by old views) ──────────────────────
+export function rowItem({ title, meta, badges, icon, onClick }) {
+  const badgeHtml = badges ? (Array.isArray(badges) ? badges.map(b => {
+    if (typeof b === 'string') return `<span class="badge ${b}">${esc(b)}</span>`;
+    const c = b.color || 'info';
+    const l = b.label || b;
+    return `<span class="badge ${c}">${esc(l)}</span>`;
+  }).join("") : badge(badges)) : "";
+  return `<div class="row-item"${onClick ? ` onclick="${onClick}"` : ""}>
+    ${icon ? `<div class="stat-icon">${esc(icon)}</div>` : ""}
+    <div class="grow">
+      <div class="t">${esc(title)}</div>
+      ${meta ? `<div class="m">${esc(meta)}</div>` : ""}
+      ${badgeHtml ? `<div style="margin-top:6px">${badgeHtml}</div>` : ""}
+    </div>
+  </div>`;
+}
+
+// ── Event row ──────────────────────────────────────────────
+export function eventRow({ span, service, traceId, latency, status, ts }) {
+  return `<div class="row-item">
+    <div class="grow">
+      <div class="t">${esc(span || "—")}</div>
+      <div class="m">${esc(service || "—")} · ${esc(latency || "—")}${traceId ? ` · trace ${esc(traceId.slice(0,8))}` : ""} · ${esc(ts || "—")}</div>
+    </div>
+    <span class="badge ${status || ''}">${esc(status || "—")}</span>
+  </div>`;
+}
+
+// ── KV table helper ────────────────────────────────────────
+export function kvHtml(entries) {
+  return entries.map(([k, v]) => {
+    const vHtml = typeof v === 'function' ? v() : esc(String(v));
+    return `<dt>${esc(k)}</dt><dd>${vHtml}</dd>`;
+  }).join("");
+}
