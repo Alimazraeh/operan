@@ -10,16 +10,42 @@
     "company_size": "500-5000+ employees",
     "industry": "global",
     "compliance_level": "full-regulatory",
-    "frameworks": ["SHRM-Certified", "ATD-Global", "WEF-Future-of-Work", "ISO-30401", "DEI-standards", "SOX", "GDPR", "CCPA", "PDPA"],
+    "frameworks": [
+      "SHRM-Certified",
+      "ATD-Global",
+      "WEF-Future-of-Work",
+      "ISO-30401",
+      "DEI-standards",
+      "SOX",
+      "GDPR",
+      "CCPA",
+      "PDPA"
+    ],
     "last_reviewed": "2026-07-17"
   },
-  "tags": ["hr", "enterprise", "center-of-excellence", "global", "multi-region", "compliance"],
+  "tags": [
+    "hr",
+    "enterprise",
+    "center-of-excellence",
+    "global",
+    "multi-region",
+    "compliance"
+  ],
   "status": "published",
   "created_by": "platform",
   "agents": [
     {
       "id": "hr-vp-01",
       "role": "VP of People / Chief HR Officer",
+      "model": "qwen-72b",
+      "access_control": {
+        "employee_records": "read-write-global",
+        "payroll_data": "read-write-global",
+        "salary_bands": "read-write-global",
+        "org_structure": "read-write-global",
+        "compensation_plan": "read-write-global",
+        "board_reports": "read-write"
+      },
       "capabilities": [
         "enterprise-workforce-strategy",
         "org-design-at-scale",
@@ -31,27 +57,35 @@
         "succession-planning",
         "crisis-communication"
       ],
-      "model": "qwen-72b",
-      "memory_profile": "episodic-enabled, graph-enabled, full-retention",
-      "tool_requirements": ["hris-api", "analytics-dashboard", "executive-calendar", "board-reporting", "payroll-api", "survey-platform"],
       "system_prompt": "You are the VP of People (CHRO) for a large enterprise. You lead a global HR organization of 30+ specialists. You report to the CEO and serve on the executive team. You drive workforce strategy, organizational design, culture transformation, and board-level people reporting. You maintain the highest standards of compliance, confidentiality, and ethical conduct.",
+      "memory_profile": "episodic-enabled, graph-enabled, full-retention",
+      "tool_requirements": [
+        "hris-api",
+        "analytics-dashboard",
+        "executive-calendar",
+        "board-reporting",
+        "payroll-api",
+        "survey-platform"
+      ],
       "constraints": {
         "max_tokens_per_request": 16384,
         "rate_limit": 500,
         "pii_handling": "encrypted-at-rest, field-level-access-control, multi-region-compliance"
       },
-      "access_control": {
-        "employee_records": "read-write-global",
-        "payroll_data": "read-write-global",
-        "salary_bands": "read-write-global",
-        "org_structure": "read-write-global",
-        "compensation_plan": "read-write-global",
-        "board_reports": "read-write"
-      }
+      "level": "director",
+      "position_title": "VP of People / Chief HR Officer",
+      "autonomy_tier": "coordinate"
     },
     {
       "id": "hrbp-senior-01",
       "role": "Senior HR Business Partner — Strategic",
+      "model": "qwen-72b",
+      "access_control": {
+        "employee_records": "read-write-bu",
+        "payroll_data": "none",
+        "salary_bands": "read-only-bu",
+        "org_structure": "read-write-bu"
+      },
       "capabilities": [
         "strategic-workforce-planning",
         "organizational-design",
@@ -62,24 +96,33 @@
         "diversity-inclusion-strategy",
         "employee-engagement-programming"
       ],
-      "model": "qwen-72b",
-      "memory_profile": "episodic-enabled, graph-enabled",
-      "tool_requirements": ["hris-api", "survey-platform", "analytics-dashboard", "calendar", "email"],
       "system_prompt": "You are a Senior HRBP serving a large business unit (500+ employees). You act as a strategic advisor to the BU leadership team on workforce planning, organizational design, talent development, and culture. You coordinate with COE specialists to deliver solutions. You maintain deep relationships with VPs and directors.",
+      "memory_profile": "episodic-enabled, graph-enabled",
+      "tool_requirements": [
+        "hris-api",
+        "survey-platform",
+        "analytics-dashboard",
+        "calendar",
+        "email"
+      ],
       "constraints": {
         "max_tokens_per_request": 8192,
         "confidentiality": "strict"
       },
-      "access_control": {
-        "employee_records": "read-write-bu",
-        "payroll_data": "none",
-        "salary_bands": "read-only-bu",
-        "org_structure": "read-write-bu"
-      }
+      "level": "senior",
+      "position_title": "Senior HR Business Partner — Strategic",
+      "autonomy_tier": "draft",
+      "reports_to": "hr-vp-01"
     },
     {
       "id": "hrbp-junior-01",
       "role": "HR Business Partner — Operational",
+      "model": "qwen-34b",
+      "access_control": {
+        "employee_records": "read-write-bu",
+        "payroll_data": "none",
+        "salary_bands": "none"
+      },
       "capabilities": [
         "employee-relations",
         "performance-management",
@@ -89,23 +132,37 @@
         "leave-administration",
         "workplace-investigations"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "episodic-enabled",
-      "tool_requirements": ["hris-api", "calendar", "email", "survey-platform"],
       "system_prompt": "You are an HRBP handling operational employee relations for a business unit. You manage day-to-day employee issues, conduct investigations, provide manager coaching, and ensure policy compliance. You escalate complex or high-risk matters to the Senior HRBP or Employee Relations specialist.",
+      "memory_profile": "episodic-enabled",
+      "tool_requirements": [
+        "hris-api",
+        "calendar",
+        "email",
+        "survey-platform"
+      ],
       "constraints": {
         "max_tokens_per_request": 4096,
-        "escalation_triggers": ["legal-risks", "litigation", "union-matters", "executive-level"]
+        "escalation_triggers": [
+          "legal-risks",
+          "litigation",
+          "union-matters",
+          "executive-level"
+        ]
       },
-      "access_control": {
-        "employee_records": "read-write-bu",
-        "payroll_data": "none",
-        "salary_bands": "none"
-      }
+      "level": "mid",
+      "position_title": "HR Business Partner — Operational",
+      "autonomy_tier": "draft",
+      "reports_to": "hr-vp-01"
     },
     {
       "id": "ta-lead-01",
       "role": "Talent Acquisition Team Lead",
+      "model": "qwen-72b",
+      "access_control": {
+        "candidate_records": "read-write-global",
+        "employee_records": "none",
+        "salary_bands": "read-only"
+      },
       "capabilities": [
         "talent-acquisition-strategy",
         "employer-brand-management",
@@ -116,23 +173,34 @@
         "campus-recruiting",
         "candidate-experience-optimization"
       ],
-      "model": "qwen-72b",
-      "memory_profile": "episodic-enabled, graph-enabled",
-      "tool_requirements": ["ats-system", "linkedin-recruiter", "email", "calendar", "video-interview", "survey-platform"],
       "system_prompt": "You lead the Talent Acquisition team for a large enterprise. You develop global recruiting strategy, manage a team of recruiters, oversee employer branding, and ensure diversity hiring targets are met. You work with hiring managers across all business units to fill critical and hard-to-fill roles.",
+      "memory_profile": "episodic-enabled, graph-enabled",
+      "tool_requirements": [
+        "ats-system",
+        "linkedin-recruiter",
+        "email",
+        "calendar",
+        "video-interview",
+        "survey-platform"
+      ],
       "constraints": {
         "max_tokens_per_request": 8192,
         "candidate_data": "gdpr-compliant"
       },
-      "access_control": {
-        "candidate_records": "read-write-global",
-        "employee_records": "none",
-        "salary_bands": "read-only"
-      }
+      "level": "lead",
+      "position_title": "Talent Acquisition Team Lead",
+      "autonomy_tier": "coordinate",
+      "reports_to": "hr-vp-01"
     },
     {
       "id": "ta-recruiter-01",
       "role": "Technical Recruiter",
+      "model": "qwen-34b",
+      "access_control": {
+        "candidate_records": "read-write",
+        "employee_records": "none",
+        "salary_bands": "read-only"
+      },
       "capabilities": [
         "technical-screening",
         "candidate-engagement",
@@ -142,22 +210,34 @@
         "market-mapping",
         "referral-program-management"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "episodic-enabled",
-      "tool_requirements": ["ats-system", "linkedin-recruiter", "email", "calendar", "github-api"],
       "system_prompt": "You are a technical recruiter focusing on engineering, data science, and product roles. You source passive candidates, conduct technical phone screens, coordinate complex interview loops, and manage offer negotiations. You build and maintain talent pipelines for critical roles.",
+      "memory_profile": "episodic-enabled",
+      "tool_requirements": [
+        "ats-system",
+        "linkedin-recruiter",
+        "email",
+        "calendar",
+        "github-api"
+      ],
       "constraints": {
         "max_tokens_per_request": 4096
       },
-      "access_control": {
-        "candidate_records": "read-write",
-        "employee_records": "none",
-        "salary_bands": "read-only"
-      }
+      "level": "mid",
+      "position_title": "Technical Recruiter",
+      "autonomy_tier": "draft",
+      "reports_to": "hr-vp-01"
     },
     {
       "id": "tr-lead-01",
       "role": "Total Rewards Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "employee_records": "read-write-payroll-only",
+        "payroll_data": "read-write-global",
+        "salary_bands": "read-write-global",
+        "equity_data": "read-write-global",
+        "pay-equity-data": "read-write"
+      },
       "capabilities": [
         "compensation-strategy",
         "market-analysis",
@@ -168,25 +248,33 @@
         "vendor-management",
         "regulatory-reporting"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["payroll-api", "hris-api", "market-survey-database", "benefits-portal", "analytics-dashboard"],
       "system_prompt": "You lead the Total Rewards function. You design and administer compensation structures, benefits programs, equity plans, and bonus structures for a global workforce. You conduct annual market benchmarking, lead pay equity analyses, and ensure compliance with global compensation regulations.",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "payroll-api",
+        "hris-api",
+        "market-survey-database",
+        "benefits-portal",
+        "analytics-dashboard"
+      ],
       "constraints": {
         "max_tokens_per_request": 8192,
         "compensation_data": "strict-confidentiality"
       },
-      "access_control": {
-        "employee_records": "read-write-payroll-only",
-        "payroll_data": "read-write-global",
-        "salary_bands": "read-write-global",
-        "equity_data": "read-write-global",
-        "pay-equity-data": "read-write"
-      }
+      "level": "lead",
+      "position_title": "Total Rewards Lead",
+      "autonomy_tier": "coordinate",
+      "reports_to": "hr-vp-01"
     },
     {
       "id": "td-lead-01",
       "role": "Learning & Development Director",
+      "model": "qwen-34b",
+      "access_control": {
+        "employee_records": "read-only",
+        "training-records": "read-write-global",
+        "content-library": "read-write"
+      },
       "capabilities": [
         "learning-strategy",
         "leadership-development",
@@ -197,22 +285,32 @@
         "roi-measurement",
         "succession-development"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["lms-system", "video-platform", "analytics-dashboard", "email", "document-storage"],
       "system_prompt": "You lead L&D for a large enterprise. You design learning strategies aligned with business goals, manage leadership development programs, oversee the LMS platform, and measure training ROI. You ensure all employees complete mandatory compliance training and develop critical skill pipelines.",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "lms-system",
+        "video-platform",
+        "analytics-dashboard",
+        "email",
+        "document-storage"
+      ],
       "constraints": {
         "max_tokens_per_request": 8192
       },
-      "access_control": {
-        "employee_records": "read-only",
-        "training-records": "read-write-global",
-        "content-library": "read-write"
-      }
+      "level": "director",
+      "position_title": "Learning & Development Director",
+      "autonomy_tier": "coordinate",
+      "reports_to": "hr-vp-01"
     },
     {
       "id": "er-specialist-01",
       "role": "Employee Relations Specialist",
+      "model": "qwen-72b",
+      "access_control": {
+        "investigation-files": "read-write-er-only",
+        "employee_records": "read-only",
+        "disciplinary-records": "read-write"
+      },
       "capabilities": [
         "workplace-investigations",
         "disciplinary-actions",
@@ -222,23 +320,34 @@
         "documentation-management",
         "risk-assessment"
       ],
-      "model": "qwen-72b",
-      "memory_profile": "episodic-enabled, immutable-storage",
-      "tool_requirements": ["hris-api", "document-storage", "email", "case-management-system"],
       "system_prompt": "You are an Employee Relations specialist handling complex workplace investigations, disciplinary actions, and policy enforcement. You conduct thorough, impartial investigations and maintain impeccable documentation. You work closely with legal counsel on high-risk cases. All investigation records are treated as privileged and immutable.",
+      "memory_profile": "episodic-enabled, immutable-storage",
+      "tool_requirements": [
+        "hris-api",
+        "document-storage",
+        "email",
+        "case-management-system"
+      ],
       "constraints": {
         "max_tokens_per_request": 8192,
         "investigation_records": "immutable, privileged, legal-hold"
       },
-      "access_control": {
-        "investigation-files": "read-write-er-only",
-        "employee_records": "read-only",
-        "disciplinary-records": "read-write"
-      }
+      "level": "mid",
+      "position_title": "Employee Relations Specialist",
+      "autonomy_tier": "draft",
+      "reports_to": "hr-vp-01"
     },
     {
       "id": "hris-lead-01",
       "role": "HRIS & People Analytics Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "employee_records": "read-write-system",
+        "payroll_data": "read-only",
+        "salary_bands": "read-only",
+        "system_config": "read-write",
+        "analytics_models": "read-write"
+      },
       "capabilities": [
         "hris-architecture",
         "data-integration-strategy",
@@ -249,25 +358,33 @@
         "system-security",
         "vendor-evaluation"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["hris-api", "sql-database", "analytics-tool", "bi-platform", "email"],
       "system_prompt": "You lead HRIS and People Analytics for a large enterprise. You design and maintain the HR technology stack, build analytics models, create executive dashboards, and provide data-driven workforce insights. You ensure data quality, security, and regulatory compliance across all HR data systems.",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "hris-api",
+        "sql-database",
+        "analytics-tool",
+        "bi-platform",
+        "email"
+      ],
       "constraints": {
         "max_tokens_per_request": 8192,
         "data_access": "role-based"
       },
-      "access_control": {
-        "employee_records": "read-write-system",
-        "payroll_data": "read-only",
-        "salary_bands": "read-only",
-        "system_config": "read-write",
-        "analytics_models": "read-write"
-      }
+      "level": "lead",
+      "position_title": "HRIS & People Analytics Lead",
+      "autonomy_tier": "coordinate",
+      "reports_to": "hr-vp-01"
     },
     {
       "id": "dei-lead-01",
       "role": "DEI & Inclusion Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "survey-data": "read-write",
+        "demographic-data": "read-write-aggregated-only",
+        "individual-records": "none"
+      },
       "capabilities": [
         "dei-strategy",
         "culture-measurement",
@@ -278,22 +395,35 @@
         "community-partnerships",
         "reporting-and-accountability"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["survey-platform", "analytics-dashboard", "email", "document-storage", "calendar"],
       "system_prompt": "You lead DEI strategy and inclusion initiatives for a large enterprise. You develop DEI programs, measure inclusion metrics, manage Employee Resource Groups, and drive inclusive hiring and promotion practices. You report DEI metrics to leadership and the board.",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "survey-platform",
+        "analytics-dashboard",
+        "email",
+        "document-storage",
+        "calendar"
+      ],
       "constraints": {
         "max_tokens_per_request": 4096
       },
-      "access_control": {
-        "survey-data": "read-write",
-        "demographic-data": "read-write-aggregated-only",
-        "individual-records": "none"
-      }
+      "level": "lead",
+      "position_title": "DEI & Inclusion Lead",
+      "autonomy_tier": "coordinate",
+      "reports_to": "hr-vp-01"
     },
     {
       "id": "hr-gpo-pod-01",
       "role": "GPO Pod — HR Support",
+      "model": "qwen-14b",
+      "access_control": {
+        "employee_records": "read-only",
+        "payroll_data": "none",
+        "salary_bands": "none",
+        "candidate_records": "read-only",
+        "investigation-files": "none",
+        "content-library": "read-write"
+      },
       "capabilities": [
         "document-drafting",
         "scheduling",
@@ -305,23 +435,33 @@
         "faq-response",
         "meeting-minutes"
       ],
-      "model": "qwen-14b",
-      "memory_profile": "semantic-enabled",
-      "tool_requirements": ["document-storage", "email", "templates-library", "hris-api", "lms-system"],
       "system_prompt": "You are a GPO pod member handling routine HR tasks at enterprise scale. You draft documents, schedule meetings, process forms, retrieve policies, generate reports, and answer employee FAQ. You are designed to handle high volume while maintaining consistency and quality. You escalate any sensitive topics or complex queries immediately to the appropriate human specialist.",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": [
+        "document-storage",
+        "email",
+        "templates-library",
+        "hris-api",
+        "lms-system"
+      ],
       "constraints": {
         "max_tokens_per_request": 2048,
-        "sensitive_topics": ["discrimination", "harassment", "termination", "litigation", "investigation", "disciplinary", "compensation-disputes", "union-matters"],
+        "sensitive_topics": [
+          "discrimination",
+          "harassment",
+          "termination",
+          "litigation",
+          "investigation",
+          "disciplinary",
+          "compensation-disputes",
+          "union-matters"
+        ],
         "volume": "high-throughput"
       },
-      "access_control": {
-        "employee_records": "read-only",
-        "payroll_data": "none",
-        "salary_bands": "none",
-        "candidate_records": "read-only",
-        "investigation-files": "none",
-        "content-library": "read-write"
-      }
+      "level": "junior",
+      "position_title": "GPO Pod — HR Support",
+      "autonomy_tier": "recommend",
+      "reports_to": "hr-vp-01"
     }
   ],
   "workflows": [
@@ -329,7 +469,10 @@
       "id": "wf-onboarding-001",
       "name": "Enterprise Onboarding (500+ employees)",
       "description": "Multi-week onboarding with pre-boarding, structured day-one through 90-day program, buddy assignment, manager enablement, and progress tracking.",
-      "triggers": ["manual", "event:new-hire-created"],
+      "triggers": [
+        "manual",
+        "event:new-hire-created"
+      ],
       "steps": [
         {
           "id": "onb-01",
@@ -346,7 +489,16 @@
           "type": "tool_call",
           "name": "Enterprise IT Provisioning",
           "config": {
-            "tools": ["email-account", "calendar", "active-directory", "vpn", "badge-access", "laptop-provisioning", "software-licenses", "system-access"],
+            "tools": [
+              "email-account",
+              "calendar",
+              "active-directory",
+              "vpn",
+              "badge-access",
+              "laptop-provisioning",
+              "software-licenses",
+              "system-access"
+            ],
             "role_profile": "standard-employee",
             "sla_hours": 48
           }
@@ -357,9 +509,20 @@
           "name": "Welcome Communications",
           "config": {
             "template": "onboarding/welcome-email",
-            "recipients": ["new-hire", "manager", "team", "buddy"],
-            "send_schedule": ["day-before-start", "day-1-morning"],
-            "cc": ["hrbp-senior-01", "hr-gpo-pod-01"]
+            "recipients": [
+              "new-hire",
+              "manager",
+              "team",
+              "buddy"
+            ],
+            "send_schedule": [
+              "day-before-start",
+              "day-1-morning"
+            ],
+            "cc": [
+              "hrbp-senior-01",
+              "hr-gpo-pod-01"
+            ]
           }
         },
         {
@@ -377,9 +540,20 @@
           "name": "Assign Buddy & Manager 1:1 Schedule",
           "config": {
             "agent": "hr-gpo-pod-01",
-            "schedule": ["day-1", "end-week-1", "day-30", "day-60", "day-90"],
+            "schedule": [
+              "day-1",
+              "end-week-1",
+              "day-30",
+              "day-60",
+              "day-90"
+            ],
             "buddy_assignment": true,
-            "templates": ["welcome-1:1", "30-day-check", "60-day-review", "90-day-confirmation"]
+            "templates": [
+              "welcome-1:1",
+              "30-day-check",
+              "60-day-review",
+              "90-day-confirmation"
+            ]
           }
         },
         {
@@ -389,7 +563,11 @@
           "config": {
             "tool": "benefits-portal",
             "enrollment_window": "first-30-days",
-            "reminder_schedule": ["day-5", "day-15", "day-25"]
+            "reminder_schedule": [
+              "day-5",
+              "day-15",
+              "day-25"
+            ]
           }
         },
         {
@@ -406,7 +584,11 @@
       "error_handling": {
         "max_retries": 3,
         "fallback": "escalate-to-human",
-        "critical_path": ["onb-01", "onb-02", "onb-04"],
+        "critical_path": [
+          "onb-01",
+          "onb-02",
+          "onb-04"
+        ],
         "sla": "48-hours"
       }
     },
@@ -414,7 +596,9 @@
       "id": "wf-performance-001",
       "name": "Enterprise Performance Management (OKR + 360)",
       "description": "Quarterly OKR cycle with continuous check-ins, 360-degree feedback, calibration at scale, and development planning.",
-      "triggers": ["schedule:quarterly"],
+      "triggers": [
+        "schedule:quarterly"
+      ],
       "steps": [
         {
           "id": "perf-01",
@@ -422,7 +606,10 @@
           "name": "Open Review Period",
           "config": {
             "message": "Q4 performance review period is now open. Set OKRs, complete self-assessments by {deadline}.",
-            "recipients": ["all-managers", "all-employees"],
+            "recipients": [
+              "all-managers",
+              "all-employees"
+            ],
             "template": "review-cycle-open"
           }
         },
@@ -441,7 +628,13 @@
           "name": "360-Degree Feedback Collection",
           "config": {
             "tool": "survey-system",
-            "participants": ["peers", "direct-reports", "manager", "cross-functional", "external-partners"],
+            "participants": [
+              "peers",
+              "direct-reports",
+              "manager",
+              "cross-functional",
+              "external-partners"
+            ],
             "anonymize": true,
             "min_responses": 5
           }
@@ -490,7 +683,10 @@
       "id": "wf-hiring-001",
       "name": "Enterprise Hiring Pipeline",
       "description": "Complex multi-stage hiring process with requisition governance, structured interviews, diverse panels, and compliance tracking.",
-      "triggers": ["manual", "event:headcount-approved"],
+      "triggers": [
+        "manual",
+        "event:headcount-approved"
+      ],
       "steps": [
         {
           "id": "hire-01",
@@ -506,7 +702,13 @@
           "type": "approval",
           "name": "Multi-Level Requisition Approval",
           "config": {
-            "required_by": ["hiring-manager", "department-head", "talent-acquisition", "finance", "workforce-planning"],
+            "required_by": [
+              "hiring-manager",
+              "department-head",
+              "talent-acquisition",
+              "finance",
+              "workforce-planning"
+            ],
             "timeout_hours": 72,
             "approval_matrix": {
               "under_75k": "hiring-manager-only",
@@ -521,7 +723,14 @@
           "type": "tool_call",
           "name": "Global Job Posting",
           "config": {
-            "channels": ["linkedin", "indeed", "company-careers", "niche-boards", "referral-program", "campus-boards"],
+            "channels": [
+              "linkedin",
+              "indeed",
+              "company-careers",
+              "niche-boards",
+              "referral-program",
+              "campus-boards"
+            ],
             "auto_renew": true,
             "renew_days": 14,
             "geo_targeting": true
@@ -542,7 +751,13 @@
           "name": "Multi-Stage Interview Loop",
           "config": {
             "agent": "ta-recruiter-01",
-            "stages": ["technical-screen", "case-study", "culture-fit", "final-panel", "executive-meeting"],
+            "stages": [
+              "technical-screen",
+              "case-study",
+              "culture-fit",
+              "final-panel",
+              "executive-meeting"
+            ],
             "scorecards": true,
             "diverse_panel_required": true,
             "candidate_feedback_after_each": true
@@ -554,7 +769,14 @@
           "name": "Background & Reference Checks",
           "config": {
             "provider": "enterprise-bg-check",
-            "checks": ["criminal", "education", "employment-history", "professional-license", "reference", "credit-check-if-required"],
+            "checks": [
+              "criminal",
+              "education",
+              "employment-history",
+              "professional-license",
+              "reference",
+              "credit-check-if-required"
+            ],
             "consent_required": true,
             "geo_compliance": true
           }
@@ -586,7 +808,10 @@
       "id": "wf-compliance-001",
       "name": "Global Compliance Framework",
       "description": "Annual and ongoing compliance program covering data protection, workplace safety, anti-harassment, and industry-specific regulations.",
-      "triggers": ["schedule:annual", "event:regulatory-change"],
+      "triggers": [
+        "schedule:annual",
+        "event:regulatory-change"
+      ],
       "steps": [
         {
           "id": "comp-01",
@@ -603,7 +828,13 @@
           "name": "Update Training Curriculum",
           "config": {
             "tool": "lms-system",
-            "modules_by_region": ["gdpr-data-protection", "workplace-safety", "anti-harassment", "code-of-conduct", "industry-specific"],
+            "modules_by_region": [
+              "gdpr-data-protection",
+              "workplace-safety",
+              "anti-harassment",
+              "code-of-conduct",
+              "industry-specific"
+            ],
             "deadline": "60-days",
             "geo_targeting": true
           }
@@ -613,7 +844,13 @@
           "type": "notification",
           "name": "Assign & Track Training",
           "config": {
-            "schedule": ["assignment", "30-day-reminder", "15-day-reminder", "deadline", "post-deadline"],
+            "schedule": [
+              "assignment",
+              "30-day-reminder",
+              "15-day-reminder",
+              "deadline",
+              "post-deadline"
+            ],
             "escalation": "manager-notification-if-non-compliant"
           }
         },
@@ -683,7 +920,14 @@
         "consent_required": true,
         "right_to_deletion": true
       },
-      "actions": ["log-all-access", "encrypt-at-rest-and-transit", "mask-in-logs", "enforce-retention-periods", "enforce-right-to-deletion", "cross-border-transfer-compliance"]
+      "actions": [
+        "log-all-access",
+        "encrypt-at-rest-and-transit",
+        "mask-in-logs",
+        "enforce-retention-periods",
+        "enforce-right-to-deletion",
+        "cross-border-transfer-compliance"
+      ]
     },
     {
       "id": "gov-hr-large-002",
@@ -692,9 +936,18 @@
       "enforcement": "enforce",
       "conditions": {
         "field": "compensation, salary, equity, bonus",
-        "visible_roles": ["hr-vp-01", "tr-lead-01", "department-heads"]
+        "visible_roles": [
+          "hr-vp-01",
+          "tr-lead-01",
+          "department-heads"
+        ]
       },
-      "actions": ["deny-access", "log-attempt", "notify-compliance", "audit-trail"]
+      "actions": [
+        "deny-access",
+        "log-attempt",
+        "notify-compliance",
+        "audit-trail"
+      ]
     },
     {
       "id": "gov-hr-large-003",
@@ -705,7 +958,12 @@
         "rule": "hiring-decision-maker != payroll-approver",
         "rule2": "compensation-setter != compensation-approver"
       },
-      "actions": ["prevent-concurrent-approval", "log-violation", "notify-hr-vp", "sox-reporting"]
+      "actions": [
+        "prevent-concurrent-approval",
+        "log-violation",
+        "notify-hr-vp",
+        "sox-reporting"
+      ]
     },
     {
       "id": "gov-hr-large-004",
@@ -716,7 +974,13 @@
         "case_type": "employee-relations-investigation",
         "privilege": "attorney-client"
       },
-      "actions": ["immutable-records", "chain-of-custody-tracking", "no-deletion", "legal-hold-enabled", "privileged-access-control"]
+      "actions": [
+        "immutable-records",
+        "chain-of-custody-tracking",
+        "no-deletion",
+        "legal-hold-enabled",
+        "privileged-access-control"
+      ]
     },
     {
       "id": "gov-hr-large-005",
@@ -727,7 +991,12 @@
         "agent_role": "hr-gpo-pod-01",
         "output_affects_individual": true
       },
-      "actions": ["human-review-required", "log-output", "retain-output-for-audit", "model-output-capture"]
+      "actions": [
+        "human-review-required",
+        "log-output",
+        "retain-output-for-audit",
+        "model-output-capture"
+      ]
     },
     {
       "id": "gov-hr-large-006",
@@ -737,9 +1006,18 @@
       "conditions": {
         "process": "hiring, promotion, compensation",
         "frequency": "quarterly",
-        "regions": ["us", "eu", "apac"]
+        "regions": [
+          "us",
+          "eu",
+          "apac"
+        ]
       },
-      "actions": ["generate-demographic-report", "flag-disparities", "notify-hr-vp", "corrective-action-plan"]
+      "actions": [
+        "generate-demographic-report",
+        "flag-disparities",
+        "notify-hr-vp",
+        "corrective-action-plan"
+      ]
     },
     {
       "id": "gov-hr-large-007",
@@ -750,7 +1028,12 @@
         "frequency": "quarterly",
         "report_type": "board-dashboard"
       },
-      "actions": ["compile-board-report", "legal-review", "ceo-signoff", "secure-distribution"]
+      "actions": [
+        "compile-board-report",
+        "legal-review",
+        "ceo-signoff",
+        "secure-distribution"
+      ]
     }
   ],
   "kpis": [
@@ -760,7 +1043,11 @@
       "description": "Average days from requisition to offer acceptance, segmented by role level",
       "metric_type": "gauge",
       "unit": "days",
-      "thresholds": {"target": 45, "warning": 55, "critical": 70},
+      "thresholds": {
+        "target": 45,
+        "warning": 55,
+        "critical": 70
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -769,7 +1056,11 @@
       "description": "Score: 90-day retention (40%) + manager rating (30%) + performance at 1-year (30%)",
       "metric_type": "gauge",
       "unit": "score",
-      "thresholds": {"target": 4.2, "warning": 3.7, "critical": 3.2},
+      "thresholds": {
+        "target": 4.2,
+        "warning": 3.7,
+        "critical": 3.2
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -778,7 +1069,11 @@
       "description": "Annual voluntary departure rate by employee level and business unit",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 8, "warning": 12, "critical": 18},
+      "thresholds": {
+        "target": 8,
+        "warning": 12,
+        "critical": 18
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -787,7 +1082,11 @@
       "description": "eNPS from annual engagement survey",
       "metric_type": "gauge",
       "unit": "score",
-      "thresholds": {"target": 50, "warning": 30, "critical": 15},
+      "thresholds": {
+        "target": 50,
+        "warning": 30,
+        "critical": 15
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -796,7 +1095,11 @@
       "description": "Percentage of employees completing mandatory training on time by region",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 98, "warning": 95, "critical": 90},
+      "thresholds": {
+        "target": 98,
+        "warning": 95,
+        "critical": 90
+      },
       "aggregation_period": "month"
     },
     {
@@ -805,7 +1108,11 @@
       "description": "Total HR cost / total headcount",
       "metric_type": "gauge",
       "unit": "currency",
-      "thresholds": {"target": 10000, "warning": 12000, "critical": 15000},
+      "thresholds": {
+        "target": 10000,
+        "warning": 12000,
+        "critical": 15000
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -814,7 +1121,11 @@
       "description": "Percentage of open positions filled internally",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 50, "warning": 40, "critical": 30},
+      "thresholds": {
+        "target": 50,
+        "warning": 40,
+        "critical": 30
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -823,7 +1134,11 @@
       "description": "Composite metric for diversity representation across levels and functions",
       "metric_type": "gauge",
       "unit": "index",
-      "thresholds": {"target": 0.9, "warning": 0.8, "critical": 0.7},
+      "thresholds": {
+        "target": 0.9,
+        "warning": 0.8,
+        "critical": 0.7
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -832,7 +1147,11 @@
       "description": "Percentage of offers accepted vs declined",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 88, "warning": 80, "critical": 70},
+      "thresholds": {
+        "target": 88,
+        "warning": 80,
+        "critical": 70
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -841,7 +1160,11 @@
       "description": "Average days for new hire to reach full productivity threshold",
       "metric_type": "gauge",
       "unit": "days",
-      "thresholds": {"target": 90, "warning": 120, "critical": 150},
+      "thresholds": {
+        "target": 90,
+        "warning": 120,
+        "critical": 150
+      },
       "aggregation_period": "quarter"
     }
   ],
@@ -853,7 +1176,16 @@
       "provider": "workday",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"endpoint": "https://api.workday.com/v30", "sync_frequency": "real-time", "regions": ["us", "eu", "apac", "latam"]}
+      "config": {
+        "endpoint": "https://api.workday.com/v30",
+        "sync_frequency": "real-time",
+        "regions": [
+          "us",
+          "eu",
+          "apac",
+          "latam"
+        ]
+      }
     },
     {
       "id": "int-hr-large-002",
@@ -862,7 +1194,15 @@
       "provider": "multiple",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"providers": ["adp", "gusto", "paychex", "local-providers"], "sync_frequency": "bi-weekly"}
+      "config": {
+        "providers": [
+          "adp",
+          "gusto",
+          "paychex",
+          "local-providers"
+        ],
+        "sync_frequency": "bi-weekly"
+      }
     },
     {
       "id": "int-hr-large-003",
@@ -871,7 +1211,9 @@
       "provider": "workday-customer-affinity",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"endpoint": "https://api.workday.com/recruiting"}
+      "config": {
+        "endpoint": "https://api.workday.com/recruiting"
+      }
     },
     {
       "id": "int-hr-large-004",
@@ -880,7 +1222,10 @@
       "provider": "cornerstone",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"endpoint": "https://api.lms.cornerstoneondemand.com", "geo_targeting": true}
+      "config": {
+        "endpoint": "https://api.lms.cornerstoneondemand.com",
+        "geo_targeting": true
+      }
     },
     {
       "id": "int-hr-large-005",
@@ -889,7 +1234,10 @@
       "provider": "microsoft_365",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"tenant": "{tenant}.onmicrosoft.com", "graph_api": true}
+      "config": {
+        "tenant": "{tenant}.onmicrosoft.com",
+        "graph_api": true
+      }
     },
     {
       "id": "int-hr-large-006",
@@ -898,7 +1246,10 @@
       "provider": "slack",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"workspace": "{tenant}", "sso": true}
+      "config": {
+        "workspace": "{tenant}",
+        "sso": true
+      }
     },
     {
       "id": "int-hr-large-007",
@@ -907,7 +1258,9 @@
       "provider": "wells-fargo-benefits",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"endpoint": "https://api.wellsfargo.com/benefits"}
+      "config": {
+        "endpoint": "https://api.wellsfargo.com/benefits"
+      }
     },
     {
       "id": "int-hr-large-008",
@@ -916,7 +1269,10 @@
       "provider": "Tableau/PowerBI",
       "auth_method": "api_key",
       "status": "active",
-      "config": {"database": "data-warehouse", "refresh": "hourly"}
+      "config": {
+        "database": "data-warehouse",
+        "refresh": "hourly"
+      }
     }
   ],
   "operational_policies": [
@@ -925,11 +1281,68 @@
       "name": "Agent Autonomy Boundaries",
       "scope": "agent",
       "rules": [
-        {"agent": "hr-gpo-pod-01", "allowed": ["draft", "schedule", "retrieval", "summary", "report-generation", "faq-response"], "denied": ["make-hiring-decision", "terminate-employment", "change-compensation", "conduct-investigation", "make-calibration-decisions"]},
-        {"agent": "hris-lead-01", "allowed": ["data-entry", "reporting", "system-config", "integration-maintenance", "analytics-models"], "denied": ["modify-compensation", "change-org-structure", "delete-employee-records"]},
-        {"agent": "ta-lead-01", "allowed": ["screen", "schedule", "communicate", "score", "pipeline-management"], "denied": ["make-final-offer", "set-compensation"]},
-        {"agent": "er-specialist-01", "allowed": ["investigate", "document", "recommend"], "denied": ["make-termination-decision", "override-legal-counsel"]},
-        {"requirement": "all-agent-output-affecting-individual-employees-requires-human-confirmation-before-action"}
+        {
+          "agent": "hr-gpo-pod-01",
+          "allowed": [
+            "draft",
+            "schedule",
+            "retrieval",
+            "summary",
+            "report-generation",
+            "faq-response"
+          ],
+          "denied": [
+            "make-hiring-decision",
+            "terminate-employment",
+            "change-compensation",
+            "conduct-investigation",
+            "make-calibration-decisions"
+          ]
+        },
+        {
+          "agent": "hris-lead-01",
+          "allowed": [
+            "data-entry",
+            "reporting",
+            "system-config",
+            "integration-maintenance",
+            "analytics-models"
+          ],
+          "denied": [
+            "modify-compensation",
+            "change-org-structure",
+            "delete-employee-records"
+          ]
+        },
+        {
+          "agent": "ta-lead-01",
+          "allowed": [
+            "screen",
+            "schedule",
+            "communicate",
+            "score",
+            "pipeline-management"
+          ],
+          "denied": [
+            "make-final-offer",
+            "set-compensation"
+          ]
+        },
+        {
+          "agent": "er-specialist-01",
+          "allowed": [
+            "investigate",
+            "document",
+            "recommend"
+          ],
+          "denied": [
+            "make-termination-decision",
+            "override-legal-counsel"
+          ]
+        },
+        {
+          "requirement": "all-agent-output-affecting-individual-employees-requires-human-confirmation-before-action"
+        }
       ]
     },
     {
@@ -937,13 +1350,34 @@
       "name": "Global Compliance & Regulatory Maintenance",
       "scope": "department",
       "rules": [
-        {"frequency": "quarterly", "action": "review-employment-law-updates-by-region"},
-        {"frequency": "quarterly", "action": "equal-opportunity-and-pay-equity-analysis"},
-        {"frequency": "quarterly", "action": "board-level-people-reporting"},
-        {"frequency": "annually", "action": "update-employee-handbook"},
-        {"frequency": "annually", "action": "conduct-compliance-audit"},
-        {"frequency": "annually", "action": "update-data-retention-policy"},
-        {"frequency": "annually", "action": "review-agent-autonomy-policies"}
+        {
+          "frequency": "quarterly",
+          "action": "review-employment-law-updates-by-region"
+        },
+        {
+          "frequency": "quarterly",
+          "action": "equal-opportunity-and-pay-equity-analysis"
+        },
+        {
+          "frequency": "quarterly",
+          "action": "board-level-people-reporting"
+        },
+        {
+          "frequency": "annually",
+          "action": "update-employee-handbook"
+        },
+        {
+          "frequency": "annually",
+          "action": "conduct-compliance-audit"
+        },
+        {
+          "frequency": "annually",
+          "action": "update-data-retention-policy"
+        },
+        {
+          "frequency": "annually",
+          "action": "review-agent-autonomy-policies"
+        }
       ]
     },
     {
@@ -951,23 +1385,143 @@
       "name": "Enterprise Data Retention & Privacy",
       "scope": "system",
       "rules": [
-        {"data_type": "employee-records", "retention": "7-years-post-termination", "disposal": "secure-delete"},
-        {"data_type": "investigation-files", "retention": "10-years", "disposal": "secure-delete", "legal_hold": true},
-        {"data_type": "application-data", "retention": "3-years", "disposal": "anonymize"},
-        {"data_type": "performance-reviews", "retention": "5-years", "disposal": "secure-delete"},
-        {"data_type": "payroll-data", "retention": "7-years", "disposal": "secure-delete"},
-        {"data_type": "training-records", "retention": "3-years", "disposal": "anonymize"},
-        {"data_type": "demographic-data", "retention": "aggregated-only-per-GDPR", "disposal": "anonymize"}
+        {
+          "data_type": "employee-records",
+          "retention": "7-years-post-termination",
+          "disposal": "secure-delete"
+        },
+        {
+          "data_type": "investigation-files",
+          "retention": "10-years",
+          "disposal": "secure-delete",
+          "legal_hold": true
+        },
+        {
+          "data_type": "application-data",
+          "retention": "3-years",
+          "disposal": "anonymize"
+        },
+        {
+          "data_type": "performance-reviews",
+          "retention": "5-years",
+          "disposal": "secure-delete"
+        },
+        {
+          "data_type": "payroll-data",
+          "retention": "7-years",
+          "disposal": "secure-delete"
+        },
+        {
+          "data_type": "training-records",
+          "retention": "3-years",
+          "disposal": "anonymize"
+        },
+        {
+          "data_type": "demographic-data",
+          "retention": "aggregated-only-per-GDPR",
+          "disposal": "anonymize"
+        }
       ]
     }
   ],
-  "metadata": {
-    "enterprise_size": "large",
-    "department_size": "20-50+ FTE",
-    "company_size": "500-5000+ employees",
-    "industry": "global",
-    "compliance_level": "full-regulatory",
-    "frameworks": ["SHRM-Certified", "ATD-Global", "WEF-Future-of-Work", "ISO-30401", "DEI-standards", "SOX", "GDPR", "CCPA", "PDPA"],
-    "last_reviewed": "2026-07-17"
-  }
+  "org_chart": [
+    {
+      "id": "pos-hr-vp-01",
+      "title": "VP of People / Chief HR Officer",
+      "role_type": "director",
+      "holder_type": "ai_agent",
+      "agent_def_id": "hr-vp-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-hrbp-senior-01",
+      "title": "Senior HR Business Partner — Strategic",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "hrbp-senior-01",
+      "reports_to": "pos-hr-vp-01",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-hrbp-junior-01",
+      "title": "HR Business Partner — Operational",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "hrbp-junior-01",
+      "reports_to": "pos-hr-vp-01",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-ta-lead-01",
+      "title": "Talent Acquisition Team Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "ta-lead-01",
+      "reports_to": "pos-hr-vp-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-ta-recruiter-01",
+      "title": "Technical Recruiter",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "ta-recruiter-01",
+      "reports_to": "pos-hr-vp-01",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-tr-lead-01",
+      "title": "Total Rewards Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "tr-lead-01",
+      "reports_to": "pos-hr-vp-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-td-lead-01",
+      "title": "Learning & Development Director",
+      "role_type": "director",
+      "holder_type": "ai_agent",
+      "agent_def_id": "td-lead-01",
+      "reports_to": "pos-hr-vp-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-er-specialist-01",
+      "title": "Employee Relations Specialist",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "er-specialist-01",
+      "reports_to": "pos-hr-vp-01",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-hris-lead-01",
+      "title": "HRIS & People Analytics Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "hris-lead-01",
+      "reports_to": "pos-hr-vp-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-dei-lead-01",
+      "title": "DEI & Inclusion Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "dei-lead-01",
+      "reports_to": "pos-hr-vp-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-hr-gpo-pod-01",
+      "title": "GPO Pod — HR Support",
+      "role_type": "support",
+      "holder_type": "ai_agent",
+      "agent_def_id": "hr-gpo-pod-01",
+      "reports_to": "pos-hr-vp-01",
+      "autonomy_tier": "recommend"
+    }
+  ]
 }

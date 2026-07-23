@@ -56,6 +56,42 @@ export async function viewAgent(agentId) {
   const mem = memR.ok ? memR.data : null;
   const myVectors = ((vecR.data && vecR.data.items) || []).filter(v => (v.metadata || {}).agent_id === agentId);
 
+  // Organization: this agent's place in its department's operating model.
+  let orgCard = "";
+  if (a.department_id) {
+    try {
+      const dRes = await get("/svc/templates/departments/" + a.department_id);
+      const dept = dRes.ok ? dRes.data : null;
+      if (dept) {
+        const positions = dept.org_chart || [];
+        const pos = positions.find(p => p.agent_id === agentId);
+        const posById = {};
+        for (const p of positions) posById[p.id] = p;
+        const boss = pos && pos.reports_to ? posById[pos.reports_to] : null;
+        const services = (dept.services || []).filter(s => pos && (s.owner_position_id === pos.id || s.owner_agent_def_id === pos.agent_def_id));
+        const risks = (dept.risks || []).filter(r => pos && r.agent_def_id === pos.agent_def_id);
+        const duties = (dept.compliance_controls || []).filter(c => pos && (c.agent_def_ids || []).includes(pos.agent_def_id));
+        const rights = (pos && pos.decision_rights || []).map(r =>
+          `<div class="dr"><span class="dr-a ${esc(r.authority)}">${esc(r.authority)}</span> ${esc(r.decision)}${r.limit ? ` <i>(${esc(r.limit)})</i>` : ""}</div>`).join("");
+        orgCard = `
+    <div class="card" style="margin-bottom:18px">
+      <h3>Organization <span class="tag">${esc(dept.name)}</span></h3>
+      <div class="hint">This agent's position, authority and duties in the department's operating model.</div>
+      <div class="kv" style="margin-top:10px">
+        <dt>Position</dt><dd>${pos ? esc(pos.title) : "unassigned"}${pos && pos.unit ? ` <span class="tag">${esc(pos.unit)}</span>` : ""}</dd>
+        <dt>Reports to</dt><dd>${boss ? esc(boss.title) : (pos && !pos.reports_to ? "— (department head; escalates to human via M09)" : "—")}</dd>
+        <dt>Autonomy tier</dt><dd>${pos ? esc(pos.autonomy_tier || "—") : "—"}</dd>
+        <dt>Services owned</dt><dd>${services.map(s => esc(s.name)).join(", ") || "—"}</dd>
+        <dt>Risk ownership</dt><dd>${risks.map(r => esc(r.name)).join(", ") || "—"}</dd>
+        <dt>Compliance duties</dt><dd>${duties.map(c => esc(c.name)).join(", ") || "—"}</dd>
+      </div>
+      ${rights ? `<div style="margin-top:8px"><b>Decision rights</b>${rights}</div>` : ""}
+      <div style="margin-top:10px"><button class="sm ghost" onclick="window.go('department','${esc(dept.id)}')">View department →</button></div>
+    </div>`;
+      }
+    } catch (_) { /* department view is optional enrichment */ }
+  }
+
   const memRows = myVectors.length === 0
     ? `<div class="empty">This agent has no personal memories yet.</div>`
     : myVectors.map(v => rowItem({
@@ -76,6 +112,7 @@ export async function viewAgent(agentId) {
         <dt>Memory state</dt><dd>${mem ? `${(mem.personal_memories||[]).length} memories · window ${mem.ephemeral_window ? mem.ephemeral_window.max_tokens+" tokens" : "default"}` : "no memory recorded yet"}</dd>
       </div>
     </div>
+    ${orgCard}
     <div class="grid g2">
       <div class="card">
         <h3>Teach this agent <span class="tag">Module 07</span></h3>

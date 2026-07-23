@@ -119,7 +119,7 @@ export function listTenants(page, pageSize) {
 export function getTenant(id) { return get("/svc/tenant/tenants/" + id); }
 export function updateTenant(id, data) { return patch("/svc/tenant/tenants/" + id, data); }
 
-// ── Department Template CRUD ───────────────────────────────
+// ── Department Template CRUD (Module 05) ───────────────────
 export function listTemplates(page, pageSize) {
   const params = new URLSearchParams();
   if (page) params.set("page", page);
@@ -127,27 +127,48 @@ export function listTemplates(page, pageSize) {
   return get("/svc/templates/templates?" + params.toString());
 }
 
-export function deployTemplate(templateId, config) {
-  return post("/svc/templates/deployments", {
-    template_id: templateId,
-    name: config.name || "Deployed Department",
-    department_id: config.department_id || uuid4(),
-    agent_count: config.agent_count || 3,
-    agent_sizes: config.agent_sizes || "small",
-    status: "select",
-  });
+// Server-orchestrated deploy: Module 05 creates the Department instance and
+// walks the pipeline itself; poll getDeployment until operational/failed.
+export function deployTemplateReal(templateId, body) {
+  return post(`/svc/templates/templates/${templateId}/deploy`,
+    body || { environment: "production", configuration: { region: "me-central" } });
 }
 
-// ── Agent Registry ─────────────────────────────────────────
+export function getDeployment(templateId, deploymentId) {
+  return get(`/svc/templates/templates/${templateId}/deployments/${deploymentId}`);
+}
+
+export function seedTemplates() {
+  return post("/svc/templates/templates/seed", {});
+}
+
+// ── Departments (Module 05 instances — the operating model) ─
+export function listDepartments(page, pageSize) {
+  const params = new URLSearchParams();
+  if (page) params.set("page", page);
+  if (pageSize) params.set("page_size", pageSize);
+  return get("/svc/templates/departments?" + params.toString());
+}
+
+export function getDepartment(id) { return get("/svc/templates/departments/" + id); }
+export function getDeptOrgChart(id) { return get(`/svc/templates/departments/${id}/org-chart`); }
+export function getDeptServices(id) { return get(`/svc/templates/departments/${id}/services`); }
+export function getDeptValueChain(id) { return get(`/svc/templates/departments/${id}/value-chain`); }
+export function getDeptRisks(id) { return get(`/svc/templates/departments/${id}/risks`); }
+export function getDeptQuality(id) { return get(`/svc/templates/departments/${id}/quality`); }
+export function getDeptCompliance(id) { return get(`/svc/templates/departments/${id}/compliance`); }
+
+// ── Agent Registry (Module 04) ─────────────────────────────
 export function listAgents(page, pageSize) {
   const params = new URLSearchParams();
   if (page) params.set("page", page);
   if (pageSize) params.set("page_size", pageSize);
-  return get("/svc/registry/agents?" + params.toString());
+  return get("/svc/registry/registry/agents?" + params.toString());
 }
 
 export function createAgent(name, role, capabilities, departmentId) {
-  return post("/svc/registry/agents", {
+  return post("/svc/registry/registry/agents", {
+    id: uuid4(), tenant_id: session.tenant,
     name, role, capabilities, department_id: departmentId,
     status: "active", version: "1.0.0",
   });

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/operan/modules/05-department-template-engine/internal/deploy"
 	"github.com/operan/modules/05-department-template-engine/internal/events"
 	"github.com/operan/modules/05-department-template-engine/internal/middleware"
 	"github.com/operan/modules/05-department-template-engine/internal/store"
@@ -50,6 +51,8 @@ func (h *TemplateHandlers) HandleTemplateNested(w http.ResponseWriter, r *http.R
 			h.handleDeploy(w, r, reqID)
 		case "clone":
 			h.handleClone(w, r, reqID)
+		case "validate":
+			h.handleValidate(w, r, reqID, templateID)
 		default:
 			writeError(w, http.StatusMethodNotAllowed, "about:blank", "Method Not Allowed",
 				"Invalid operation", r.URL.Path, reqID)
@@ -108,6 +111,14 @@ func (h *TemplateHandlers) handleDeploy(w http.ResponseWriter, r *http.Request, 
 
 	templateID := extractTemplateIDFromNestedPath(r.URL.Path)
 	tenantID := middleware.TenantIDFromContext(r.Context())
+	userID := middleware.UserIDFromContext(r.Context())
+
+	tmpl, err := h.TemplateStore.GetByIDAndTenant(templateID, tenantID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "about:blank", "Not Found",
+			"Template not found", r.URL.Path, reqID)
+		return
+	}
 
 	now := time.Now()
 	deployment := &store.TemplateDeployment{
@@ -117,10 +128,13 @@ func (h *TemplateHandlers) handleDeploy(w http.ResponseWriter, r *http.Request, 
 		Status:        "select",
 		Environment:   req.Environment,
 		Configuration: req.Configuration,
-		DeployedBy:    middleware.UserIDFromContext(r.Context()),
+		DeployedBy:    userID,
 		StartedAt:     &now,
 		CreatedAt:     now,
 		UpdatedAt:     now,
+		Stages: []store.StageRecord{{
+			Stage: "select", Status: "completed", Detail: "template " + templateID, StartedAt: now, CompletedAt: &now,
+		}},
 	}
 
 	created, err := h.DeploymentStore.Create(deployment)
@@ -130,17 +144,47 @@ func (h *TemplateHandlers) handleDeploy(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	h.EventPublisher.PublishTemplateDeployed(events.TemplateDeployedPayload{
-		Event:        "template.deployed",
-		DeploymentID: created.ID,
-		TemplateID:   templateID,
-		Version:      created.Version,
-		Environment:  created.Environment,
-		Status:       created.Status,
-		DeployedAt:   created.CreatedAt,
-		DeployedBy:   created.DeployedBy,
-		TenantID:     middleware.TenantIDFromContext(r.Context()),
-	})
+	// Materialize the Department instance (provisioning) when the server-side
+	// orchestrator is wired; legacy behavior (bare deployment record) otherwise.
+	if h.Orchestrator != nil {
+		dept := deploy.MaterializeDepartment(tmpl, created, req.DepartmentName, userID)
+		deptCreated, err := h.DepartmentStore.Create(dept)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "about:blank", "Internal Server Error",
+				"Failed to create department", r.URL.Path, reqID)
+			return
+		}
+		dept.ID = deptCreated.ID
+		dept.CreatedAt = deptCreated.CreatedAt
+		updated, _ := h.DeploymentStore.Mutate(created.ID, func(d *store.TemplateDeployment) {
+			d.DepartmentID = dept.ID
+		})
+		if updated != nil {
+			created = updated
+		}
+
+		h.EventPublisher.PublishDepartmentCreated(events.DepartmentLifecyclePayload{
+			DepartmentID: dept.ID, TenantID: tenantID, TemplateID: templateID,
+			DeploymentID: created.ID, Name: dept.Name, Category: dept.Category,
+			Status: "provisioning", Timestamp: now,
+		})
+
+		// Kick off the async pipeline with captured caller credentials.
+		auth := r.Header.Get("Authorization")
+		go h.Orchestrator.Run(auth, tenantID, userID, tmpl, created, dept)
+	} else {
+		h.EventPublisher.PublishTemplateDeployed(events.TemplateDeployedPayload{
+			Event:        "template.deployed",
+			DeploymentID: created.ID,
+			TemplateID:   templateID,
+			Version:      created.Version,
+			Environment:  created.Environment,
+			Status:       created.Status,
+			DeployedAt:   created.CreatedAt,
+			DeployedBy:   created.DeployedBy,
+			TenantID:     tenantID,
+		})
+	}
 
 	writeJSON(w, http.StatusCreated, toDeploymentResponse(created))
 }
@@ -288,6 +332,14 @@ func (h *TemplateHandlers) handleUpdateDeployment(w http.ResponseWriter, r *http
 	if deployment.TenantID != tenantID {
 		writeError(w, http.StatusForbidden, "about:blank", "Forbidden",
 			"Access denied", r.URL.Path, reqID)
+		return
+	}
+
+	// Server-orchestrated deployments own their status machine — reject
+	// external transitions so a stale client can't fight the orchestrator.
+	if deployment.DepartmentID != "" {
+		writeError(w, http.StatusConflict, "about:blank", "Conflict",
+			"Deployment is server-orchestrated; its status advances automatically", r.URL.Path, reqID)
 		return
 	}
 

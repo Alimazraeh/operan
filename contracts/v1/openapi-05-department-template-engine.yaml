@@ -34,6 +34,49 @@ components:
       name: X-Tenant-ID
 
   schemas:
+    Department:
+      type: object
+      description: Deployed department instance. Canonical field-level schema in contracts/v1/schema-05-department-template-engine.json#/definitions/Department.
+      additionalProperties: true
+    OrgChart:
+      type: object
+      properties:
+        root_position_id:
+          type: string
+        positions:
+          type: array
+          items:
+            type: object
+        edges:
+          type: array
+          items:
+            type: object
+            properties:
+              from:
+                type: string
+              to:
+                type: string
+              type:
+                type: string
+                enum: [reports_to, escalates_to]
+    ValidationResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              path:
+                type: string
+              message:
+                type: string
+        warnings:
+          type: array
+          items:
+            type: object
     # ─── Core types ───
     Error:
       type: object
@@ -1231,9 +1274,300 @@ paths:
           schema:
             $ref: '#/components/schemas/Error'
 
+  /templates/{id}/validate:
+    post:
+      summary: Validate a template against the canonical operating-model schema
+      description: Runs the same validation the deploy orchestrator runs at the configure stage (schema shape + org-chart integrity — single root, no reports_to cycles, resolvable service/KPI/workflow refs).
+      operationId: validateTemplate
+      tags:
+        - Templates
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /templates/seed:
+    post:
+      summary: Seed the built-in template catalog into the caller's tenant
+      description: Idempotently copies any missing built-in catalog templates (embedded in the service) into the tenant's template store. Also happens lazily on first template list.
+      operationId: seedTemplates
+      tags:
+        - Templates
+      responses:
+        '200':
+          description: Seed result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  seeded:
+                    type: array
+                    items:
+                      type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /departments:
+    get:
+      summary: List departments
+      description: List deployed department instances for the tenant.
+      operationId: listDepartments
+      tags:
+        - Departments
+      parameters:
+        - $ref: '#/components/parameters/CategoryParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [provisioning, operational, degraded, suspended, archived]
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Paginated departments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Department'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create a department directly (no-template path)
+      operationId: createDepartment
+      tags:
+        - Departments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Department'
+      responses:
+        '201':
+          description: Department created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /departments/{id}:
+    get:
+      summary: Get a department
+      operationId: getDepartment
+      tags:
+        - Departments
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Department
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update a department
+      description: Partial update of name, mission, status, business_logic, org_chart, services, value_streams, risks, quality_standards, compliance_controls.
+      operationId: patchDepartment
+      tags:
+        - Departments
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Department'
+      responses:
+        '200':
+          description: Updated department
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Archive a department
+      description: Sets status to archived and best-effort deactivates the department's Module 04 agents.
+      operationId: archiveDepartment
+      tags:
+        - Departments
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Archived
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /departments/{id}/org-chart:
+    get:
+      summary: Get the department org chart
+      description: Positions plus reporting/escalation edges and the root position id.
+      operationId: getDepartmentOrgChart
+      tags:
+        - Departments
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Org chart graph
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgChart'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /departments/{id}/services:
+    get:
+      summary: Get the department service portfolio
+      operationId: getDepartmentServices
+      tags:
+        - Departments
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Service offerings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /departments/{id}/value-chain:
+    get:
+      summary: Get the department value streams with resolved KPI index
+      operationId: getDepartmentValueChain
+      tags:
+        - Departments
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Value streams + kpi_index
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value_streams:
+                    type: array
+                    items:
+                      type: object
+                  kpi_index:
+                    type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /departments/{id}/risks:
+    get:
+      summary: Get the department risk register
+      operationId: getDepartmentRisks
+      tags:
+        - Departments
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Risk items
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /departments/{id}/quality:
+    get:
+      summary: Get the department quality standards
+      operationId: getDepartmentQuality
+      tags:
+        - Departments
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Quality standards
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /departments/{id}/compliance:
+    get:
+      summary: Get the department compliance controls grouped by framework
+      operationId: getDepartmentCompliance
+      tags:
+        - Departments
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Frameworks + controls
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 tags:
   - name: Templates
     description: Standard department template CRUD operations
+  - name: Departments
+    description: Deployed department instances — org chart, services, value chain, risk/quality, compliance
   - name: Deployments
     description: Template deployment lifecycle management
   - name: Custom Templates

@@ -273,7 +273,7 @@ AsyncAPI events: 4/9 covered (provisioned, suspended, deprovisioned, quota_excee
 
 ---
 
-### Module 05 — Department Template Engine: ~95%
+### Module 05 — Department Lifecycle Engine (formerly Template Engine): operating-model upgrade 2026-07-23
 
 | PRD Requirement | Status | Notes |
 |-----------------|--------|-------|
@@ -281,12 +281,15 @@ AsyncAPI events: 4/9 covered (provisioned, suspended, deprovisioned, quota_excee
 | Custom Templates | ✅ | User-defined custom templates with flexible content |
 | Version Management | ✅ | Immutable version snapshots with automatic incrementing |
 | Template Cloning | ✅ | Create variants of existing templates |
-| Deployment Pipeline | ✅ | Multi-stage deployment (select → configure → connect_data → provision_memory → deploy_swarm → operational) |
-| Event Publishing | ✅ | 8 AsyncAPI channels for all lifecycle operations |
+| Deployment Pipeline | ✅ | Server-side orchestrated (select → configure → connect_data → provision_memory → deploy_swarm → operational); registers agents into M04, provisions memory in M07, materializes a Department instance |
+| Department Instances | ✅ | First-class `Department` aggregate: business logic, org chart (Positions + reporting/escalation), service portfolio (SLAs), value streams, risk register, quality standards, compliance controls |
+| Template Catalog Seeding | ✅ | 31 built-in templates embedded (go:embed), lazily seeded per tenant; `POST /templates/seed`; `POST /templates/{id}/validate` |
+| Event Publishing | ✅ | 8 template channels + 7 department lifecycle channels (created/stage_advanced/agent_provisioned/operational/provisioning_failed/updated/archived) |
 | Tenant Isolation | ✅ | Full multi-tenancy with per-tenant data isolation |
-| REST API | ✅ | OpenAPI 3.0.3-compliant REST API |
+| REST API | ✅ | OpenAPI 3.0.3-compliant REST API (+ /departments resource: CRUD, org-chart, services, value-chain, risks, quality, compliance) |
+| Persistence | ✅ | hostPath snapshot persistence (Module 07 pattern) — departments survive pod restarts |
 
-**Contract counts:** 15 OpenAPI operations · 8 AsyncAPI channels · JSON Schema with 15+ definitions
+**Contract counts:** 27 OpenAPI operations · 15 AsyncAPI channels · JSON Schema with 28+ definitions (Department, Position, ServiceOffering, ValueStream, RiskItem, QualityStandard, ComplianceControl, canonical AgentDefinition, StageRecord added 2026-07-23)
 
 **Implementation status:**
 - Handlers: 5 handler files (`templates.go`, `custom_templates.go`, `deployments.go`, `versions.go`, `helpers.go`) + `router.go`

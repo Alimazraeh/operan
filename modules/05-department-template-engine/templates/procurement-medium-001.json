@@ -10,16 +10,36 @@
     "company_size": "50-500 employees",
     "industry": "general",
     "compliance_level": "formalized-spend-governance",
-    "frameworks": ["CIPS", "NABIDP", "ISO-20400", "SOX"],
+    "frameworks": [
+      "CIPS",
+      "NAABIDP",
+      "ISO-20400",
+      "SOX"
+    ],
     "last_reviewed": "2026-07-17"
   },
-  "tags": ["procurement", "sourcing", "vendor-management", "purchasing", "medium-enterprise", "spend-governance"],
+  "tags": [
+    "procurement",
+    "sourcing",
+    "vendor-management",
+    "purchasing",
+    "medium-enterprise",
+    "spend-governance"
+  ],
   "status": "published",
   "created_by": "platform",
   "agents": [
     {
       "id": "procurement-manager-01",
       "role": "Procurement Manager / Director",
+      "model": "qwen-72b",
+      "access_control": {
+        "vendor-contracts": "read-write",
+        "spend-data": "read-write",
+        "purchase-orders": "read-write",
+        "budget-data": "read-only",
+        "vendor-communications": "read-write"
+      },
       "capabilities": [
         "strategic-sourcing",
         "vendor-management",
@@ -30,26 +50,34 @@
         "budget-management",
         "procurement-policy-development"
       ],
-      "model": "qwen-72b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["procurement-system", "email", "document-storage", "analytics-dashboard", "contract-management", "spend-analysis-tool"],
       "system_prompt": "You are the Procurement Manager/Director for a medium enterprise. You lead sourcing strategy, manage vendor relationships, negotiate contracts, and oversee the procurement function. You ensure spend compliance, drive cost savings, and manage supplier risk. You report to the Finance Manager and work closely with all departments on procurement needs.",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "procurement-system",
+        "email",
+        "document-storage",
+        "analytics-dashboard",
+        "contract-management",
+        "spend-analysis-tool"
+      ],
       "constraints": {
         "max_tokens_per_request": 8192,
         "contract_data": "confidential",
         "spend_data": "department-heads-access"
       },
-      "access_control": {
-        "vendor-contracts": "read-write",
-        "spend-data": "read-write",
-        "purchase-orders": "read-write",
-        "budget-data": "read-only",
-        "vendor-communications": "read-write"
-      }
+      "level": "director",
+      "position_title": "Procurement Manager / Director",
+      "autonomy_tier": "coordinate"
     },
     {
       "id": "sourcing-specialist-01",
       "role": "Sourcing Specialist",
+      "model": "qwen-34b",
+      "access_control": {
+        "vendor-proposals": "read-write",
+        "market-data": "read-write",
+        "vendor-contracts": "read-only"
+      },
       "capabilities": [
         "market-research",
         "rfp-generation",
@@ -60,22 +88,31 @@
         "supplier-discovery",
         "contract-drafting-support"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled",
-      "tool_requirements": ["procurement-system", "market-database", "email", "document-storage"],
       "system_prompt": "You are a Sourcing Specialist. You conduct market research, generate RFPs, evaluate vendor proposals, support negotiations, and analyze category spend. You identify and onboard new suppliers, conduct price benchmarking, and support contract drafting.",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": [
+        "procurement-system",
+        "market-database",
+        "email",
+        "document-storage"
+      ],
       "constraints": {
         "max_tokens_per_request": 4096
       },
-      "access_control": {
-        "vendor-proposals": "read-write",
-        "market-data": "read-write",
-        "vendor-contracts": "read-only"
-      }
+      "level": "mid",
+      "position_title": "Sourcing Specialist",
+      "autonomy_tier": "draft",
+      "reports_to": "procurement-manager-01"
     },
     {
       "id": "purchasing-coordinator-01",
       "role": "Purchasing Coordinator",
+      "model": "qwen-34b",
+      "access_control": {
+        "purchase-orders": "read-write",
+        "vendor-contracts": "read-only",
+        "spend-data": "read-only"
+      },
       "capabilities": [
         "purchase-order-processing",
         "vendor-order-tracking",
@@ -85,22 +122,31 @@
         "delivery-coordination",
         "vendor-communication"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["procurement-system", "email", "inventory-system"],
       "system_prompt": "You are a Purchasing Coordinator. You process purchase orders, track vendor orders, reconcile invoices, manage catalogs, and handle routine vendor communications. You ensure purchase orders follow approval workflows and maintain accurate procurement records.",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "procurement-system",
+        "email",
+        "inventory-system"
+      ],
       "constraints": {
         "max_tokens_per_request": 4096
       },
-      "access_control": {
-        "purchase-orders": "read-write",
-        "vendor-contracts": "read-only",
-        "spend-data": "read-only"
-      }
+      "level": "mid",
+      "position_title": "Purchasing Coordinator",
+      "autonomy_tier": "coordinate",
+      "reports_to": "procurement-manager-01"
     },
     {
       "id": "procurement-analyst-01",
       "role": "Procurement Analyst",
+      "model": "qwen-34b",
+      "access_control": {
+        "spend-data": "read-write",
+        "vendor-performance": "read-write",
+        "contract-data": "read-only",
+        "budget-data": "read-only"
+      },
       "capabilities": [
         "spend-analysis",
         "vendor-performance-tracking",
@@ -110,23 +156,32 @@
         "contract-expiration-tracking",
         "compliance-monitoring"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled",
-      "tool_requirements": ["procurement-system", "analytics-dashboard", "email", "spend-analysis-tool"],
       "system_prompt": "You are a Procurement Analyst. You analyze spend data, track vendor performance, monitor cost savings initiatives, generate procurement reports, track contract expirations, and ensure procurement compliance. You provide data-driven insights to the Procurement Manager.",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": [
+        "procurement-system",
+        "analytics-dashboard",
+        "email",
+        "spend-analysis-tool"
+      ],
       "constraints": {
         "max_tokens_per_request": 4096
       },
-      "access_control": {
-        "spend-data": "read-write",
-        "vendor-performance": "read-write",
-        "contract-data": "read-only",
-        "budget-data": "read-only"
-      }
+      "level": "mid",
+      "position_title": "Procurement Analyst",
+      "autonomy_tier": "analyze",
+      "reports_to": "procurement-manager-01"
     },
     {
       "id": "procurement-gpo-01",
       "role": "General Purpose Agent — Procurement Support",
+      "model": "qwen-14b",
+      "access_control": {
+        "vendor-contracts": "read-only",
+        "spend-data": "read-only",
+        "purchase-orders": "read-write-limited",
+        "budget-data": "none"
+      },
       "capabilities": [
         "purchase-request-processing",
         "vendor-search",
@@ -136,21 +191,27 @@
         "report-generation",
         "faq-response"
       ],
-      "model": "qwen-14b",
-      "memory_profile": "semantic-enabled",
-      "tool_requirements": ["document-storage", "email", "templates-library", "procurement-system"],
       "system_prompt": "You are a Procurement GPO handling routine tasks: processing purchase requests, searching vendor catalogs, drafting standard documents, generating routine reports, coordinating scheduling, answering employee questions about procurement policies. You always route high-value purchases, non-standard requests, and vendor disputes to the appropriate human specialist.",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": [
+        "document-storage",
+        "email",
+        "templates-library",
+        "procurement-system"
+      ],
       "constraints": {
         "max_tokens_per_request": 2048,
         "approval_threshold": 5000,
-        "sensitive_topics": ["vendor-bias-concerns", "contract-disputes", "fraud-indicators"]
+        "sensitive_topics": [
+          "vendor-bias-concerns",
+          "contract-disputes",
+          "fraud-indicators"
+        ]
       },
-      "access_control": {
-        "vendor-contracts": "read-only",
-        "spend-data": "read-only",
-        "purchase-orders": "read-write-limited",
-        "budget-data": "none"
-      }
+      "level": "junior",
+      "position_title": "General Purpose Agent — Procurement Support",
+      "autonomy_tier": "recommend",
+      "reports_to": "procurement-manager-01"
     }
   ],
   "workflows": [
@@ -158,7 +219,10 @@
       "id": "wf-po-001",
       "name": "Purchase Order Process",
       "description": "End-to-end purchase order processing from request to delivery and payment.",
-      "triggers": ["manual", "event:purchase-request-created"],
+      "triggers": [
+        "manual",
+        "event:purchase-request-created"
+      ],
       "steps": [
         {
           "id": "po-01",
@@ -226,7 +290,10 @@
       "id": "wf-sourcing-001",
       "name": "Strategic Sourcing Process",
       "description": "Formal sourcing process for new vendors, category changes, or significant purchases.",
-      "triggers": ["manual", "event:vendor-contract-expiring"],
+      "triggers": [
+        "manual",
+        "event:vendor-contract-expiring"
+      ],
       "steps": [
         {
           "id": "src-01",
@@ -289,7 +356,9 @@
       "id": "wf-vendor-001",
       "name": "Vendor Performance Management",
       "description": "Quarterly vendor performance review, scorecard management, and relationship improvement.",
-      "triggers": ["schedule:quarterly"],
+      "triggers": [
+        "schedule:quarterly"
+      ],
       "steps": [
         {
           "id": "vend-01",
@@ -306,7 +375,13 @@
           "name": "Generate Vendor Scorecards",
           "config": {
             "agent": "procurement-analyst-01",
-            "scoring_dimensions": ["delivery-timeliness", "quality", "cost-effectiveness", "responsiveness", "compliance"]
+            "scoring_dimensions": [
+              "delivery-timeliness",
+              "quality",
+              "cost-effectiveness",
+              "responsiveness",
+              "compliance"
+            ]
           }
         },
         {
@@ -343,7 +418,9 @@
       "id": "wf-spend-001",
       "name": "Monthly Spend Analysis & Reporting",
       "description": "Monthly spend analysis by category, department, and vendor with savings tracking.",
-      "triggers": ["schedule:monthly"],
+      "triggers": [
+        "schedule:monthly"
+      ],
       "steps": [
         {
           "id": "spend-01",
@@ -360,7 +437,13 @@
           "name": "Generate Spend Reports",
           "config": {
             "agent": "procurement-analyst-01",
-            "report_types": ["by-category", "by-department", "by-vendor", "by-period", "savings-tracking"]
+            "report_types": [
+              "by-category",
+              "by-department",
+              "by-vendor",
+              "by-period",
+              "savings-tracking"
+            ]
           }
         },
         {
@@ -368,7 +451,11 @@
           "type": "notification",
           "name": "Distribute to Stakeholders",
           "config": {
-            "recipients": ["procurement-manager-01", "finance-manager-01", "department-heads"],
+            "recipients": [
+              "procurement-manager-01",
+              "finance-manager-01",
+              "department-heads"
+            ],
             "template": "monthly-spend-report"
           }
         }
@@ -403,7 +490,11 @@
       "conditions": {
         "rule": "purchase-requester != purchase-order-approver != payment-approver"
       },
-      "actions": ["prevent-concurrent-approval", "log-violation", "notify-compliance"]
+      "actions": [
+        "prevent-concurrent-approval",
+        "log-violation",
+        "notify-compliance"
+      ]
     },
     {
       "id": "gov-proc-002",
@@ -414,7 +505,11 @@
         "process": "vendor-selection",
         "requirement": "minimum-3-proposals-for-competitive-sourcing"
       },
-      "actions": ["require-multiple-proposals", "document-selection-rationale", "audit-trail"]
+      "actions": [
+        "require-multiple-proposals",
+        "document-selection-rationale",
+        "audit-trail"
+      ]
     },
     {
       "id": "gov-proc-003",
@@ -424,7 +519,11 @@
       "conditions": {
         "contract_value_over": 10000
       },
-      "actions": ["legal-review-required", "standard-terms-only", "deviation-approval"]
+      "actions": [
+        "legal-review-required",
+        "standard-terms-only",
+        "deviation-approval"
+      ]
     }
   ],
   "kpis": [
@@ -434,7 +533,11 @@
       "description": "Year-over-year cost savings from sourcing initiatives",
       "metric_type": "gauge",
       "unit": "currency",
-      "thresholds": {"target": 500000, "warning": 350000, "critical": 200000},
+      "thresholds": {
+        "target": 500000,
+        "warning": 350000,
+        "critical": 200000
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -443,7 +546,11 @@
       "description": "Average days from request to PO issuance",
       "metric_type": "gauge",
       "unit": "days",
-      "thresholds": {"target": 3, "warning": 5, "critical": 7},
+      "thresholds": {
+        "target": 3,
+        "warning": 5,
+        "critical": 7
+      },
       "aggregation_period": "month"
     },
     {
@@ -452,7 +559,11 @@
       "description": "Percentage of total spend managed through formal procurement processes",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 85, "warning": 75, "critical": 60},
+      "thresholds": {
+        "target": 85,
+        "warning": 75,
+        "critical": 60
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -461,7 +572,11 @@
       "description": "Percentage of vendors meeting SLA requirements",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 95, "warning": 85, "critical": 70},
+      "thresholds": {
+        "target": 95,
+        "warning": 85,
+        "critical": 70
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -470,7 +585,11 @@
       "description": "Percentage of contracts renewed or re-competed before expiration",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 100, "warning": 90, "critical": 75},
+      "thresholds": {
+        "target": 100,
+        "warning": 90,
+        "critical": 75
+      },
       "aggregation_period": "quarter"
     }
   ],
@@ -482,7 +601,9 @@
       "provider": "coupa",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"endpoint": "https://api.coupa.com"}
+      "config": {
+        "endpoint": "https://api.coupa.com"
+      }
     },
     {
       "id": "int-proc-002",
@@ -491,7 +612,9 @@
       "provider": "netsuite",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"endpoint": "https://system.na1.netsuite.com"}
+      "config": {
+        "endpoint": "https://system.na1.netsuite.com"
+      }
     },
     {
       "id": "int-proc-003",
@@ -500,7 +623,9 @@
       "provider": "docu_sign",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"endpoint": "https://api.docusign.com"}
+      "config": {
+        "endpoint": "https://api.docusign.com"
+      }
     },
     {
       "id": "int-proc-004",
@@ -509,7 +634,9 @@
       "provider": "google_workspace",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"domain": "{tenant}.google.com"}
+      "config": {
+        "domain": "{tenant}.google.com"
+      }
     }
   ],
   "operational_policies": [
@@ -518,9 +645,37 @@
       "name": "Agent Autonomy in Procurement",
       "scope": "agent",
       "rules": [
-        {"agent": "procurement-gpo-01", "allowed": ["catalog-search", "request-processing", "data-entry", "reporting"], "denied": ["approve-purchase-orders", "select-vendors", "negotiate-contracts", "change-pricing"]},
-        {"agent": "purchasing-coordinator-01", "allowed": ["create-po", "track-delivery", "reconcile-invoices"], "denied": ["approve-requests", "select-vendors", "change-terms"]},
-        {"requirement": "all-agent-actions-above-approval-thresholds-require-human-confirmation"}
+        {
+          "agent": "procurement-gpo-01",
+          "allowed": [
+            "catalog-search",
+            "request-processing",
+            "data-entry",
+            "reporting"
+          ],
+          "denied": [
+            "approve-purchase-orders",
+            "select-vendors",
+            "negotiate-contracts",
+            "change-pricing"
+          ]
+        },
+        {
+          "agent": "purchasing-coordinator-01",
+          "allowed": [
+            "create-po",
+            "track-delivery",
+            "reconcile-invoices"
+          ],
+          "denied": [
+            "approve-requests",
+            "select-vendors",
+            "change-terms"
+          ]
+        },
+        {
+          "requirement": "all-agent-actions-above-approval-thresholds-require-human-confirmation"
+        }
       ]
     },
     {
@@ -528,20 +683,69 @@
       "name": "Spend Governance",
       "scope": "department",
       "rules": [
-        {"frequency": "monthly", "action": "spend-analysis-and-reporting"},
-        {"frequency": "quarterly", "action": "vendor-performance-review"},
-        {"frequency": "annually", "action": "procurement-policy-review"},
-        {"frequency": "annually", "action": "contract-renewal-schedule-update"}
+        {
+          "frequency": "monthly",
+          "action": "spend-analysis-and-reporting"
+        },
+        {
+          "frequency": "quarterly",
+          "action": "vendor-performance-review"
+        },
+        {
+          "frequency": "annually",
+          "action": "procurement-policy-review"
+        },
+        {
+          "frequency": "annually",
+          "action": "contract-renewal-schedule-update"
+        }
       ]
     }
   ],
-  "metadata": {
-    "enterprise_size": "medium",
-    "department_size": "5-15 FTE",
-    "company_size": "50-500 employees",
-    "industry": "general",
-    "compliance_level": "formalized-spend-governance",
-    "frameworks": ["CIPS", "NAABIDP", "ISO-20400", "SOX"],
-    "last_reviewed": "2026-07-17"
-  }
+  "org_chart": [
+    {
+      "id": "pos-procurement-manager-01",
+      "title": "Procurement Manager / Director",
+      "role_type": "director",
+      "holder_type": "ai_agent",
+      "agent_def_id": "procurement-manager-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-sourcing-specialist-01",
+      "title": "Sourcing Specialist",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "sourcing-specialist-01",
+      "reports_to": "pos-procurement-manager-01",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-purchasing-coordinator-01",
+      "title": "Purchasing Coordinator",
+      "role_type": "coordinator",
+      "holder_type": "ai_agent",
+      "agent_def_id": "purchasing-coordinator-01",
+      "reports_to": "pos-procurement-manager-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-procurement-analyst-01",
+      "title": "Procurement Analyst",
+      "role_type": "analyst",
+      "holder_type": "ai_agent",
+      "agent_def_id": "procurement-analyst-01",
+      "reports_to": "pos-procurement-manager-01",
+      "autonomy_tier": "analyze"
+    },
+    {
+      "id": "pos-procurement-gpo-01",
+      "title": "General Purpose Agent — Procurement Support",
+      "role_type": "support",
+      "holder_type": "ai_agent",
+      "agent_def_id": "procurement-gpo-01",
+      "reports_to": "pos-procurement-manager-01",
+      "autonomy_tier": "recommend"
+    }
+  ]
 }

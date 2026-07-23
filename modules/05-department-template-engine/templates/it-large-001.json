@@ -10,16 +10,36 @@
     "company_size": "500+ employees",
     "industry": "global",
     "compliance_level": "enterprise",
-    "frameworks": ["ITIL-v4", "NIST-CSF", "COBIT", "ISO-27001", "SOC-2"],
+    "frameworks": [
+      "ITIL-v4",
+      "NIST-CSF",
+      "COBIT",
+      "ISO-27001",
+      "SOC-2"
+    ],
     "last_reviewed": "2026-07-17"
   },
-  "tags": ["it", "enterprise", "infrastructure", "security", "cloud", "multiple-teams"],
+  "tags": [
+    "it",
+    "enterprise",
+    "infrastructure",
+    "security",
+    "cloud",
+    "multiple-teams"
+  ],
   "status": "published",
   "created_by": "platform",
   "agents": [
     {
       "id": "it-director-01",
       "role": "IT Director",
+      "model": "qwen-72b",
+      "access_control": {
+        "all-it-data": "read-write",
+        "budget-data": "read-write",
+        "enterprise-architecture": "read-write",
+        "project-portfolio": "read-write"
+      },
       "capabilities": [
         "it-strategy",
         "enterprise-architecture",
@@ -29,21 +49,39 @@
         "risk-management",
         "digital-transformation"
       ],
-      "model": "qwen-72b",
-      "memory_profile": "semantic-enabled, graph-enabled, full-retention",
-      "tool_requirements": ["enterprise-dashboard", "project-portfolio", "budget-tool", "email", "reporting"],
       "system_prompt": "You are the IT Director for a large enterprise. You set IT strategy, manage the IT budget, oversee enterprise architecture, and lead digital transformation initiatives. You report to the CIO or CTO.",
-      "constraints": {"max_tokens_per_request": 8192},
-      "access_control": {
-        "all-it-data": "read-write",
-        "budget-data": "read-write",
-        "enterprise-architecture": "read-write",
-        "project-portfolio": "read-write"
-      }
+      "memory_profile": "semantic-enabled, graph-enabled, full-retention",
+      "tool_requirements": [
+        "enterprise-dashboard",
+        "project-portfolio",
+        "budget-tool",
+        "email",
+        "reporting"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 8192
+      },
+      "level": "director",
+      "position_title": "IT Director",
+      "autonomy_tier": "coordinate",
+      "escalation_path": [
+        "human"
+      ],
+      "services": [
+        "svc-access-management",
+        "svc-vendor-assets"
+      ]
     },
     {
       "id": "infrastructure-lead-01",
       "role": "Infrastructure Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "infrastructure": "read-write",
+        "cloud-console": "read-write",
+        "monitoring": "read-write",
+        "backup-system": "read-write"
+      },
       "capabilities": [
         "infrastructure-design",
         "cloud-architecture",
@@ -51,21 +89,41 @@
         "disaster-recovery",
         "capacity-planning"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["infrastructure-monitoring", "cloud-console", "documentation", "backup-system"],
       "system_prompt": "You lead the Infrastructure team. You design infrastructure architecture, manage cloud migration, oversee disaster recovery, and plan capacity for enterprise systems.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "infrastructure": "read-write",
-        "cloud-console": "read-write",
-        "monitoring": "read-write",
-        "backup-system": "read-write"
-      }
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "infrastructure-monitoring",
+        "cloud-console",
+        "documentation",
+        "backup-system"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "lead",
+      "position_title": "Infrastructure Lead",
+      "autonomy_tier": "execute",
+      "reports_to": "it-director-01",
+      "escalation_path": [
+        "it-director-01",
+        "human"
+      ],
+      "services": [
+        "svc-monitoring",
+        "svc-patch-management",
+        "svc-backup-recovery"
+      ]
     },
     {
       "id": "security-admin-01",
       "role": "Security Administrator",
+      "model": "qwen-34b",
+      "access_control": {
+        "security-data": "read-write",
+        "siem": "read-write",
+        "vulnerability-scanner": "read-write",
+        "incident-reports": "read-write-privileged"
+      },
       "capabilities": [
         "security-monitoring",
         "vulnerability-management",
@@ -73,21 +131,40 @@
         "compliance-auditing",
         "security-awareness"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled, immutable-storage",
-      "tool_requirements": ["siem", "vulnerability-scanner", "ticketing-system", "compliance-system"],
       "system_prompt": "You manage IT security operations. You monitor security events, manage vulnerabilities, lead incident response, and support compliance audits.",
-      "constraints": {"max_tokens_per_request": 4096, "security-logs": "immutable"},
-      "access_control": {
-        "security-data": "read-write",
-        "siem": "read-write",
-        "vulnerability-scanner": "read-write",
-        "incident-reports": "read-write-privileged"
-      }
+      "memory_profile": "semantic-enabled, procedural-enabled, immutable-storage",
+      "tool_requirements": [
+        "siem",
+        "vulnerability-scanner",
+        "ticketing-system",
+        "compliance-system"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096,
+        "security-logs": "immutable"
+      },
+      "level": "mid",
+      "position_title": "Security Administrator",
+      "autonomy_tier": "analyze",
+      "reports_to": "it-director-01",
+      "escalation_path": [
+        "it-director-01",
+        "human"
+      ],
+      "services": [
+        "svc-security-operations"
+      ]
     },
     {
       "id": "network-lead-01",
       "role": "Network Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "network-config": "read-write",
+        "firewall": "read-write",
+        "monitoring": "read-write",
+        "automation": "read-write"
+      },
       "capabilities": [
         "network-architecture",
         "firewall-management",
@@ -95,21 +172,36 @@
         "sd-wan",
         "network-automation"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["network-monitoring", "firewall-console", "network-automation", "documentation"],
       "system_prompt": "You lead the Network team. You design network architecture, manage firewalls, implement SD-WAN, and automate network operations.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "network-config": "read-write",
-        "firewall": "read-write",
-        "monitoring": "read-write",
-        "automation": "read-write"
-      }
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "network-monitoring",
+        "firewall-console",
+        "network-automation",
+        "documentation"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "lead",
+      "position_title": "Network Lead",
+      "autonomy_tier": "draft",
+      "reports_to": "it-director-01",
+      "escalation_path": [
+        "it-director-01",
+        "human"
+      ]
     },
     {
       "id": "helpdesk-manager-01",
       "role": "Helpdesk Manager",
+      "model": "qwen-34b",
+      "access_control": {
+        "ticketing": "read-write",
+        "user-accounts": "read-write",
+        "asset-management": "read-write",
+        "knowledge-base": "read-write"
+      },
       "capabilities": [
         "team-management",
         "sla-management",
@@ -117,21 +209,38 @@
         "user-experience",
         "onboarding-optimization"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["ticketing-system", "monitoring-dashboard", "knowledge-base", "asset-management"],
       "system_prompt": "You manage the helpdesk team. You oversee SLAs, manage the knowledge base, optimize user experience, and lead onboarding/offboarding processes.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "ticketing": "read-write",
-        "user-accounts": "read-write",
-        "asset-management": "read-write",
-        "knowledge-base": "read-write"
-      }
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "ticketing-system",
+        "monitoring-dashboard",
+        "knowledge-base",
+        "asset-management"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "lead",
+      "position_title": "Helpdesk Manager",
+      "autonomy_tier": "draft",
+      "reports_to": "it-director-01",
+      "escalation_path": [
+        "it-director-01",
+        "human"
+      ],
+      "services": [
+        "svc-service-desk"
+      ]
     },
     {
       "id": "cloud-engineer-01",
       "role": "Cloud Engineer",
+      "model": "qwen-34b",
+      "access_control": {
+        "cloud-console": "read-write",
+        "ci-cd": "read-write",
+        "terraform": "read-write"
+      },
       "capabilities": [
         "cloud-deployment",
         "ci-cd-pipeline",
@@ -139,20 +248,41 @@
         "cost-optimization",
         "cloud-security"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled",
-      "tool_requirements": ["cloud-console", "terraform", "ci-cd", "cost-monitoring"],
       "system_prompt": "You are a Cloud Engineer. You manage cloud deployments, build CI/CD pipelines, implement infrastructure as code, and optimize cloud costs.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "cloud-console": "read-write",
-        "ci-cd": "read-write",
-        "terraform": "read-write"
-      }
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": [
+        "cloud-console",
+        "terraform",
+        "ci-cd",
+        "cost-monitoring"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "mid",
+      "position_title": "Cloud Engineer",
+      "autonomy_tier": "execute",
+      "reports_to": "it-director-01",
+      "escalation_path": [
+        "it-director-01",
+        "human"
+      ],
+      "services": [
+        "svc-change-deployment"
+      ]
     },
     {
       "id": "it-gpo-pod-01",
       "role": "GPO Pod — IT Support",
+      "model": "qwen-14b",
+      "access_control": {
+        "ticketing": "read-write",
+        "knowledge-base": "read-write",
+        "infrastructure": "read-only",
+        "network-config": "none",
+        "security-data": "read-only",
+        "sla-dashboard": "read-only"
+      },
       "capabilities": [
         "ticket-routing",
         "faq-response",
@@ -161,22 +291,31 @@
         "report-generation",
         "sla-monitoring"
       ],
-      "model": "qwen-14b",
-      "memory_profile": "semantic-enabled",
-      "tool_requirements": ["ticketing-system", "knowledge-base", "email", "monitoring-dashboard"],
       "system_prompt": "You are an IT GPO pod member. You handle user support tickets, provide FAQ answers, maintain documentation, generate reports, and monitor SLAs. Always escalate infrastructure issues and security incidents to the appropriate specialist.",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": [
+        "ticketing-system",
+        "knowledge-base",
+        "email",
+        "monitoring-dashboard"
+      ],
       "constraints": {
         "max_tokens_per_request": 2048,
-        "sensitive_topics": ["security-incident", "infrastructure-outage", "data-breach", "compliance-violation"]
+        "sensitive_topics": [
+          "security-incident",
+          "infrastructure-outage",
+          "data-breach",
+          "compliance-violation"
+        ]
       },
-      "access_control": {
-        "ticketing": "read-write",
-        "knowledge-base": "read-write",
-        "infrastructure": "read-only",
-        "network-config": "none",
-        "security-data": "read-only",
-        "sla-dashboard": "read-only"
-      }
+      "level": "junior",
+      "position_title": "GPO Pod — IT Support",
+      "autonomy_tier": "recommend",
+      "reports_to": "it-director-01",
+      "escalation_path": [
+        "it-director-01",
+        "human"
+      ]
     }
   ],
   "workflows": [
@@ -184,37 +323,56 @@
       "id": "wf-itsm-001",
       "name": "Enterprise ITSM Process",
       "description": "End-to-end IT service management: incident, problem, change, and request fulfillment.",
-      "triggers": ["manual", "event:ticket-created", "event:system-alert"],
+      "triggers": [
+        "manual",
+        "event:ticket-created",
+        "event:system-alert"
+      ],
       "steps": [
         {
           "id": "itsm-01",
           "type": "tool_call",
           "name": "Auto-Triage",
-          "config": {"tool": "ticketing-system", "action": "auto-categorize-priority"}
+          "config": {
+            "tool": "ticketing-system",
+            "action": "auto-categorize-priority"
+          }
         },
         {
           "id": "itsm-02",
           "type": "agent_call",
           "name": "Route to Team",
-          "config": {"agent": "it-gpo-pod-01", "task": "Route ticket to appropriate team: infrastructure, security, network, or helpdesk"}
+          "config": {
+            "agent": "it-gpo-pod-01",
+            "task": "Route ticket to appropriate team: infrastructure, security, network, or helpdesk"
+          }
         },
         {
           "id": "itsm-03",
           "type": "transformation",
           "name": "Resolve Issue",
-          "config": {"agent": "assigned-team", "task": "Diagnose, resolve, document solution per ITIL standards"}
+          "config": {
+            "agent": "assigned-team",
+            "task": "Diagnose, resolve, document solution per ITIL standards"
+          }
         },
         {
           "id": "itsm-04",
           "type": "approval",
           "name": "SLA Verification",
-          "config": {"check": "resolution-within-sla", "if_fail": "escalate-to-manager"}
+          "config": {
+            "check": "resolution-within-sla",
+            "if_fail": "escalate-to-manager"
+          }
         },
         {
           "id": "itsm-05",
           "type": "tool_call",
           "name": "Close & Report",
-          "config": {"tool": "ticketing-system", "action": "close-and-generate-report"}
+          "config": {
+            "tool": "ticketing-system",
+            "action": "close-and-generate-report"
+          }
         }
       ]
     },
@@ -222,31 +380,50 @@
       "id": "wf-change-001",
       "name": "Enterprise Change Management",
       "description": "Formal change management with CAB approval for production changes.",
-      "triggers": ["manual", "event:change-request"],
+      "triggers": [
+        "manual",
+        "event:change-request"
+      ],
       "steps": [
         {
           "id": "change-01",
           "type": "agent_call",
           "name": "Change Request",
-          "config": {"agent": "infrastructure-lead-01", "task": "Submit change request with risk assessment, rollback plan, and testing strategy"}
+          "config": {
+            "agent": "infrastructure-lead-01",
+            "task": "Submit change request with risk assessment, rollback plan, and testing strategy"
+          }
         },
         {
           "id": "change-02",
           "type": "approval",
           "name": "CAB Review",
-          "config": {"required_by": "it-director-01", "if": "standard-change", "escalate_if": "high-risk"}
+          "config": {
+            "required_by": "it-director-01",
+            "if": "standard-change",
+            "escalate_if": "high-risk"
+          }
         },
         {
           "id": "change-03",
           "type": "transformation",
           "name": "Implement Change",
-          "config": {"agent": "infrastructure-lead-01", "task": "Implement change during approved maintenance window"}
+          "config": {
+            "agent": "infrastructure-lead-01",
+            "task": "Implement change during approved maintenance window"
+          }
         },
         {
           "id": "change-04",
           "type": "tool_call",
           "name": "Post-Implementation Review",
-          "config": {"tools": ["health-check", "monitoring", "user-testing"]}
+          "config": {
+            "tools": [
+              "health-check",
+              "monitoring",
+              "user-testing"
+            ]
+          }
         }
       ]
     },
@@ -254,19 +431,32 @@
       "id": "wf-security-001",
       "name": "Security Incident Response",
       "description": "Enterprise security incident response following NIST framework.",
-      "triggers": ["manual", "event:security-alert", "event:siem-detection"],
+      "triggers": [
+        "manual",
+        "event:security-alert",
+        "event:siem-detection"
+      ],
       "steps": [
         {
           "id": "sec-01",
           "type": "tool_call",
           "name": "Detect & Classify",
-          "config": {"tools": ["siem", "endpoint-detection"], "action": "classify-severity"}
+          "config": {
+            "tools": [
+              "siem",
+              "endpoint-detection"
+            ],
+            "action": "classify-severity"
+          }
         },
         {
           "id": "sec-02",
           "type": "agent_call",
           "name": "Initial Assessment",
-          "config": {"agent": "security-admin-01", "task": "Assess scope, impact, and containment requirements"}
+          "config": {
+            "agent": "security-admin-01",
+            "task": "Assess scope, impact, and containment requirements"
+          }
         },
         {
           "id": "sec-03",
@@ -282,13 +472,23 @@
           "id": "sec-04",
           "type": "transformation",
           "name": "Contain & Remediate",
-          "config": {"agent": "security-admin-01", "task": "Contain threat, remediate, preserve evidence"}
+          "config": {
+            "agent": "security-admin-01",
+            "task": "Contain threat, remediate, preserve evidence"
+          }
         },
         {
           "id": "sec-05",
           "type": "notification",
           "name": "Stakeholder Communication",
-          "config": {"recipients": ["it-director-01", "legal", "executive-team"], "if": "critical-severity"}
+          "config": {
+            "recipients": [
+              "it-director-01",
+              "legal",
+              "executive-team"
+            ],
+            "if": "critical-severity"
+          }
         }
       ]
     }
@@ -321,24 +521,42 @@
       "name": "Change Advisory Board",
       "type": "compliance",
       "enforcement": "enforce",
-      "conditions": {"change_type": "production-configuration"},
-      "actions": ["require-cab-approval", "maintain-audit-trail", "rollback-plan-required"]
+      "conditions": {
+        "change_type": "production-configuration"
+      },
+      "actions": [
+        "require-cab-approval",
+        "maintain-audit-trail",
+        "rollback-plan-required"
+      ]
     },
     {
       "id": "gov-it-l-002",
       "name": "Security Event Logging",
       "type": "audit",
       "enforcement": "enforce",
-      "conditions": {"event_type": "security-relevant"},
-      "actions": ["immutable-logging", "siem-forwarding", "quarterly-review"]
+      "conditions": {
+        "event_type": "security-relevant"
+      },
+      "actions": [
+        "immutable-logging",
+        "siem-forwarding",
+        "quarterly-review"
+      ]
     },
     {
       "id": "gov-it-l-003",
       "name": "Access Review & Certification",
       "type": "compliance",
       "enforcement": "enforce",
-      "conditions": {"review_period": "quarterly"},
-      "actions": ["review-all-permissions", "certify-access", "remove-dormant"]
+      "conditions": {
+        "review_period": "quarterly"
+      },
+      "actions": [
+        "review-all-permissions",
+        "certify-access",
+        "remove-dormant"
+      ]
     }
   ],
   "kpis": [
@@ -348,7 +566,11 @@
       "description": "Percentage of tickets resolved within SLA",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 95, "warning": 90, "critical": 85},
+      "thresholds": {
+        "target": 95,
+        "warning": 90,
+        "critical": 85
+      },
       "aggregation_period": "week"
     },
     {
@@ -357,7 +579,11 @@
       "description": "Percentage of time core systems are operational",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 99.99, "warning": 99.9, "critical": 99.5},
+      "thresholds": {
+        "target": 99.99,
+        "warning": 99.9,
+        "critical": 99.5
+      },
       "aggregation_period": "month"
     },
     {
@@ -366,7 +592,11 @@
       "description": "Average time to resolve critical incidents",
       "metric_type": "gauge",
       "unit": "hours",
-      "thresholds": {"target": 2, "warning": 4, "critical": 8},
+      "thresholds": {
+        "target": 2,
+        "warning": 4,
+        "critical": 8
+      },
       "aggregation_period": "month"
     },
     {
@@ -375,7 +605,11 @@
       "description": "Number of security incidents per quarter",
       "metric_type": "counter",
       "unit": "incidents",
-      "thresholds": {"target": 0, "warning": 3, "critical": 10},
+      "thresholds": {
+        "target": 0,
+        "warning": 3,
+        "critical": 10
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -384,7 +618,11 @@
       "description": "Average user satisfaction rating for IT services",
       "metric_type": "gauge",
       "unit": "score",
-      "thresholds": {"target": 4.5, "warning": 4.0, "critical": 3.5},
+      "thresholds": {
+        "target": 4.5,
+        "warning": 4.0,
+        "critical": 3.5
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -393,7 +631,11 @@
       "description": "Average IT infrastructure cost per employee",
       "metric_type": "gauge",
       "unit": "currency",
-      "thresholds": {"target": 2000, "warning": 2500, "critical": 3000},
+      "thresholds": {
+        "target": 2000,
+        "warning": 2500,
+        "critical": 3000
+      },
       "aggregation_period": "quarter"
     }
   ],
@@ -461,7 +703,23 @@
       "name": "Agent Autonomy",
       "scope": "agent",
       "rules": [
-        {"agent": "it-gpo-pod-01", "allowed": ["ticket-handling", "user-support", "documentation", "reporting", "sla-monitoring"], "denied": ["change-infrastructure", "modify-security-settings", "deploy-to-production", "approve-changes", "access-security-logs"]}
+        {
+          "agent": "it-gpo-pod-01",
+          "allowed": [
+            "ticket-handling",
+            "user-support",
+            "documentation",
+            "reporting",
+            "sla-monitoring"
+          ],
+          "denied": [
+            "change-infrastructure",
+            "modify-security-settings",
+            "deploy-to-production",
+            "approve-changes",
+            "access-security-logs"
+          ]
+        }
       ]
     },
     {
@@ -469,20 +727,822 @@
       "name": "Data Retention",
       "scope": "system",
       "rules": [
-        {"data_type": "ticket-history", "retention": "5-years", "disposal": "archive"},
-        {"data_type": "incident-reports", "retention": "indefinite", "disposal": "none"},
-        {"data_type": "security-logs", "retention": "indefinite", "disposal": "none"},
-        {"data_type": "change-logs", "retention": "5-years", "disposal": "archive"}
+        {
+          "data_type": "ticket-history",
+          "retention": "5-years",
+          "disposal": "archive"
+        },
+        {
+          "data_type": "incident-reports",
+          "retention": "indefinite",
+          "disposal": "none"
+        },
+        {
+          "data_type": "security-logs",
+          "retention": "indefinite",
+          "disposal": "none"
+        },
+        {
+          "data_type": "change-logs",
+          "retention": "5-years",
+          "disposal": "archive"
+        }
       ]
     }
   ],
-  "metadata": {
-    "enterprise_size": "large",
-    "department_size": "15-50+ FTE",
-    "company_size": "500+ employees",
-    "industry": "global",
-    "compliance_level": "enterprise",
-    "frameworks": ["ITIL-v4", "NIST-CSF", "COBIT", "ISO-27001", "SOC-2"],
-    "last_reviewed": "2026-07-17"
+  "org_chart": [
+    {
+      "id": "pos-it-director-01",
+      "title": "IT Director",
+      "role_type": "director",
+      "holder_type": "ai_agent",
+      "agent_def_id": "it-director-01",
+      "unit": "Leadership",
+      "autonomy_tier": "coordinate",
+      "decision_rights": [
+        {
+          "decision": "approve standard (pre-authorized, low-risk) changes",
+          "authority": "decide",
+          "limit": "standard changes only"
+        },
+        {
+          "decision": "user permission and access changes",
+          "authority": "recommend",
+          "limit": "human approves via supervision gate"
+        },
+        {
+          "decision": "department spend",
+          "authority": "recommend",
+          "limit": "$5,000"
+        }
+      ],
+      "approval_gate_refs": [
+        "it-high-risk-approvals"
+      ]
+    },
+    {
+      "id": "pos-infrastructure-lead-01",
+      "title": "Infrastructure Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "infrastructure-lead-01",
+      "reports_to": "pos-it-director-01",
+      "unit": "Infrastructure",
+      "autonomy_tier": "execute",
+      "escalates_to": "pos-it-director-01",
+      "decision_rights": [
+        {
+          "decision": "execute infrastructure mutations beyond standard changes",
+          "authority": "recommend",
+          "limit": "requires supervision-gate approval"
+        }
+      ],
+      "approval_gate_refs": [
+        "it-high-risk-approvals"
+      ]
+    },
+    {
+      "id": "pos-security-admin-01",
+      "title": "Security Administrator",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "security-admin-01",
+      "reports_to": "pos-it-director-01",
+      "unit": "Security",
+      "autonomy_tier": "analyze",
+      "escalates_to": "pos-it-director-01",
+      "decision_rights": [
+        {
+          "decision": "block risky changes and deployments",
+          "authority": "veto"
+        }
+      ]
+    },
+    {
+      "id": "pos-network-lead-01",
+      "title": "Network Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "network-lead-01",
+      "reports_to": "pos-it-director-01",
+      "unit": "Network",
+      "autonomy_tier": "draft",
+      "escalates_to": "pos-it-director-01"
+    },
+    {
+      "id": "pos-helpdesk-manager-01",
+      "title": "Helpdesk Manager",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "helpdesk-manager-01",
+      "reports_to": "pos-it-director-01",
+      "unit": "Service Desk",
+      "autonomy_tier": "draft",
+      "escalates_to": "pos-it-director-01"
+    },
+    {
+      "id": "pos-cloud-engineer-01",
+      "title": "Cloud Engineer",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "cloud-engineer-01",
+      "reports_to": "pos-it-director-01",
+      "unit": "Reliability & Automation",
+      "autonomy_tier": "execute",
+      "escalates_to": "pos-it-director-01",
+      "decision_rights": [
+        {
+          "decision": "execute infrastructure mutations beyond standard changes",
+          "authority": "recommend",
+          "limit": "requires supervision-gate approval"
+        }
+      ],
+      "approval_gate_refs": [
+        "it-high-risk-approvals"
+      ]
+    },
+    {
+      "id": "pos-it-gpo-pod-01",
+      "title": "GPO Pod — IT Support",
+      "role_type": "support",
+      "holder_type": "ai_agent",
+      "agent_def_id": "it-gpo-pod-01",
+      "reports_to": "pos-it-director-01",
+      "unit": "Support Pod",
+      "autonomy_tier": "recommend",
+      "escalates_to": "pos-it-director-01"
+    }
+  ],
+  "services": [
+    {
+      "id": "svc-service-desk",
+      "name": "Service Desk & Incident Response",
+      "description": "24x7 AI-staffed first line: ticket intake, triage, resolution and user communication for every employee issue.",
+      "owner_position_id": "pos-helpdesk-manager-01",
+      "owner_agent_def_id": "helpdesk-manager-01",
+      "consumers": [
+        "all-employees"
+      ],
+      "sla": {
+        "availability": "99.5%",
+        "response_time": "15m (P1) / 4h (P3)",
+        "resolution_time": "4h (P1) / 2d (P3)",
+        "coverage": "24x7"
+      },
+      "delivery_workflow_id": "wf-itsm-001",
+      "kpi_refs": [
+        "it-kpi-l-003",
+        "it-kpi-l-005"
+      ],
+      "request_channel": "portal",
+      "status": "active"
+    },
+    {
+      "id": "svc-access-management",
+      "name": "User & Access Management",
+      "description": "Joiner/mover/leaver account and permission lifecycle; every permission change is human-approved through the supervision gate.",
+      "owner_position_id": "pos-it-director-01",
+      "owner_agent_def_id": "it-director-01",
+      "consumers": [
+        "all-departments",
+        "hr"
+      ],
+      "sla": {
+        "response_time": "4h",
+        "resolution_time": "1 business day",
+        "coverage": "business-hours"
+      },
+      "delivery_workflow_id": "wf-change-001",
+      "kpi_refs": [
+        "it-kpi-l-001"
+      ],
+      "request_channel": "portal",
+      "status": "active"
+    },
+    {
+      "id": "svc-monitoring",
+      "name": "Infrastructure Monitoring & Alerting",
+      "description": "Continuous monitoring of servers, network and applications with automated alerting and daily health digests.",
+      "owner_position_id": "pos-infrastructure-lead-01",
+      "owner_agent_def_id": "infrastructure-lead-01",
+      "consumers": [
+        "it",
+        "executive-team"
+      ],
+      "sla": {
+        "availability": "99.9%",
+        "response_time": "10m alert acknowledgement",
+        "coverage": "24x7"
+      },
+      "kpi_refs": [
+        "it-kpi-l-002"
+      ],
+      "request_channel": "portal",
+      "status": "active"
+    },
+    {
+      "id": "svc-patch-management",
+      "name": "Patch & Maintenance Management",
+      "description": "Scheduled patch cycles and maintenance windows; 95% of critical patches applied within 14 days.",
+      "owner_position_id": "pos-infrastructure-lead-01",
+      "owner_agent_def_id": "infrastructure-lead-01",
+      "consumers": [
+        "it"
+      ],
+      "sla": {
+        "resolution_time": "critical patches ≤ 14 days",
+        "coverage": "monthly cycle + emergency"
+      },
+      "delivery_workflow_id": "wf-change-001",
+      "kpi_refs": [
+        "it-kpi-l-001",
+        "it-kpi-l-002"
+      ],
+      "request_channel": "portal",
+      "status": "active"
+    },
+    {
+      "id": "svc-backup-recovery",
+      "name": "Backup & Recovery",
+      "description": "Automated backups with verification, RPO 24h / RTO 4h, and quarterly restore tests.",
+      "owner_position_id": "pos-infrastructure-lead-01",
+      "owner_agent_def_id": "infrastructure-lead-01",
+      "consumers": [
+        "all-departments"
+      ],
+      "sla": {
+        "resolution_time": "RTO 4h",
+        "coverage": "daily backups, quarterly restore test"
+      },
+      "kpi_refs": [
+        "it-kpi-l-002"
+      ],
+      "request_channel": "portal",
+      "status": "active"
+    },
+    {
+      "id": "svc-change-deployment",
+      "name": "Change & Deployment Support",
+      "description": "Standard changes same-day; normal changes through CAB approval (supervision gate) within 3 days.",
+      "owner_position_id": "pos-cloud-engineer-01",
+      "owner_agent_def_id": "cloud-engineer-01",
+      "consumers": [
+        "engineering",
+        "it"
+      ],
+      "sla": {
+        "response_time": "standard same-day / normal ≤ 3 days",
+        "coverage": "business-hours"
+      },
+      "delivery_workflow_id": "wf-change-001",
+      "request_channel": "portal",
+      "status": "active"
+    },
+    {
+      "id": "svc-security-operations",
+      "name": "Security Operations",
+      "description": "Threat triage, vulnerability management and remediation tracking by severity.",
+      "owner_position_id": "pos-security-admin-01",
+      "owner_agent_def_id": "security-admin-01",
+      "consumers": [
+        "all-departments",
+        "compliance"
+      ],
+      "sla": {
+        "response_time": "30m triage",
+        "resolution_time": "critical 48h",
+        "coverage": "24x7"
+      },
+      "delivery_workflow_id": "wf-security-001",
+      "kpi_refs": [
+        "it-kpi-l-004"
+      ],
+      "request_channel": "portal",
+      "status": "active"
+    },
+    {
+      "id": "svc-vendor-assets",
+      "name": "Vendor & Asset Management",
+      "description": "Hardware/software asset registry, license compliance and vendor request handling.",
+      "owner_position_id": "pos-it-director-01",
+      "owner_agent_def_id": "it-director-01",
+      "consumers": [
+        "finance",
+        "procurement",
+        "it"
+      ],
+      "sla": {
+        "response_time": "2 business days",
+        "coverage": "business-hours"
+      },
+      "delivery_workflow_id": "wf-change-001",
+      "kpi_refs": [
+        "it-kpi-l-006"
+      ],
+      "request_channel": "portal",
+      "status": "active"
+    }
+  ],
+  "value_streams": [
+    {
+      "id": "vs-restore-service",
+      "name": "Restore Service",
+      "description": "From disruption signal to verified restoration — the run-the-business loop.",
+      "stages": [
+        {
+          "id": "st-detect",
+          "name": "Detect & Triage",
+          "inputs": [
+            "monitoring alerts",
+            "user tickets"
+          ],
+          "activities": [
+            "classify severity",
+            "correlate signals",
+            "assign owner"
+          ],
+          "outputs": [
+            "prioritized incident"
+          ],
+          "owner_position_id": "pos-helpdesk-manager-01",
+          "workflow_ref": "wf-security-001"
+        },
+        {
+          "id": "st-diagnose",
+          "name": "Diagnose & Fix",
+          "inputs": [
+            "prioritized incident",
+            "runbooks",
+            "system access"
+          ],
+          "activities": [
+            "root-cause analysis",
+            "apply fix (gated above standard changes)"
+          ],
+          "outputs": [
+            "restored service"
+          ],
+          "owner_position_id": "pos-infrastructure-lead-01",
+          "workflow_ref": "wf-security-001"
+        },
+        {
+          "id": "st-verify",
+          "name": "Verify & Close",
+          "inputs": [
+            "restored service"
+          ],
+          "activities": [
+            "verify with user",
+            "document resolution",
+            "update knowledge base"
+          ],
+          "outputs": [
+            "closed ticket",
+            "learning entry"
+          ],
+          "owner_position_id": "pos-helpdesk-manager-01"
+        }
+      ],
+      "outcome": "MTTR under 4 hours for P1 incidents",
+      "business_outcome": "Employee productivity and system availability protected without an offshore NOC",
+      "value_metric_kpi_refs": [
+        "it-kpi-l-003",
+        "it-kpi-l-002"
+      ]
+    },
+    {
+      "id": "vs-provision-enable",
+      "name": "Provision & Enable",
+      "description": "From access/equipment request to a fully productive employee.",
+      "stages": [
+        {
+          "id": "st-request",
+          "name": "Request & Approve",
+          "inputs": [
+            "access/equipment request"
+          ],
+          "activities": [
+            "validate against policy",
+            "route for human approval (supervision gate)"
+          ],
+          "outputs": [
+            "approved request"
+          ],
+          "owner_position_id": "pos-it-director-01",
+          "workflow_ref": "wf-change-001"
+        },
+        {
+          "id": "st-provision",
+          "name": "Provision",
+          "inputs": [
+            "approved request"
+          ],
+          "activities": [
+            "create accounts",
+            "grant permissions",
+            "prepare equipment/software"
+          ],
+          "outputs": [
+            "provisioned access"
+          ],
+          "owner_position_id": "pos-infrastructure-lead-01"
+        },
+        {
+          "id": "st-handover",
+          "name": "Verify & Handover",
+          "inputs": [
+            "provisioned access"
+          ],
+          "activities": [
+            "verify access works",
+            "notify requester",
+            "record in asset registry"
+          ],
+          "outputs": [
+            "productive employee"
+          ],
+          "owner_position_id": "pos-helpdesk-manager-01"
+        }
+      ],
+      "outcome": "New-hire or role-change ready on day one",
+      "business_outcome": "Zero productivity loss waiting on IT; full auditable access trail",
+      "value_metric_kpi_refs": [
+        "it-kpi-l-005"
+      ]
+    },
+    {
+      "id": "vs-protect-comply",
+      "name": "Protect & Comply",
+      "description": "The continuous protection loop: monitor, patch, back up, audit.",
+      "stages": [
+        {
+          "id": "st-monitor",
+          "name": "Monitor",
+          "inputs": [
+            "telemetry",
+            "threat feeds"
+          ],
+          "activities": [
+            "watch dashboards",
+            "tune alerts",
+            "capacity checks"
+          ],
+          "outputs": [
+            "health posture",
+            "alerts"
+          ],
+          "owner_position_id": "pos-infrastructure-lead-01"
+        },
+        {
+          "id": "st-patch",
+          "name": "Patch & Harden",
+          "inputs": [
+            "vulnerability reports",
+            "patch releases"
+          ],
+          "activities": [
+            "test patches",
+            "apply in maintenance windows"
+          ],
+          "outputs": [
+            "hardened systems"
+          ],
+          "owner_position_id": "pos-infrastructure-lead-01",
+          "workflow_ref": "wf-change-001"
+        },
+        {
+          "id": "st-backup",
+          "name": "Back Up & Test",
+          "inputs": [
+            "backup schedule"
+          ],
+          "activities": [
+            "run backups",
+            "verify integrity",
+            "quarterly restore test"
+          ],
+          "outputs": [
+            "verified recovery capability"
+          ],
+          "owner_position_id": "pos-infrastructure-lead-01"
+        },
+        {
+          "id": "st-audit",
+          "name": "Audit & Report",
+          "inputs": [
+            "logs",
+            "control evidence"
+          ],
+          "activities": [
+            "compile compliance evidence",
+            "report posture to leadership"
+          ],
+          "outputs": [
+            "audit-ready reports"
+          ],
+          "owner_position_id": "pos-security-admin-01"
+        }
+      ],
+      "outcome": "Audit-ready security and continuity posture at all times",
+      "business_outcome": "Reduced breach/loss likelihood; compliance evidence produced as a by-product of operations",
+      "value_metric_kpi_refs": [
+        "it-kpi-l-004",
+        "it-kpi-l-001"
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "id": "risk-unauth-permission",
+      "name": "Unauthorized permission change by an agent",
+      "description": "An AI agent grants or modifies access without human approval.",
+      "category": "security",
+      "severity": "high",
+      "likelihood": "possible",
+      "mitigation": "All permission changes routed through the supervision approval gate; access-control governance rule enforced; full audit trail.",
+      "owner_position_id": "pos-it-director-01",
+      "scope": "service",
+      "service_ref": "svc-access-management",
+      "status": "mitigating",
+      "review_cadence": "monthly"
+    },
+    {
+      "id": "risk-backup-silent-failure",
+      "name": "Undetected backup failure",
+      "description": "Backups appear green but restores fail when needed.",
+      "category": "operational",
+      "severity": "high",
+      "likelihood": "unlikely",
+      "mitigation": "Daily backup verification KPI; quarterly restore test with human sign-off.",
+      "owner_position_id": "pos-infrastructure-lead-01",
+      "scope": "service",
+      "service_ref": "svc-backup-recovery",
+      "status": "mitigating",
+      "review_cadence": "quarterly"
+    },
+    {
+      "id": "risk-hallucinated-command",
+      "name": "Incorrect infrastructure command by an AI agent",
+      "description": "An execute-tier agent issues a destructive or wrong command.",
+      "category": "model",
+      "severity": "critical",
+      "likelihood": "possible",
+      "mitigation": "Execute tier is gated: mutations beyond standard changes require supervision-gate approval; sandbox dry-run before production execution.",
+      "owner_position_id": "pos-it-director-01",
+      "scope": "agent",
+      "agent_def_id": "infrastructure-lead-01",
+      "status": "mitigating",
+      "review_cadence": "monthly"
+    },
+    {
+      "id": "risk-desk-outage",
+      "name": "AI service-desk outage",
+      "description": "The AI first line becomes unavailable, leaving users unsupported.",
+      "category": "operational",
+      "severity": "medium",
+      "likelihood": "possible",
+      "mitigation": "Human on-call escalation path; platform observability alerts on agent health.",
+      "owner_position_id": "pos-helpdesk-manager-01",
+      "scope": "service",
+      "service_ref": "svc-service-desk",
+      "status": "open",
+      "review_cadence": "monthly"
+    },
+    {
+      "id": "risk-sensitive-data-tickets",
+      "name": "Sensitive data exposure in tickets",
+      "description": "Credentials or personal data pasted into tickets get retained in memory.",
+      "category": "compliance",
+      "severity": "high",
+      "likelihood": "possible",
+      "mitigation": "Data-usage governance rule; retention policy on memory topology; redaction guidance in agent prompts.",
+      "owner_position_id": "pos-security-admin-01",
+      "scope": "department",
+      "status": "mitigating",
+      "review_cadence": "quarterly"
+    },
+    {
+      "id": "risk-cost-runaway",
+      "name": "Agent execution cost runaway",
+      "description": "Runaway loops or oversized prompts inflate model spend.",
+      "category": "financial",
+      "severity": "medium",
+      "likelihood": "possible",
+      "mitigation": "Per-agent execution budgets and cost-governance caps; weekly cost review in operating cadence.",
+      "owner_position_id": "pos-it-director-01",
+      "scope": "agent",
+      "agent_def_id": "it-gpo-pod-01",
+      "status": "mitigating",
+      "review_cadence": "weekly"
+    }
+  ],
+  "quality_standards": [
+    {
+      "id": "qs-uptime",
+      "name": "Infrastructure uptime SLO",
+      "type": "slo",
+      "target": "99.9% monthly uptime",
+      "measure_kpi_ref": "it-kpi-l-002",
+      "scope": "service",
+      "service_ref": "svc-monitoring"
+    },
+    {
+      "id": "qs-csat",
+      "name": "User satisfaction",
+      "type": "accuracy_target",
+      "target": "≥ 90% CSAT on closed tickets",
+      "measure_kpi_ref": "it-kpi-l-005",
+      "scope": "service",
+      "service_ref": "svc-service-desk"
+    },
+    {
+      "id": "qs-fcr",
+      "name": "First-contact resolution",
+      "type": "slo",
+      "target": "≥ 70% of tickets resolved at first contact",
+      "scope": "service",
+      "service_ref": "svc-service-desk"
+    },
+    {
+      "id": "qs-patch",
+      "name": "Patch compliance",
+      "type": "sla_internal",
+      "target": "95% of critical patches within 14 days",
+      "scope": "service",
+      "service_ref": "svc-patch-management"
+    },
+    {
+      "id": "qs-change-failure",
+      "name": "Change failure rate",
+      "type": "slo",
+      "target": "< 10% of changes cause incidents",
+      "scope": "service",
+      "service_ref": "svc-change-deployment"
+    },
+    {
+      "id": "qs-reopen",
+      "name": "Ticket reopen rate",
+      "type": "review_gate",
+      "target": "< 5% of closed tickets reopened",
+      "scope": "service",
+      "service_ref": "svc-service-desk"
+    }
+  ],
+  "compliance_controls": [
+    {
+      "id": "cc-itil-incident",
+      "framework": "ITIL-v4",
+      "control_id": "incident-management",
+      "name": "Incident Management practice",
+      "description": "Incidents follow the detect→triage→resolve→verify workflow with severity-based SLAs.",
+      "applies_to": "department",
+      "evidence_kpi_refs": [
+        "it-kpi-l-003"
+      ],
+      "status": "implemented"
+    },
+    {
+      "id": "cc-itil-change",
+      "framework": "ITIL-v4",
+      "control_id": "change-enablement",
+      "name": "Change Enablement practice",
+      "description": "Non-standard changes require CAB/supervision-gate approval before execution.",
+      "applies_to": "department",
+      "governance_rule_refs": [
+        "gov-it-l-001"
+      ],
+      "status": "implemented"
+    },
+    {
+      "id": "cc-iso-access",
+      "framework": "ISO-27001",
+      "control_id": "A.9",
+      "name": "Access control",
+      "description": "Access grants follow least-privilege with human approval and full audit trail.",
+      "applies_to": "service",
+      "governance_rule_refs": [
+        "gov-it-l-003"
+      ],
+      "evidence_kpi_refs": [
+        "it-kpi-l-001"
+      ],
+      "status": "implemented"
+    },
+    {
+      "id": "cc-iso-backup",
+      "framework": "ISO-27001",
+      "control_id": "A.12.3",
+      "name": "Information backup",
+      "description": "Backups run to schedule, verified, and restore-tested quarterly.",
+      "applies_to": "service",
+      "status": "implemented"
+    },
+    {
+      "id": "cc-nist-detect",
+      "framework": "NIST-CSF",
+      "control_id": "DE",
+      "name": "Detect: continuous monitoring",
+      "description": "Monitoring and alerting cover infrastructure, network and applications.",
+      "applies_to": "service",
+      "evidence_kpi_refs": [
+        "it-kpi-l-002"
+      ],
+      "status": "implemented"
+    },
+    {
+      "id": "cc-nist-respond",
+      "framework": "NIST-CSF",
+      "control_id": "RS",
+      "name": "Respond: incident response",
+      "description": "Security incidents triaged within 30 minutes and remediated by severity.",
+      "applies_to": "service",
+      "agent_def_ids": [
+        "security-admin-01"
+      ],
+      "governance_rule_refs": [
+        "gov-it-l-002"
+      ],
+      "evidence_kpi_refs": [
+        "it-kpi-l-004"
+      ],
+      "status": "implemented"
+    },
+    {
+      "id": "cc-audit-trail",
+      "framework": "custom",
+      "name": "Execute-tier audit trail",
+      "description": "Every execute-tier agent action is logged to platform observability with actor, input and result.",
+      "applies_to": "agent",
+      "agent_def_ids": [
+        "infrastructure-lead-01",
+        "cloud-engineer-01"
+      ],
+      "status": "implemented"
+    }
+  ],
+  "business_logic": {
+    "purpose": "Keep every employee productive and every system secure and available — a complete IT department run by governed AI agents with human command.",
+    "value_proposition": "24x7 AI-staffed operations at a fraction of offshore cost, with human sign-off on everything risky and an audit trail on everything else.",
+    "activities": [
+      "Service Desk & Incident Response",
+      "User & Access Management",
+      "Infrastructure Monitoring & Alerting",
+      "Patch & Maintenance Management",
+      "Backup & Recovery",
+      "Change & Deployment Support",
+      "Security Operations",
+      "Vendor & Asset Management"
+    ],
+    "stakeholders": [
+      "all-employees",
+      "executive-team",
+      "engineering",
+      "compliance",
+      "finance"
+    ],
+    "operating_cadence": [
+      {
+        "name": "Daily operations digest",
+        "frequency": "daily",
+        "description": "Open incidents, alerts, and pending approvals summarized for the human supervisor.",
+        "participants": [
+          "pos-it-director-01",
+          "pos-infrastructure-lead-01",
+          "pos-security-admin-01",
+          "pos-network-lead-01",
+          "pos-helpdesk-manager-01",
+          "pos-cloud-engineer-01",
+          "pos-it-gpo-pod-01"
+        ]
+      },
+      {
+        "name": "Weekly service review",
+        "frequency": "weekly",
+        "description": "KPI and SLA review; cost check against execution budgets.",
+        "participants": [
+          "pos-it-director-01",
+          "pos-helpdesk-manager-01",
+          "pos-infrastructure-lead-01"
+        ]
+      },
+      {
+        "name": "Monthly patch & maintenance window",
+        "frequency": "monthly",
+        "description": "Scheduled patching and maintenance with change records.",
+        "participants": [
+          "pos-infrastructure-lead-01"
+        ]
+      },
+      {
+        "name": "Quarterly risk & restore review",
+        "frequency": "quarterly",
+        "description": "Risk register review and backup restore test with human sign-off.",
+        "participants": [
+          "pos-it-director-01",
+          "pos-infrastructure-lead-01",
+          "pos-security-admin-01"
+        ]
+      }
+    ]
   }
 }

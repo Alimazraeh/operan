@@ -10,16 +10,36 @@
     "company_size": "1000+ employees",
     "industry": "technology",
     "compliance_level": "enterprise-security",
-    "frameworks": ["SAFe", "DevOps", "GitOps", "SRE", "OWASP", "SOC-2"],
+    "frameworks": [
+      "SAFe",
+      "DevOps",
+      "GitOps",
+      "SRE",
+      "OWASP",
+      "SOC-2"
+    ],
     "last_reviewed": "2026-07-17"
   },
-  "tags": ["software-development", "enterprise", "scaled-agile", "multiple-teams", "saas"],
+  "tags": [
+    "software-development",
+    "enterprise",
+    "scaled-agile",
+    "multiple-teams",
+    "saas"
+  ],
   "status": "published",
   "created_by": "platform",
   "agents": [
     {
       "id": "vp-dev-01",
       "role": "VP of Software Development",
+      "model": "qwen-72b",
+      "access_control": {
+        "all-dev-data": "read-write",
+        "budget-data": "read-write",
+        "board-reports": "read-write",
+        "code-repos": "read-only"
+      },
       "capabilities": [
         "delivery-strategy",
         "org-design",
@@ -29,21 +49,30 @@
         "cross-functional-alignment",
         "board-reporting"
       ],
-      "model": "qwen-72b",
-      "memory_profile": "semantic-enabled, graph-enabled, full-retention",
-      "tool_requirements": ["analytics-dashboard", "project-management", "email", "budget-tool"],
       "system_prompt": "You are the VP of Software Development leading a global organization of 50+ engineers across multiple teams. You set delivery strategy, manage budgets, drive technical roadmap, and report to the CTO or SVP of Engineering.",
-      "constraints": {"max_tokens_per_request": 8192},
-      "access_control": {
-        "all-dev-data": "read-write",
-        "budget-data": "read-write",
-        "board-reports": "read-write",
-        "code-repos": "read-only"
-      }
+      "memory_profile": "semantic-enabled, graph-enabled, full-retention",
+      "tool_requirements": [
+        "analytics-dashboard",
+        "project-management",
+        "email",
+        "budget-tool"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 8192
+      },
+      "level": "director",
+      "position_title": "VP of Software Development",
+      "autonomy_tier": "coordinate"
     },
     {
       "id": "engineering-director-01",
       "role": "Engineering Director",
+      "model": "qwen-72b",
+      "access_control": {
+        "all-dev-data": "read-write",
+        "project-management": "read-write",
+        "code-repos": "read-only"
+      },
       "capabilities": [
         "team-leadership",
         "delivery-management",
@@ -52,20 +81,31 @@
         "performance-management",
         "cross-team-coordination"
       ],
-      "model": "qwen-72b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["project-management", "analytics-dashboard", "email"],
       "system_prompt": "You are an Engineering Director managing 2-3 development teams. You oversee delivery, manage tech leads, coordinate cross-team dependencies, and ensure quality standards.",
-      "constraints": {"max_tokens_per_request": 8192},
-      "access_control": {
-        "all-dev-data": "read-write",
-        "project-management": "read-write",
-        "code-repos": "read-only"
-      }
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "project-management",
+        "analytics-dashboard",
+        "email"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 8192
+      },
+      "level": "director",
+      "position_title": "Engineering Director",
+      "autonomy_tier": "coordinate",
+      "reports_to": "vp-dev-01"
     },
     {
       "id": "tech-lead-01",
       "role": "Senior Tech Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "code-repos": "read-write",
+        "ci-cd": "read-write",
+        "architecture-docs": "read-write",
+        "project-management": "read-write"
+      },
       "capabilities": [
         "technical-design",
         "code-review",
@@ -74,21 +114,30 @@
         "tech-debt-management",
         "cross-team-technical-coordination"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["git-repo", "project-management", "ci-cd", "architecture-docs"],
       "system_prompt": "You are a Senior Tech Lead for a development squad. You design technical solutions, review code, mentor developers, manage technical debt, and coordinate with other tech leads.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "code-repos": "read-write",
-        "ci-cd": "read-write",
-        "architecture-docs": "read-write",
-        "project-management": "read-write"
-      }
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "git-repo",
+        "project-management",
+        "ci-cd",
+        "architecture-docs"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "lead",
+      "position_title": "Senior Tech Lead",
+      "autonomy_tier": "coordinate",
+      "reports_to": "vp-dev-01"
     },
     {
       "id": "frontend-dev-01",
       "role": "Senior Frontend Developer",
+      "model": "qwen-34b",
+      "access_control": {
+        "code-repos": "read-write",
+        "production": "read-only"
+      },
       "capabilities": [
         "ui-development",
         "component-architecture",
@@ -97,19 +146,31 @@
         "design-systems",
         "cross-browser-testing"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled",
-      "tool_requirements": ["git-repo", "code-editor", "testing-tools", "design-tools"],
       "system_prompt": "You are a Senior Frontend Developer building complex user interfaces. You create design systems, optimize performance, ensure accessibility, and mentor junior frontend developers.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "code-repos": "read-write",
-        "production": "read-only"
-      }
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": [
+        "git-repo",
+        "code-editor",
+        "testing-tools",
+        "design-tools"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "senior",
+      "position_title": "Senior Frontend Developer",
+      "autonomy_tier": "draft",
+      "reports_to": "vp-dev-01"
     },
     {
       "id": "backend-dev-01",
       "role": "Senior Backend Developer",
+      "model": "qwen-34b",
+      "access_control": {
+        "code-repos": "read-write",
+        "databases": "read-write",
+        "production": "read-only"
+      },
       "capabilities": [
         "api-development",
         "database-design",
@@ -118,20 +179,31 @@
         "security-implementation",
         "performance-optimization"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled",
-      "tool_requirements": ["git-repo", "code-editor", "testing-tools", "database-tools"],
       "system_prompt": "You are a Senior Backend Developer building APIs and microservices. You design database schemas, implement APIs, optimize performance, and ensure system security.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "code-repos": "read-write",
-        "databases": "read-write",
-        "production": "read-only"
-      }
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": [
+        "git-repo",
+        "code-editor",
+        "testing-tools",
+        "database-tools"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "senior",
+      "position_title": "Senior Backend Developer",
+      "autonomy_tier": "draft",
+      "reports_to": "vp-dev-01"
     },
     {
       "id": "qa-lead-01",
       "role": "QA/Test Engineering Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "test-results": "read-write",
+        "bug-tracking": "read-write",
+        "ci-cd": "read-write"
+      },
       "capabilities": [
         "test-strategy",
         "test-automation",
@@ -140,20 +212,32 @@
         "quality-metrics",
         "bug-tracking"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["test-frameworks", "ci-cd", "bug-tracking", "performance-tools"],
       "system_prompt": "You lead QA for the development organization. You design test strategies, build automation frameworks, manage performance testing, and track quality metrics across all teams.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "test-results": "read-write",
-        "bug-tracking": "read-write",
-        "ci-cd": "read-write"
-      }
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "test-frameworks",
+        "ci-cd",
+        "bug-tracking",
+        "performance-tools"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "lead",
+      "position_title": "QA/Test Engineering Lead",
+      "autonomy_tier": "coordinate",
+      "reports_to": "vp-dev-01"
     },
     {
       "id": "dev-gpo-pod-01",
       "role": "GPO Pod — Development Support",
+      "model": "qwen-14b",
+      "access_control": {
+        "code-repos": "read-only",
+        "documentation": "read-write",
+        "project-management": "read-only",
+        "security-data": "none"
+      },
       "capabilities": [
         "documentation",
         "report-generation",
@@ -162,20 +246,26 @@
         "meeting-minutes",
         "faq-response"
       ],
-      "model": "qwen-14b",
-      "memory_profile": "semantic-enabled",
-      "tool_requirements": ["document-storage", "email", "project-management", "templates-library"],
       "system_prompt": "You are a Dev GPO pod member. You maintain documentation, generate reports, track project milestones, schedule meetings, and answer developer questions. Always route technical decisions and code changes to human developers.",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": [
+        "document-storage",
+        "email",
+        "project-management",
+        "templates-library"
+      ],
       "constraints": {
         "max_tokens_per_request": 2048,
-        "sensitive_topics": ["security-vulnerabilities", "production-issues", "code-reviews"]
+        "sensitive_topics": [
+          "security-vulnerabilities",
+          "production-issues",
+          "code-reviews"
+        ]
       },
-      "access_control": {
-        "code-repos": "read-only",
-        "documentation": "read-write",
-        "project-management": "read-only",
-        "security-data": "none"
-      }
+      "level": "junior",
+      "position_title": "GPO Pod — Development Support",
+      "autonomy_tier": "recommend",
+      "reports_to": "vp-dev-01"
     }
   ],
   "workflows": [
@@ -183,61 +273,97 @@
       "id": "wf-feature-001",
       "name": "Enterprise Feature Development",
       "description": "Multi-stage feature development with architecture review, code review gates, automated testing, and staged deployments.",
-      "triggers": ["manual", "event:epic-planning"],
+      "triggers": [
+        "manual",
+        "event:epic-planning"
+      ],
       "steps": [
         {
           "id": "feat-01",
           "type": "agent_call",
           "name": "Epic Planning",
-          "config": {"agent": "engineering-director-01", "task": "Plan epic scope, assign teams, set milestones, identify dependencies"}
+          "config": {
+            "agent": "engineering-director-01",
+            "task": "Plan epic scope, assign teams, set milestones, identify dependencies"
+          }
         },
         {
           "id": "feat-02",
           "type": "agent_call",
           "name": "Architecture Design",
-          "config": {"agent": "tech-lead-01", "task": "Design technical architecture, create design doc, get architecture review"}
+          "config": {
+            "agent": "tech-lead-01",
+            "task": "Design technical architecture, create design doc, get architecture review"
+          }
         },
         {
           "id": "feat-03",
           "type": "transformation",
           "name": "Implementation",
-          "config": {"agent": "developer", "task": "Write code, write tests, create pull request"}
+          "config": {
+            "agent": "developer",
+            "task": "Write code, write tests, create pull request"
+          }
         },
         {
           "id": "feat-04",
           "type": "approval",
           "name": "Code Review Gate",
-          "config": {"required_by": "tech-lead-01", "task": "Review for quality, security, and design alignment"}
+          "config": {
+            "required_by": "tech-lead-01",
+            "task": "Review for quality, security, and design alignment"
+          }
         },
         {
           "id": "feat-05",
           "type": "tool_call",
           "name": "CI/CD Pipeline",
-          "config": {"tools": ["lint", "test", "build", "security-scan", "performance-test"]}
+          "config": {
+            "tools": [
+              "lint",
+              "test",
+              "build",
+              "security-scan",
+              "performance-test"
+            ]
+          }
         },
         {
           "id": "feat-06",
           "type": "tool_call",
           "name": "Deploy to Staging",
-          "config": {"tool": "ci-cd", "environment": "staging"}
+          "config": {
+            "tool": "ci-cd",
+            "environment": "staging"
+          }
         },
         {
           "id": "feat-07",
           "type": "approval",
           "name": "QA Sign-off",
-          "config": {"required_by": "qa-lead-01", "task": "Verify feature meets requirements and passes all tests"}
+          "config": {
+            "required_by": "qa-lead-01",
+            "task": "Verify feature meets requirements and passes all tests"
+          }
         },
         {
           "id": "feat-08",
           "type": "tool_call",
           "name": "Deploy to Production (Canary)",
-          "config": {"tool": "ci-cd", "environment": "production", "strategy": "canary"}
+          "config": {
+            "tool": "ci-cd",
+            "environment": "production",
+            "strategy": "canary"
+          }
         },
         {
           "id": "feat-09",
           "type": "transformation",
           "name": "Monitor & Rollback",
-          "config": {"agent": "dev-gpo-pod-01", "task": "Monitor metrics, auto-rollback if error rate exceeds threshold"}
+          "config": {
+            "agent": "dev-gpo-pod-01",
+            "task": "Monitor metrics, auto-rollback if error rate exceeds threshold"
+          }
         }
       ]
     },
@@ -245,31 +371,46 @@
       "id": "wf-sprint-001",
       "name": "SAFe-Style Agile Delivery",
       "description": "Scaled agile delivery with PI planning, sprint execution, and system demos.",
-      "triggers": ["schedule:quarterly", "schedule:bi-weekly"],
+      "triggers": [
+        "schedule:quarterly",
+        "schedule:bi-weekly"
+      ],
       "steps": [
         {
           "id": "sprint-01",
           "type": "agent_call",
           "name": "PI Planning",
-          "config": {"agent": "engineering-director-01", "task": "Plan Program Increment, set objectives, identify cross-team dependencies"}
+          "config": {
+            "agent": "engineering-director-01",
+            "task": "Plan Program Increment, set objectives, identify cross-team dependencies"
+          }
         },
         {
           "id": "sprint-02",
           "type": "transformation",
           "name": "Sprint Execution",
-          "config": {"agent": "tech-lead-01", "task": "Execute sprint, track progress, manage blockers"}
+          "config": {
+            "agent": "tech-lead-01",
+            "task": "Execute sprint, track progress, manage blockers"
+          }
         },
         {
           "id": "sprint-03",
           "type": "agent_call",
           "name": "System Demo",
-          "config": {"agent": "engineering-director-01", "task": "Demo completed features to stakeholders and business owners"}
+          "config": {
+            "agent": "engineering-director-01",
+            "task": "Demo completed features to stakeholders and business owners"
+          }
         },
         {
           "id": "sprint-04",
           "type": "agent_call",
           "name": "Retrospective & Inspect & Adapt",
-          "config": {"agent": "engineering-director-01", "task": "Conduct PI retrospective, identify improvements"}
+          "config": {
+            "agent": "engineering-director-01",
+            "task": "Conduct PI retrospective, identify improvements"
+          }
         }
       ]
     },
@@ -277,13 +418,23 @@
       "id": "wf-security-001",
       "name": "Security Review Process",
       "description": "Mandatory security review for all production code changes.",
-      "triggers": ["manual", "event:code-reviewed"],
+      "triggers": [
+        "manual",
+        "event:code-reviewed"
+      ],
       "steps": [
         {
           "id": "sec-01",
           "type": "tool_call",
           "name": "Automated Security Scan",
-          "config": {"tools": ["sast", "dast", "dependency-scan", "secret-scan"]}
+          "config": {
+            "tools": [
+              "sast",
+              "dast",
+              "dependency-scan",
+              "secret-scan"
+            ]
+          }
         },
         {
           "id": "sec-02",
@@ -299,7 +450,10 @@
           "id": "sec-03",
           "type": "approval",
           "name": "Security Sign-off",
-          "config": {"required_by": "tech-lead-01", "if": "manual-review-required"}
+          "config": {
+            "required_by": "tech-lead-01",
+            "if": "manual-review-required"
+          }
         }
       ]
     }
@@ -332,32 +486,52 @@
       "name": "Dual Code Review",
       "type": "compliance",
       "enforcement": "enforce",
-      "conditions": {"change_type": "production-code"},
-      "actions": ["require-minimum-2-approvals", "block-merge-without-approval"]
+      "conditions": {
+        "change_type": "production-code"
+      },
+      "actions": [
+        "require-minimum-2-approvals",
+        "block-merge-without-approval"
+      ]
     },
     {
       "id": "gov-dev-l-002",
       "name": "Test Coverage Gate",
       "type": "compliance",
       "enforcement": "enforce",
-      "conditions": {"change_type": "new-feature"},
-      "actions": ["require-minimum-coverage-85", "block-merge-if-below"]
+      "conditions": {
+        "change_type": "new-feature"
+      },
+      "actions": [
+        "require-minimum-coverage-85",
+        "block-merge-if-below"
+      ]
     },
     {
       "id": "gov-dev-l-003",
       "name": "Security Scan Gate",
       "type": "compliance",
       "enforcement": "enforce",
-      "conditions": {"change_type": "any-production-code"},
-      "actions": ["mandatory-security-scan", "block-merge-if-critical"]
+      "conditions": {
+        "change_type": "any-production-code"
+      },
+      "actions": [
+        "mandatory-security-scan",
+        "block-merge-if-critical"
+      ]
     },
     {
       "id": "gov-dev-l-004",
       "name": "Production Deployment Approval",
       "type": "compliance",
       "enforcement": "enforce",
-      "conditions": {"change_type": "production-deployment"},
-      "actions": ["engineering-director-approval", "change-approval-board"]
+      "conditions": {
+        "change_type": "production-deployment"
+      },
+      "actions": [
+        "engineering-director-approval",
+        "change-approval-board"
+      ]
     }
   ],
   "kpis": [
@@ -367,7 +541,11 @@
       "description": "Average story points completed per sprint across all teams",
       "metric_type": "counter",
       "unit": "points",
-      "thresholds": {"target": 80, "warning": 50, "critical": 30},
+      "thresholds": {
+        "target": 80,
+        "warning": 50,
+        "critical": 30
+      },
       "aggregation_period": "sprint"
     },
     {
@@ -376,7 +554,11 @@
       "description": "Percentage of bugs found in production vs caught in testing",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 5, "warning": 10, "critical": 20},
+      "thresholds": {
+        "target": 5,
+        "warning": 10,
+        "critical": 20
+      },
       "aggregation_period": "sprint"
     },
     {
@@ -385,7 +567,11 @@
       "description": "Percentage of code covered by automated tests",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 85, "warning": 70, "critical": 55},
+      "thresholds": {
+        "target": 85,
+        "warning": 70,
+        "critical": 55
+      },
       "aggregation_period": "sprint"
     },
     {
@@ -394,7 +580,11 @@
       "description": "Number of production deployments per week",
       "metric_type": "counter",
       "unit": "per-week",
-      "thresholds": {"target": 10, "warning": 5, "critical": 2},
+      "thresholds": {
+        "target": 10,
+        "warning": 5,
+        "critical": 2
+      },
       "aggregation_period": "week"
     },
     {
@@ -403,7 +593,11 @@
       "description": "Average time from code commit to production deployment",
       "metric_type": "gauge",
       "unit": "hours",
-      "thresholds": {"target": 12, "warning": 24, "critical": 48},
+      "thresholds": {
+        "target": 12,
+        "warning": 24,
+        "critical": 48
+      },
       "aggregation_period": "week"
     },
     {
@@ -412,7 +606,11 @@
       "description": "Number of security vulnerabilities found in production",
       "metric_type": "counter",
       "unit": "incidents",
-      "thresholds": {"target": 0, "warning": 2, "critical": 5},
+      "thresholds": {
+        "target": 0,
+        "warning": 2,
+        "critical": 5
+      },
       "aggregation_period": "quarter"
     }
   ],
@@ -480,7 +678,21 @@
       "name": "Agent Autonomy",
       "scope": "agent",
       "rules": [
-        {"agent": "dev-gpo-pod-01", "allowed": ["documentation", "reporting", "scheduling", "project-tracking"], "denied": ["write-code", "merge-pull-requests", "deploy-to-production", "approve-code-reviews"]}
+        {
+          "agent": "dev-gpo-pod-01",
+          "allowed": [
+            "documentation",
+            "reporting",
+            "scheduling",
+            "project-tracking"
+          ],
+          "denied": [
+            "write-code",
+            "merge-pull-requests",
+            "deploy-to-production",
+            "approve-code-reviews"
+          ]
+        }
       ]
     },
     {
@@ -488,20 +700,91 @@
       "name": "Data Retention",
       "scope": "system",
       "rules": [
-        {"data_type": "code-reviews", "retention": "1-year", "disposal": "delete"},
-        {"data_type": "bug-reports", "retention": "2-years", "disposal": "anonymize"},
-        {"data_type": "security-scans", "retention": "indefinite", "disposal": "none"},
-        {"data_type": "architecture-docs", "retention": "5-years", "disposal": "archive"}
+        {
+          "data_type": "code-reviews",
+          "retention": "1-year",
+          "disposal": "delete"
+        },
+        {
+          "data_type": "bug-reports",
+          "retention": "2-years",
+          "disposal": "anonymize"
+        },
+        {
+          "data_type": "security-scans",
+          "retention": "indefinite",
+          "disposal": "none"
+        },
+        {
+          "data_type": "architecture-docs",
+          "retention": "5-years",
+          "disposal": "archive"
+        }
       ]
     }
   ],
-  "metadata": {
-    "enterprise_size": "large",
-    "department_size": "30-100+ FTE",
-    "company_size": "1000+ employees",
-    "industry": "technology",
-    "compliance_level": "enterprise-security",
-    "frameworks": ["SAFe", "DevOps", "GitOps", "SRE", "OWASP", "SOC-2"],
-    "last_reviewed": "2026-07-17"
-  }
+  "org_chart": [
+    {
+      "id": "pos-vp-dev-01",
+      "title": "VP of Software Development",
+      "role_type": "director",
+      "holder_type": "ai_agent",
+      "agent_def_id": "vp-dev-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-engineering-director-01",
+      "title": "Engineering Director",
+      "role_type": "director",
+      "holder_type": "ai_agent",
+      "agent_def_id": "engineering-director-01",
+      "reports_to": "pos-vp-dev-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-tech-lead-01",
+      "title": "Senior Tech Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "tech-lead-01",
+      "reports_to": "pos-vp-dev-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-frontend-dev-01",
+      "title": "Senior Frontend Developer",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "frontend-dev-01",
+      "reports_to": "pos-vp-dev-01",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-backend-dev-01",
+      "title": "Senior Backend Developer",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "backend-dev-01",
+      "reports_to": "pos-vp-dev-01",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-qa-lead-01",
+      "title": "QA/Test Engineering Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "qa-lead-01",
+      "reports_to": "pos-vp-dev-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-dev-gpo-pod-01",
+      "title": "GPO Pod — Development Support",
+      "role_type": "support",
+      "holder_type": "ai_agent",
+      "agent_def_id": "dev-gpo-pod-01",
+      "reports_to": "pos-vp-dev-01",
+      "autonomy_tier": "recommend"
+    }
+  ]
 }

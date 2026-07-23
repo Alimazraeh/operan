@@ -1,20 +1,29 @@
-// Module 05 — Department Template Engine
+// Module 05 — Department Lifecycle Engine
 //
-// This service provides the template factory for Operan: standardized
-// department blueprints (agents, workflows, memory, governance, KPIs,
-// integrations) that can be deployed and cloned across tenants.
+// The department factory for Operan: standardized department blueprints
+// (agents, workflows, memory, governance, KPIs, org charts, service
+// portfolios, value streams) that deploy into living Department instances —
+// agents registered in Module 04, memory provisioned in Module 07 — with
+// snapshot persistence so departments survive restarts.
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"os/signal"
+	"syscall"
 	"time"
 
+	"github.com/operan/modules/05-department-template-engine/internal/clients"
 	"github.com/operan/modules/05-department-template-engine/internal/config"
+	"github.com/operan/modules/05-department-template-engine/internal/deploy"
 	"github.com/operan/modules/05-department-template-engine/internal/events"
 	"github.com/operan/modules/05-department-template-engine/internal/handlers"
 	"github.com/operan/modules/05-department-template-engine/internal/middleware"
+	"github.com/operan/modules/05-department-template-engine/internal/persist"
+	"github.com/operan/modules/05-department-template-engine/internal/seed"
 	"github.com/operan/modules/05-department-template-engine/internal/store"
 )
 
@@ -25,11 +34,31 @@ func main() {
 		log.Fatalf("Fatal: %v", err)
 	}
 
+	// ─── Built-in template catalog (embedded; fail fast on drift) ─────────
+	if err := seed.LoadCatalog(templatesFS, "templates"); err != nil {
+		log.Fatalf("Fatal: template catalog: %v", err)
+	}
+	log.Printf("template catalog loaded: %d built-in templates", len(seed.Catalog()))
+
 	// ─── Stores ───────────────────────────────────────────────────────────
 	templateStore := store.NewTemplateStore()
 	customTemplateStore := store.NewCustomTemplateStore()
 	deploymentStore := store.NewDeploymentStore()
 	versionStore := store.NewVersionStore()
+	departmentStore := store.NewDepartmentStore()
+
+	// ─── Persistence (snapshot restore + periodic save) ───────────────────
+	persistFiles := []persist.File{
+		{Name: "templates.json", Store: templateStore},
+		{Name: "custom_templates.json", Store: customTemplateStore},
+		{Name: "deployments.json", Store: deploymentStore},
+		{Name: "versions.json", Store: versionStore},
+		{Name: "departments.json", Store: departmentStore},
+	}
+	persist.Load(cfg.DataDir, persistFiles)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+	go persist.Run(ctx, cfg.DataDir, time.Duration(cfg.SnapshotInterval)*time.Second, persistFiles)
 
 	// ─── Events ───────────────────────────────────────────────────────────
 	publisher := events.NewPublisher()
@@ -53,6 +82,14 @@ func main() {
 		publisher,
 		cfg.MaxPageSize,
 	)
+	h.DepartmentStore = departmentStore // shared with the persistence loop
+	h.Orchestrator = &deploy.Orchestrator{
+		Deployments: deploymentStore,
+		Departments: departmentStore,
+		Publisher:   publisher,
+		Registry:    &clients.RegistryClient{BaseURL: cfg.RegistryURL},
+		Memory:      &clients.MemoryClient{BaseURL: cfg.MemoryURL},
+	}
 
 	// ─── Router ───────────────────────────────────────────────────────────
 	mux := http.NewServeMux()
@@ -77,8 +114,22 @@ func main() {
 	})
 	root.Handle("/", chain)
 
+	// Graceful shutdown: the signal context (also driving the persist loop)
+	// stops the HTTP server so SIGTERM actually terminates the process after
+	// a final snapshot — required for clean pod rollovers.
+	srv := &http.Server{Addr: fmt.Sprintf(":%d", cfg.Port), Handler: root}
+	go func() {
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		srv.Shutdown(shutdownCtx)
+	}()
+
 	log.Printf("Module 05 — Department Template Engine starting on :%d", cfg.Port)
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), root); err != nil {
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Server failed: %v", err)
 	}
+	// Final snapshot before exit (persist.Run also saves on ctx cancel).
+	persist.SaveAll(cfg.DataDir, persistFiles)
+	log.Printf("Module 05 stopped cleanly")
 }

@@ -33,6 +33,51 @@ Each template follows the **GARDEN** framework:
 | **Analyst** | 0 | 1 | 2–6 |
 | **Support / GPO** | Shared GPO | 1 department GPO | Dedicated GPO pod |
 
+### Canonical Agent Schema (2026-07-23)
+
+Every `agents[]` entry MUST use the canonical shape defined in
+`contracts/v1/schema-05-department-template-engine.json#/definitions/AgentDefinition`.
+It is a superset of the two historical shapes; the migration mapping was:
+
+| Old (divergent) field | Canonical field |
+|---|---|
+| `agent_model` | `model` |
+| `permissions: [p1, p2]` | `access_control: {p1: "granted", …}` |
+| `schedule.escalation_path` | `reports_to` (+ `schedule.availability` retained) |
+| `level` | `level` (kept) |
+
+New operating-model fields on every agent: `position_title`, `reports_to`
+(AgentDefinition.id — the chain of command), `autonomy_tier`
+(recommend|analyze|coordinate|draft|execute — Module 04 CapabilityTier ladder),
+`services` (ServiceOffering ids the agent owns), `decision_rights`
+(decide|recommend|veto|must_be_informed + limit), `escalation_path`
+(ordered ids ending in `"human"` → Module 09 gates), `risk_refs`,
+`quality_refs`, `compliance_refs`.
+
+### Template Operating-Model Sections (2026-07-23)
+
+Beyond GARDEN's original arrays, each template now carries:
+
+- `business_logic` — purpose, value proposition, activities, stakeholders, operating cadence
+- `org_chart` — `Position[]` (title, role_type, holder_type ai_agent|human|vacant,
+  agent_def_id, reports_to, unit, autonomy_tier, decision_rights, escalates_to,
+  approval_gate_refs). Exactly one root (no `reports_to`); no cycles.
+- `services` — the department's service portfolio (`ServiceOffering[]` with SLA,
+  consumers, delivering workflow, measuring KPIs)
+- `value_streams` — inputs → activities → outputs per stage, with `business_outcome`
+  and `value_metric_kpi_refs` proving value realization
+- `risks` — risk register (severity × likelihood, mitigation, owner, scope)
+- `quality_standards` — SLOs/review gates with KPI measures
+- `compliance_controls` — framework-mapped controls (ITIL-v4, ISO-27001, NIST-CSF, …)
+  referencing the governance rules that implement them
+
+The **IT and IT-Operations templates (`it-*`, `ops-*`) are the flagship exemplars**
+of the full operating model; other categories carry at minimum a mechanically
+generated org chart and canonical agents, with full enrichment to follow.
+
+`POST /templates/{id}/validate` (or deploying) runs schema + integrity validation:
+single org-chart root, acyclic reports_to, resolvable service/KPI/workflow references.
+
 ---
 
 ## Template Index

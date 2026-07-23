@@ -10,16 +10,36 @@
     "company_size": "500+ employees",
     "industry": "global",
     "compliance_level": "enterprise",
-    "frameworks": ["growth-at-scale", "abm", "martech-stack", "data-driven-marketing"],
+    "frameworks": [
+      "growth-at-scale",
+      "abm",
+      "martech-stack",
+      "data-driven-marketing"
+    ],
     "last_reviewed": "2026-07-17"
   },
-  "tags": ["marketing", "enterprise", "multi-regional", "abm", "martech", "multiple-teams"],
+  "tags": [
+    "marketing",
+    "enterprise",
+    "multi-regional",
+    "abm",
+    "martech",
+    "multiple-teams"
+  ],
   "status": "published",
   "created_by": "platform",
   "agents": [
     {
       "id": "cmo-01",
       "role": "Chief Marketing Officer",
+      "model": "qwen-72b",
+      "access_control": {
+        "all-marketing-data": "read-write",
+        "budget-data": "read-write",
+        "analytics": "read-write",
+        "crm": "read-write",
+        "board-reports": "read-write"
+      },
       "capabilities": [
         "marketing-strategy",
         "brand-strategy",
@@ -29,22 +49,32 @@
         "investor-relations",
         "crisis-communications"
       ],
-      "model": "qwen-72b",
-      "memory_profile": "semantic-enabled, graph-enabled, full-retention",
-      "tool_requirements": ["enterprise-analytics", "crm", "budget-tool", "email", "reporting", "presentation-tools"],
       "system_prompt": "You are the CMO for a global enterprise. You set enterprise marketing strategy, manage multi-regional teams, oversee brand, drive growth, and report to the CEO or board.",
-      "constraints": {"max_tokens_per_request": 8192},
-      "access_control": {
-        "all-marketing-data": "read-write",
-        "budget-data": "read-write",
-        "analytics": "read-write",
-        "crm": "read-write",
-        "board-reports": "read-write"
-      }
+      "memory_profile": "semantic-enabled, graph-enabled, full-retention",
+      "tool_requirements": [
+        "enterprise-analytics",
+        "crm",
+        "budget-tool",
+        "email",
+        "reporting",
+        "presentation-tools"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 8192
+      },
+      "level": "director",
+      "position_title": "Chief Marketing Officer",
+      "autonomy_tier": "coordinate"
     },
     {
       "id": "product-marketing-lead-01",
       "role": "Product Marketing Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "crm": "read-write",
+        "analytics": "read-write",
+        "competitive-intelligence": "read-write"
+      },
       "capabilities": [
         "product-positioning",
         "go-to-market",
@@ -52,20 +82,32 @@
         "sales-enablement",
         "launch-strategy"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["crm", "analytics", "competitive-intelligence", "presentation-tools"],
       "system_prompt": "You lead Product Marketing. You define product positioning, develop go-to-market strategies, manage competitive intelligence, and enable sales teams.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "crm": "read-write",
-        "analytics": "read-write",
-        "competitive-intelligence": "read-write"
-      }
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "crm",
+        "analytics",
+        "competitive-intelligence",
+        "presentation-tools"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "lead",
+      "position_title": "Product Marketing Lead",
+      "autonomy_tier": "coordinate",
+      "reports_to": "cmo-01"
     },
     {
       "id": "demand-gen-lead-01",
       "role": "Demand Generation Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "marketing-automation": "read-write",
+        "crm": "read-write",
+        "analytics": "read-write",
+        "abm-platform": "read-write"
+      },
       "capabilities": [
         "abm-strategy",
         "campaign-management",
@@ -74,21 +116,32 @@
         "conversion-optimization",
         "partner-marketing"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["marketing-automation", "crm", "analytics", "email-platform", "abm-platform"],
       "system_prompt": "You lead Demand Generation for a global enterprise. You run ABM campaigns, manage marketing automation, nurture leads through complex funnels, and drive pipeline growth.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "marketing-automation": "read-write",
-        "crm": "read-write",
-        "analytics": "read-write",
-        "abm-platform": "read-write"
-      }
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "marketing-automation",
+        "crm",
+        "analytics",
+        "email-platform",
+        "abm-platform"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "lead",
+      "position_title": "Demand Generation Lead",
+      "autonomy_tier": "coordinate",
+      "reports_to": "cmo-01"
     },
     {
       "id": "content-strategy-lead-01",
       "role": "Content Strategy Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "cms": "read-write",
+        "analytics": "read-write",
+        "content-calendar": "read-write"
+      },
       "capabilities": [
         "content-strategy",
         "seo-strategy",
@@ -96,20 +149,32 @@
         "content-ops",
         "multi-language-content"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["cms", "seo-tools", "analytics", "content-calendar", "translation-tools"],
       "system_prompt": "You lead Content Strategy for a global enterprise. You develop content strategy across markets, manage multi-language content, and drive thought leadership.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "cms": "read-write",
-        "analytics": "read-write",
-        "content-calendar": "read-write"
-      }
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "cms",
+        "seo-tools",
+        "analytics",
+        "content-calendar",
+        "translation-tools"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "lead",
+      "position_title": "Content Strategy Lead",
+      "autonomy_tier": "coordinate",
+      "reports_to": "cmo-01"
     },
     {
       "id": "brand-director-01",
       "role": "Brand Director",
+      "model": "qwen-34b",
+      "access_control": {
+        "brand-guide": "read-write",
+        "asset-management": "read-write",
+        "creative-tools": "read-write"
+      },
       "capabilities": [
         "brand-strategy",
         "creative-direction",
@@ -118,20 +183,32 @@
         "event-management",
         "crisis-communications"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["brand-guide", "asset-management", "creative-tools", "event-platform"],
       "system_prompt": "You are the Brand Director. You set brand strategy, manage creative direction, ensure brand consistency across markets, and handle internal communications.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "brand-guide": "read-write",
-        "asset-management": "read-write",
-        "creative-tools": "read-write"
-      }
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "brand-guide",
+        "asset-management",
+        "creative-tools",
+        "event-platform"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "director",
+      "position_title": "Brand Director",
+      "autonomy_tier": "coordinate",
+      "reports_to": "cmo-01"
     },
     {
       "id": "marketing-analytics-lead-01",
       "role": "Marketing Analytics Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "analytics": "read-write",
+        "bi-tools": "read-write",
+        "crm": "read-write",
+        "data-warehouse": "read-only"
+      },
       "capabilities": [
         "marketing-mix-modeling",
         "attribution",
@@ -139,21 +216,32 @@
         "roi-analysis",
         "predictive-analytics"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["analytics", "bi-tools", "crm", "data-warehouse"],
       "system_prompt": "You lead Marketing Analytics. You build attribution models, develop dashboards, analyze marketing mix, and provide predictive insights to optimize investment.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "analytics": "read-write",
-        "bi-tools": "read-write",
-        "crm": "read-write",
-        "data-warehouse": "read-only"
-      }
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "analytics",
+        "bi-tools",
+        "crm",
+        "data-warehouse"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "lead",
+      "position_title": "Marketing Analytics Lead",
+      "autonomy_tier": "coordinate",
+      "reports_to": "cmo-01"
     },
     {
       "id": "marketing-ops-lead-01",
       "role": "Marketing Operations Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "marketing-automation": "read-write",
+        "crm": "read-write",
+        "integration-platform": "read-write",
+        "data-warehouse": "read-only"
+      },
       "capabilities": [
         "martech-management",
         "process-optimization",
@@ -161,21 +249,33 @@
         "tool-integration",
         "team-training"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["marketing-automation", "crm", "integration-platform", "reporting-tools"],
       "system_prompt": "You manage Marketing Operations. You oversee the martech stack, optimize processes, ensure data quality, and train the marketing team on tools.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "marketing-automation": "read-write",
-        "crm": "read-write",
-        "integration-platform": "read-write",
-        "data-warehouse": "read-only"
-      }
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "marketing-automation",
+        "crm",
+        "integration-platform",
+        "reporting-tools"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "lead",
+      "position_title": "Marketing Operations Lead",
+      "autonomy_tier": "coordinate",
+      "reports_to": "cmo-01"
     },
     {
       "id": "marketing-gpo-pod-01",
       "role": "GPO Pod — Marketing Support",
+      "model": "qwen-14b",
+      "access_control": {
+        "analytics": "read-only",
+        "cms": "read-only",
+        "social-listening": "read-only",
+        "crm": "read-only",
+        "asset-management": "read-only"
+      },
       "capabilities": [
         "content-research",
         "report-generation",
@@ -184,21 +284,28 @@
         "faq-response",
         "asset-organization"
       ],
-      "model": "qwen-14b",
-      "memory_profile": "semantic-enabled",
-      "tool_requirements": ["social-listening", "email", "calendar", "asset-management", "templates-library"],
       "system_prompt": "You are a Marketing GPO pod member. You conduct content research, generate reports, monitor social media, coordinate events, organize assets, and answer marketing questions. Always route campaign strategy, brand decisions, and budget matters to qualified team members.",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": [
+        "social-listening",
+        "email",
+        "calendar",
+        "asset-management",
+        "templates-library"
+      ],
       "constraints": {
         "max_tokens_per_request": 2048,
-        "sensitive_topics": ["campaign-strategy", "budget-approval", "brand-guidelines", "crisis-communications"]
+        "sensitive_topics": [
+          "campaign-strategy",
+          "budget-approval",
+          "brand-guidelines",
+          "crisis-communications"
+        ]
       },
-      "access_control": {
-        "analytics": "read-only",
-        "cms": "read-only",
-        "social-listening": "read-only",
-        "crm": "read-only",
-        "asset-management": "read-only"
-      }
+      "level": "junior",
+      "position_title": "GPO Pod — Marketing Support",
+      "autonomy_tier": "recommend",
+      "reports_to": "cmo-01"
     }
   ],
   "workflows": [
@@ -206,37 +313,55 @@
       "id": "wf-campaign-001",
       "name": "Enterprise Campaign Management",
       "description": "Multi-channel enterprise campaign from strategy through measurement.",
-      "triggers": ["manual", "schedule:quarterly"],
+      "triggers": [
+        "manual",
+        "schedule:quarterly"
+      ],
       "steps": [
         {
           "id": "campaign-01",
           "type": "agent_call",
           "name": "Campaign Strategy",
-          "config": {"agent": "demand-gen-lead-01", "task": "Define multi-channel strategy, target segments, budget allocation, and KPIs"}
+          "config": {
+            "agent": "demand-gen-lead-01",
+            "task": "Define multi-channel strategy, target segments, budget allocation, and KPIs"
+          }
         },
         {
           "id": "campaign-02",
           "type": "agent_call",
           "name": "Content & Creative",
-          "config": {"agent": "content-strategy-lead-01", "task": "Develop content strategy and creative briefs for multi-market deployment"}
+          "config": {
+            "agent": "content-strategy-lead-01",
+            "task": "Develop content strategy and creative briefs for multi-market deployment"
+          }
         },
         {
           "id": "campaign-03",
           "type": "agent_call",
           "name": "Brand Review",
-          "config": {"agent": "brand-director-01", "task": "Review creative for brand alignment across markets"}
+          "config": {
+            "agent": "brand-director-01",
+            "task": "Review creative for brand alignment across markets"
+          }
         },
         {
           "id": "campaign-04",
           "type": "tool_call",
           "name": "Deploy to Channels",
-          "config": {"tool": "marketing-automation", "action": "deploy-multi-channel"}
+          "config": {
+            "tool": "marketing-automation",
+            "action": "deploy-multi-channel"
+          }
         },
         {
           "id": "campaign-05",
           "type": "transformation",
           "name": "Optimize & Report",
-          "config": {"agent": "marketing-analytics-lead-01", "task": "Monitor performance, optimize, generate insights"}
+          "config": {
+            "agent": "marketing-analytics-lead-01",
+            "task": "Monitor performance, optimize, generate insights"
+          }
         }
       ]
     },
@@ -244,31 +369,45 @@
       "id": "wf-launch-001",
       "name": "Product Launch Process",
       "description": "End-to-end enterprise product launch with cross-functional coordination.",
-      "triggers": ["schedule:product-calendar"],
+      "triggers": [
+        "schedule:product-calendar"
+      ],
       "steps": [
         {
           "id": "launch-01",
           "type": "agent_call",
           "name": "Launch Planning",
-          "config": {"agent": "product-marketing-lead-01", "task": "Create launch plan, coordinate with sales, product, and marketing teams"}
+          "config": {
+            "agent": "product-marketing-lead-01",
+            "task": "Create launch plan, coordinate with sales, product, and marketing teams"
+          }
         },
         {
           "id": "launch-02",
           "type": "transformation",
           "name": "Create Launch Assets",
-          "config": {"agent": "content-strategy-lead-01", "task": "Develop all launch content: PR, web, sales enablement, social"}
+          "config": {
+            "agent": "content-strategy-lead-01",
+            "task": "Develop all launch content: PR, web, sales enablement, social"
+          }
         },
         {
           "id": "launch-03",
           "type": "tool_call",
           "name": "Execute Launch",
-          "config": {"tool": "marketing-automation", "action": "coordinate-launch-activities"}
+          "config": {
+            "tool": "marketing-automation",
+            "action": "coordinate-launch-activities"
+          }
         },
         {
           "id": "launch-04",
           "type": "transformation",
           "name": "Post-Launch Analysis",
-          "config": {"agent": "marketing-analytics-lead-01", "task": "Analyze launch performance, document learnings"}
+          "config": {
+            "agent": "marketing-analytics-lead-01",
+            "task": "Analyze launch performance, document learnings"
+          }
         }
       ]
     },
@@ -276,25 +415,37 @@
       "id": "wf-analytics-001",
       "name": "Marketing Performance & ROI",
       "description": "Comprehensive marketing analytics: attribution, ROI, and strategic recommendations.",
-      "triggers": ["schedule:monthly", "schedule:quarterly"],
+      "triggers": [
+        "schedule:monthly",
+        "schedule:quarterly"
+      ],
       "steps": [
         {
           "id": "analytics-01",
           "type": "agent_call",
           "name": "Data Collection",
-          "config": {"agent": "marketing-ops-lead-01", "task": "Collect data from all marketing channels and systems"}
+          "config": {
+            "agent": "marketing-ops-lead-01",
+            "task": "Collect data from all marketing channels and systems"
+          }
         },
         {
           "id": "analytics-02",
           "type": "transformation",
           "name": "Attribution Analysis",
-          "config": {"agent": "marketing-analytics-lead-01", "task": "Run attribution models, calculate ROI, identify top-performing channels"}
+          "config": {
+            "agent": "marketing-analytics-lead-01",
+            "task": "Run attribution models, calculate ROI, identify top-performing channels"
+          }
         },
         {
           "id": "analytics-03",
           "type": "agent_call",
           "name": "Strategic Recommendations",
-          "config": {"agent": "cmo-01", "task": "Review analytics, recommend budget reallocation and strategy adjustments"}
+          "config": {
+            "agent": "cmo-01",
+            "task": "Review analytics, recommend budget reallocation and strategy adjustments"
+          }
         }
       ]
     }
@@ -327,24 +478,43 @@
       "name": "Brand Governance",
       "type": "compliance",
       "enforcement": "enforce",
-      "conditions": {"asset_type": "public-facing"},
-      "actions": ["require-brand-approval", "enforce-guidelines", "log-all-usage"]
+      "conditions": {
+        "asset_type": "public-facing"
+      },
+      "actions": [
+        "require-brand-approval",
+        "enforce-guidelines",
+        "log-all-usage"
+      ]
     },
     {
       "id": "gov-mkt-l-002",
       "name": "Data Privacy & Compliance",
       "type": "compliance",
       "enforcement": "enforce",
-      "conditions": {"data_type": "personal-data"},
-      "actions": ["gdpr-compliant", "ccpa-compliant", "consent-management", "data-minimization"]
+      "conditions": {
+        "data_type": "personal-data"
+      },
+      "actions": [
+        "gdpr-compliant",
+        "ccpa-compliant",
+        "consent-management",
+        "data-minimization"
+      ]
     },
     {
       "id": "gov-mkt-l-003",
       "name": "Budget Approval",
       "type": "compliance",
       "enforcement": "enforce",
-      "conditions": {"budget_above": "threshold"},
-      "actions": ["require-cmo-approval", "document-roi", "track-spend"]
+      "conditions": {
+        "budget_above": "threshold"
+      },
+      "actions": [
+        "require-cmo-approval",
+        "document-roi",
+        "track-spend"
+      ]
     }
   ],
   "kpis": [
@@ -354,7 +524,11 @@
       "description": "Total pipeline generated by marketing activities",
       "metric_type": "gauge",
       "unit": "currency",
-      "thresholds": {"target": 10000000, "warning": 7500000, "critical": 5000000},
+      "thresholds": {
+        "target": 10000000,
+        "warning": 7500000,
+        "critical": 5000000
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -363,7 +537,11 @@
       "description": "Return on marketing investment",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 400, "warning": 300, "critical": 200},
+      "thresholds": {
+        "target": 400,
+        "warning": 300,
+        "critical": 200
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -372,7 +550,11 @@
       "description": "Average cost to acquire a customer",
       "metric_type": "gauge",
       "unit": "currency",
-      "thresholds": {"target": 150, "warning": 200, "critical": 250},
+      "thresholds": {
+        "target": 150,
+        "warning": 200,
+        "critical": 250
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -381,7 +563,11 @@
       "description": "Measured brand awareness in target markets",
       "metric_type": "gauge",
       "unit": "score",
-      "thresholds": {"target": 85, "warning": 75, "critical": 60},
+      "thresholds": {
+        "target": 85,
+        "warning": 75,
+        "critical": 60
+      },
       "aggregation_period": "year"
     },
     {
@@ -390,7 +576,11 @@
       "description": "Average customer lifetime value",
       "metric_type": "gauge",
       "unit": "currency",
-      "thresholds": {"target": 15000, "warning": 12000, "critical": 8000},
+      "thresholds": {
+        "target": 15000,
+        "warning": 12000,
+        "critical": 8000
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -399,7 +589,11 @@
       "description": "Lead conversion rate by channel",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 15, "warning": 10, "critical": 5},
+      "thresholds": {
+        "target": 15,
+        "warning": 10,
+        "critical": 5
+      },
       "aggregation_period": "month"
     }
   ],
@@ -467,7 +661,22 @@
       "name": "Agent Autonomy",
       "scope": "agent",
       "rules": [
-        {"agent": "marketing-gpo-pod-01", "allowed": ["research", "reporting", "scheduling", "monitoring", "asset-organization"], "denied": ["launch-campaigns", "approve-brand-usage", "access-budget-data", "modify-marketing-automation"]}
+        {
+          "agent": "marketing-gpo-pod-01",
+          "allowed": [
+            "research",
+            "reporting",
+            "scheduling",
+            "monitoring",
+            "asset-organization"
+          ],
+          "denied": [
+            "launch-campaigns",
+            "approve-brand-usage",
+            "access-budget-data",
+            "modify-marketing-automation"
+          ]
+        }
       ]
     },
     {
@@ -475,19 +684,95 @@
       "name": "Data Retention",
       "scope": "system",
       "rules": [
-        {"data_type": "campaign-data", "retention": "3-years", "disposal": "archive"},
-        {"data_type": "analytics", "retention": "5-years", "disposal": "anonymize"},
-        {"data_type": "personal-data", "retention": "gdpr-compliant", "disposal": "secure-delete"}
+        {
+          "data_type": "campaign-data",
+          "retention": "3-years",
+          "disposal": "archive"
+        },
+        {
+          "data_type": "analytics",
+          "retention": "5-years",
+          "disposal": "anonymize"
+        },
+        {
+          "data_type": "personal-data",
+          "retention": "gdpr-compliant",
+          "disposal": "secure-delete"
+        }
       ]
     }
   ],
-  "metadata": {
-    "enterprise_size": "large",
-    "department_size": "15-50+ FTE",
-    "company_size": "500+ employees",
-    "industry": "global",
-    "compliance_level": "enterprise",
-    "frameworks": ["growth-at-scale", "abm", "martech-stack", "data-driven-marketing"],
-    "last_reviewed": "2026-07-17"
-  }
+  "org_chart": [
+    {
+      "id": "pos-cmo-01",
+      "title": "Chief Marketing Officer",
+      "role_type": "director",
+      "holder_type": "ai_agent",
+      "agent_def_id": "cmo-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-product-marketing-lead-01",
+      "title": "Product Marketing Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "product-marketing-lead-01",
+      "reports_to": "pos-cmo-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-demand-gen-lead-01",
+      "title": "Demand Generation Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "demand-gen-lead-01",
+      "reports_to": "pos-cmo-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-content-strategy-lead-01",
+      "title": "Content Strategy Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "content-strategy-lead-01",
+      "reports_to": "pos-cmo-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-brand-director-01",
+      "title": "Brand Director",
+      "role_type": "director",
+      "holder_type": "ai_agent",
+      "agent_def_id": "brand-director-01",
+      "reports_to": "pos-cmo-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-marketing-analytics-lead-01",
+      "title": "Marketing Analytics Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "marketing-analytics-lead-01",
+      "reports_to": "pos-cmo-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-marketing-ops-lead-01",
+      "title": "Marketing Operations Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "marketing-ops-lead-01",
+      "reports_to": "pos-cmo-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-marketing-gpo-pod-01",
+      "title": "GPO Pod — Marketing Support",
+      "role_type": "support",
+      "holder_type": "ai_agent",
+      "agent_def_id": "marketing-gpo-pod-01",
+      "reports_to": "pos-cmo-01",
+      "autonomy_tier": "recommend"
+    }
+  ]
 }

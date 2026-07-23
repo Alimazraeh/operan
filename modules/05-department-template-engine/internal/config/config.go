@@ -15,6 +15,10 @@ type Config struct {
 	OTLPEndpoint     string
 	TemplateCacheTTL int
 	MaxPageSize      int
+	DataDir          string // snapshot persistence directory (hostPath in k8s)
+	SnapshotInterval int    // seconds between snapshots
+	RegistryURL      string // Module 04 agent registry base URL (deploy orchestration)
+	MemoryURL        string // Module 07 memory fabric base URL (deploy orchestration)
 }
 
 func ParseConfig() Config {
@@ -27,6 +31,10 @@ func ParseConfig() Config {
 		OTLPEndpoint:     env("MODULE05_OTLP_ENDPOINT", "http://localhost:4318"),
 		TemplateCacheTTL: envInt("MODULE05_TEMPLATE_CACHE_TTL", 300),
 		MaxPageSize:      envInt("MODULE05_MAX_PAGE_SIZE", 100),
+		DataDir:          env("MODULE05_DATA_DIR", "/data"),
+		SnapshotInterval: envInt("MODULE05_SNAPSHOT_INTERVAL", 10),
+		RegistryURL:      env("MODULE05_REGISTRY_URL", "http://agent-registry.operan.svc.cluster.local:8083"),
+		MemoryURL:        env("MODULE05_MEMORY_URL", "http://memory-fabric.operan.svc.cluster.local:8007"),
 	}
 }
 

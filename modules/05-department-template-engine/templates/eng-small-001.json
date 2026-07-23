@@ -34,6 +34,13 @@
       "role": "Engineering Lead",
       "level": "senior",
       "description": "Technical leader responsible for architecture decisions, sprint planning, code review approval, and mentoring. Primary technical decision-maker and bridge between product and engineering.",
+      "model": "qwen-72b",
+      "access_control": {
+        "deploy-production": "granted",
+        "merge-main": "granted",
+        "architecture-approve": "granted",
+        "incident-command": "granted"
+      },
       "capabilities": [
         "architecture",
         "code-review",
@@ -42,18 +49,16 @@
         "technical-decision",
         "deployment-approval"
       ],
-      "agent_model": "qwen-72b",
       "memory_profile": "full-retention",
-      "permissions": [
-        "deploy-production",
-        "merge-main",
-        "architecture-approve",
-        "incident-command"
-      ],
       "schedule": {
-        "availability": "business-hours",
-        "escalation_path": "external-advisory"
-      }
+        "availability": "business-hours"
+      },
+      "escalation_path": [
+        "external-advisory",
+        "human"
+      ],
+      "position_title": "Engineering Lead",
+      "autonomy_tier": "coordinate"
     },
     {
       "id": "agent-eng-senior-001",
@@ -61,6 +66,13 @@
       "role": "Engineer",
       "level": "senior",
       "description": "Core contributor responsible for feature development, code reviews, debugging, and maintaining CI/CD pipelines. May own one or more service areas or subsystems.",
+      "model": "qwen-34b",
+      "access_control": {
+        "deploy-staging": "granted",
+        "merge-feature": "granted",
+        "test-execute": "granted",
+        "bug-triage": "granted"
+      },
       "capabilities": [
         "code-development",
         "code-review",
@@ -69,18 +81,13 @@
         "testing",
         "documentation"
       ],
-      "agent_model": "qwen-34b",
       "memory_profile": "semantic-enabled",
-      "permissions": [
-        "deploy-staging",
-        "merge-feature",
-        "test-execute",
-        "bug-triage"
-      ],
       "schedule": {
-        "availability": "business-hours",
-        "escalation_path": "agent-eng-lead-001"
-      }
+        "availability": "business-hours"
+      },
+      "reports_to": "agent-eng-lead-001",
+      "position_title": "Senior Engineer",
+      "autonomy_tier": "draft"
     },
     {
       "id": "agent-eng-junior-001",
@@ -88,6 +95,12 @@
       "role": "Engineer",
       "level": "junior",
       "description": "Early-career engineer focused on implementing well-scoped features, fixing bugs, writing tests, and learning system architecture under guidance.",
+      "model": "qwen-14b",
+      "access_control": {
+        "deploy-staging": "granted",
+        "merge-feature": "granted",
+        "test-execute": "granted"
+      },
       "capabilities": [
         "code-development",
         "testing",
@@ -95,17 +108,13 @@
         "documentation",
         "task-tracking"
       ],
-      "agent_model": "qwen-14b",
       "memory_profile": "episodic-enabled",
-      "permissions": [
-        "deploy-staging",
-        "merge-feature",
-        "test-execute"
-      ],
       "schedule": {
-        "availability": "business-hours",
-        "escalation_path": "agent-eng-senior-001"
-      }
+        "availability": "business-hours"
+      },
+      "reports_to": "agent-eng-senior-001",
+      "position_title": "Junior Engineer",
+      "autonomy_tier": "draft"
     },
     {
       "id": "agent-eng-gpo-001",
@@ -113,6 +122,12 @@
       "role": "GPO",
       "level": "general",
       "description": "Versatile operator filling gaps across the engineering workflow. Handles routine maintenance, documentation updates, environment setup, and ad-hoc support.",
+      "model": "qwen-14b",
+      "access_control": {
+        "deploy-staging": "granted",
+        "document-edit": "granted",
+        "report-generate": "granted"
+      },
       "capabilities": [
         "documentation",
         "env-setup",
@@ -121,17 +136,13 @@
         "task-automation",
         "knowledge-base"
       ],
-      "agent_model": "qwen-14b",
       "memory_profile": "procedural-enabled",
-      "permissions": [
-        "deploy-staging",
-        "document-edit",
-        "report-generate"
-      ],
       "schedule": {
-        "availability": "always-on",
-        "escalation_path": "agent-eng-lead-001"
-      }
+        "availability": "always-on"
+      },
+      "reports_to": "agent-eng-lead-001",
+      "position_title": "General Purpose Operator",
+      "autonomy_tier": "recommend"
     }
   ],
   "workflows": [
@@ -145,52 +156,77 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "automated-checks",
-          "agent": "agent-eng-gpo-001",
-          "description": "Run CI checks including linting, unit tests, and static analysis on the feature branch",
-          "status_conditions": [
-            "checks_pass"
-          ],
-          "timeout_minutes": 15
+          "id": "automated-checks",
+          "type": "agent_call",
+          "name": "Automated Checks",
+          "config": {
+            "action": "automated-checks",
+            "agent": "agent-eng-gpo-001",
+            "description": "Run CI checks including linting, unit tests, and static analysis on the feature branch",
+            "order": 1,
+            "status_conditions": [
+              "checks_pass"
+            ]
+          },
+          "timeout_seconds": 900
         },
         {
-          "order": 2,
-          "action": "assign-reviewer",
-          "agent": "agent-eng-lead-001",
-          "description": "Route the PR to an appropriate reviewer based on component ownership",
-          "status_conditions": [
-            "reviewer_assigned"
-          ]
+          "id": "assign-reviewer",
+          "type": "agent_call",
+          "name": "Assign Reviewer",
+          "config": {
+            "action": "assign-reviewer",
+            "agent": "agent-eng-lead-001",
+            "description": "Route the PR to an appropriate reviewer based on component ownership",
+            "order": 2,
+            "status_conditions": [
+              "reviewer_assigned"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "peer-review",
-          "agent": "agent-eng-senior-001",
-          "description": "Reviewer examines the diff for correctness, readability, and adherence to standards",
-          "status_conditions": [
-            "approved",
-            "changes_requested"
-          ]
+          "id": "peer-review",
+          "type": "agent_call",
+          "name": "Peer Review",
+          "config": {
+            "action": "peer-review",
+            "agent": "agent-eng-senior-001",
+            "description": "Reviewer examines the diff for correctness, readability, and adherence to standards",
+            "order": 3,
+            "status_conditions": [
+              "approved",
+              "changes_requested"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "address-feedback",
-          "agent": "agent-eng-junior-001",
-          "description": "Author addresses all requested changes, updates the PR, and triggers re-review",
-          "status_conditions": [
-            "updated",
-            "ready_for_merge"
-          ]
+          "id": "address-feedback",
+          "type": "agent_call",
+          "name": "Address Feedback",
+          "config": {
+            "action": "address-feedback",
+            "agent": "agent-eng-junior-001",
+            "description": "Author addresses all requested changes, updates the PR, and triggers re-review",
+            "order": 4,
+            "status_conditions": [
+              "updated",
+              "ready_for_merge"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "merge-to-develop",
-          "agent": "agent-eng-lead-001",
-          "description": "Engineering Lead performs final approval and merges the PR to develop after all checks pass",
-          "status_conditions": [
-            "merged"
-          ]
+          "id": "merge-to-develop",
+          "type": "agent_call",
+          "name": "Merge To Develop",
+          "config": {
+            "action": "merge-to-develop",
+            "agent": "agent-eng-lead-001",
+            "description": "Engineering Lead performs final approval and merges the PR to develop after all checks pass",
+            "order": 5,
+            "status_conditions": [
+              "merged"
+            ]
+          }
         }
       ]
     },
@@ -204,54 +240,79 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "build-artifact",
-          "agent": "agent-eng-gpo-001",
-          "description": "Build Docker image or deployment artifact from the latest commit and push to the container registry",
-          "status_conditions": [
-            "build_success",
-            "artifact_pushed"
-          ]
+          "id": "build-artifact",
+          "type": "agent_call",
+          "name": "Build Artifact",
+          "config": {
+            "action": "build-artifact",
+            "agent": "agent-eng-gpo-001",
+            "description": "Build Docker image or deployment artifact from the latest commit and push to the container registry",
+            "order": 1,
+            "status_conditions": [
+              "build_success",
+              "artifact_pushed"
+            ]
+          }
         },
         {
-          "order": 2,
-          "action": "deploy-staging",
-          "agent": "agent-eng-gpo-001",
-          "description": "Deploy the new artifact to the staging environment and run integration tests",
-          "status_conditions": [
-            "deployed",
-            "integration_tests_pass"
-          ]
+          "id": "deploy-staging",
+          "type": "agent_call",
+          "name": "Deploy Staging",
+          "config": {
+            "action": "deploy-staging",
+            "agent": "agent-eng-gpo-001",
+            "description": "Deploy the new artifact to the staging environment and run integration tests",
+            "order": 2,
+            "status_conditions": [
+              "deployed",
+              "integration_tests_pass"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "staging-validation",
-          "agent": "agent-eng-senior-001",
-          "description": "Senior Engineer validates that staging changes work as expected with smoke tests",
-          "status_conditions": [
-            "validated",
-            "rejected"
-          ]
+          "id": "staging-validation",
+          "type": "agent_call",
+          "name": "Staging Validation",
+          "config": {
+            "action": "staging-validation",
+            "agent": "agent-eng-senior-001",
+            "description": "Senior Engineer validates that staging changes work as expected with smoke tests",
+            "order": 3,
+            "status_conditions": [
+              "validated",
+              "rejected"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "promote-to-production",
-          "agent": "agent-eng-lead-001",
-          "description": "Engineering Lead approves the promotion and triggers production deployment with rolling update",
-          "status_conditions": [
-            "deployed",
-            "health_check_pass"
-          ]
+          "id": "promote-to-production",
+          "type": "agent_call",
+          "name": "Promote To Production",
+          "config": {
+            "action": "promote-to-production",
+            "agent": "agent-eng-lead-001",
+            "description": "Engineering Lead approves the promotion and triggers production deployment with rolling update",
+            "order": 4,
+            "status_conditions": [
+              "deployed",
+              "health_check_pass"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "production-verification",
-          "agent": "agent-eng-gpo-001",
-          "description": "Run post-deployment health checks and monitor error rates; notify the team of deployment status",
-          "status_conditions": [
-            "verified",
-            "rollback_triggered"
-          ]
+          "id": "production-verification",
+          "type": "agent_call",
+          "name": "Production Verification",
+          "config": {
+            "action": "production-verification",
+            "agent": "agent-eng-gpo-001",
+            "description": "Run post-deployment health checks and monitor error rates; notify the team of deployment status",
+            "order": 5,
+            "status_conditions": [
+              "verified",
+              "rollback_triggered"
+            ]
+          }
         }
       ]
     },
@@ -266,52 +327,77 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "detect-and-classify",
-          "agent": "agent-eng-gpo-001",
-          "description": "Automated monitoring detects the anomaly and classifies incident severity (P1/P2/P3) based on impact scope",
-          "status_conditions": [
-            "classified"
-          ],
-          "timeout_minutes": 5
+          "id": "detect-and-classify",
+          "type": "agent_call",
+          "name": "Detect And Classify",
+          "config": {
+            "action": "detect-and-classify",
+            "agent": "agent-eng-gpo-001",
+            "description": "Automated monitoring detects the anomaly and classifies incident severity (P1/P2/P3) based on impact scope",
+            "order": 1,
+            "status_conditions": [
+              "classified"
+            ]
+          },
+          "timeout_seconds": 300
         },
         {
-          "order": 2,
-          "action": "page-on-call",
-          "agent": "agent-eng-lead-001",
-          "description": "Notify the on-call engineer via Slack and SMS; Engineering Lead assumes incident command for P1",
-          "status_conditions": [
-            "acknowledged"
-          ]
+          "id": "page-on-call",
+          "type": "agent_call",
+          "name": "Page On Call",
+          "config": {
+            "action": "page-on-call",
+            "agent": "agent-eng-lead-001",
+            "description": "Notify the on-call engineer via Slack and SMS; Engineering Lead assumes incident command for P1",
+            "order": 2,
+            "status_conditions": [
+              "acknowledged"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "diagnose-and-mitigate",
-          "agent": "agent-eng-senior-001",
-          "description": "On-call engineer investigates root cause, implements mitigation (rollback, restart, feature flag), and updates the incident channel",
-          "status_conditions": [
-            "mitigated",
-            "root_cause_found"
-          ]
+          "id": "diagnose-and-mitigate",
+          "type": "agent_call",
+          "name": "Diagnose And Mitigate",
+          "config": {
+            "action": "diagnose-and-mitigate",
+            "agent": "agent-eng-senior-001",
+            "description": "On-call engineer investigates root cause, implements mitigation (rollback, restart, feature flag), and updates the incident channel",
+            "order": 3,
+            "status_conditions": [
+              "mitigated",
+              "root_cause_found"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "verify-resolution",
-          "agent": "agent-eng-gpo-001",
-          "description": "Automated health checks and dashboard monitoring confirm service metrics have returned to normal thresholds",
-          "status_conditions": [
-            "resolved",
-            "persisting"
-          ]
+          "id": "verify-resolution",
+          "type": "agent_call",
+          "name": "Verify Resolution",
+          "config": {
+            "action": "verify-resolution",
+            "agent": "agent-eng-gpo-001",
+            "description": "Automated health checks and dashboard monitoring confirm service metrics have returned to normal thresholds",
+            "order": 4,
+            "status_conditions": [
+              "resolved",
+              "persisting"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "close-and-document",
-          "agent": "agent-eng-lead-001",
-          "description": "Close the incident, document timeline and root cause, and create follow-up action items",
-          "status_conditions": [
-            "closed"
-          ]
+          "id": "close-and-document",
+          "type": "agent_call",
+          "name": "Close And Document",
+          "config": {
+            "action": "close-and-document",
+            "agent": "agent-eng-lead-001",
+            "description": "Close the incident, document timeline and root cause, and create follow-up action items",
+            "order": 5,
+            "status_conditions": [
+              "closed"
+            ]
+          }
         }
       ]
     },
@@ -325,49 +411,74 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "groom-backlog",
-          "agent": "agent-eng-lead-001",
-          "description": "Review and refine the product backlog, remove stale items, estimate story points, ensure actionable tickets",
-          "status_conditions": [
-            "backlog_groomed"
-          ]
+          "id": "groom-backlog",
+          "type": "agent_call",
+          "name": "Groom Backlog",
+          "config": {
+            "action": "groom-backlog",
+            "agent": "agent-eng-lead-001",
+            "description": "Review and refine the product backlog, remove stale items, estimate story points, ensure actionable tickets",
+            "order": 1,
+            "status_conditions": [
+              "backlog_groomed"
+            ]
+          }
         },
         {
-          "order": 2,
-          "action": "capacity-assessment",
-          "agent": "agent-eng-lead-001",
-          "description": "Calculate team capacity for the sprint accounting for PTO, holidays, and a 20% unplanned buffer",
-          "status_conditions": [
-            "capacity_calculated"
-          ]
+          "id": "capacity-assessment",
+          "type": "agent_call",
+          "name": "Capacity Assessment",
+          "config": {
+            "action": "capacity-assessment",
+            "agent": "agent-eng-lead-001",
+            "description": "Calculate team capacity for the sprint accounting for PTO, holidays, and a 20% unplanned buffer",
+            "order": 2,
+            "status_conditions": [
+              "capacity_calculated"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "assign-tasks",
-          "agent": "agent-eng-senior-001",
-          "description": "Distribute backlog items across team members based on expertise, capacity, and development goals",
-          "status_conditions": [
-            "tasks_assigned"
-          ]
+          "id": "assign-tasks",
+          "type": "agent_call",
+          "name": "Assign Tasks",
+          "config": {
+            "action": "assign-tasks",
+            "agent": "agent-eng-senior-001",
+            "description": "Distribute backlog items across team members based on expertise, capacity, and development goals",
+            "order": 3,
+            "status_conditions": [
+              "tasks_assigned"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "set-sprint-goals",
-          "agent": "agent-eng-lead-001",
-          "description": "Define 2-3 measurable sprint goals and communicate them to the full team and product stakeholders",
-          "status_conditions": [
-            "goals_set"
-          ]
+          "id": "set-sprint-goals",
+          "type": "agent_call",
+          "name": "Set Sprint Goals",
+          "config": {
+            "action": "set-sprint-goals",
+            "agent": "agent-eng-lead-001",
+            "description": "Define 2-3 measurable sprint goals and communicate them to the full team and product stakeholders",
+            "order": 4,
+            "status_conditions": [
+              "goals_set"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "kickoff-sync",
-          "agent": "agent-eng-gpo-001",
-          "description": "Send sprint kickoff message with goals, task assignments, and burndown chart link to the team channel",
-          "status_conditions": [
-            "sprint_active"
-          ]
+          "id": "kickoff-sync",
+          "type": "agent_call",
+          "name": "Kickoff Sync",
+          "config": {
+            "action": "kickoff-sync",
+            "agent": "agent-eng-gpo-001",
+            "description": "Send sprint kickoff message with goals, task assignments, and burndown chart link to the team channel",
+            "order": 5,
+            "status_conditions": [
+              "sprint_active"
+            ]
+          }
         }
       ]
     },
@@ -382,50 +493,75 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "identify-debt",
-          "agent": "agent-eng-senior-001",
-          "description": "Identify technical debt items through code analysis tools, CI warnings, developer reports, and production issue patterns",
-          "status_conditions": [
-            "debt_items_listed"
-          ]
+          "id": "identify-debt",
+          "type": "agent_call",
+          "name": "Identify Debt",
+          "config": {
+            "action": "identify-debt",
+            "agent": "agent-eng-senior-001",
+            "description": "Identify technical debt items through code analysis tools, CI warnings, developer reports, and production issue patterns",
+            "order": 1,
+            "status_conditions": [
+              "debt_items_listed"
+            ]
+          }
         },
         {
-          "order": 2,
-          "action": "prioritize-debt",
-          "agent": "agent-eng-lead-001",
-          "description": "Prioritize debt items by business impact, risk, and cost of delay; flag items blocking feature work",
-          "status_conditions": [
-            "debt_prioritized"
-          ]
+          "id": "prioritize-debt",
+          "type": "agent_call",
+          "name": "Prioritize Debt",
+          "config": {
+            "action": "prioritize-debt",
+            "agent": "agent-eng-lead-001",
+            "description": "Prioritize debt items by business impact, risk, and cost of delay; flag items blocking feature work",
+            "order": 2,
+            "status_conditions": [
+              "debt_prioritized"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "allocate-sprint-budget",
-          "agent": "agent-eng-lead-001",
-          "description": "Reserve 15-20% of each sprint capacity for technical debt resolution based on the prioritized list",
-          "status_conditions": [
-            "budget_allocated"
-          ]
+          "id": "allocate-sprint-budget",
+          "type": "agent_call",
+          "name": "Allocate Sprint Budget",
+          "config": {
+            "action": "allocate-sprint-budget",
+            "agent": "agent-eng-lead-001",
+            "description": "Reserve 15-20% of each sprint capacity for technical debt resolution based on the prioritized list",
+            "order": 3,
+            "status_conditions": [
+              "budget_allocated"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "implement-fixes",
-          "agent": "agent-eng-senior-001",
-          "description": "Engineers implement debt fixes following standard code review and deployment workflows with tests",
-          "status_conditions": [
-            "fixes_merged",
-            "tests_pass"
-          ]
+          "id": "implement-fixes",
+          "type": "agent_call",
+          "name": "Implement Fixes",
+          "config": {
+            "action": "implement-fixes",
+            "agent": "agent-eng-senior-001",
+            "description": "Engineers implement debt fixes following standard code review and deployment workflows with tests",
+            "order": 4,
+            "status_conditions": [
+              "fixes_merged",
+              "tests_pass"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "track-metrics",
-          "agent": "agent-eng-gpo-001",
-          "description": "Update tech debt dashboard with resolved items, track debt ratio trend, and report on improvement over time",
-          "status_conditions": [
-            "metrics_updated"
-          ]
+          "id": "track-metrics",
+          "type": "agent_call",
+          "name": "Track Metrics",
+          "config": {
+            "action": "track-metrics",
+            "agent": "agent-eng-gpo-001",
+            "description": "Update tech debt dashboard with resolved items, track debt ratio trend, and report on improvement over time",
+            "order": 5,
+            "status_conditions": [
+              "metrics_updated"
+            ]
+          }
         }
       ]
     }
@@ -489,116 +625,143 @@
     {
       "id": "gov-001",
       "name": "Code Review Requirement",
-      "rule": "Every pull request must have at least one approved review from a peer before merging to the develop branch. No self-merges on production-critical code.",
-      "scope": "all-code-changes",
-      "severity": "high",
-      "enforcement": "automated"
+      "type": "custom",
+      "description": "Every pull request must have at least one approved review from a peer before merging to the develop branch. No self-merges on production-critical code.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "all-code-changes",
+        "severity": "high"
+      }
     },
     {
       "id": "gov-002",
       "name": "Production Deployment Window",
-      "rule": "Production deployments are preferred during business hours (09:00-17:00 in the team timezone). Out-of-hours deployments require Engineering Lead approval.",
-      "scope": "production-deployment",
-      "severity": "medium",
-      "enforcement": "policy-gate"
+      "type": "custom",
+      "description": "Production deployments are preferred during business hours (09:00-17:00 in the team timezone). Out-of-hours deployments require Engineering Lead approval.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "production-deployment",
+        "severity": "medium"
+      }
     },
     {
       "id": "gov-003",
       "name": "Test Coverage Floor",
-      "rule": "All new code must maintain minimum 70% test coverage. Existing modules being modified must not decrease coverage below current baseline.",
-      "scope": "testing",
-      "severity": "medium",
-      "enforcement": "ci-gate"
+      "type": "custom",
+      "description": "All new code must maintain minimum 70% test coverage. Existing modules being modified must not decrease coverage below current baseline.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "testing",
+        "severity": "medium"
+      }
     },
     {
       "id": "gov-004",
       "name": "Incident Communication",
-      "rule": "All P1 and P2 incidents must be documented with a written post-incident report within 48 hours of resolution including root cause, timeline, and action items.",
-      "scope": "incident-management",
-      "severity": "high",
-      "enforcement": "process-gate"
+      "type": "custom",
+      "description": "All P1 and P2 incidents must be documented with a written post-incident report within 48 hours of resolution including root cause, timeline, and action items.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "incident-management",
+        "severity": "high"
+      }
     },
     {
       "id": "gov-005",
       "name": "Secrets Management",
-      "rule": "No secrets, API keys, or credentials may be committed to version control. Use environment variables or a secrets manager. Rotate any exposed secrets within 24 hours.",
-      "scope": "security",
-      "severity": "critical",
-      "enforcement": "automated"
+      "type": "custom",
+      "description": "No secrets, API keys, or credentials may be committed to version control. Use environment variables or a secrets manager. Rotate any exposed secrets within 24 hours.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "security",
+        "severity": "critical"
+      }
     }
   ],
   "kpis": [
     {
       "id": "kpi-001",
       "name": "Deployment Frequency",
-      "description": "How often the team deploys to production",
-      "target": "on-demand (multiple per day)",
-      "measurement": "count per week",
-      "baseline": 5,
-      "target_value": 10,
-      "threshold": 3,
-      "frequency": "weekly",
-      "dashboard": "deployment-metrics"
+      "description": "How often the team deploys to production Measured as: count per week",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 10,
+        "warning": 3,
+        "baseline": 5,
+        "target_label": "on-demand (multiple per day)"
+      },
+      "aggregation_period": "week",
+      "dashboard_link": "dashboard://deployment-metrics"
     },
     {
       "id": "kpi-002",
       "name": "Lead Time for Changes",
-      "description": "Time from code commit to production deployment",
-      "target": "less than 1 day",
-      "measurement": "median hours",
-      "baseline": 24,
-      "target_value": 4,
-      "threshold": 48,
-      "frequency": "weekly",
-      "dashboard": "deployment-metrics"
+      "description": "Time from code commit to production deployment Measured as: median hours",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 4,
+        "warning": 48,
+        "baseline": 24,
+        "target_label": "less than 1 day"
+      },
+      "aggregation_period": "week",
+      "dashboard_link": "dashboard://deployment-metrics"
     },
     {
       "id": "kpi-003",
       "name": "Change Failure Rate",
-      "description": "Percentage of deployments causing a production incident",
-      "target": "less than 15%",
-      "measurement": "percentage",
-      "baseline": 10,
-      "target_value": 5,
-      "threshold": 15,
-      "frequency": "weekly",
-      "dashboard": "deployment-metrics"
+      "description": "Percentage of deployments causing a production incident Measured as: percentage",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 5,
+        "warning": 15,
+        "baseline": 10,
+        "target_label": "less than 15%"
+      },
+      "aggregation_period": "week",
+      "dashboard_link": "dashboard://deployment-metrics"
     },
     {
       "id": "kpi-004",
       "name": "Mean Time to Recovery (MTTR)",
-      "description": "Average time to restore service after a production incident",
-      "target": "less than 1 hour for P1",
-      "measurement": "minutes",
-      "baseline": 60,
-      "target_value": 30,
-      "threshold": 120,
-      "frequency": "per-incident",
-      "dashboard": "incident-metrics"
+      "description": "Average time to restore service after a production incident Measured as: minutes",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 30,
+        "warning": 120,
+        "baseline": 60,
+        "target_label": "less than 1 hour for P1"
+      },
+      "aggregation_period": "week",
+      "dashboard_link": "dashboard://incident-metrics"
     },
     {
       "id": "kpi-005",
       "name": "Technical Debt Ratio",
-      "description": "Estimated time to fix all known technical debt as a percentage of total development effort",
-      "target": "declining trend",
-      "measurement": "percentage",
-      "baseline": 15,
-      "target_value": 10,
-      "threshold": 20,
-      "frequency": "monthly",
-      "dashboard": "code-health"
+      "description": "Estimated time to fix all known technical debt as a percentage of total development effort Measured as: percentage",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 10,
+        "warning": 20,
+        "baseline": 15,
+        "target_label": "declining trend"
+      },
+      "aggregation_period": "month",
+      "dashboard_link": "dashboard://code-health"
     },
     {
       "id": "kpi-006",
       "name": "Test Coverage",
-      "description": "Percentage of codebase covered by automated tests",
-      "target": "at least 70%",
-      "measurement": "percentage",
-      "baseline": 55,
-      "target_value": 70,
-      "threshold": 60,
-      "frequency": "weekly",
-      "dashboard": "code-health"
+      "description": "Percentage of codebase covered by automated tests Measured as: percentage",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 70,
+        "warning": 60,
+        "baseline": 55,
+        "target_label": "at least 70%"
+      },
+      "aggregation_period": "week",
+      "dashboard_link": "dashboard://code-health"
     }
   ],
   "integrations": [
@@ -672,7 +835,7 @@
       "name": "On-Call Rotation",
       "description": "The Engineering Lead and Senior Engineer rotate weekly on-call duty. On-call engineer is responsible for initial incident response and escalation. Escalation to external support after 30 minutes for P1 incidents.",
       "scope": "incident-management",
-      "effective_from": "2026-07-17",
+      "effective_from": "2026-07-17T00:00:00Z",
       "review_frequency": "quarterly"
     },
     {
@@ -680,7 +843,7 @@
       "name": "Branching Strategy",
       "description": "Use trunk-based development with short-lived feature branches. Main branch is always deployable. Feature flags used to protect main from incomplete features. Develop branch serves as the integration branch.",
       "scope": "version-control",
-      "effective_from": "2026-07-17",
+      "effective_from": "2026-07-17T00:00:00Z",
       "review_frequency": "biannually"
     },
     {
@@ -688,8 +851,45 @@
       "name": "Incident Severity Definitions",
       "description": "P1 (Critical): Production outage affecting all users — respond within 15 minutes. P2 (High): Major feature broken for some users — respond within 30 minutes. P3 (Medium): Minor issue with workaround — respond within 4 hours.",
       "scope": "incident-management",
-      "effective_from": "2026-07-17",
+      "effective_from": "2026-07-17T00:00:00Z",
       "review_frequency": "annually"
+    }
+  ],
+  "org_chart": [
+    {
+      "id": "pos-agent-eng-lead-001",
+      "title": "Engineering Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-eng-lead-001",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-agent-eng-senior-001",
+      "title": "Senior Engineer",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-eng-senior-001",
+      "reports_to": "pos-agent-eng-lead-001",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-agent-eng-junior-001",
+      "title": "Junior Engineer",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-eng-junior-001",
+      "reports_to": "pos-agent-eng-senior-001",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-agent-eng-gpo-001",
+      "title": "General Purpose Operator",
+      "role_type": "support",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-eng-gpo-001",
+      "reports_to": "pos-agent-eng-lead-001",
+      "autonomy_tier": "recommend"
     }
   ]
 }

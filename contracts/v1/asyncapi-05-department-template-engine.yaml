@@ -103,8 +103,136 @@ channels:
       message:
         $ref: '#/components/messages/TemplateCloned'
 
+  # ─── department.created ───
+  operan/events/department/created:
+    description: Published when a department instance is created from a template deploy (or directly).
+    address: operan/events/department/created
+    publish:
+      summary: A department instance was created.
+      operationId: onDepartmentCreated
+      message:
+        $ref: '#/components/messages/DepartmentCreated'
+
+  # ─── department.stage_advanced ───
+  operan/events/department/stage_advanced:
+    description: Published each time the deploy orchestrator advances a provisioning stage.
+    address: operan/events/department/stage_advanced
+    publish:
+      summary: A department provisioning stage advanced.
+      operationId: onDepartmentStageAdvanced
+      message:
+        $ref: '#/components/messages/DepartmentStageAdvanced'
+
+  # ─── department.agent_provisioned ───
+  operan/events/department/agent_provisioned:
+    description: Published per agent registered into Module 04 during deploy_swarm.
+    address: operan/events/department/agent_provisioned
+    publish:
+      summary: An agent was provisioned for a department.
+      operationId: onDepartmentAgentProvisioned
+      message:
+        $ref: '#/components/messages/DepartmentAgentProvisioned'
+
+  # ─── department.operational ───
+  operan/events/department/operational:
+    description: Published when a department reaches operational status.
+    address: operan/events/department/operational
+    publish:
+      summary: A department became operational.
+      operationId: onDepartmentOperational
+      message:
+        $ref: '#/components/messages/DepartmentOperational'
+
+  # ─── department.provisioning_failed ───
+  operan/events/department/provisioning_failed:
+    description: Published when provisioning fails at any stage; department is marked degraded.
+    address: operan/events/department/provisioning_failed
+    publish:
+      summary: Department provisioning failed.
+      operationId: onDepartmentProvisioningFailed
+      message:
+        $ref: '#/components/messages/DepartmentProvisioningFailed'
+
+  # ─── department.updated ───
+  operan/events/department/updated:
+    description: Published when a department instance is updated.
+    address: operan/events/department/updated
+    publish:
+      summary: A department was updated.
+      operationId: onDepartmentUpdated
+      message:
+        $ref: '#/components/messages/DepartmentUpdated'
+
+  # ─── department.archived ───
+  operan/events/department/archived:
+    description: Published when a department is archived; its agents are best-effort deactivated.
+    address: operan/events/department/archived
+    publish:
+      summary: A department was archived.
+      operationId: onDepartmentArchived
+      message:
+        $ref: '#/components/messages/DepartmentArchived'
+
 components:
   messages:
+    # ─── Department lifecycle ───
+    DepartmentCreated:
+      name: DepartmentCreated
+      summary: Department instance created.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DepartmentLifecyclePayload'
+      traits:
+        - $ref: '#/components/traits/commonHeaders'
+    DepartmentStageAdvanced:
+      name: DepartmentStageAdvanced
+      summary: Provisioning stage advanced.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DepartmentStagePayload'
+      traits:
+        - $ref: '#/components/traits/commonHeaders'
+    DepartmentAgentProvisioned:
+      name: DepartmentAgentProvisioned
+      summary: Agent provisioned during deploy_swarm.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DepartmentAgentPayload'
+      traits:
+        - $ref: '#/components/traits/commonHeaders'
+    DepartmentOperational:
+      name: DepartmentOperational
+      summary: Department operational.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DepartmentLifecyclePayload'
+      traits:
+        - $ref: '#/components/traits/commonHeaders'
+    DepartmentProvisioningFailed:
+      name: DepartmentProvisioningFailed
+      summary: Provisioning failed.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DepartmentStagePayload'
+      traits:
+        - $ref: '#/components/traits/commonHeaders'
+    DepartmentUpdated:
+      name: DepartmentUpdated
+      summary: Department updated.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DepartmentLifecyclePayload'
+      traits:
+        - $ref: '#/components/traits/commonHeaders'
+    DepartmentArchived:
+      name: DepartmentArchived
+      summary: Department archived.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DepartmentLifecyclePayload'
+      traits:
+        - $ref: '#/components/traits/commonHeaders'
+
     # ─── TemplateCreated ───
     TemplateCreated:
       name: TemplateCreated
@@ -186,6 +314,69 @@ components:
         - $ref: '#/components/traits/commonHeaders'
 
   schemas:
+    DepartmentLifecyclePayload:
+      type: object
+      required: [department_id, tenant_id]
+      properties:
+        department_id:
+          type: string
+        tenant_id:
+          type: string
+        template_id:
+          type: string
+        deployment_id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    DepartmentStagePayload:
+      type: object
+      required: [department_id, deployment_id, stage, status]
+      properties:
+        department_id:
+          type: string
+        deployment_id:
+          type: string
+        tenant_id:
+          type: string
+        stage:
+          type: string
+          enum: [select, configure, connect_data, provision_memory, deploy_swarm, operational]
+        status:
+          type: string
+          enum: [running, completed, failed]
+        detail:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    DepartmentAgentPayload:
+      type: object
+      required: [department_id, agent_def_id, agent_id]
+      properties:
+        department_id:
+          type: string
+        deployment_id:
+          type: string
+        tenant_id:
+          type: string
+        agent_def_id:
+          type: string
+        agent_id:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
     # ─── TemplateCreatedPayload ───
     TemplateCreatedPayload:
       type: object

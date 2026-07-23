@@ -335,6 +335,10 @@ spec:
               key: secret
         - name: MODULE05_EVENT_BROKER_URL
           value: kafka.operan.svc.cluster.local:9092
+        - name: MODULE05_REGISTRY_URL
+          value: http://agent-registry.operan.svc.cluster.local:8083
+        - name: MODULE05_MEMORY_URL
+          value: http://memory-fabric.operan.svc.cluster.local:8007
         readinessProbe:
           httpGet:
             path: /health
@@ -353,6 +357,24 @@ spec:
             memory: 32Mi
           limits:
             memory: 256Mi
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      initContainers:
+      - name: fix-data-perms
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - chown -R 1001:1001 /data
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        hostPath:
+          path: /var/lib/operan/department-templates
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service

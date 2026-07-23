@@ -13,6 +13,9 @@ func RegisterRoutes(mux *http.ServeMux, h *TemplateHandlers) {
 	mux.HandleFunc("PATCH /templates/", h.UpdateTemplate)
 	mux.HandleFunc("DELETE /templates/", h.DeleteTemplate)
 
+	// ─── Catalog seeding (exact pattern wins over POST /templates/) ───────
+	mux.HandleFunc("POST /templates/seed", h.SeedTemplates)
+
 	// ─── Custom Templates (under /templates/custom) ───────────────────────
 	mux.HandleFunc("GET /templates/custom", h.ListCustomTemplates)
 	mux.HandleFunc("POST /templates/custom", h.CreateCustomTemplate)
@@ -24,4 +27,11 @@ func RegisterRoutes(mux *http.ServeMux, h *TemplateHandlers) {
 	// ─── Deploy, Deployments, Versions, Clone (nested under /templates/{id}) ─
 	// These use /templates/ prefix and extract template ID from path.
 	mux.HandleFunc("POST /templates/", h.HandleTemplateNested)
+
+	// ─── Departments (deployed instances with the full operating model) ───
+	mux.HandleFunc("GET /departments", h.ListDepartments)
+	mux.HandleFunc("POST /departments", h.CreateDepartment)
+	mux.HandleFunc("GET /departments/", h.HandleDepartmentByID)
+	mux.HandleFunc("PATCH /departments/", h.HandleDepartmentByID)
+	mux.HandleFunc("DELETE /departments/", h.HandleDepartmentByID)
 }
