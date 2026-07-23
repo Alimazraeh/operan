@@ -4,11 +4,14 @@ package handlers
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/operan/modules/05-department-template-engine/internal/events"
 	"github.com/operan/modules/05-department-template-engine/internal/middleware"
+	"github.com/operan/modules/05-department-template-engine/internal/seed"
 	"github.com/operan/modules/05-department-template-engine/internal/store"
 )
 
@@ -18,8 +21,16 @@ type TemplateHandlers struct {
 	CustomTemplateStore *store.CustomTemplateStore
 	DeploymentStore     *store.DeploymentStore
 	VersionStore        *store.VersionStore
+	DepartmentStore     *store.DepartmentStore
 	EventPublisher      *events.Publisher
 	MaxPageSize         int
+	Orchestrator        DeployOrchestrator // server-side deploy pipeline; nil in legacy tests
+}
+
+// DeployOrchestrator runs the server-side provisioning pipeline for a deploy.
+// Implemented by internal/deploy; injected so handler tests can fake it.
+type DeployOrchestrator interface {
+	Run(auth, tenantID, userID string, tmpl *store.Template, dep *store.TemplateDeployment, dept *store.Department)
 }
 
 // allowedChangedFields is the set of fields that can appear in changed_fields events.
@@ -55,6 +66,7 @@ func NewTemplateHandlers(ts *store.TemplateStore, cts *store.CustomTemplateStore
 		CustomTemplateStore: cts,
 		DeploymentStore:     ds,
 		VersionStore:        vs,
+		DepartmentStore:     store.NewDepartmentStore(),
 		EventPublisher:      ep,
 		MaxPageSize:         maxPageSize,
 	}
@@ -146,6 +158,14 @@ func (h *TemplateHandlers) CreateTemplate(w http.ResponseWriter, r *http.Request
 
 // ListTemplates handles GET /templates
 func (h *TemplateHandlers) ListTemplates(w http.ResponseWriter, r *http.Request) {
+	// Lazily seed the built-in catalog into this tenant so the department
+	// catalog is populated on first visit without a manual import step.
+	if tenantID := middleware.TenantIDFromContext(r.Context()); tenantID != "" {
+		if seeded := seed.EnsureTenant(h.TemplateStore, tenantID, middleware.UserIDFromContext(r.Context())); len(seeded) > 0 {
+			log.Printf("[SEED] tenant %s: seeded %d catalog templates", tenantID, len(seeded))
+		}
+	}
+
 	page := 1
 	pageSize := 20
 	if p := r.URL.Query().Get("page"); p != "" {
@@ -185,6 +205,13 @@ func (h *TemplateHandlers) GetTemplate(w http.ResponseWriter, r *http.Request) {
 	reqID := middleware.RequestIDFromContext(r.Context())
 	id := extractIDFromPath(r.URL.Path, "/templates/")
 
+	// Nested reads (/templates/{id}/deployments/..., /versions/...) belong to
+	// the nested dispatcher; the mux's "GET /templates/" pattern catches them all.
+	if rest := strings.TrimPrefix(r.URL.Path, "/templates/"); strings.Contains(rest, "/") {
+		h.HandleTemplateNested(w, r)
+		return
+	}
+
 	if id == "" {
 		writeError(w, http.StatusBadRequest, "about:blank", "Bad Request",
 			"Invalid template ID", r.URL.Path, reqID)
@@ -206,6 +233,13 @@ func (h *TemplateHandlers) GetTemplate(w http.ResponseWriter, r *http.Request) {
 func (h *TemplateHandlers) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 	reqID := middleware.RequestIDFromContext(r.Context())
 	id := extractIDFromPath(r.URL.Path, "/templates/")
+
+	// Nested writes (/templates/{id}/deployments/{depId}) belong to the nested
+	// dispatcher; the mux's "PATCH /templates/" pattern catches them all.
+	if rest := strings.TrimPrefix(r.URL.Path, "/templates/"); strings.Contains(rest, "/") {
+		h.HandleTemplateNested(w, r)
+		return
+	}
 
 	if id == "" {
 		writeError(w, http.StatusBadRequest, "about:blank", "Bad Request",

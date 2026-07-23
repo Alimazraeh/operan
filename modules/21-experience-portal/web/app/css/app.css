@@ -818,3 +818,61 @@ html[dir="rtl"] .toast.warn { border-right-color: var(--warn); }
   .login-card { padding: 28px 20px; }
   .stages { overflow-x: auto; }
 }
+/* ── Department operating-model views (2026-07) ─────────── */
+.tab-bar { display: flex; gap: 4px; margin-bottom: 14px; flex-wrap: wrap; border-bottom: 1px solid var(--border, #263243); }
+.tab-btn {
+  background: none; border: none; color: var(--muted, #8aa0b8); padding: 8px 14px;
+  font: inherit; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent;
+}
+.tab-btn:hover { color: var(--text, #e2ecf7); }
+.tab-btn.active { color: var(--accent, #66b5ff); border-bottom-color: var(--accent, #66b5ff); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* org tree */
+.org-tree, .org-tree ul { list-style: none; padding-left: 22px; margin: 6px 0; border-left: 1px dashed var(--border, #2a3a4e); }
+.org-tree { padding-left: 0; border-left: none; }
+.org-node {
+  display: inline-block; background: var(--bg-card2, rgba(255,255,255,0.03));
+  border: 1px solid var(--border, #263243); border-radius: 8px; padding: 8px 12px; margin: 5px 0;
+  min-width: 240px;
+}
+.org-title { font-weight: 600; font-size: 13px; }
+.org-holder { font-size: 12px; margin-top: 2px; }
+.org-meta { font-size: 11px; color: var(--muted, #8aa0b8); margin-top: 2px; }
+.dr { font-size: 11px; margin-top: 4px; color: var(--muted, #a9bdd2); }
+.dr i { opacity: 0.75; }
+.dr-a {
+  display: inline-block; padding: 0 6px; border-radius: 4px; font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.04em; margin-right: 4px;
+  background: rgba(102,181,255,0.15); color: #66b5ff;
+}
+.dr-a.decide { background: rgba(60,200,140,0.18); color: #3cc88c; }
+.dr-a.veto { background: rgba(255,90,120,0.18); color: #ff5a78; }
+.dr-a.recommend { background: rgba(255,200,90,0.16); color: #ffc85a; }
+.dr-a.gate { background: rgba(160,120,255,0.18); color: #a078ff; }
+
+/* value streams */
+.vs-track { display: flex; align-items: stretch; gap: 6px; overflow-x: auto; padding: 8px 0; }
+.vs-stage { display: flex; gap: 8px; background: var(--bg-card2, rgba(255,255,255,0.03)); border: 1px solid var(--border, #263243); border-radius: 8px; padding: 8px 10px; min-width: 190px; }
+.vs-num { width: 20px; height: 20px; border-radius: 50%; background: rgba(102,181,255,0.18); color: #66b5ff; font-size: 11px; display: flex; align-items: center; justify-content: center; flex: none; }
+.vs-body b { font-size: 12px; }
+.vs-io { font-size: 10px; color: var(--muted, #8aa0b8); display: flex; flex-direction: column; margin-top: 3px; }
+.vs-arrow { align-self: center; color: var(--muted, #56708c); flex: none; }
+.vs-outcome { font-size: 12px; color: var(--muted, #a9bdd2); margin-top: 6px; line-height: 1.6; }
+
+/* service table */
+.svc-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.svc-table th { text-align: left; padding: 8px 10px; color: var(--muted, #8aa0b8); font-weight: 500; border-bottom: 1px solid var(--border, #263243); white-space: nowrap; }
+.svc-table td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top; }
+
+/* risk rows */
+.risk-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.risk-sev { flex: none; padding: 2px 8px; border-radius: 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(255,255,255,0.06); }
+.risk-sev.ok { background: rgba(60,200,140,0.15); color: #3cc88c; }
+.risk-sev.warn { background: rgba(255,200,90,0.15); color: #ffc85a; }
+.risk-sev.bad { background: rgba(255,90,120,0.16); color: #ff5a78; }
+.risk-body { flex: 1; font-size: 13px; }
+
+/* flagship catalog card */
+.tmpl.flagship { border-color: rgba(102,181,255,0.4); box-shadow: 0 0 0 1px rgba(102,181,255,0.15); }

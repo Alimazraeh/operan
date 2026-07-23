@@ -158,6 +158,12 @@ func toDeploymentResponse(d *store.TemplateDeployment) map[string]interface{} {
 	if d.ProvisionedEntities != nil {
 		resp["provisioned_entities"] = d.ProvisionedEntities
 	}
+	if d.DepartmentID != "" {
+		resp["department_id"] = d.DepartmentID
+	}
+	if d.Stages != nil {
+		resp["stages"] = d.Stages
+	}
 	if d.StartedAt != nil {
 		resp["started_at"] = d.StartedAt
 	}

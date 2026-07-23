@@ -10,16 +10,40 @@
     "company_size": "500+ employees",
     "industry": "global",
     "compliance_level": "full-regulatory",
-    "frameworks": ["ISO-37301", "ISO-31000", "COSO-ERM", "SOC-2", "GDPR", "CCPA", "SOX", "FCPA"],
+    "frameworks": [
+      "ISO-37301",
+      "ISO-31000",
+      "COSO-ERM",
+      "SOC-2",
+      "GDPR",
+      "CCPA",
+      "SOX",
+      "FCPA"
+    ],
     "last_reviewed": "2026-07-17"
   },
-  "tags": ["compliance", "enterprise", "regulatory", "audit", "governance", "global"],
+  "tags": [
+    "compliance",
+    "enterprise",
+    "regulatory",
+    "audit",
+    "governance",
+    "global"
+  ],
   "status": "published",
   "created_by": "platform",
   "agents": [
     {
       "id": "cco-01",
       "role": "Chief Compliance Officer",
+      "model": "qwen-72b",
+      "access_control": {
+        "all-compliance-data": "read-write",
+        "board-reports": "read-write",
+        "audit-files": "read-write",
+        "incident-reports": "read-write",
+        "company-wide-data": "read-only"
+      },
       "capabilities": [
         "compliance-strategy",
         "regulatory-program",
@@ -30,25 +54,32 @@
         "incident-response",
         "external-audit-coordination"
       ],
-      "model": "qwen-72b",
-      "memory_profile": "semantic-enabled, graph-enabled, full-retention",
-      "tool_requirements": ["compliance-system", "analytics-dashboard", "email", "board-reporting", "policy-management"],
       "system_prompt": "You are the Chief Compliance Officer for a large enterprise. You lead the global compliance organization, report to the board, and ensure compliance across all jurisdictions. You manage regulatory relations, internal audit coordination, and compliance culture.",
+      "memory_profile": "semantic-enabled, graph-enabled, full-retention",
+      "tool_requirements": [
+        "compliance-system",
+        "analytics-dashboard",
+        "email",
+        "board-reporting",
+        "policy-management"
+      ],
       "constraints": {
         "max_tokens_per_request": 8192,
         "compliance-data": "immutable, audit-trail"
       },
-      "access_control": {
-        "all-compliance-data": "read-write",
-        "board-reports": "read-write",
-        "audit-files": "read-write",
-        "incident-reports": "read-write",
-        "company-wide-data": "read-only"
-      }
+      "level": "director",
+      "position_title": "Chief Compliance Officer",
+      "autonomy_tier": "coordinate"
     },
     {
       "id": "regulatory-lead-01",
       "role": "Regulatory Affairs Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "regulatory-database": "read-write",
+        "filings": "read-write",
+        "government-communications": "read-write"
+      },
       "capabilities": [
         "regulatory-monitoring",
         "licensing",
@@ -56,20 +87,30 @@
         "government-relations",
         "policy-interpretation"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["regulatory-database", "document-storage", "email"],
       "system_prompt": "You lead Regulatory Affairs. You monitor regulatory changes, manage licenses and permits, prepare regulatory filings, and liaise with government agencies.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "regulatory-database": "read-write",
-        "filings": "read-write",
-        "government-communications": "read-write"
-      }
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "regulatory-database",
+        "document-storage",
+        "email"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "lead",
+      "position_title": "Regulatory Affairs Lead",
+      "autonomy_tier": "coordinate",
+      "reports_to": "cco-01"
     },
     {
       "id": "risk-lead-01",
       "role": "Risk Management Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "risk-register": "read-write",
+        "risk-reports": "read-write",
+        "company-data": "read-only"
+      },
       "capabilities": [
         "risk-assessment",
         "risk-framework",
@@ -77,20 +118,30 @@
         "risk-reporting",
         "business-continuity"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["risk-register", "analytics-dashboard", "email"],
       "system_prompt": "You lead Risk Management. You design the risk framework, conduct enterprise risk assessments, perform scenario analysis, and prepare risk reports for leadership.",
-      "constraints": {"max_tokens_per_request": 4096},
-      "access_control": {
-        "risk-register": "read-write",
-        "risk-reports": "read-write",
-        "company-data": "read-only"
-      }
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "risk-register",
+        "analytics-dashboard",
+        "email"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096
+      },
+      "level": "lead",
+      "position_title": "Risk Management Lead",
+      "autonomy_tier": "coordinate",
+      "reports_to": "cco-01"
     },
     {
       "id": "internal-audit-lead-01",
       "role": "Internal Audit Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "audit-files": "read-write",
+        "investigation-files": "read-write-privileged",
+        "company-data": "read-only-audit"
+      },
       "capabilities": [
         "internal-audit",
         "controls-testing",
@@ -98,20 +149,31 @@
         "audit-reporting",
         "sox-testing"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "semantic-enabled, immutable-storage",
-      "tool_requirements": ["audit-management", "document-storage", "email"],
       "system_prompt": "You lead Internal Audit. You conduct risk-based audits, test controls, investigate fraud, and report to the Audit Committee.",
-      "constraints": {"max_tokens_per_request": 4096, "audit-files": "immutable, privileged"},
-      "access_control": {
-        "audit-files": "read-write",
-        "investigation-files": "read-write-privileged",
-        "company-data": "read-only-audit"
-      }
+      "memory_profile": "semantic-enabled, immutable-storage",
+      "tool_requirements": [
+        "audit-management",
+        "document-storage",
+        "email"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 4096,
+        "audit-files": "immutable, privileged"
+      },
+      "level": "lead",
+      "position_title": "Internal Audit Lead",
+      "autonomy_tier": "coordinate",
+      "reports_to": "cco-01"
     },
     {
       "id": "compliance-analyst-01",
       "role": "Compliance Analyst",
+      "model": "qwen-14b",
+      "access_control": {
+        "compliance-data": "read-write",
+        "policies": "read-write",
+        "incident-reports": "read-write"
+      },
       "capabilities": [
         "compliance-testing",
         "policy-administration",
@@ -119,20 +181,30 @@
         "training-coordination",
         "data-collection"
       ],
-      "model": "qwen-14b",
-      "memory_profile": "semantic-enabled",
-      "tool_requirements": ["compliance-system", "document-storage", "email"],
       "system_prompt": "You are a Compliance Analyst. You test controls, administer policies, generate reports, coordinate training, and collect compliance data.",
-      "constraints": {"max_tokens_per_request": 2048},
-      "access_control": {
-        "compliance-data": "read-write",
-        "policies": "read-write",
-        "incident-reports": "read-write"
-      }
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": [
+        "compliance-system",
+        "document-storage",
+        "email"
+      ],
+      "constraints": {
+        "max_tokens_per_request": 2048
+      },
+      "level": "mid",
+      "position_title": "Compliance Analyst",
+      "autonomy_tier": "analyze",
+      "reports_to": "cco-01"
     },
     {
       "id": "compliance-gpo-01",
       "role": "GPO Pod — Compliance Support",
+      "model": "qwen-14b",
+      "access_control": {
+        "policies": "read-only",
+        "compliance-data": "read-only",
+        "incident-reports": "read-only"
+      },
       "capabilities": [
         "policy-retrieval",
         "document-drafting",
@@ -140,19 +212,25 @@
         "training-coordination",
         "faq-response"
       ],
-      "model": "qwen-14b",
-      "memory_profile": "semantic-enabled",
-      "tool_requirements": ["document-storage", "email", "templates-library"],
       "system_prompt": "You are a Compliance GPO pod member. You handle policy retrieval, document drafting, report generation, and training coordination. Always escalate incidents and regulatory changes to the appropriate specialist.",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": [
+        "document-storage",
+        "email",
+        "templates-library"
+      ],
       "constraints": {
         "max_tokens_per_request": 2048,
-        "sensitive_topics": ["incident-report", "regulatory-violation", "investigation"]
+        "sensitive_topics": [
+          "incident-report",
+          "regulatory-violation",
+          "investigation"
+        ]
       },
-      "access_control": {
-        "policies": "read-only",
-        "compliance-data": "read-only",
-        "incident-reports": "read-only"
-      }
+      "level": "junior",
+      "position_title": "GPO Pod — Compliance Support",
+      "autonomy_tier": "recommend",
+      "reports_to": "cco-01"
     }
   ],
   "workflows": [
@@ -160,31 +238,48 @@
       "id": "wf-risk-001",
       "name": "Quarterly Risk Assessment",
       "description": "Comprehensive enterprise risk assessment across all domains.",
-      "triggers": ["schedule:quarterly"],
+      "triggers": [
+        "schedule:quarterly"
+      ],
       "steps": [
         {
           "id": "risk-01",
           "type": "agent_call",
           "name": "Identify Risks",
-          "config": {"agent": "risk-lead-01", "task": "Survey all departments for new risks, review incident logs, update risk register"}
+          "config": {
+            "agent": "risk-lead-01",
+            "task": "Survey all departments for new risks, review incident logs, update risk register"
+          }
         },
         {
           "id": "risk-02",
           "type": "transformation",
           "name": "Score & Prioritize",
-          "config": {"agent": "risk-lead-01", "task": "Score risks using probability-impact matrix, prioritize for treatment"}
+          "config": {
+            "agent": "risk-lead-01",
+            "task": "Score risks using probability-impact matrix, prioritize for treatment"
+          }
         },
         {
           "id": "risk-03",
           "type": "approval",
           "name": "CCO Review",
-          "config": {"required_by": "cco-01", "task": "Review risk assessment results, approve treatment plans"}
+          "config": {
+            "required_by": "cco-01",
+            "task": "Review risk assessment results, approve treatment plans"
+          }
         },
         {
           "id": "risk-04",
           "type": "notification",
           "name": "Report to Leadership",
-          "config": {"recipients": ["executive-team", "board"], "template": "quarterly-risk-report"}
+          "config": {
+            "recipients": [
+              "executive-team",
+              "board"
+            ],
+            "template": "quarterly-risk-report"
+          }
         }
       ]
     },
@@ -192,13 +287,19 @@
       "id": "wf-incident-001",
       "name": "Compliance Incident Response",
       "description": "Structured incident response for compliance violations and regulatory incidents.",
-      "triggers": ["manual", "event:incident-detected"],
+      "triggers": [
+        "manual",
+        "event:incident-detected"
+      ],
       "steps": [
         {
           "id": "inc-01",
           "type": "agent_call",
           "name": "Initial Triage",
-          "config": {"agent": "compliance-analyst-01", "task": "Document incident, classify severity, identify affected systems"}
+          "config": {
+            "agent": "compliance-analyst-01",
+            "task": "Document incident, classify severity, identify affected systems"
+          }
         },
         {
           "id": "inc-02",
@@ -214,25 +315,37 @@
           "id": "inc-03",
           "type": "approval",
           "name": "CCO Authorization",
-          "config": {"required_by": "cco-01", "timeout_hours": 4}
+          "config": {
+            "required_by": "cco-01",
+            "timeout_hours": 4
+          }
         },
         {
           "id": "inc-04",
           "type": "agent_call",
           "name": "Investigate",
-          "config": {"agent": "internal-audit-lead-01", "task": "Conduct investigation, collect evidence, document findings"}
+          "config": {
+            "agent": "internal-audit-lead-01",
+            "task": "Conduct investigation, collect evidence, document findings"
+          }
         },
         {
           "id": "inc-05",
           "type": "notification",
           "name": "Regulatory Notification",
-          "config": {"if_required": "incident.reports_to_regulator", "timeline": "per-regulatory-requirement"}
+          "config": {
+            "if_required": "incident.reports_to_regulator",
+            "timeline": "per-regulatory-requirement"
+          }
         },
         {
           "id": "inc-06",
           "type": "transformation",
           "name": "Post-Incident Review",
-          "config": {"agent": "compliance-analyst-01", "task": "Document lessons learned, update controls"}
+          "config": {
+            "agent": "compliance-analyst-01",
+            "task": "Document lessons learned, update controls"
+          }
         }
       ]
     },
@@ -240,31 +353,47 @@
       "id": "wf-policy-001",
       "name": "Policy Lifecycle Management",
       "description": "End-to-end policy lifecycle: draft, review, approve, publish, acknowledge, review.",
-      "triggers": ["manual", "schedule:annual", "event:regulatory-change"],
+      "triggers": [
+        "manual",
+        "schedule:annual",
+        "event:regulatory-change"
+      ],
       "steps": [
         {
           "id": "pol-01",
           "type": "agent_call",
           "name": "Draft Policy",
-          "config": {"agent": "compliance-analyst-01", "task": "Draft policy based on regulatory changes or business needs"}
+          "config": {
+            "agent": "compliance-analyst-01",
+            "task": "Draft policy based on regulatory changes or business needs"
+          }
         },
         {
           "id": "pol-02",
           "type": "approval",
           "name": "Legal Review",
-          "config": {"required_by": "cco-01", "task": "Review for regulatory compliance and legal adequacy"}
+          "config": {
+            "required_by": "cco-01",
+            "task": "Review for regulatory compliance and legal adequacy"
+          }
         },
         {
           "id": "pol-03",
           "type": "transformation",
           "name": "Publish & Distribute",
-          "config": {"agent": "compliance-gpo-01", "task": "Publish to policy system, notify employees, require acknowledgment"}
+          "config": {
+            "agent": "compliance-gpo-01",
+            "task": "Publish to policy system, notify employees, require acknowledgment"
+          }
         },
         {
           "id": "pol-04",
           "type": "notification",
           "name": "Track Acknowledgments",
-          "config": {"deadline": "14-days", "escalate_if": "no_completion"}
+          "config": {
+            "deadline": "14-days",
+            "escalate_if": "no_completion"
+          }
         }
       ]
     }
@@ -296,24 +425,45 @@
       "name": "Incident Record Integrity",
       "type": "audit",
       "enforcement": "enforce",
-      "conditions": {"record_type": "incident-report", "legal_hold": true},
-      "actions": ["immutable-records", "chain-of-custody", "no-deletion", "legal-hold"]
+      "conditions": {
+        "record_type": "incident-report",
+        "legal_hold": true
+      },
+      "actions": [
+        "immutable-records",
+        "chain-of-custody",
+        "no-deletion",
+        "legal-hold"
+      ]
     },
     {
       "id": "gov-comp-l-002",
       "name": "Regulatory Filing Accuracy",
       "type": "audit",
       "enforcement": "enforce",
-      "conditions": {"filing_type": "regulatory-submission"},
-      "actions": ["dual-review-required", "retain-drafts", "audit-trail"]
+      "conditions": {
+        "filing_type": "regulatory-submission"
+      },
+      "actions": [
+        "dual-review-required",
+        "retain-drafts",
+        "audit-trail"
+      ]
     },
     {
       "id": "gov-comp-l-003",
       "name": "Whistleblower Protection",
       "type": "compliance",
       "enforcement": "enforce",
-      "conditions": {"report_type": "whistleblower"},
-      "actions": ["anonymize-reporter", "immediate-escalation", "no-retaliation", "independent-review"]
+      "conditions": {
+        "report_type": "whistleblower"
+      },
+      "actions": [
+        "anonymize-reporter",
+        "immediate-escalation",
+        "no-retaliation",
+        "independent-review"
+      ]
     }
   ],
   "kpis": [
@@ -323,7 +473,11 @@
       "description": "Percentage of employees who have acknowledged current policies",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 100, "warning": 95, "critical": 85},
+      "thresholds": {
+        "target": 100,
+        "warning": 95,
+        "critical": 85
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -332,7 +486,11 @@
       "description": "Average time from incident detection to initial response",
       "metric_type": "gauge",
       "unit": "hours",
-      "thresholds": {"target": 4, "warning": 12, "critical": 24},
+      "thresholds": {
+        "target": 4,
+        "warning": 12,
+        "critical": 24
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -341,7 +499,11 @@
       "description": "Percentage of regulatory filings submitted on time",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 100, "warning": 95, "critical": 85},
+      "thresholds": {
+        "target": 100,
+        "warning": 95,
+        "critical": 85
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -350,7 +512,11 @@
       "description": "Percentage of identified risks with approved mitigations implemented on time",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 90, "warning": 80, "critical": 65},
+      "thresholds": {
+        "target": 90,
+        "warning": 80,
+        "critical": 65
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -359,7 +525,11 @@
       "description": "Percentage of employees completing mandatory compliance training",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 98, "warning": 90, "critical": 80},
+      "thresholds": {
+        "target": 98,
+        "warning": 90,
+        "critical": 80
+      },
       "aggregation_period": "quarter"
     }
   ],
@@ -395,7 +565,20 @@
       "name": "Agent Autonomy",
       "scope": "agent",
       "rules": [
-        {"agent": "compliance-gpo-01", "allowed": ["retrieval", "drafting", "reporting", "scheduling"], "denied": ["make-compliance-determination", "approve-policies", "escalate-without-notice"]}
+        {
+          "agent": "compliance-gpo-01",
+          "allowed": [
+            "retrieval",
+            "drafting",
+            "reporting",
+            "scheduling"
+          ],
+          "denied": [
+            "make-compliance-determination",
+            "approve-policies",
+            "escalate-without-notice"
+          ]
+        }
       ]
     },
     {
@@ -403,19 +586,77 @@
       "name": "Data Retention",
       "scope": "system",
       "rules": [
-        {"data_type": "incident-reports", "retention": "7-years", "disposal": "secure-delete"},
-        {"data_type": "audit-files", "retention": "10-years", "disposal": "secure-delete"},
-        {"data_type": "investigation-files", "retention": "indefinite", "disposal": "none"}
+        {
+          "data_type": "incident-reports",
+          "retention": "7-years",
+          "disposal": "secure-delete"
+        },
+        {
+          "data_type": "audit-files",
+          "retention": "10-years",
+          "disposal": "secure-delete"
+        },
+        {
+          "data_type": "investigation-files",
+          "retention": "indefinite",
+          "disposal": "none"
+        }
       ]
     }
   ],
-  "metadata": {
-    "enterprise_size": "large",
-    "department_size": "15-40 FTE",
-    "company_size": "500+ employees",
-    "industry": "global",
-    "compliance_level": "full-regulatory",
-    "frameworks": ["ISO-37301", "ISO-31000", "COSO-ERM", "SOC-2", "GDPR", "CCPA", "SOX", "FCPA"],
-    "last_reviewed": "2026-07-17"
-  }
+  "org_chart": [
+    {
+      "id": "pos-cco-01",
+      "title": "Chief Compliance Officer",
+      "role_type": "director",
+      "holder_type": "ai_agent",
+      "agent_def_id": "cco-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-regulatory-lead-01",
+      "title": "Regulatory Affairs Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "regulatory-lead-01",
+      "reports_to": "pos-cco-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-risk-lead-01",
+      "title": "Risk Management Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "risk-lead-01",
+      "reports_to": "pos-cco-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-internal-audit-lead-01",
+      "title": "Internal Audit Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "internal-audit-lead-01",
+      "reports_to": "pos-cco-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-compliance-analyst-01",
+      "title": "Compliance Analyst",
+      "role_type": "analyst",
+      "holder_type": "ai_agent",
+      "agent_def_id": "compliance-analyst-01",
+      "reports_to": "pos-cco-01",
+      "autonomy_tier": "analyze"
+    },
+    {
+      "id": "pos-compliance-gpo-01",
+      "title": "GPO Pod — Compliance Support",
+      "role_type": "support",
+      "holder_type": "ai_agent",
+      "agent_def_id": "compliance-gpo-01",
+      "reports_to": "pos-cco-01",
+      "autonomy_tier": "recommend"
+    }
+  ]
 }

@@ -10,16 +10,40 @@
     "company_size": "50-500 employees",
     "industry": "general",
     "compliance_level": "formalized",
-    "frameworks": ["GAAP", "SOX", "NetSuite", "SAP", "QuickBooks"],
+    "frameworks": [
+      "GAAP",
+      "SOX",
+      "NetSuite",
+      "SAP",
+      "QuickBooks"
+    ],
     "last_reviewed": "2026-07-17"
   },
-  "tags": ["finance", "medium-enterprise", "specialized", "mid-market", "sox", "audit-ready", "formalized"],
+  "tags": [
+    "finance",
+    "medium-enterprise",
+    "specialized",
+    "mid-market",
+    "sox",
+    "audit-ready",
+    "formalized"
+  ],
   "status": "published",
   "created_by": "platform",
   "agents": [
     {
       "id": "finance-manager-01",
       "role": "Finance Manager / Director",
+      "model": "qwen-72b",
+      "access_control": {
+        "financial_records": "read-write-global",
+        "bank_accounts": "read-write",
+        "payroll_data": "read-write",
+        "vendor_contracts": "read-write",
+        "tax_records": "read-write",
+        "audit_files": "read-write",
+        "budget_documents": "read-write"
+      },
       "capabilities": [
         "financial-strategy",
         "budgeting-and-forecasting",
@@ -32,29 +56,40 @@
         "system-implementation",
         "team-leadership"
       ],
-      "model": "qwen-72b",
-      "memory_profile": "episodic-enabled, graph-enabled, full-retention",
-      "tool_requirements": ["erp-system", "analytics-dashboard", "email", "document-storage", "payroll-api", "bank-api", "board-reporting"],
       "system_prompt": "You are the Finance Manager/Director for a medium enterprise. You lead a team of 10+ finance specialists across accounting, analysis, AP/AR, and payroll. You report to the CFO or department head. You own the financial close process, budgeting, forecasting, and external audit relationship. You ensure compliance with GAAP and SOX (if applicable). You maintain the highest standards of financial integrity and regulatory compliance.",
+      "memory_profile": "episodic-enabled, graph-enabled, full-retention",
+      "tool_requirements": [
+        "erp-system",
+        "analytics-dashboard",
+        "email",
+        "document-storage",
+        "payroll-api",
+        "bank-api",
+        "board-reporting"
+      ],
       "constraints": {
         "max_tokens_per_request": 16384,
         "rate_limit": 500,
         "pii_handling": "encrypted-at-rest, field-level-access-control",
         "financial_data": "immutable-audit-trail, sox-compliant"
       },
-      "access_control": {
-        "financial_records": "read-write-global",
-        "bank_accounts": "read-write",
-        "payroll_data": "read-write",
-        "vendor_contracts": "read-write",
-        "tax_records": "read-write",
-        "audit_files": "read-write",
-        "budget_documents": "read-write"
-      }
+      "level": "director",
+      "position_title": "Finance Manager / Director",
+      "autonomy_tier": "coordinate"
     },
     {
       "id": "senior-accountant-01",
       "role": "Senior Accountant",
+      "model": "qwen-34b",
+      "access_control": {
+        "financial_records": "read-write-technical",
+        "bank_accounts": "read-only",
+        "payroll_data": "read-only",
+        "vendor_contracts": "read-only",
+        "tax_records": "read-only",
+        "fixed_assets": "read-write",
+        "audit_files": "read-write"
+      },
       "capabilities": [
         "month-end-close",
         "complex-journal-entries",
@@ -66,27 +101,39 @@
         "account-reconciliations",
         "gaap-compliance"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "episodic-enabled, procedural-enabled",
-      "tool_requirements": ["erp-system", "email", "document-storage", "analytics-dashboard", "bank-api"],
       "system_prompt": "You are a Senior Accountant handling complex accounting functions for a medium enterprise. You lead the month-end close, prepare complex journal entries, manage fixed assets, perform accrual analyses, and support external audits. You ensure GAAP compliance and mentor junior accountants. You escalate significant discrepancies or unusual transactions to the Finance Manager.",
+      "memory_profile": "episodic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "erp-system",
+        "email",
+        "document-storage",
+        "analytics-dashboard",
+        "bank-api"
+      ],
       "constraints": {
         "max_tokens_per_request": 8192,
-        "approval_required_for": ["journal-entries-over-25000", "account-closure", "estimate-modifications"]
+        "approval_required_for": [
+          "journal-entries-over-25000",
+          "account-closure",
+          "estimate-modifications"
+        ]
       },
-      "access_control": {
-        "financial_records": "read-write-technical",
-        "bank_accounts": "read-only",
-        "payroll_data": "read-only",
-        "vendor_contracts": "read-only",
-        "tax_records": "read-only",
-        "fixed_assets": "read-write",
-        "audit_files": "read-write"
-      }
+      "level": "senior",
+      "position_title": "Senior Accountant",
+      "autonomy_tier": "draft",
+      "reports_to": "finance-manager-01"
     },
     {
       "id": "junior-accountant-01",
       "role": "Junior Accountant",
+      "model": "qwen-14b",
+      "access_control": {
+        "financial_records": "read-write-entry-only",
+        "bank_accounts": "read-only",
+        "payroll_data": "none",
+        "vendor_contracts": "read-only",
+        "tax_records": "none"
+      },
       "capabilities": [
         "basic-journal-entries",
         "account-reconciliations",
@@ -96,25 +143,36 @@
         "basic-reporting",
         "document-organization"
       ],
-      "model": "qwen-14b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["erp-system", "email", "document-storage"],
       "system_prompt": "You are a Junior Accountant supporting the finance team with routine accounting tasks. You prepare basic journal entries, reconcile accounts, process invoices, review expenses, and organize documentation for audits and reviews. You follow established procedures and escalate complex issues to the Senior Accountant. Accuracy and attention to detail are your top priorities.",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "erp-system",
+        "email",
+        "document-storage"
+      ],
       "constraints": {
         "max_tokens_per_request": 4096,
-        "approval_required_for": ["journal-entries-over-5000"]
+        "approval_required_for": [
+          "journal-entries-over-5000"
+        ]
       },
-      "access_control": {
-        "financial_records": "read-write-entry-only",
-        "bank_accounts": "read-only",
-        "payroll_data": "none",
-        "vendor_contracts": "read-only",
-        "tax_records": "none"
-      }
+      "level": "mid",
+      "position_title": "Junior Accountant",
+      "autonomy_tier": "draft",
+      "reports_to": "finance-manager-01"
     },
     {
       "id": "finance-analyst-01",
       "role": "Financial Analyst",
+      "model": "qwen-72b",
+      "access_control": {
+        "financial_records": "read-only",
+        "bank_accounts": "none",
+        "payroll_data": "read-only-aggregated",
+        "vendor_contracts": "read-only",
+        "budget_documents": "read-write",
+        "analytics_models": "read-write"
+      },
       "capabilities": [
         "budget-forecasting",
         "variance-analysis",
@@ -126,26 +184,37 @@
         "scenario-planning",
         "executive-presentations"
       ],
-      "model": "qwen-72b",
-      "memory_profile": "semantic-enabled, procedural-enabled",
-      "tool_requirements": ["erp-system", "analytics-dashboard", "excel-api", "email", "document-storage", "bi-tool"],
       "system_prompt": "You are a Financial Analyst supporting strategic decision-making for a medium enterprise. You build financial models, conduct variance analysis, prepare forecasts, track KPIs, and develop business cases for management. You translate complex financial data into actionable insights for the Finance Manager and executive team. You maintain rolling forecasts and scenario analyses.",
+      "memory_profile": "semantic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "erp-system",
+        "analytics-dashboard",
+        "excel-api",
+        "email",
+        "document-storage",
+        "bi-tool"
+      ],
       "constraints": {
         "max_tokens_per_request": 8192,
         "modeling_data": "version-controlled"
       },
-      "access_control": {
-        "financial_records": "read-only",
-        "bank_accounts": "none",
-        "payroll_data": "read-only-aggregated",
-        "vendor_contracts": "read-only",
-        "budget_documents": "read-write",
-        "analytics_models": "read-write"
-      }
+      "level": "mid",
+      "position_title": "Financial Analyst",
+      "autonomy_tier": "analyze",
+      "reports_to": "finance-manager-01"
     },
     {
       "id": "ap-lead-01",
       "role": "AP/AR Lead",
+      "model": "qwen-34b",
+      "access_control": {
+        "financial_records": "read-write-ap-ar-only",
+        "bank_accounts": "read-only",
+        "payroll_data": "none",
+        "vendor_contracts": "read-write",
+        "customer_records": "read-write",
+        "payment_authority": "up-to-25000"
+      },
       "capabilities": [
         "ap-process-oversee",
         "ar-process-oversee",
@@ -157,26 +226,38 @@
         "team-coordination",
         "process-improvement"
       ],
-      "model": "qwen-34b",
-      "memory_profile": "episodic-enabled, procedural-enabled",
-      "tool_requirements": ["erp-system", "email", "document-storage", "bank-api", "payment-processor", "expense-management"],
       "system_prompt": "You are the AP/AR Lead managing the accounts payable and receivable team for a medium enterprise. You oversee the full order-to-cash and procure-to-pay cycles, manage vendor relationships, handle collections, and ensure proper segregation of duties. You coordinate payment runs, resolve disputes, and maintain accurate aging reports. You escalate systemic issues to the Finance Manager.",
+      "memory_profile": "episodic-enabled, procedural-enabled",
+      "tool_requirements": [
+        "erp-system",
+        "email",
+        "document-storage",
+        "bank-api",
+        "payment-processor",
+        "expense-management"
+      ],
       "constraints": {
         "max_tokens_per_request": 8192,
         "segregation_of_duties": true
       },
-      "access_control": {
-        "financial_records": "read-write-ap-ar-only",
-        "bank_accounts": "read-only",
-        "payroll_data": "none",
-        "vendor_contracts": "read-write",
-        "customer_records": "read-write",
-        "payment_authority": "up-to-25000"
-      }
+      "level": "lead",
+      "position_title": "AP/AR Lead",
+      "autonomy_tier": "coordinate",
+      "reports_to": "finance-manager-01"
     },
     {
       "id": "finance-gpo-01",
       "role": "General Purpose Agent — Finance Support",
+      "model": "qwen-14b",
+      "access_control": {
+        "financial_records": "read-only",
+        "bank_accounts": "none",
+        "payroll_data": "none",
+        "vendor_contracts": "read-only",
+        "tax_records": "none",
+        "expense_claims": "read-write-input-only",
+        "document_library": "read-write"
+      },
       "capabilities": [
         "document-drafting",
         "data-entry",
@@ -187,25 +268,31 @@
         "reconciliation-assist",
         "meeting-minutes"
       ],
-      "model": "qwen-14b",
-      "memory_profile": "semantic-enabled",
-      "tool_requirements": ["document-storage", "email", "erp-system", "templates-library", "expense-management"],
       "system_prompt": "You are a Finance GPO handling routine support tasks at medium enterprise scale. You scan and process invoices, draft standard financial reports, manage expense claims, perform data entry, retrieve accounting policies, and assist with reconciliations. You never make approval decisions on payments, adjust ledger accounts, or modify bank accounts. You escalate anomalies and exception cases to the AP/AR Lead or appropriate accountant.",
+      "memory_profile": "semantic-enabled",
+      "tool_requirements": [
+        "document-storage",
+        "email",
+        "erp-system",
+        "templates-library",
+        "expense-management"
+      ],
       "constraints": {
         "max_tokens_per_request": 2048,
-        "sensitive_topics": ["fraud", "tax-evasion", "audit-discrepancy", "payroll-error", "sox-violation"],
+        "sensitive_topics": [
+          "fraud",
+          "tax-evasion",
+          "audit-discrepancy",
+          "payroll-error",
+          "sox-violation"
+        ],
         "no_approval_authority": true,
         "no_ledger_modification": true
       },
-      "access_control": {
-        "financial_records": "read-only",
-        "bank_accounts": "none",
-        "payroll_data": "none",
-        "vendor_contracts": "read-only",
-        "tax_records": "none",
-        "expense_claims": "read-write-input-only",
-        "document_library": "read-write"
-      }
+      "level": "junior",
+      "position_title": "General Purpose Agent — Finance Support",
+      "autonomy_tier": "recommend",
+      "reports_to": "finance-manager-01"
     }
   ],
   "workflows": [
@@ -213,7 +300,9 @@
       "id": "wf-monthly-close-001",
       "name": "Formalized Monthly Financial Close",
       "description": "Structured month-end close process with defined SLAs, checklists, reconciliation requirements, approval gates, and audit trail documentation. Covers all entities and subsidiaries.",
-      "triggers": ["schedule:monthly"],
+      "triggers": [
+        "schedule:monthly"
+      ],
       "steps": [
         {
           "id": "close-01",
@@ -238,8 +327,16 @@
           "type": "tool_call",
           "name": "Bank Reconciliations",
           "config": {
-            "tools": ["erp-system", "bank-api"],
-            "accounts_to_reconcile": ["all-bank", "credit-card", "petty-cash", "intercompany"],
+            "tools": [
+              "erp-system",
+              "bank-api"
+            ],
+            "accounts_to_reconcile": [
+              "all-bank",
+              "credit-card",
+              "petty-cash",
+              "intercompany"
+            ],
             "deadline": "day-3"
           }
         },
@@ -276,7 +373,13 @@
           "name": "Generate Financial Statements",
           "config": {
             "agent": "finance-manager-01",
-            "statements": ["balance-sheet", "income-statement", "cash-flow-statement", "statement-of-equity", "trial-balance"],
+            "statements": [
+              "balance-sheet",
+              "income-statement",
+              "cash-flow-statement",
+              "statement-of-equity",
+              "trial-balance"
+            ],
             "format": "standard-gaap",
             "multi_entity": true
           }
@@ -297,14 +400,26 @@
           "name": "Deliver Management Pack",
           "config": {
             "template": "monthly-management-package",
-            "recipients": ["department-heads", "cfo"],
-            "attachments": ["financial-statements", "variance-analysis", "cash-flow-summary", "kpi-dashboard"]
+            "recipients": [
+              "department-heads",
+              "cfo"
+            ],
+            "attachments": [
+              "financial-statements",
+              "variance-analysis",
+              "cash-flow-summary",
+              "kpi-dashboard"
+            ]
           }
         }
       ],
       "error_handling": {
         "max_retries": 2,
-        "critical_path": ["close-03", "close-06", "close-08"],
+        "critical_path": [
+          "close-03",
+          "close-06",
+          "close-08"
+        ],
         "on_failure": "defer-close-and-notify-manager"
       }
     },
@@ -312,7 +427,10 @@
       "id": "wf-budget-001",
       "name": "Annual Budgeting and Quarterly Forecasting",
       "description": "Annual budget process with departmental input, Finance Manager consolidation, board approval, and quarterly rolling forecast updates with variance analysis.",
-      "triggers": ["schedule:annual", "schedule:quarterly"],
+      "triggers": [
+        "schedule:annual",
+        "schedule:quarterly"
+      ],
       "steps": [
         {
           "id": "bud-01",
@@ -320,7 +438,9 @@
           "name": "Open Budget Process",
           "config": {
             "template": "budget-cycle-open",
-            "recipients": ["all-department-heads"],
+            "recipients": [
+              "all-department-heads"
+            ],
             "deadline": "90-days-before-fiscal-year"
           }
         },
@@ -357,8 +477,15 @@
           "name": "Board Presentation and Approval",
           "config": {
             "template": "budget-approval-presentation",
-            "recipients": ["board", "ceo"],
-            "attachments": ["budget-package", "scenario-analysis", "assumptions-document"]
+            "recipients": [
+              "board",
+              "ceo"
+            ],
+            "attachments": [
+              "budget-package",
+              "scenario-analysis",
+              "assumptions-document"
+            ]
           }
         },
         {
@@ -366,7 +493,9 @@
           "type": "tool_call",
           "name": "Load Approved Budget to ERP",
           "config": {
-            "tools": ["erp-system"],
+            "tools": [
+              "erp-system"
+            ],
             "validation": "budget-against-actuals",
             "versioning": "create-budget-version"
           }
@@ -374,14 +503,20 @@
       ],
       "error_handling": {
         "max_retries": 2,
-        "critical_path": ["bud-03", "bud-05"]
+        "critical_path": [
+          "bud-03",
+          "bud-05"
+        ]
       }
     },
     {
       "id": "wf-audit-001",
       "name": "Annual External Audit Preparation",
       "description": "End-to-end audit preparation: scheduling, documentation gathering, walkthrough support, findings follow-up, and response coordination.",
-      "triggers": ["schedule:annual", "event:audit-scheduled"],
+      "triggers": [
+        "schedule:annual",
+        "event:audit-scheduled"
+      ],
       "steps": [
         {
           "id": "audit-01",
@@ -406,8 +541,16 @@
           "type": "tool_call",
           "name": "Prepare Audit Schedules",
           "config": {
-            "tools": ["erp-system", "analytics-dashboard"],
-            "schedules": ["account-detail", "journal-entry-sample", "transaction-testing", "subsequent-events"]
+            "tools": [
+              "erp-system",
+              "analytics-dashboard"
+            ],
+            "schedules": [
+              "account-detail",
+              "journal-entry-sample",
+              "transaction-testing",
+              "subsequent-events"
+            ]
           }
         },
         {
@@ -434,14 +577,22 @@
           "name": "Issue Management Letter",
           "config": {
             "template": "audit-completion-notice",
-            "recipients": ["finance-manager-01", "cfo"],
-            "cc": ["external-auditor"]
+            "recipients": [
+              "finance-manager-01",
+              "cfo"
+            ],
+            "cc": [
+              "external-auditor"
+            ]
           }
         }
       ],
       "error_handling": {
         "max_retries": 2,
-        "critical_path": ["audit-02", "audit-04"],
+        "critical_path": [
+          "audit-02",
+          "audit-04"
+        ],
         "on_failure": "escalate-to-finance-manager"
       }
     },
@@ -449,7 +600,10 @@
       "id": "wf-ap-001",
       "name": "Accounts Payable Processing (Segregated)",
       "description": "Formalized AP workflow with segregation of duties: invoice receipt through vendor payment with mandatory 3-way match, dual approval for large amounts, and payment run controls.",
-      "triggers": ["manual", "event:invoice-received"],
+      "triggers": [
+        "manual",
+        "event:invoice-received"
+      ],
       "steps": [
         {
           "id": "ap-01",
@@ -466,8 +620,14 @@
           "type": "tool_call",
           "name": "3-Way Match Validation",
           "config": {
-            "tools": ["erp-system"],
-            "match_documents": ["purchase-order", "receiving-report", "vendor-invoice"],
+            "tools": [
+              "erp-system"
+            ],
+            "match_documents": [
+              "purchase-order",
+              "receiving-report",
+              "vendor-invoice"
+            ],
             "tolerance_percent": 2,
             "auto_match": "under_threshold"
           }
@@ -506,9 +666,16 @@
           "type": "tool_call",
           "name": "Execute Payment Run",
           "config": {
-            "tools": ["erp-system", "bank-api"],
+            "tools": [
+              "erp-system",
+              "bank-api"
+            ],
             "payment_schedule": "weekly",
-            "methods": ["ach", "wire", "check"],
+            "methods": [
+              "ach",
+              "wire",
+              "check"
+            ],
             "dual_authorization": true
           }
         },
@@ -518,21 +685,33 @@
           "name": "Payment Confirmation and Reconciliation",
           "config": {
             "template": "payment-reconciliation",
-            "recipients": ["finance-gpo-01"],
-            "cc": ["ap-lead-01"]
+            "recipients": [
+              "finance-gpo-01"
+            ],
+            "cc": [
+              "ap-lead-01"
+            ]
           }
         }
       ],
       "error_handling": {
         "max_retries": 2,
-        "critical_path": ["ap-02", "ap-04", "ap-06"]
+        "critical_path": [
+          "ap-02",
+          "ap-04",
+          "ap-06"
+        ]
       }
     },
     {
       "id": "wf-ar-001",
       "name": "Accounts Receivable and Collections",
       "description": "Invoice generation to collections workflow with aging monitoring, automated dunning, and escalation procedures for delinquent accounts.",
-      "triggers": ["manual", "event:sale-completed", "schedule:recurring"],
+      "triggers": [
+        "manual",
+        "event:sale-completed",
+        "schedule:recurring"
+      ],
       "steps": [
         {
           "id": "ar-01",
@@ -549,8 +728,15 @@
           "type": "tool_call",
           "name": "Deliver Invoice",
           "config": {
-            "tools": ["email", "erp-system"],
-            "methods": ["email-pdf", "customer-portal", "edi"],
+            "tools": [
+              "email",
+              "erp-system"
+            ],
+            "methods": [
+              "email-pdf",
+              "customer-portal",
+              "edi"
+            ],
             "auto_send": true
           }
         },
@@ -560,8 +746,16 @@
           "name": "Aging Monitor",
           "config": {
             "agent": "finance-gpo-01",
-            "schedule": ["daily"],
-            "checks": ["current", "1-30", "31-60", "61-90", "90+"],
+            "schedule": [
+              "daily"
+            ],
+            "checks": [
+              "current",
+              "1-30",
+              "31-60",
+              "61-90",
+              "90+"
+            ],
             "flag_threshold": "31-days"
           }
         },
@@ -570,8 +764,17 @@
           "type": "tool_call",
           "name": "Automated Dunning",
           "config": {
-            "tools": ["email", "erp-system"],
-            "dunning_schedule": ["1-day-before-due", "1-day-overdue", "7-days-overdue", "14-days-overdue", "30-days-overdue"],
+            "tools": [
+              "email",
+              "erp-system"
+            ],
+            "dunning_schedule": [
+              "1-day-before-due",
+              "1-day-overdue",
+              "7-days-overdue",
+              "14-days-overdue",
+              "30-days-overdue"
+            ],
             "escalation_path": "ap-lead-escalation"
           }
         },
@@ -581,7 +784,10 @@
           "name": "Bad Debt Authorization",
           "config": {
             "required_by": "finance-manager-01",
-            "conditions": ["invoice_age > 90_days", "multiple-collection-attempts"],
+            "conditions": [
+              "invoice_age > 90_days",
+              "multiple-collection-attempts"
+            ],
             "timeout_hours": 72
           }
         },
@@ -597,14 +803,19 @@
       ],
       "error_handling": {
         "max_retries": 3,
-        "critical_path": ["ar-01"]
+        "critical_path": [
+          "ar-01"
+        ]
       }
     },
     {
       "id": "wf-sox-001",
       "name": "SOX Compliance Monitoring",
       "description": "Ongoing SOX control monitoring: test execution, exception tracking, remediation follow-up, and control environment maintenance for finance operations.",
-      "triggers": ["schedule:quarterly", "event:sox-trigger"],
+      "triggers": [
+        "schedule:quarterly",
+        "event:sox-trigger"
+      ],
       "steps": [
         {
           "id": "sox-01",
@@ -620,8 +831,15 @@
           "type": "tool_call",
           "name": "Execute Control Tests",
           "config": {
-            "tools": ["erp-system", "document-storage"],
-            "test_types": ["operating-effectiveness", "design-effectiveness", "key-control-verification"],
+            "tools": [
+              "erp-system",
+              "document-storage"
+            ],
+            "test_types": [
+              "operating-effectiveness",
+              "design-effectiveness",
+              "key-control-verification"
+            ],
             "sample_selection": "statistical"
           }
         },
@@ -649,13 +867,21 @@
           "name": "Remediation Tracker Update",
           "config": {
             "agent": "finance-manager-01",
-            "actions": ["update-remediation-tracker", "assign-responsibilities", "set-deadlines", "notify-compliance"]
+            "actions": [
+              "update-remediation-tracker",
+              "assign-responsibilities",
+              "set-deadlines",
+              "notify-compliance"
+            ]
           }
         }
       ],
       "error_handling": {
         "max_retries": 1,
-        "critical_path": ["sox-02", "sox-04"],
+        "critical_path": [
+          "sox-02",
+          "sox-04"
+        ],
         "on_failure": "immediate-escalation"
       }
     }
@@ -699,7 +925,12 @@
         "access_level": "need-to-know-basis",
         "export_restrictions": true
       },
-      "actions": ["log-all-access", "encrypt-at-rest-and-transit", "mask-in-logs", "enforce-retention-periods"]
+      "actions": [
+        "log-all-access",
+        "encrypt-at-rest-and-transit",
+        "mask-in-logs",
+        "enforce-retention-periods"
+      ]
     },
     {
       "id": "gov-fin-med-002",
@@ -710,7 +941,11 @@
         "rule": "invoice-processor != payment-approver",
         "sox_requirement": true
       },
-      "actions": ["prevent-concurrent-approval", "log-violation", "notify-finance-manager"]
+      "actions": [
+        "prevent-concurrent-approval",
+        "log-violation",
+        "notify-finance-manager"
+      ]
     },
     {
       "id": "gov-fin-med-003",
@@ -718,10 +953,20 @@
       "type": "audit",
       "enforcement": "enforce",
       "conditions": {
-        "record_types": ["journal-entries", "payments", "adjustments", "reconciliations", "budget-changes"],
+        "record_types": [
+          "journal-entries",
+          "payments",
+          "adjustments",
+          "reconciliations",
+          "budget-changes"
+        ],
         "modification": "immutable-after-posting"
       },
-      "actions": ["log-all-modifications", "require-reversal-entry", "preserve-original"]
+      "actions": [
+        "log-all-modifications",
+        "require-reversal-entry",
+        "preserve-original"
+      ]
     },
     {
       "id": "gov-fin-med-004",
@@ -733,7 +978,11 @@
         "unreconciled_items_threshold": 3,
         "reviewer": "senior-accountant-or-above"
       },
-      "actions": ["flag-unreconciled", "require-explanation", "controller-review"]
+      "actions": [
+        "flag-unreconciled",
+        "require-explanation",
+        "controller-review"
+      ]
     },
     {
       "id": "gov-fin-med-005",
@@ -744,7 +993,11 @@
         "change_type": "budget-variance-over-10-percent",
         "approval_required": "finance-manager-plus-ops-head"
       },
-      "actions": ["require-justification", "log-change", "notify-stakeholders"]
+      "actions": [
+        "require-justification",
+        "log-change",
+        "notify-stakeholders"
+      ]
     },
     {
       "id": "gov-fin-med-006",
@@ -755,7 +1008,10 @@
         "agent_role": "finance-gpo-01",
         "sensitive_topics": true
       },
-      "actions": ["human-review-required", "log-output"]
+      "actions": [
+        "human-review-required",
+        "log-output"
+      ]
     }
   ],
   "kpis": [
@@ -765,7 +1021,11 @@
       "description": "Days from period end to completed monthly financial close across all entities",
       "metric_type": "counter",
       "unit": "days",
-      "thresholds": {"target": 5, "warning": 7, "critical": 10},
+      "thresholds": {
+        "target": 5,
+        "warning": 7,
+        "critical": 10
+      },
       "aggregation_period": "month"
     },
     {
@@ -774,7 +1034,11 @@
       "description": "Percentage of invoices processed without error on first pass through 3-way match",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 97, "warning": 94, "critical": 90},
+      "thresholds": {
+        "target": 97,
+        "warning": 94,
+        "critical": 90
+      },
       "aggregation_period": "month"
     },
     {
@@ -783,7 +1047,11 @@
       "description": "Average collection period for accounts receivable",
       "metric_type": "counter",
       "unit": "days",
-      "thresholds": {"target": 35, "warning": 45, "critical": 60},
+      "thresholds": {
+        "target": 35,
+        "warning": 45,
+        "critical": 60
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -792,7 +1060,11 @@
       "description": "Average absolute variance between budgeted and actual spend across all departments",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 3, "warning": 5, "critical": 10},
+      "thresholds": {
+        "target": 3,
+        "warning": 5,
+        "critical": 10
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -801,7 +1073,11 @@
       "description": "Percentage of SOX controls tested without exceptions per quarter",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 98, "warning": 95, "critical": 90},
+      "thresholds": {
+        "target": 98,
+        "warning": 95,
+        "critical": 90
+      },
       "aggregation_period": "quarter"
     },
     {
@@ -810,7 +1086,11 @@
       "description": "Months of operating expenses covered by current cash and liquid assets",
       "metric_type": "gauge",
       "unit": "months",
-      "thresholds": {"target": 4, "warning": 2, "critical": 1},
+      "thresholds": {
+        "target": 4,
+        "warning": 2,
+        "critical": 1
+      },
       "aggregation_period": "month"
     },
     {
@@ -819,7 +1099,11 @@
       "description": "Average days to remediate audit findings from identification to closure",
       "metric_type": "counter",
       "unit": "days",
-      "thresholds": {"target": 30, "warning": 60, "critical": 90},
+      "thresholds": {
+        "target": 30,
+        "warning": 60,
+        "critical": 90
+      },
       "aggregation_period": "year"
     },
     {
@@ -828,7 +1112,11 @@
       "description": "Percentage of required account reconciliations completed within SLA each month",
       "metric_type": "gauge",
       "unit": "percent",
-      "thresholds": {"target": 100, "warning": 95, "critical": 85},
+      "thresholds": {
+        "target": 100,
+        "warning": 95,
+        "critical": 85
+      },
       "aggregation_period": "month"
     }
   ],
@@ -840,7 +1128,19 @@
       "provider": "netsuite",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"endpoint": "https://system.netsuite.com", "sync_frequency": "real-time", "modules": ["gl", "ap", "ar", "fixed-assets", "inventory", "reporting", "budgeting"]}
+      "config": {
+        "endpoint": "https://system.netsuite.com",
+        "sync_frequency": "real-time",
+        "modules": [
+          "gl",
+          "ap",
+          "ar",
+          "fixed-assets",
+          "inventory",
+          "reporting",
+          "budgeting"
+        ]
+      }
     },
     {
       "id": "int-fin-med-002",
@@ -849,7 +1149,16 @@
       "provider": "sap_business_one",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"endpoint": "https://api.sap.com/businessone", "sync_frequency": "real-time", "modules": ["gl", "ap", "ar", "reporting"]}
+      "config": {
+        "endpoint": "https://api.sap.com/businessone",
+        "sync_frequency": "real-time",
+        "modules": [
+          "gl",
+          "ap",
+          "ar",
+          "reporting"
+        ]
+      }
     },
     {
       "id": "int-fin-med-003",
@@ -858,7 +1167,16 @@
       "provider": "plaid",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"endpoint": "https://api.plaid.com", "sync_frequency": "daily", "accounts_to_sync": ["all-operating", "payroll", "tax", "savings"]}
+      "config": {
+        "endpoint": "https://api.plaid.com",
+        "sync_frequency": "daily",
+        "accounts_to_sync": [
+          "all-operating",
+          "payroll",
+          "tax",
+          "savings"
+        ]
+      }
     },
     {
       "id": "int-fin-med-004",
@@ -867,7 +1185,16 @@
       "provider": "gusto",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"endpoint": "https://api.gusto.com", "sync_frequency": "bi-weekly", "modules": ["payroll", "tax-withholding", "benefits", "reporting"]}
+      "config": {
+        "endpoint": "https://api.gusto.com",
+        "sync_frequency": "bi-weekly",
+        "modules": [
+          "payroll",
+          "tax-withholding",
+          "benefits",
+          "reporting"
+        ]
+      }
     },
     {
       "id": "int-fin-med-005",
@@ -876,7 +1203,15 @@
       "provider": "bill_com",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"endpoint": "https://api.bill.com", "sync_frequency": "daily", "modules": ["expenses", "receipts", "policy-enforcement"]}
+      "config": {
+        "endpoint": "https://api.bill.com",
+        "sync_frequency": "daily",
+        "modules": [
+          "expenses",
+          "receipts",
+          "policy-enforcement"
+        ]
+      }
     },
     {
       "id": "int-fin-med-006",
@@ -885,7 +1220,15 @@
       "provider": "google_workspace",
       "auth_method": "oauth2",
       "status": "active",
-      "config": {"domain": "{tenant}.google.com", "folders": ["invoices", "bank-statements", "tax-correspondence", "audit-documents"]}
+      "config": {
+        "domain": "{tenant}.google.com",
+        "folders": [
+          "invoices",
+          "bank-statements",
+          "tax-correspondence",
+          "audit-documents"
+        ]
+      }
     },
     {
       "id": "int-fin-med-007",
@@ -894,7 +1237,17 @@
       "provider": "google_drive",
       "auth_method": "api_key",
       "status": "active",
-      "config": {"shared_folder": "finance/documents", "categories": ["invoices", "receipts", "tax-records", "bank-statements", "audit-files", "budget-documents"]}
+      "config": {
+        "shared_folder": "finance/documents",
+        "categories": [
+          "invoices",
+          "receipts",
+          "tax-records",
+          "bank-statements",
+          "audit-files",
+          "budget-documents"
+        ]
+      }
     }
   ],
   "operational_policies": [
@@ -905,23 +1258,67 @@
       "rules": [
         {
           "agent": "finance-gpo-01",
-          "allowed": ["scan-invoices", "categorize-expenses", "data-entry", "report-draft", "retrieval", "reconciliation-assist", "expense-processing"],
-          "denied": ["approve-payments", "adjust-ledger", "change-bank-accounts", "file-taxes", "modify-payroll", "create-vendors", "modify-sox-controls"]
+          "allowed": [
+            "scan-invoices",
+            "categorize-expenses",
+            "data-entry",
+            "report-draft",
+            "retrieval",
+            "reconciliation-assist",
+            "expense-processing"
+          ],
+          "denied": [
+            "approve-payments",
+            "adjust-ledger",
+            "change-bank-accounts",
+            "file-taxes",
+            "modify-payroll",
+            "create-vendors",
+            "modify-sox-controls"
+          ]
         },
         {
           "agent": "junior-accountant-01",
-          "allowed": ["basic-journal-entries", "reconciliation", "invoice-processing", "expense-review", "document-organization"],
-          "denied": ["close-period-without-review", "override-approvals", "modify-sox-controls", "create-new-vendor-bank-account"]
+          "allowed": [
+            "basic-journal-entries",
+            "reconciliation",
+            "invoice-processing",
+            "expense-review",
+            "document-organization"
+          ],
+          "denied": [
+            "close-period-without-review",
+            "override-approvals",
+            "modify-sox-controls",
+            "create-new-vendor-bank-account"
+          ]
         },
         {
           "agent": "senior-accountant-01",
-          "allowed": ["complex-journal-entries", "month-end-close", "fixed-assets", "accruals", "account-reconciliations", "audit-support"],
-          "denied": ["override-sox-controls", "delete-posted-entries", "bypass-segregation-of-duties"]
+          "allowed": [
+            "complex-journal-entries",
+            "month-end-close",
+            "fixed-assets",
+            "accruals",
+            "account-reconciliations",
+            "audit-support"
+          ],
+          "denied": [
+            "override-sox-controls",
+            "delete-posted-entries",
+            "bypass-segregation-of-duties"
+          ]
         },
         {
           "agent": "finance-manager-01",
-          "allowed": ["all-operations"],
-          "denied": ["override-audit-logs", "delete-posted-entries", "bypass-sox-governance"]
+          "allowed": [
+            "all-operations"
+          ],
+          "denied": [
+            "override-audit-logs",
+            "delete-posted-entries",
+            "bypass-sox-governance"
+          ]
         },
         {
           "requirement": "all-agent-output-involving-financial-transactions-requires-human-confirmation-before-execution"
@@ -982,6 +1379,61 @@
           "disposal": "secure-delete"
         }
       ]
+    }
+  ],
+  "org_chart": [
+    {
+      "id": "pos-finance-manager-01",
+      "title": "Finance Manager / Director",
+      "role_type": "director",
+      "holder_type": "ai_agent",
+      "agent_def_id": "finance-manager-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-senior-accountant-01",
+      "title": "Senior Accountant",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "senior-accountant-01",
+      "reports_to": "pos-finance-manager-01",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-junior-accountant-01",
+      "title": "Junior Accountant",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "junior-accountant-01",
+      "reports_to": "pos-finance-manager-01",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-finance-analyst-01",
+      "title": "Financial Analyst",
+      "role_type": "analyst",
+      "holder_type": "ai_agent",
+      "agent_def_id": "finance-analyst-01",
+      "reports_to": "pos-finance-manager-01",
+      "autonomy_tier": "analyze"
+    },
+    {
+      "id": "pos-ap-lead-01",
+      "title": "AP/AR Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "ap-lead-01",
+      "reports_to": "pos-finance-manager-01",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-finance-gpo-01",
+      "title": "General Purpose Agent — Finance Support",
+      "role_type": "support",
+      "holder_type": "ai_agent",
+      "agent_def_id": "finance-gpo-01",
+      "reports_to": "pos-finance-manager-01",
+      "autonomy_tier": "recommend"
     }
   ]
 }

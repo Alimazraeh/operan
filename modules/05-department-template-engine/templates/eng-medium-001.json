@@ -36,6 +36,14 @@
       "role": "Engineering Manager",
       "level": "senior",
       "description": "People manager responsible for team health, capacity planning, performance reviews, and cross-team alignment. Ensures delivery commitments are met and removes organizational blockers.",
+      "model": "qwen-72b",
+      "access_control": {
+        "deploy-production": "granted",
+        "merge-main": "granted",
+        "budget-approve": "granted",
+        "hiring-approve": "granted",
+        "org-chart-edit": "granted"
+      },
       "capabilities": [
         "team-management",
         "capacity-planning",
@@ -44,19 +52,16 @@
         "hiring",
         "stakeholder-management"
       ],
-      "agent_model": "qwen-72b",
       "memory_profile": "full-retention",
-      "permissions": [
-        "deploy-production",
-        "merge-main",
-        "budget-approve",
-        "hiring-approve",
-        "org-chart-edit"
-      ],
       "schedule": {
-        "availability": "business-hours",
-        "escalation_path": "director-engineering"
-      }
+        "availability": "business-hours"
+      },
+      "escalation_path": [
+        "director-engineering",
+        "human"
+      ],
+      "position_title": "Engineering Manager",
+      "autonomy_tier": "coordinate"
     },
     {
       "id": "agent-tech-lead-001",
@@ -64,6 +69,13 @@
       "role": "Tech Lead",
       "level": "senior",
       "description": "Senior technical authority who drives architectural decisions, conducts architectural reviews, mentors senior engineers, and ensures technical alignment across teams.",
+      "model": "qwen-72b",
+      "access_control": {
+        "architecture-approve": "granted",
+        "code-review-gate": "granted",
+        "merge-main": "granted",
+        "tech-debt-approve": "granted"
+      },
       "capabilities": [
         "architecture",
         "architectural-review",
@@ -73,18 +85,13 @@
         "cross-team-alignment",
         "code-review-gates"
       ],
-      "agent_model": "qwen-72b",
       "memory_profile": "full-retention",
-      "permissions": [
-        "architecture-approve",
-        "code-review-gate",
-        "merge-main",
-        "tech-debt-approve"
-      ],
       "schedule": {
-        "availability": "business-hours",
-        "escalation_path": "agent-eng-mgr-001"
-      }
+        "availability": "business-hours"
+      },
+      "reports_to": "agent-eng-mgr-001",
+      "position_title": "Tech Lead",
+      "autonomy_tier": "coordinate"
     },
     {
       "id": "agent-senior-eng-001",
@@ -92,6 +99,14 @@
       "role": "Senior Engineer",
       "level": "senior",
       "description": "Experienced engineer who owns significant system components, leads feature development, performs code reviews, and contributes to architectural decisions. May serve as team lead for specific subsystems.",
+      "model": "qwen-34b",
+      "access_control": {
+        "deploy-staging": "granted",
+        "deploy-production": "granted",
+        "merge-feature": "granted",
+        "code-review-approve": "granted",
+        "on-call": "granted"
+      },
       "capabilities": [
         "code-development",
         "code-review",
@@ -102,19 +117,13 @@
         "on-call",
         "incident-response"
       ],
-      "agent_model": "qwen-34b",
       "memory_profile": "semantic-enabled",
-      "permissions": [
-        "deploy-staging",
-        "deploy-production",
-        "merge-feature",
-        "code-review-approve",
-        "on-call"
-      ],
       "schedule": {
-        "availability": "business-hours",
-        "escalation_path": "agent-tech-lead-001"
-      }
+        "availability": "business-hours"
+      },
+      "reports_to": "agent-tech-lead-001",
+      "position_title": "Senior Engineer",
+      "autonomy_tier": "draft"
     },
     {
       "id": "agent-junior-eng-001",
@@ -122,6 +131,12 @@
       "role": "Engineer",
       "level": "junior",
       "description": "Early-career engineer implementing well-scoped features, fixing bugs, writing tests, and growing into system design under the guidance of senior team members.",
+      "model": "qwen-14b",
+      "access_control": {
+        "deploy-staging": "granted",
+        "merge-feature": "granted",
+        "test-execute": "granted"
+      },
       "capabilities": [
         "code-development",
         "testing",
@@ -129,17 +144,13 @@
         "documentation",
         "task-tracking"
       ],
-      "agent_model": "qwen-14b",
       "memory_profile": "episodic-enabled",
-      "permissions": [
-        "deploy-staging",
-        "merge-feature",
-        "test-execute"
-      ],
       "schedule": {
-        "availability": "business-hours",
-        "escalation_path": "agent-senior-eng-001"
-      }
+        "availability": "business-hours"
+      },
+      "reports_to": "agent-senior-eng-001",
+      "position_title": "Junior Engineer",
+      "autonomy_tier": "draft"
     },
     {
       "id": "agent-devops-001",
@@ -147,6 +158,14 @@
       "role": "DevOps Engineer",
       "level": "senior",
       "description": "Infrastructure specialist responsible for CI/CD pipelines, cloud infrastructure, monitoring, and reliability engineering. Manages on-call rotation and implements SLOs.",
+      "model": "qwen-34b",
+      "access_control": {
+        "deploy-production": "granted",
+        "infrastructure-edit": "granted",
+        "monitoring-config": "granted",
+        "incident-command": "granted",
+        "on-call": "granted"
+      },
       "capabilities": [
         "infrastructure-as-code",
         "ci-cd",
@@ -157,19 +176,13 @@
         "security-hardening",
         "on-call"
       ],
-      "agent_model": "qwen-34b",
       "memory_profile": "procedural-enabled",
-      "permissions": [
-        "deploy-production",
-        "infrastructure-edit",
-        "monitoring-config",
-        "incident-command",
-        "on-call"
-      ],
       "schedule": {
-        "availability": "always-on",
-        "escalation_path": "agent-eng-mgr-001"
-      }
+        "availability": "always-on"
+      },
+      "reports_to": "agent-eng-mgr-001",
+      "position_title": "DevOps Engineer",
+      "autonomy_tier": "draft"
     },
     {
       "id": "agent-qa-lead-001",
@@ -177,6 +190,13 @@
       "role": "QA Lead",
       "level": "senior",
       "description": "Quality assurance leader responsible for testing strategy, test automation, quality gates, and ensuring release readiness. Defines quality standards and manages the QA process across teams.",
+      "model": "qwen-34b",
+      "access_control": {
+        "test-execute": "granted",
+        "quality-gate-approve": "granted",
+        "release-approve": "granted",
+        "test-env-setup": "granted"
+      },
       "capabilities": [
         "test-strategy",
         "test-automation",
@@ -186,18 +206,13 @@
         "bug-triage",
         "quality-metrics"
       ],
-      "agent_model": "qwen-34b",
       "memory_profile": "semantic-enabled",
-      "permissions": [
-        "test-execute",
-        "quality-gate-approve",
-        "release-approve",
-        "test-env-setup"
-      ],
       "schedule": {
-        "availability": "business-hours",
-        "escalation_path": "agent-eng-mgr-001"
-      }
+        "availability": "business-hours"
+      },
+      "reports_to": "agent-eng-mgr-001",
+      "position_title": "QA Lead",
+      "autonomy_tier": "coordinate"
     },
     {
       "id": "agent-eng-gpo-001",
@@ -205,6 +220,13 @@
       "role": "GPO",
       "level": "general",
       "description": "A pod of GPO agents handling operational support across the engineering department. Manages environment provisioning, documentation, reporting, and ad-hoc operational tasks.",
+      "model": "qwen-14b",
+      "access_control": {
+        "deploy-staging": "granted",
+        "document-edit": "granted",
+        "report-generate": "granted",
+        "env-manage": "granted"
+      },
       "capabilities": [
         "documentation",
         "env-setup",
@@ -214,18 +236,13 @@
         "knowledge-base",
         "access-management"
       ],
-      "agent_model": "qwen-14b",
       "memory_profile": "procedural-enabled",
-      "permissions": [
-        "deploy-staging",
-        "document-edit",
-        "report-generate",
-        "env-manage"
-      ],
       "schedule": {
-        "availability": "always-on",
-        "escalation_path": "agent-eng-mgr-001"
-      }
+        "availability": "always-on"
+      },
+      "reports_to": "agent-eng-mgr-001",
+      "position_title": "Engineering GPO Pod",
+      "autonomy_tier": "recommend"
     }
   ],
   "workflows": [
@@ -239,58 +256,88 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "backlog-refinement",
-          "agent": "agent-tech-lead-001",
-          "description": "Review and prioritize the product backlog, refine story estimates, ensure acceptance criteria are clear and testable",
-          "status_conditions": [
-            "backlog_refined"
-          ]
+          "id": "backlog-refinement",
+          "type": "agent_call",
+          "name": "Backlog Refinement",
+          "config": {
+            "action": "backlog-refinement",
+            "agent": "agent-tech-lead-001",
+            "description": "Review and prioritize the product backlog, refine story estimates, ensure acceptance criteria are clear and testable",
+            "order": 1,
+            "status_conditions": [
+              "backlog_refined"
+            ]
+          }
         },
         {
-          "order": 2,
-          "action": "capacity-calculation",
-          "agent": "agent-eng-mgr-001",
-          "description": "Calculate team capacity accounting for PTO, holidays, meetings, and the 20% buffer for unplanned work and on-call duties",
-          "status_conditions": [
-            "capacity_calculated"
-          ]
+          "id": "capacity-calculation",
+          "type": "agent_call",
+          "name": "Capacity Calculation",
+          "config": {
+            "action": "capacity-calculation",
+            "agent": "agent-eng-mgr-001",
+            "description": "Calculate team capacity accounting for PTO, holidays, meetings, and the 20% buffer for unplanned work and on-call duties",
+            "order": 2,
+            "status_conditions": [
+              "capacity_calculated"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "sprint-commitment",
-          "agent": "agent-senior-eng-001",
-          "description": "Team commits to sprint goals based on capacity. Assign epic-level owners and distribute stories across team members",
-          "status_conditions": [
-            "commitment_set"
-          ]
+          "id": "sprint-commitment",
+          "type": "agent_call",
+          "name": "Sprint Commitment",
+          "config": {
+            "action": "sprint-commitment",
+            "agent": "agent-senior-eng-001",
+            "description": "Team commits to sprint goals based on capacity. Assign epic-level owners and distribute stories across team members",
+            "order": 3,
+            "status_conditions": [
+              "commitment_set"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "task-breakdown",
-          "agent": "agent-senior-eng-001",
-          "description": "Break stories into subtasks with clear definitions of done. Ensure each task is completable within 1-2 days",
-          "status_conditions": [
-            "tasks_defined"
-          ]
+          "id": "task-breakdown",
+          "type": "agent_call",
+          "name": "Task Breakdown",
+          "config": {
+            "action": "task-breakdown",
+            "agent": "agent-senior-eng-001",
+            "description": "Break stories into subtasks with clear definitions of done. Ensure each task is completable within 1-2 days",
+            "order": 4,
+            "status_conditions": [
+              "tasks_defined"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "risk-assessment",
-          "agent": "agent-tech-lead-001",
-          "description": "Identify technical risks, dependencies on other teams, and items requiring architectural review before sprint start",
-          "status_conditions": [
-            "risks_documented"
-          ]
+          "id": "risk-assessment",
+          "type": "agent_call",
+          "name": "Risk Assessment",
+          "config": {
+            "action": "risk-assessment",
+            "agent": "agent-tech-lead-001",
+            "description": "Identify technical risks, dependencies on other teams, and items requiring architectural review before sprint start",
+            "order": 5,
+            "status_conditions": [
+              "risks_documented"
+            ]
+          }
         },
         {
-          "order": 6,
-          "action": "sprint-kickoff",
-          "agent": "agent-eng-gpo-001",
-          "description": "Send sprint kickoff with goals, commitments, risk register, and burndown dashboard to the team and stakeholders",
-          "status_conditions": [
-            "sprint_active"
-          ]
+          "id": "sprint-kickoff",
+          "type": "agent_call",
+          "name": "Sprint Kickoff",
+          "config": {
+            "action": "sprint-kickoff",
+            "agent": "agent-eng-gpo-001",
+            "description": "Send sprint kickoff with goals, commitments, risk register, and burndown dashboard to the team and stakeholders",
+            "order": 6,
+            "status_conditions": [
+              "sprint_active"
+            ]
+          }
         }
       ]
     },
@@ -304,63 +351,93 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "automated-quality-gates",
-          "agent": "agent-devops-001",
-          "description": "Run automated checks: linting, unit tests, integration tests, SAST security scan, dependency vulnerability scan, and performance benchmark",
-          "status_conditions": [
-            "all_gates_pass"
-          ],
-          "timeout_minutes": 20
+          "id": "automated-quality-gates",
+          "type": "agent_call",
+          "name": "Automated Quality Gates",
+          "config": {
+            "action": "automated-quality-gates",
+            "agent": "agent-devops-001",
+            "description": "Run automated checks: linting, unit tests, integration tests, SAST security scan, dependency vulnerability scan, and performance benchmark",
+            "order": 1,
+            "status_conditions": [
+              "all_gates_pass"
+            ]
+          },
+          "timeout_seconds": 1200
         },
         {
-          "order": 2,
-          "action": "peer-code-review",
-          "agent": "agent-senior-eng-001",
-          "description": "Peer reviewer examines code for correctness, readability, edge cases, and adherence to coding standards",
-          "status_conditions": [
-            "review_approved",
-            "changes_requested"
-          ]
+          "id": "peer-code-review",
+          "type": "agent_call",
+          "name": "Peer Code Review",
+          "config": {
+            "action": "peer-code-review",
+            "agent": "agent-senior-eng-001",
+            "description": "Peer reviewer examines code for correctness, readability, edge cases, and adherence to coding standards",
+            "order": 2,
+            "status_conditions": [
+              "review_approved",
+              "changes_requested"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "architectural-compliance",
-          "agent": "agent-tech-lead-001",
-          "description": "Tech Lead reviews for architectural alignment, pattern consistency, performance implications, and security considerations on non-trivial changes",
-          "status_conditions": [
-            "architecture_approved",
-            "architecture_flagged"
-          ]
+          "id": "architectural-compliance",
+          "type": "agent_call",
+          "name": "Architectural Compliance",
+          "config": {
+            "action": "architectural-compliance",
+            "agent": "agent-tech-lead-001",
+            "description": "Tech Lead reviews for architectural alignment, pattern consistency, performance implications, and security considerations on non-trivial changes",
+            "order": 3,
+            "status_conditions": [
+              "architecture_approved",
+              "architecture_flagged"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "qa-validation",
-          "agent": "agent-qa-lead-001",
-          "description": "QA Lead validates that automated test coverage meets thresholds, new test cases are included, and no regression detected",
-          "status_conditions": [
-            "qa_approved",
-            "qa_flagged"
-          ]
+          "id": "qa-validation",
+          "type": "agent_call",
+          "name": "Qa Validation",
+          "config": {
+            "action": "qa-validation",
+            "agent": "agent-qa-lead-001",
+            "description": "QA Lead validates that automated test coverage meets thresholds, new test cases are included, and no regression detected",
+            "order": 4,
+            "status_conditions": [
+              "qa_approved",
+              "qa_flagged"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "address-feedback",
-          "agent": "agent-senior-eng-001",
-          "description": "Author addresses all requested changes from peer review, architectural compliance, and QA feedback",
-          "status_conditions": [
-            "feedback_addressed",
-            "ready_for_merge"
-          ]
+          "id": "address-feedback",
+          "type": "agent_call",
+          "name": "Address Feedback",
+          "config": {
+            "action": "address-feedback",
+            "agent": "agent-senior-eng-001",
+            "description": "Author addresses all requested changes from peer review, architectural compliance, and QA feedback",
+            "order": 5,
+            "status_conditions": [
+              "feedback_addressed",
+              "ready_for_merge"
+            ]
+          }
         },
         {
-          "order": 6,
-          "action": "merge-approval",
-          "agent": "agent-eng-mgr-001",
-          "description": "Engineering Manager grants final merge approval after confirming all gates passed and no outstanding blockers",
-          "status_conditions": [
-            "merged"
-          ]
+          "id": "merge-approval",
+          "type": "approval",
+          "name": "Merge Approval",
+          "config": {
+            "action": "merge-approval",
+            "agent": "agent-eng-mgr-001",
+            "description": "Engineering Manager grants final merge approval after confirming all gates passed and no outstanding blockers",
+            "order": 6,
+            "status_conditions": [
+              "merged"
+            ]
+          }
         }
       ]
     },
@@ -375,64 +452,94 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "build-and-package",
-          "agent": "agent-devops-001",
-          "description": "Build application artifacts, run security scans, package Docker images, and push to the container registry with version tagging",
-          "status_conditions": [
-            "build_success",
-            "package_tagged"
-          ]
+          "id": "build-and-package",
+          "type": "agent_call",
+          "name": "Build And Package",
+          "config": {
+            "action": "build-and-package",
+            "agent": "agent-devops-001",
+            "description": "Build application artifacts, run security scans, package Docker images, and push to the container registry with version tagging",
+            "order": 1,
+            "status_conditions": [
+              "build_success",
+              "package_tagged"
+            ]
+          }
         },
         {
-          "order": 2,
-          "action": "deploy-staging",
-          "agent": "agent-devops-001",
-          "description": "Deploy to staging environment with canary rollout; run full integration test suite and smoke tests",
-          "status_conditions": [
-            "deployed",
-            "tests_pass"
-          ]
+          "id": "deploy-staging",
+          "type": "agent_call",
+          "name": "Deploy Staging",
+          "config": {
+            "action": "deploy-staging",
+            "agent": "agent-devops-001",
+            "description": "Deploy to staging environment with canary rollout; run full integration test suite and smoke tests",
+            "order": 2,
+            "status_conditions": [
+              "deployed",
+              "tests_pass"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "qa-release-validation",
-          "agent": "agent-qa-lead-001",
-          "description": "QA Lead validates release candidates with regression testing, performance testing, and user acceptance criteria check",
-          "status_conditions": [
-            "qa_approved",
-            "qa_rejected"
-          ]
+          "id": "qa-release-validation",
+          "type": "agent_call",
+          "name": "Qa Release Validation",
+          "config": {
+            "action": "qa-release-validation",
+            "agent": "agent-qa-lead-001",
+            "description": "QA Lead validates release candidates with regression testing, performance testing, and user acceptance criteria check",
+            "order": 3,
+            "status_conditions": [
+              "qa_approved",
+              "qa_rejected"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "staging-sign-off",
-          "agent": "agent-tech-lead-001",
-          "description": "Tech Lead signs off on staging deployment confirming feature completeness, performance, and security compliance",
-          "status_conditions": [
-            "sign_off_granted",
-            "sign_off_with_conditions"
-          ]
+          "id": "staging-sign-off",
+          "type": "agent_call",
+          "name": "Staging Sign Off",
+          "config": {
+            "action": "staging-sign-off",
+            "agent": "agent-tech-lead-001",
+            "description": "Tech Lead signs off on staging deployment confirming feature completeness, performance, and security compliance",
+            "order": 4,
+            "status_conditions": [
+              "sign_off_granted",
+              "sign_off_with_conditions"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "deploy-production",
-          "agent": "agent-devops-001",
-          "description": "Execute production deployment with blue-green or canary strategy; monitor error rates and latency during rollout",
-          "status_conditions": [
-            "deployed",
-            "auto_rollback_triggered"
-          ]
+          "id": "deploy-production",
+          "type": "agent_call",
+          "name": "Deploy Production",
+          "config": {
+            "action": "deploy-production",
+            "agent": "agent-devops-001",
+            "description": "Execute production deployment with blue-green or canary strategy; monitor error rates and latency during rollout",
+            "order": 5,
+            "status_conditions": [
+              "deployed",
+              "auto_rollback_triggered"
+            ]
+          }
         },
         {
-          "order": 6,
-          "action": "post-deployment-validation",
-          "agent": "agent-eng-gpo-001",
-          "description": "Run post-deployment verification: health checks, synthetic transactions, and alert monitoring; notify stakeholders of deployment status",
-          "status_conditions": [
-            "validated",
-            "issue_detected"
-          ]
+          "id": "post-deployment-validation",
+          "type": "agent_call",
+          "name": "Post Deployment Validation",
+          "config": {
+            "action": "post-deployment-validation",
+            "agent": "agent-eng-gpo-001",
+            "description": "Run post-deployment verification: health checks, synthetic transactions, and alert monitoring; notify stakeholders of deployment status",
+            "order": 6,
+            "status_conditions": [
+              "validated",
+              "issue_detected"
+            ]
+          }
         }
       ]
     },
@@ -448,64 +555,94 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "detect-and-classify",
-          "agent": "agent-eng-gpo-001",
-          "description": "Automated monitoring or user report triggers incident classification by severity: P1 (complete outage), P2 (major degradation), P3 (minor issue), P4 (cosmetic)",
-          "status_conditions": [
-            "severity_classified"
-          ],
-          "timeout_minutes": 5
+          "id": "detect-and-classify",
+          "type": "agent_call",
+          "name": "Detect And Classify",
+          "config": {
+            "action": "detect-and-classify",
+            "agent": "agent-eng-gpo-001",
+            "description": "Automated monitoring or user report triggers incident classification by severity: P1 (complete outage), P2 (major degradation), P3 (minor issue), P4 (cosmetic)",
+            "order": 1,
+            "status_conditions": [
+              "severity_classified"
+            ]
+          },
+          "timeout_seconds": 300
         },
         {
-          "order": 2,
-          "action": "activate-response",
-          "agent": "agent-devops-001",
-          "description": "On-call engineer acknowledges and activates the incident response channel. For P1/P2, Engineering Manager is paged and assigned as incident commander",
-          "status_conditions": [
-            "response_active",
-            "commander_assigned"
-          ]
+          "id": "activate-response",
+          "type": "agent_call",
+          "name": "Activate Response",
+          "config": {
+            "action": "activate-response",
+            "agent": "agent-devops-001",
+            "description": "On-call engineer acknowledges and activates the incident response channel. For P1/P2, Engineering Manager is paged and assigned as incident commander",
+            "order": 2,
+            "status_conditions": [
+              "response_active",
+              "commander_assigned"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "investigate-and-mitigate",
-          "agent": "agent-senior-eng-001",
-          "description": "Investigation team diagnoses root cause using logs, metrics, and traces. Implements immediate mitigation (rollback, feature flag, scaling) while deeper investigation continues",
-          "status_conditions": [
-            "mitigated",
-            "root_cause_found",
-            "escalated"
-          ]
+          "id": "investigate-and-mitigate",
+          "type": "agent_call",
+          "name": "Investigate And Mitigate",
+          "config": {
+            "action": "investigate-and-mitigate",
+            "agent": "agent-senior-eng-001",
+            "description": "Investigation team diagnoses root cause using logs, metrics, and traces. Implements immediate mitigation (rollback, feature flag, scaling) while deeper investigation continues",
+            "order": 3,
+            "status_conditions": [
+              "mitigated",
+              "root_cause_found",
+              "escalated"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "communication-update",
-          "agent": "agent-eng-gpo-001",
-          "description": "Send status updates to stakeholders at regular intervals (P1: every 15 minutes, P2: every 30 minutes, P3: every hour) with current status, impact, and ETA",
-          "status_conditions": [
-            "updates_sent"
-          ]
+          "id": "communication-update",
+          "type": "agent_call",
+          "name": "Communication Update",
+          "config": {
+            "action": "communication-update",
+            "agent": "agent-eng-gpo-001",
+            "description": "Send status updates to stakeholders at regular intervals (P1: every 15 minutes, P2: every 30 minutes, P3: every hour) with current status, impact, and ETA",
+            "order": 4,
+            "status_conditions": [
+              "updates_sent"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "resolve-and-verify",
-          "agent": "agent-devops-001",
-          "description": "Implement permanent fix, deploy to production, verify service health through automated checks and manual validation",
-          "status_conditions": [
-            "resolved",
-            "persisting"
-          ]
+          "id": "resolve-and-verify",
+          "type": "agent_call",
+          "name": "Resolve And Verify",
+          "config": {
+            "action": "resolve-and-verify",
+            "agent": "agent-devops-001",
+            "description": "Implement permanent fix, deploy to production, verify service health through automated checks and manual validation",
+            "order": 5,
+            "status_conditions": [
+              "resolved",
+              "persisting"
+            ]
+          }
         },
         {
-          "order": 6,
-          "action": "post-mortem-schedule",
-          "agent": "agent-eng-mgr-001",
-          "description": "Schedule blameless post-mortem within 5 business days for P1/P2 incidents. Assign action items with owners and due dates",
-          "status_conditions": [
-            "postmortem_scheduled",
-            "actions_assigned"
-          ]
+          "id": "post-mortem-schedule",
+          "type": "agent_call",
+          "name": "Post Mortem Schedule",
+          "config": {
+            "action": "post-mortem-schedule",
+            "agent": "agent-eng-mgr-001",
+            "description": "Schedule blameless post-mortem within 5 business days for P1/P2 incidents. Assign action items with owners and due dates",
+            "order": 6,
+            "status_conditions": [
+              "postmortem_scheduled",
+              "actions_assigned"
+            ]
+          }
         }
       ]
     },
@@ -519,60 +656,90 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "gather-data",
-          "agent": "agent-eng-gpo-001",
-          "description": "Collect all incident data: timeline from monitoring, chat logs, deployment records, metrics snapshots, and user impact reports",
-          "status_conditions": [
-            "data_collected"
-          ]
+          "id": "gather-data",
+          "type": "agent_call",
+          "name": "Gather Data",
+          "config": {
+            "action": "gather-data",
+            "agent": "agent-eng-gpo-001",
+            "description": "Collect all incident data: timeline from monitoring, chat logs, deployment records, metrics snapshots, and user impact reports",
+            "order": 1,
+            "status_conditions": [
+              "data_collected"
+            ]
+          }
         },
         {
-          "order": 2,
-          "action": "schedule-postmortem",
-          "agent": "agent-eng-mgr-001",
-          "description": "Schedule blameless post-mortem meeting with all involved parties within 5 business days. Send pre-read with incident timeline",
-          "status_conditions": [
-            "meeting_scheduled",
-            "pre_read_sent"
-          ]
+          "id": "schedule-postmortem",
+          "type": "agent_call",
+          "name": "Schedule Postmortem",
+          "config": {
+            "action": "schedule-postmortem",
+            "agent": "agent-eng-mgr-001",
+            "description": "Schedule blameless post-mortem meeting with all involved parties within 5 business days. Send pre-read with incident timeline",
+            "order": 2,
+            "status_conditions": [
+              "meeting_scheduled",
+              "pre_read_sent"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "conduct-review",
-          "agent": "agent-eng-mgr-001",
-          "description": "Facilitate blameless post-mortem: review timeline, identify contributing factors, discuss what went well and what did not, focus on system issues not individual blame",
-          "status_conditions": [
-            "review_completed"
-          ]
+          "id": "conduct-review",
+          "type": "agent_call",
+          "name": "Conduct Review",
+          "config": {
+            "action": "conduct-review",
+            "agent": "agent-eng-mgr-001",
+            "description": "Facilitate blameless post-mortem: review timeline, identify contributing factors, discuss what went well and what did not, focus on system issues not individual blame",
+            "order": 3,
+            "status_conditions": [
+              "review_completed"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "document-findings",
-          "agent": "agent-eng-gpo-001",
-          "description": "Write post-mortem document with root cause analysis, timeline, impact assessment, contributing factors, and actionable recommendations",
-          "status_conditions": [
-            "document_published"
-          ]
+          "id": "document-findings",
+          "type": "agent_call",
+          "name": "Document Findings",
+          "config": {
+            "action": "document-findings",
+            "agent": "agent-eng-gpo-001",
+            "description": "Write post-mortem document with root cause analysis, timeline, impact assessment, contributing factors, and actionable recommendations",
+            "order": 4,
+            "status_conditions": [
+              "document_published"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "create-action-items",
-          "agent": "agent-tech-lead-001",
-          "description": "Convert recommendations into specific action items with owners, priority levels, and due dates. Categorize as prevent, detect, respond, or recover",
-          "status_conditions": [
-            "actions_created"
-          ]
+          "id": "create-action-items",
+          "type": "agent_call",
+          "name": "Create Action Items",
+          "config": {
+            "action": "create-action-items",
+            "agent": "agent-tech-lead-001",
+            "description": "Convert recommendations into specific action items with owners, priority levels, and due dates. Categorize as prevent, detect, respond, or recover",
+            "order": 5,
+            "status_conditions": [
+              "actions_created"
+            ]
+          }
         },
         {
-          "order": 6,
-          "action": "track-remediation",
-          "agent": "agent-eng-mgr-001",
-          "description": "Track all action items to completion. Review progress in regular team meetings. Report on post-mortem closure rate in monthly quality review",
-          "status_conditions": [
-            "tracking_active",
-            "items_closed"
-          ]
+          "id": "track-remediation",
+          "type": "agent_call",
+          "name": "Track Remediation",
+          "config": {
+            "action": "track-remediation",
+            "agent": "agent-eng-mgr-001",
+            "description": "Track all action items to completion. Review progress in regular team meetings. Report on post-mortem closure rate in monthly quality review",
+            "order": 6,
+            "status_conditions": [
+              "tracking_active",
+              "items_closed"
+            ]
+          }
         }
       ]
     },
@@ -588,63 +755,93 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "esignal-submission",
-          "agent": "agent-senior-eng-001",
-          "description": "Submit EDesign Artifact (eSignal) with proposed change description, alternatives considered, impact analysis, and rollback plan",
-          "status_conditions": [
-            "esignal_submitted"
-          ]
+          "id": "esignal-submission",
+          "type": "agent_call",
+          "name": "Esignal Submission",
+          "config": {
+            "action": "esignal-submission",
+            "agent": "agent-senior-eng-001",
+            "description": "Submit EDesign Artifact (eSignal) with proposed change description, alternatives considered, impact analysis, and rollback plan",
+            "order": 1,
+            "status_conditions": [
+              "esignal_submitted"
+            ]
+          }
         },
         {
-          "order": 2,
-          "action": "initial-review",
-          "agent": "agent-tech-lead-001",
-          "description": "Tech Lead performs initial review for completeness, feasibility, and alignment with architectural principles",
-          "status_conditions": [
-            "review_passed",
-            "revision_requested"
-          ]
+          "id": "initial-review",
+          "type": "agent_call",
+          "name": "Initial Review",
+          "config": {
+            "action": "initial-review",
+            "agent": "agent-tech-lead-001",
+            "description": "Tech Lead performs initial review for completeness, feasibility, and alignment with architectural principles",
+            "order": 2,
+            "status_conditions": [
+              "review_passed",
+              "revision_requested"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "peer-review",
-          "agent": "agent-senior-eng-001",
-          "description": "Two senior engineers review the design for technical soundness, scalability, security implications, and performance considerations",
-          "status_conditions": [
-            "peer_approved",
-            "concerns_raised"
-          ]
+          "id": "peer-review",
+          "type": "agent_call",
+          "name": "Peer Review",
+          "config": {
+            "action": "peer-review",
+            "agent": "agent-senior-eng-001",
+            "description": "Two senior engineers review the design for technical soundness, scalability, security implications, and performance considerations",
+            "order": 3,
+            "status_conditions": [
+              "peer_approved",
+              "concerns_raised"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "review-meeting",
-          "agent": "agent-tech-lead-001",
-          "description": "Conduct architectural review meeting with stakeholders. Present design, discuss concerns, and document decisions and trade-offs",
-          "status_conditions": [
-            "approved",
-            "approved_with_conditions",
-            "rejected"
-          ]
+          "id": "review-meeting",
+          "type": "agent_call",
+          "name": "Review Meeting",
+          "config": {
+            "action": "review-meeting",
+            "agent": "agent-tech-lead-001",
+            "description": "Conduct architectural review meeting with stakeholders. Present design, discuss concerns, and document decisions and trade-offs",
+            "order": 4,
+            "status_conditions": [
+              "approved",
+              "approved_with_conditions",
+              "rejected"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "implement-approved-design",
-          "agent": "agent-senior-eng-001",
-          "description": "Implement the approved design following standard feature development workflow with regular sync-ups on architectural concerns",
-          "status_conditions": [
-            "implementation_complete"
-          ]
+          "id": "implement-approved-design",
+          "type": "agent_call",
+          "name": "Implement Approved Design",
+          "config": {
+            "action": "implement-approved-design",
+            "agent": "agent-senior-eng-001",
+            "description": "Implement the approved design following standard feature development workflow with regular sync-ups on architectural concerns",
+            "order": 5,
+            "status_conditions": [
+              "implementation_complete"
+            ]
+          }
         },
         {
-          "order": 6,
-          "action": "verify-implementation",
-          "agent": "agent-tech-lead-001",
-          "description": "Verify that the implementation matches the approved architectural design. Close the eSignal with implementation notes and lessons learned",
-          "status_conditions": [
-            "verified",
-            "deviations_documented"
-          ]
+          "id": "verify-implementation",
+          "type": "agent_call",
+          "name": "Verify Implementation",
+          "config": {
+            "action": "verify-implementation",
+            "agent": "agent-tech-lead-001",
+            "description": "Verify that the implementation matches the approved architectural design. Close the eSignal with implementation notes and lessons learned",
+            "order": 6,
+            "status_conditions": [
+              "verified",
+              "deviations_documented"
+            ]
+          }
         }
       ]
     }
@@ -720,136 +917,168 @@
     {
       "id": "gov-001",
       "name": "Multi-Gate Code Review",
-      "rule": "All production code must pass peer code review, architectural compliance check (for non-trivial changes), and QA validation before merging to main. No exceptions.",
-      "scope": "all-production-code",
-      "severity": "high",
-      "enforcement": "automated"
+      "type": "custom",
+      "description": "All production code must pass peer code review, architectural compliance check (for non-trivial changes), and QA validation before merging to main. No exceptions.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "all-production-code",
+        "severity": "high"
+      }
     },
     {
       "id": "gov-002",
       "name": "SLO-Driven Deployment",
-      "rule": "No production deployment may violate defined Service Level Objectives. If SLO error budgets are exhausted, deployments pause until budget is replenished or risk is accepted by Engineering Manager.",
-      "scope": "production-deployment",
-      "severity": "high",
-      "enforcement": "policy-gate"
+      "type": "custom",
+      "description": "No production deployment may violate defined Service Level Objectives. If SLO error budgets are exhausted, deployments pause until budget is replenished or risk is accepted by Engineering Manager.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "production-deployment",
+        "severity": "high"
+      }
     },
     {
       "id": "gov-003",
       "name": "Incident Post-Mortem Requirement",
-      "rule": "All P1 and P2 incidents must have a blameless post-mortem within 5 business days. Action items must be assigned, tracked, and closed. Post-mortem reports are archived and reviewed quarterly.",
-      "scope": "incident-management",
-      "severity": "high",
-      "enforcement": "process-gate"
+      "type": "custom",
+      "description": "All P1 and P2 incidents must have a blameless post-mortem within 5 business days. Action items must be assigned, tracked, and closed. Post-mortem reports are archived and reviewed quarterly.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "incident-management",
+        "severity": "high"
+      }
     },
     {
       "id": "gov-004",
       "name": "Test Coverage and Quality Gates",
-      "rule": "Minimum 80% test coverage for new code and 75% for existing code. PRs that reduce coverage below baseline are rejected. Performance benchmarks must not regress.",
-      "scope": "testing",
-      "severity": "medium",
-      "enforcement": "ci-gate"
+      "type": "custom",
+      "description": "Minimum 80% test coverage for new code and 75% for existing code. PRs that reduce coverage below baseline are rejected. Performance benchmarks must not regress.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "testing",
+        "severity": "medium"
+      }
     },
     {
       "id": "gov-005",
       "name": "Secrets and Credential Management",
-      "rule": "No secrets stored in version control. All credentials managed through a secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault). Quarterly credential rotation required. Exposure triggers immediate rotation and incident.",
-      "scope": "security",
-      "severity": "critical",
-      "enforcement": "automated"
+      "type": "custom",
+      "description": "No secrets stored in version control. All credentials managed through a secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault). Quarterly credential rotation required. Exposure triggers immediate rotation and incident.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "security",
+        "severity": "critical"
+      }
     },
     {
       "id": "gov-006",
       "name": "On-Call Rotation Coverage",
-      "rule": "Every member of the engineering team participates in the on-call rotation. P1 incidents must be acknowledged within 15 minutes. No unassigned on-call shifts allowed.",
-      "scope": "incident-management",
-      "severity": "high",
-      "enforcement": "policy-gate"
+      "type": "custom",
+      "description": "Every member of the engineering team participates in the on-call rotation. P1 incidents must be acknowledged within 15 minutes. No unassigned on-call shifts allowed.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "incident-management",
+        "severity": "high"
+      }
     }
   ],
   "kpis": [
     {
       "id": "kpi-001",
       "name": "Deployment Frequency",
-      "description": "How often the team successfully deploys to production",
-      "target": "on-demand (multiple per day)",
-      "measurement": "count per week",
-      "baseline": 8,
-      "target_value": 15,
-      "threshold": 5,
-      "frequency": "weekly",
-      "dashboard": "delivery-metrics"
+      "description": "How often the team successfully deploys to production Measured as: count per week",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 15,
+        "warning": 5,
+        "baseline": 8,
+        "target_label": "on-demand (multiple per day)"
+      },
+      "aggregation_period": "week",
+      "dashboard_link": "dashboard://delivery-metrics"
     },
     {
       "id": "kpi-002",
       "name": "Lead Time for Changes",
-      "description": "Time from code commit to production deployment",
-      "target": "less than 1 day",
-      "measurement": "median hours",
-      "baseline": 18,
-      "target_value": 6,
-      "threshold": 24,
-      "frequency": "weekly",
-      "dashboard": "delivery-metrics"
+      "description": "Time from code commit to production deployment Measured as: median hours",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 6,
+        "warning": 24,
+        "baseline": 18,
+        "target_label": "less than 1 day"
+      },
+      "aggregation_period": "week",
+      "dashboard_link": "dashboard://delivery-metrics"
     },
     {
       "id": "kpi-003",
       "name": "Change Failure Rate",
-      "description": "Percentage of deployments causing a P2 or higher production incident",
-      "target": "less than 10%",
-      "measurement": "percentage",
-      "baseline": 8,
-      "target_value": 5,
-      "threshold": 15,
-      "frequency": "weekly",
-      "dashboard": "quality-metrics"
+      "description": "Percentage of deployments causing a P2 or higher production incident Measured as: percentage",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 5,
+        "warning": 15,
+        "baseline": 8,
+        "target_label": "less than 10%"
+      },
+      "aggregation_period": "week",
+      "dashboard_link": "dashboard://quality-metrics"
     },
     {
       "id": "kpi-004",
       "name": "Mean Time to Recovery (MTTR)",
-      "description": "Average time to restore service after a production incident",
-      "target": "less than 1 hour for P1, 4 hours for P2",
-      "measurement": "minutes",
-      "baseline": 90,
-      "target_value": 45,
-      "threshold": 180,
-      "frequency": "per-incident",
-      "dashboard": "reliability-metrics"
+      "description": "Average time to restore service after a production incident Measured as: minutes",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 45,
+        "warning": 180,
+        "baseline": 90,
+        "target_label": "less than 1 hour for P1, 4 hours for P2"
+      },
+      "aggregation_period": "week",
+      "dashboard_link": "dashboard://reliability-metrics"
     },
     {
       "id": "kpi-005",
       "name": "Sprint Velocity",
-      "description": "Average story points completed per sprint, tracking team delivery predictability",
-      "target": "consistent within 15% variance",
-      "measurement": "story points per sprint",
-      "baseline": 40,
-      "target_value": 50,
-      "threshold": 30,
-      "frequency": "per-sprint",
-      "dashboard": "delivery-metrics"
+      "description": "Average story points completed per sprint, tracking team delivery predictability Measured as: story points per sprint",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 50,
+        "warning": 30,
+        "baseline": 40,
+        "target_label": "consistent within 15% variance"
+      },
+      "aggregation_period": "week",
+      "dashboard_link": "dashboard://delivery-metrics"
     },
     {
       "id": "kpi-006",
       "name": "Test Coverage",
-      "description": "Percentage of codebase covered by automated tests",
-      "target": "at least 80% new code, 75% existing code",
-      "measurement": "percentage",
-      "baseline": 65,
-      "target_value": 80,
-      "threshold": 70,
-      "frequency": "weekly",
-      "dashboard": "quality-metrics"
+      "description": "Percentage of codebase covered by automated tests Measured as: percentage",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 80,
+        "warning": 70,
+        "baseline": 65,
+        "target_label": "at least 80% new code, 75% existing code"
+      },
+      "aggregation_period": "week",
+      "dashboard_link": "dashboard://quality-metrics"
     },
     {
       "id": "kpi-007",
       "name": "Bug Escape Rate",
-      "description": "Percentage of defects found by users vs. caught by automated testing",
-      "target": "less than 5%",
-      "measurement": "percentage",
-      "baseline": 12,
-      "target_value": 5,
-      "threshold": 15,
-      "frequency": "monthly",
-      "dashboard": "quality-metrics"
+      "description": "Percentage of defects found by users vs. caught by automated testing Measured as: percentage",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 5,
+        "warning": 15,
+        "baseline": 12,
+        "target_label": "less than 5%"
+      },
+      "aggregation_period": "month",
+      "dashboard_link": "dashboard://quality-metrics"
     }
   ],
   "integrations": [
@@ -940,7 +1169,7 @@
       "name": "On-Call Rotation Policy",
       "description": "All senior engineers and the DevOps Engineer participate in a weekly on-call rotation. P1 incidents require acknowledgment within 15 minutes. On-call engineers are compensated with time-off in lieu. Escalation to Engineering Manager after 30 minutes for P1.",
       "scope": "incident-management",
-      "effective_from": "2026-07-17",
+      "effective_from": "2026-07-17T00:00:00Z",
       "review_frequency": "quarterly"
     },
     {
@@ -948,7 +1177,7 @@
       "name": "Branching and Release Strategy",
       "description": "Use trunk-based development with short-lived feature branches. Main branch is protected and requires all quality gates. Release branches created from main for versioned releases. Hotfix branches for critical production fixes with expedited review.",
       "scope": "version-control",
-      "effective_from": "2026-07-17",
+      "effective_from": "2026-07-17T00:00:00Z",
       "review_frequency": "biannually"
     },
     {
@@ -956,8 +1185,72 @@
       "name": "Incident Severity and Response SLAs",
       "description": "P1 (Critical): Complete outage affecting all users -- respond within 15 minutes, resolve within 8 hours. P2 (High): Major feature degraded for significant users -- respond within 30 minutes, resolve within 8 hours. P3 (Medium): Minor issue with workaround -- respond within 4 hours, resolve within 2 business days. P4 (Low): Cosmetic or minor -- respond within 1 business day.",
       "scope": "incident-management",
-      "effective_from": "2026-07-17",
+      "effective_from": "2026-07-17T00:00:00Z",
       "review_frequency": "annually"
+    }
+  ],
+  "org_chart": [
+    {
+      "id": "pos-agent-eng-mgr-001",
+      "title": "Engineering Manager",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-eng-mgr-001",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-agent-tech-lead-001",
+      "title": "Tech Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-tech-lead-001",
+      "reports_to": "pos-agent-eng-mgr-001",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-agent-senior-eng-001",
+      "title": "Senior Engineer",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-senior-eng-001",
+      "reports_to": "pos-agent-tech-lead-001",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-agent-junior-eng-001",
+      "title": "Junior Engineer",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-junior-eng-001",
+      "reports_to": "pos-agent-senior-eng-001",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-agent-devops-001",
+      "title": "DevOps Engineer",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-devops-001",
+      "reports_to": "pos-agent-eng-mgr-001",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-agent-qa-lead-001",
+      "title": "QA Lead",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-qa-lead-001",
+      "reports_to": "pos-agent-eng-mgr-001",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-agent-eng-gpo-001",
+      "title": "Engineering GPO Pod",
+      "role_type": "support",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-eng-gpo-001",
+      "reports_to": "pos-agent-eng-mgr-001",
+      "autonomy_tier": "recommend"
     }
   ]
 }

@@ -84,7 +84,7 @@ body {
 .hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .rain-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
 .rain-canvas::after { display: none; }
-#webgl-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; opacity: 0.92; }
+#webgl-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; opacity: 1; }
 #webgl-canvas::after { display: none; }
 .hero::before {
   content: ''; position: absolute; top: 40%; left: 50%;
@@ -94,7 +94,11 @@ body {
 }
 .hero::after {
   content: ''; position: absolute; inset: 0;
-  background: rgba(5, 8, 16, 0.78);
+  background: radial-gradient(ellipse 74% 66% at 50% 47%,
+    rgba(5,8,16,0.94) 0%,
+    rgba(5,8,16,0.88) 34%,
+    rgba(5,8,16,0.55) 64%,
+    rgba(5,8,16,0.16) 100%);
   z-index: 3; pointer-events: none;
 }
 .hero-content {
@@ -405,6 +409,7 @@ body {
       <a href="industries.html" class="nav-link">Industries</a>
       <a href="security.html" class="nav-link">Security</a>
       <a href="about.html" class="nav-link">About</a>
+      <a href="/app/" class="nav-link">Sign In</a>
       <a href="briefing.html" class="nav-cta">Request Briefing</a>
     </div>
     <div class="nav-toggle" id="navToggle"><span></span><span></span><span></span></div>

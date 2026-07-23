@@ -36,6 +36,14 @@
       "role": "Marketing Manager",
       "level": "senior",
       "description": "Strategic leader responsible for marketing planning, campaign oversight, budget management, cross-functional alignment, and performance reporting. Sets marketing priorities and ensures alignment with revenue goals.",
+      "model": "qwen-72b",
+      "access_control": {
+        "campaign-approve": "granted",
+        "budget-approve": "granted",
+        "content-publish": "granted",
+        "analytics-access": "granted",
+        "vendor-contracts": "granted"
+      },
       "capabilities": [
         "campaign-strategy",
         "budget-management",
@@ -45,19 +53,16 @@
         "team-coordination",
         "stakeholder-management"
       ],
-      "agent_model": "qwen-72b",
       "memory_profile": "full-retention",
-      "permissions": [
-        "campaign-approve",
-        "budget-approve",
-        "content-publish",
-        "analytics-access",
-        "vendor-contracts"
-      ],
       "schedule": {
-        "availability": "business-hours",
-        "escalation_path": "cmo"
-      }
+        "availability": "business-hours"
+      },
+      "escalation_path": [
+        "cmo",
+        "human"
+      ],
+      "position_title": "Marketing Manager",
+      "autonomy_tier": "coordinate"
     },
     {
       "id": "agent-content-spec-001",
@@ -65,6 +70,13 @@
       "role": "Content Specialist",
       "level": "mid",
       "description": "Content creation and management specialist responsible for blog posts, whitepapers, case studies, email copy, web copy, and content calendar management. Ensures brand voice consistency and SEO optimization.",
+      "model": "qwen-34b",
+      "access_control": {
+        "content-create": "granted",
+        "content-edit": "granted",
+        "cms-edit": "granted",
+        "seo-analysis": "granted"
+      },
       "capabilities": [
         "content-creation",
         "copywriting",
@@ -74,18 +86,13 @@
         "content-seo",
         "email-copy"
       ],
-      "agent_model": "qwen-34b",
       "memory_profile": "semantic-enabled",
-      "permissions": [
-        "content-create",
-        "content-edit",
-        "cms-edit",
-        "seo-analysis"
-      ],
       "schedule": {
-        "availability": "business-hours",
-        "escalation_path": "agent-mkt-mgr-001"
-      }
+        "availability": "business-hours"
+      },
+      "reports_to": "agent-mkt-mgr-001",
+      "position_title": "Content Specialist",
+      "autonomy_tier": "draft"
     },
     {
       "id": "agent-digital-mkt-001",
@@ -93,6 +100,14 @@
       "role": "Digital Marketing Specialist",
       "level": "mid",
       "description": "Digital channel specialist managing paid campaigns (SEM, social ads), SEO strategy, email marketing automation, analytics, and lead nurturing workflows. Focused on measurable results and conversion optimization.",
+      "model": "qwen-34b",
+      "access_control": {
+        "ad-platform-access": "granted",
+        "email-platform-access": "granted",
+        "analytics-access": "granted",
+        "campaign-launch": "granted",
+        "landing-page-edit": "granted"
+      },
       "capabilities": [
         "sem-management",
         "paid-social",
@@ -103,19 +118,13 @@
         "lead-nurturing",
         "ab-testing"
       ],
-      "agent_model": "qwen-34b",
       "memory_profile": "semantic-enabled",
-      "permissions": [
-        "ad-platform-access",
-        "email-platform-access",
-        "analytics-access",
-        "campaign-launch",
-        "landing-page-edit"
-      ],
       "schedule": {
-        "availability": "business-hours",
-        "escalation_path": "agent-mkt-mgr-001"
-      }
+        "availability": "business-hours"
+      },
+      "reports_to": "agent-mkt-mgr-001",
+      "position_title": "Digital Marketing Specialist",
+      "autonomy_tier": "draft"
     },
     {
       "id": "agent-designer-001",
@@ -123,6 +132,12 @@
       "role": "Designer/Creator",
       "level": "mid",
       "description": "Visual content creator responsible for social media graphics, ad creatives, email templates, presentation decks, brand assets, and multimedia content. Maintains brand visual standards.",
+      "model": "qwen-34b",
+      "access_control": {
+        "design-tools-access": "granted",
+        "asset-publish": "granted",
+        "brand-guidelines-edit": "granted"
+      },
       "capabilities": [
         "graphic-design",
         "social-media-graphics",
@@ -132,17 +147,13 @@
         "video-editing",
         "presentation-design"
       ],
-      "agent_model": "qwen-34b",
       "memory_profile": "semantic-enabled",
-      "permissions": [
-        "design-tools-access",
-        "asset-publish",
-        "brand-guidelines-edit"
-      ],
       "schedule": {
-        "availability": "business-hours",
-        "escalation_path": "agent-mkt-mgr-001"
-      }
+        "availability": "business-hours"
+      },
+      "reports_to": "agent-mkt-mgr-001",
+      "position_title": "Designer/Creator",
+      "autonomy_tier": "draft"
     },
     {
       "id": "agent-mkt-gpo-001",
@@ -150,6 +161,13 @@
       "role": "GPO",
       "level": "general",
       "description": "Operational support agent handling CRM data management, report generation, asset organization, compliance checks, and administrative marketing tasks.",
+      "model": "qwen-14b",
+      "access_control": {
+        "cms-access": "granted",
+        "crm-access": "granted",
+        "report-generate": "granted",
+        "data-export": "granted"
+      },
       "capabilities": [
         "data-management",
         "reporting",
@@ -159,18 +177,13 @@
         "crm-administration",
         "content-publishing"
       ],
-      "agent_model": "qwen-14b",
       "memory_profile": "procedural-enabled",
-      "permissions": [
-        "cms-access",
-        "crm-access",
-        "report-generate",
-        "data-export"
-      ],
       "schedule": {
-        "availability": "always-on",
-        "escalation_path": "agent-mkt-mgr-001"
-      }
+        "availability": "always-on"
+      },
+      "reports_to": "agent-mkt-mgr-001",
+      "position_title": "Marketing GPO",
+      "autonomy_tier": "recommend"
     }
   ],
   "workflows": [
@@ -187,60 +200,90 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "define-objectives",
-          "agent": "agent-mkt-mgr-001",
-          "description": "Define campaign objectives, target audience, key messages, success metrics (KPIs), budget allocation, and timeline",
-          "status_conditions": [
-            "objectives_defined"
-          ]
+          "id": "define-objectives",
+          "type": "agent_call",
+          "name": "Define Objectives",
+          "config": {
+            "action": "define-objectives",
+            "agent": "agent-mkt-mgr-001",
+            "description": "Define campaign objectives, target audience, key messages, success metrics (KPIs), budget allocation, and timeline",
+            "order": 1,
+            "status_conditions": [
+              "objectives_defined"
+            ]
+          }
         },
         {
-          "order": 2,
-          "action": "channel-strategy",
-          "agent": "agent-digital-mkt-001",
-          "description": "Determine optimal channel mix (email, social, search, content, paid ads) based on audience profiles and campaign goals",
-          "status_conditions": [
-            "channel_strategy_set"
-          ]
+          "id": "channel-strategy",
+          "type": "agent_call",
+          "name": "Channel Strategy",
+          "config": {
+            "action": "channel-strategy",
+            "agent": "agent-digital-mkt-001",
+            "description": "Determine optimal channel mix (email, social, search, content, paid ads) based on audience profiles and campaign goals",
+            "order": 2,
+            "status_conditions": [
+              "channel_strategy_set"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "content-plan",
-          "agent": "agent-content-spec-001",
-          "description": "Develop content calendar and creative brief. Define content types, formats, messaging frameworks, and production schedule",
-          "status_conditions": [
-            "content_plan_ready"
-          ]
+          "id": "content-plan",
+          "type": "agent_call",
+          "name": "Content Plan",
+          "config": {
+            "action": "content-plan",
+            "agent": "agent-content-spec-001",
+            "description": "Develop content calendar and creative brief. Define content types, formats, messaging frameworks, and production schedule",
+            "order": 3,
+            "status_conditions": [
+              "content_plan_ready"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "creative-production",
-          "agent": "agent-designer-001",
-          "description": "Produce visual assets, ad creatives, email templates, and multimedia content according to brand guidelines",
-          "status_conditions": [
-            "assets_ready"
-          ]
+          "id": "creative-production",
+          "type": "agent_call",
+          "name": "Creative Production",
+          "config": {
+            "action": "creative-production",
+            "agent": "agent-designer-001",
+            "description": "Produce visual assets, ad creatives, email templates, and multimedia content according to brand guidelines",
+            "order": 4,
+            "status_conditions": [
+              "assets_ready"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "review-and-approve",
-          "agent": "agent-mkt-mgr-001",
-          "description": "Review all campaign materials for brand compliance, messaging accuracy, and quality. Approve or request revisions",
-          "status_conditions": [
-            "approved",
-            "revisions_requested"
-          ]
+          "id": "review-and-approve",
+          "type": "agent_call",
+          "name": "Review And Approve",
+          "config": {
+            "action": "review-and-approve",
+            "agent": "agent-mkt-mgr-001",
+            "description": "Review all campaign materials for brand compliance, messaging accuracy, and quality. Approve or request revisions",
+            "order": 5,
+            "status_conditions": [
+              "approved",
+              "revisions_requested"
+            ]
+          }
         },
         {
-          "order": 6,
-          "action": "launch-and-monitor",
-          "agent": "agent-digital-mkt-001",
-          "description": "Launch campaign across all channels. Monitor real-time performance metrics and adjust bids, targeting, or creative as needed",
-          "status_conditions": [
-            "launched",
-            "optimized"
-          ]
+          "id": "launch-and-monitor",
+          "type": "agent_call",
+          "name": "Launch And Monitor",
+          "config": {
+            "action": "launch-and-monitor",
+            "agent": "agent-digital-mkt-001",
+            "description": "Launch campaign across all channels. Monitor real-time performance metrics and adjust bids, targeting, or creative as needed",
+            "order": 6,
+            "status_conditions": [
+              "launched",
+              "optimized"
+            ]
+          }
         }
       ]
     },
@@ -255,60 +298,90 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "topic-selection",
-          "agent": "agent-content-spec-001",
-          "description": "Select topics based on content calendar, SEO keyword research, audience interests, and business priorities. Define target keywords and search intent",
-          "status_conditions": [
-            "topic_selected"
-          ]
+          "id": "topic-selection",
+          "type": "agent_call",
+          "name": "Topic Selection",
+          "config": {
+            "action": "topic-selection",
+            "agent": "agent-content-spec-001",
+            "description": "Select topics based on content calendar, SEO keyword research, audience interests, and business priorities. Define target keywords and search intent",
+            "order": 1,
+            "status_conditions": [
+              "topic_selected"
+            ]
+          }
         },
         {
-          "order": 2,
-          "action": "outline-and-research",
-          "agent": "agent-content-spec-001",
-          "description": "Research topic thoroughly, create content outline, identify source materials, and define content structure and key takeaways",
-          "status_conditions": [
-            "outline_ready"
-          ]
+          "id": "outline-and-research",
+          "type": "agent_call",
+          "name": "Outline And Research",
+          "config": {
+            "action": "outline-and-research",
+            "agent": "agent-content-spec-001",
+            "description": "Research topic thoroughly, create content outline, identify source materials, and define content structure and key takeaways",
+            "order": 2,
+            "status_conditions": [
+              "outline_ready"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "draft-creation",
-          "agent": "agent-content-spec-001",
-          "description": "Write content draft following brand voice guidelines. Optimize for SEO with target keywords, meta descriptions, and internal linking",
-          "status_conditions": [
-            "draft_complete"
-          ]
+          "id": "draft-creation",
+          "type": "agent_call",
+          "name": "Draft Creation",
+          "config": {
+            "action": "draft-creation",
+            "agent": "agent-content-spec-001",
+            "description": "Write content draft following brand voice guidelines. Optimize for SEO with target keywords, meta descriptions, and internal linking",
+            "order": 3,
+            "status_conditions": [
+              "draft_complete"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "design-visuals",
-          "agent": "agent-designer-001",
-          "description": "Create supporting visuals, featured images, infographics, or charts. Ensure all visuals follow brand guidelines",
-          "status_conditions": [
-            "visuals_ready"
-          ]
+          "id": "design-visuals",
+          "type": "agent_call",
+          "name": "Design Visuals",
+          "config": {
+            "action": "design-visuals",
+            "agent": "agent-designer-001",
+            "description": "Create supporting visuals, featured images, infographics, or charts. Ensure all visuals follow brand guidelines",
+            "order": 4,
+            "status_conditions": [
+              "visuals_ready"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "review-and-edit",
-          "agent": "agent-mkt-mgr-001",
-          "description": "Review content for accuracy, tone, brand alignment, and SEO optimization. Request revisions if needed",
-          "status_conditions": [
-            "approved",
-            "revisions_requested"
-          ]
+          "id": "review-and-edit",
+          "type": "agent_call",
+          "name": "Review And Edit",
+          "config": {
+            "action": "review-and-edit",
+            "agent": "agent-mkt-mgr-001",
+            "description": "Review content for accuracy, tone, brand alignment, and SEO optimization. Request revisions if needed",
+            "order": 5,
+            "status_conditions": [
+              "approved",
+              "revisions_requested"
+            ]
+          }
         },
         {
-          "order": 6,
-          "action": "publish-and-promote",
-          "agent": "agent-mkt-gpo-001",
-          "description": "Publish content to CMS, schedule social media promotion, add to email newsletters, and submit to search engines for indexing",
-          "status_conditions": [
-            "published",
-            "promoted"
-          ]
+          "id": "publish-and-promote",
+          "type": "agent_call",
+          "name": "Publish And Promote",
+          "config": {
+            "action": "publish-and-promote",
+            "agent": "agent-mkt-gpo-001",
+            "description": "Publish content to CMS, schedule social media promotion, add to email newsletters, and submit to search engines for indexing",
+            "order": 6,
+            "status_conditions": [
+              "published",
+              "promoted"
+            ]
+          }
         }
       ]
     },
@@ -324,61 +397,91 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "plan-content",
-          "agent": "agent-content-spec-001",
-          "description": "Plan social media content calendar across platforms. Determine posting frequency, content mix (educational, promotional, engaging), and optimal posting times",
-          "status_conditions": [
-            "calendar_planned"
-          ]
+          "id": "plan-content",
+          "type": "agent_call",
+          "name": "Plan Content",
+          "config": {
+            "action": "plan-content",
+            "agent": "agent-content-spec-001",
+            "description": "Plan social media content calendar across platforms. Determine posting frequency, content mix (educational, promotional, engaging), and optimal posting times",
+            "order": 1,
+            "status_conditions": [
+              "calendar_planned"
+            ]
+          }
         },
         {
-          "order": 2,
-          "action": "create-assets",
-          "agent": "agent-designer-001",
-          "description": "Design platform-specific visual assets including images, short-form video, stories, and carousel posts",
-          "status_conditions": [
-            "assets_created"
-          ]
+          "id": "create-assets",
+          "type": "agent_call",
+          "name": "Create Assets",
+          "config": {
+            "action": "create-assets",
+            "agent": "agent-designer-001",
+            "description": "Design platform-specific visual assets including images, short-form video, stories, and carousel posts",
+            "order": 2,
+            "status_conditions": [
+              "assets_created"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "write-captions",
-          "agent": "agent-content-spec-001",
-          "description": "Write platform-optimized captions with relevant hashtags, calls-to-action, and engagement hooks. Include UTM parameters for tracking",
-          "status_conditions": [
-            "captions_ready"
-          ]
+          "id": "write-captions",
+          "type": "agent_call",
+          "name": "Write Captions",
+          "config": {
+            "action": "write-captions",
+            "agent": "agent-content-spec-001",
+            "description": "Write platform-optimized captions with relevant hashtags, calls-to-action, and engagement hooks. Include UTM parameters for tracking",
+            "order": 3,
+            "status_conditions": [
+              "captions_ready"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "review-and-approve",
-          "agent": "agent-mkt-mgr-001",
-          "description": "Review social media content for brand compliance, messaging accuracy, and engagement potential. Approve scheduled content",
-          "status_conditions": [
-            "approved",
-            "revisions_requested"
-          ]
+          "id": "review-and-approve",
+          "type": "agent_call",
+          "name": "Review And Approve",
+          "config": {
+            "action": "review-and-approve",
+            "agent": "agent-mkt-mgr-001",
+            "description": "Review social media content for brand compliance, messaging accuracy, and engagement potential. Approve scheduled content",
+            "order": 4,
+            "status_conditions": [
+              "approved",
+              "revisions_requested"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "schedule-publish",
-          "agent": "agent-mkt-gpo-001",
-          "description": "Schedule and publish content across all social media platforms using social media management tools",
-          "status_conditions": [
-            "scheduled",
-            "published"
-          ]
+          "id": "schedule-publish",
+          "type": "agent_call",
+          "name": "Schedule Publish",
+          "config": {
+            "action": "schedule-publish",
+            "agent": "agent-mkt-gpo-001",
+            "description": "Schedule and publish content across all social media platforms using social media management tools",
+            "order": 5,
+            "status_conditions": [
+              "scheduled",
+              "published"
+            ]
+          }
         },
         {
-          "order": 6,
-          "action": "engage-and-monitor",
-          "agent": "agent-mkt-gpo-001",
-          "description": "Monitor comments, messages, and mentions. Respond to audience engagement, manage community, and flag urgent issues to the team",
-          "status_conditions": [
-            "engagement_logged",
-            "issues_escalated"
-          ]
+          "id": "engage-and-monitor",
+          "type": "agent_call",
+          "name": "Engage And Monitor",
+          "config": {
+            "action": "engage-and-monitor",
+            "agent": "agent-mkt-gpo-001",
+            "description": "Monitor comments, messages, and mentions. Respond to audience engagement, manage community, and flag urgent issues to the team",
+            "order": 6,
+            "status_conditions": [
+              "engagement_logged",
+              "issues_escalated"
+            ]
+          }
         }
       ]
     },
@@ -394,60 +497,90 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "segment-lead",
-          "agent": "agent-mkt-gpo-001",
-          "description": "Classify and segment the lead based on source, industry, company size, behavioral signals, and lead score into appropriate nurturing stream",
-          "status_conditions": [
-            "lead_segmented"
-          ]
+          "id": "segment-lead",
+          "type": "agent_call",
+          "name": "Segment Lead",
+          "config": {
+            "action": "segment-lead",
+            "agent": "agent-mkt-gpo-001",
+            "description": "Classify and segment the lead based on source, industry, company size, behavioral signals, and lead score into appropriate nurturing stream",
+            "order": 1,
+            "status_conditions": [
+              "lead_segmented"
+            ]
+          }
         },
         {
-          "order": 2,
-          "action": "trigger-sequence",
-          "agent": "agent-digital-mkt-001",
-          "description": "Activate the appropriate lead nurturing email sequence based on the lead segment. Configure timing, content personalization, and trigger conditions",
-          "status_conditions": [
-            "sequence_triggered"
-          ]
+          "id": "trigger-sequence",
+          "type": "agent_call",
+          "name": "Trigger Sequence",
+          "config": {
+            "action": "trigger-sequence",
+            "agent": "agent-digital-mkt-001",
+            "description": "Activate the appropriate lead nurturing email sequence based on the lead segment. Configure timing, content personalization, and trigger conditions",
+            "order": 2,
+            "status_conditions": [
+              "sequence_triggered"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "deliver-content",
-          "agent": "agent-mkt-gpo-001",
-          "description": "Deliver personalized content through email, retargeting ads, and in-app messages based on lead engagement and behavioral triggers",
-          "status_conditions": [
-            "content_delivered"
-          ]
+          "id": "deliver-content",
+          "type": "agent_call",
+          "name": "Deliver Content",
+          "config": {
+            "action": "deliver-content",
+            "agent": "agent-mkt-gpo-001",
+            "description": "Deliver personalized content through email, retargeting ads, and in-app messages based on lead engagement and behavioral triggers",
+            "order": 3,
+            "status_conditions": [
+              "content_delivered"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "track-engagement",
-          "agent": "agent-digital-mkt-001",
-          "description": "Track lead engagement across all touchpoints: email opens, clicks, content downloads, website visits, and content interactions",
-          "status_conditions": [
-            "engagement_tracked"
-          ]
+          "id": "track-engagement",
+          "type": "agent_call",
+          "name": "Track Engagement",
+          "config": {
+            "action": "track-engagement",
+            "agent": "agent-digital-mkt-001",
+            "description": "Track lead engagement across all touchpoints: email opens, clicks, content downloads, website visits, and content interactions",
+            "order": 4,
+            "status_conditions": [
+              "engagement_tracked"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "score-and-route",
-          "agent": "agent-mkt-gpo-001",
-          "description": "Update lead score based on engagement. Route high-scoring leads to sales team. Continue nurturing for lower-scoring leads with additional content",
-          "status_conditions": [
-            "lead_scorred",
-            "lead_routed"
-          ]
+          "id": "score-and-route",
+          "type": "agent_call",
+          "name": "Score And Route",
+          "config": {
+            "action": "score-and-route",
+            "agent": "agent-mkt-gpo-001",
+            "description": "Update lead score based on engagement. Route high-scoring leads to sales team. Continue nurturing for lower-scoring leads with additional content",
+            "order": 5,
+            "status_conditions": [
+              "lead_scorred",
+              "lead_routed"
+            ]
+          }
         },
         {
-          "order": 6,
-          "action": "analyze-and-optimize",
-          "agent": "agent-digital-mkt-001",
-          "description": "Analyze sequence performance: open rates, click-through rates, conversion rates, and drop-off points. Optimize content and timing through A/B testing",
-          "status_conditions": [
-            "analysis_complete",
-            "optimizations_applied"
-          ]
+          "id": "analyze-and-optimize",
+          "type": "agent_call",
+          "name": "Analyze And Optimize",
+          "config": {
+            "action": "analyze-and-optimize",
+            "agent": "agent-digital-mkt-001",
+            "description": "Analyze sequence performance: open rates, click-through rates, conversion rates, and drop-off points. Optimize content and timing through A/B testing",
+            "order": 6,
+            "status_conditions": [
+              "analysis_complete",
+              "optimizations_applied"
+            ]
+          }
         }
       ]
     },
@@ -464,59 +597,89 @@
       ],
       "steps": [
         {
-          "order": 1,
-          "action": "collect-metrics",
-          "agent": "agent-mkt-gpo-001",
-          "description": "Aggregate performance data from all marketing channels: website analytics, ad platforms, email platforms, social media, and CRM",
-          "status_conditions": [
-            "data_collected"
-          ]
+          "id": "collect-metrics",
+          "type": "agent_call",
+          "name": "Collect Metrics",
+          "config": {
+            "action": "collect-metrics",
+            "agent": "agent-mkt-gpo-001",
+            "description": "Aggregate performance data from all marketing channels: website analytics, ad platforms, email platforms, social media, and CRM",
+            "order": 1,
+            "status_conditions": [
+              "data_collected"
+            ]
+          }
         },
         {
-          "order": 2,
-          "action": "calculate-kpis",
-          "agent": "agent-digital-mkt-001",
-          "description": "Calculate key performance indicators: CAC, ROI, conversion rates, engagement rates, lead volume, funnel metrics, and channel attribution",
-          "status_conditions": [
-            "kpis_calculated"
-          ]
+          "id": "calculate-kpis",
+          "type": "agent_call",
+          "name": "Calculate Kpis",
+          "config": {
+            "action": "calculate-kpis",
+            "agent": "agent-digital-mkt-001",
+            "description": "Calculate key performance indicators: CAC, ROI, conversion rates, engagement rates, lead volume, funnel metrics, and channel attribution",
+            "order": 2,
+            "status_conditions": [
+              "kpis_calculated"
+            ]
+          }
         },
         {
-          "order": 3,
-          "action": "generate-report",
-          "agent": "agent-mkt-gpo-001",
-          "description": "Generate performance report with channel breakdown, campaign results, trend analysis, and comparison against targets",
-          "status_conditions": [
-            "report_generated"
-          ]
+          "id": "generate-report",
+          "type": "agent_call",
+          "name": "Generate Report",
+          "config": {
+            "action": "generate-report",
+            "agent": "agent-mkt-gpo-001",
+            "description": "Generate performance report with channel breakdown, campaign results, trend analysis, and comparison against targets",
+            "order": 3,
+            "status_conditions": [
+              "report_generated"
+            ]
+          }
         },
         {
-          "order": 4,
-          "action": "identify-insights",
-          "agent": "agent-digital-mkt-001",
-          "description": "Analyze report to identify top-performing channels, underperforming areas, successful tactics, and optimization opportunities",
-          "status_conditions": [
-            "insights_identified"
-          ]
+          "id": "identify-insights",
+          "type": "agent_call",
+          "name": "Identify Insights",
+          "config": {
+            "action": "identify-insights",
+            "agent": "agent-digital-mkt-001",
+            "description": "Analyze report to identify top-performing channels, underperforming areas, successful tactics, and optimization opportunities",
+            "order": 4,
+            "status_conditions": [
+              "insights_identified"
+            ]
+          }
         },
         {
-          "order": 5,
-          "action": "recommend-actions",
-          "agent": "agent-mkt-mgr-001",
-          "description": "Formulate strategic recommendations: reallocate budget, adjust targeting, modify creative, pause underperforming campaigns, or scale winning approaches",
-          "status_conditions": [
-            "recommendations_formulated"
-          ]
+          "id": "recommend-actions",
+          "type": "agent_call",
+          "name": "Recommend Actions",
+          "config": {
+            "action": "recommend-actions",
+            "agent": "agent-mkt-mgr-001",
+            "description": "Formulate strategic recommendations: reallocate budget, adjust targeting, modify creative, pause underperforming campaigns, or scale winning approaches",
+            "order": 5,
+            "status_conditions": [
+              "recommendations_formulated"
+            ]
+          }
         },
         {
-          "order": 6,
-          "action": "executive-communication",
-          "agent": "agent-mkt-gpo-001",
-          "description": "Present performance summary and recommendations to stakeholders. Update marketing dashboard and archive historical data",
-          "status_conditions": [
-            "communicated",
-            "data_archived"
-          ]
+          "id": "executive-communication",
+          "type": "agent_call",
+          "name": "Executive Communication",
+          "config": {
+            "action": "executive-communication",
+            "agent": "agent-mkt-gpo-001",
+            "description": "Present performance summary and recommendations to stakeholders. Update marketing dashboard and archive historical data",
+            "order": 6,
+            "status_conditions": [
+              "communicated",
+              "data_archived"
+            ]
+          }
         }
       ]
     }
@@ -586,128 +749,157 @@
     {
       "id": "gov-001",
       "name": "Brand Voice and Visual Standards",
-      "rule": "All marketing content must follow approved brand voice guidelines and visual standards. The Marketing Manager or Designer must review and approve all customer-facing materials before publication.",
-      "scope": "all-marketing-content",
-      "severity": "high",
-      "enforcement": "process-gate"
+      "type": "custom",
+      "description": "All marketing content must follow approved brand voice guidelines and visual standards. The Marketing Manager or Designer must review and approve all customer-facing materials before publication.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "all-marketing-content",
+        "severity": "high"
+      }
     },
     {
       "id": "gov-002",
       "name": "Campaign Approval Process",
-      "rule": "All paid campaigns must have budget approval from the Marketing Manager before launch. Campaign materials must be reviewed for compliance, accuracy, and brand alignment prior to any public release.",
-      "scope": "paid-campaigns",
-      "severity": "high",
-      "enforcement": "policy-gate"
+      "type": "custom",
+      "description": "All paid campaigns must have budget approval from the Marketing Manager before launch. Campaign materials must be reviewed for compliance, accuracy, and brand alignment prior to any public release.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "paid-campaigns",
+        "severity": "high"
+      }
     },
     {
       "id": "gov-003",
       "name": "Data Privacy and Compliance",
-      "rule": "All lead data must be collected and processed in compliance with GDPR, CAN-SPAM, and relevant data protection regulations. Unsubscribe requests must be honored within 24 hours. Personal data must be stored securely and only used for stated purposes.",
-      "scope": "data-handling",
-      "severity": "critical",
-      "enforcement": "automated"
+      "type": "compliance",
+      "description": "All lead data must be collected and processed in compliance with GDPR, CAN-SPAM, and relevant data protection regulations. Unsubscribe requests must be honored within 24 hours. Personal data must be stored securely and only used for stated purposes.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "data-handling",
+        "severity": "critical"
+      }
     },
     {
       "id": "gov-004",
       "name": "Content SEO Standards",
-      "rule": "All published content must include SEO optimization: target keywords in title, headers, and first paragraph, meta description under 160 characters, alt text for images, and internal links to relevant pages.",
-      "scope": "content-publishing",
-      "severity": "medium",
-      "enforcement": "process-gate"
+      "type": "custom",
+      "description": "All published content must include SEO optimization: target keywords in title, headers, and first paragraph, meta description under 160 characters, alt text for images, and internal links to relevant pages.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "content-publishing",
+        "severity": "medium"
+      }
     },
     {
       "id": "gov-005",
       "name": "Social Media Compliance",
-      "rule": "All social media posts must comply with platform policies, industry regulations (especially for regulated industries), and company social media policy. Financial disclosures and sponsored content tags must be included where required.",
-      "scope": "social-media",
-      "severity": "high",
-      "enforcement": "process-gate"
+      "type": "compliance",
+      "description": "All social media posts must comply with platform policies, industry regulations (especially for regulated industries), and company social media policy. Financial disclosures and sponsored content tags must be included where required.",
+      "enforcement": "enforce",
+      "conditions": {
+        "scope": "social-media",
+        "severity": "high"
+      }
     }
   ],
   "kpis": [
     {
       "id": "kpi-001",
       "name": "Lead Generation",
-      "description": "Number of qualified marketing leads generated per month",
-      "target": "based on revenue targets (typically 100-500/month depending on company)",
-      "measurement": "count per month",
-      "baseline": 100,
-      "target_value": 250,
-      "threshold": 80,
-      "frequency": "monthly",
-      "dashboard": "lead-metrics"
+      "description": "Number of qualified marketing leads generated per month Measured as: count per month",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 250,
+        "warning": 80,
+        "baseline": 100,
+        "target_label": "based on revenue targets (typically 100-500/month depending on company)"
+      },
+      "aggregation_period": "month",
+      "dashboard_link": "dashboard://lead-metrics"
     },
     {
       "id": "kpi-002",
       "name": "Conversion Rate",
-      "description": "Percentage of website visitors who complete a desired action (form fill, demo request, purchase)",
-      "target": "2-5% for B2B, 1-3% for e-commerce",
-      "measurement": "percentage",
-      "baseline": 2.5,
-      "target_value": 4,
-      "threshold": 1.5,
-      "frequency": "weekly",
-      "dashboard": "conversion-metrics"
+      "description": "Percentage of website visitors who complete a desired action (form fill, demo request, purchase) Measured as: percentage",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 4,
+        "warning": 1.5,
+        "baseline": 2.5,
+        "target_label": "2-5% for B2B, 1-3% for e-commerce"
+      },
+      "aggregation_period": "week",
+      "dashboard_link": "dashboard://conversion-metrics"
     },
     {
       "id": "kpi-003",
       "name": "Customer Acquisition Cost (CAC)",
-      "description": "Total marketing spend divided by number of new customers acquired",
-      "target": "declining or stable trend",
-      "measurement": "currency per customer",
-      "baseline": 150,
-      "target_value": 100,
-      "threshold": 200,
-      "frequency": "monthly",
-      "dashboard": "roi-metrics"
+      "description": "Total marketing spend divided by number of new customers acquired Measured as: currency per customer",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 100,
+        "warning": 200,
+        "baseline": 150,
+        "target_label": "declining or stable trend"
+      },
+      "aggregation_period": "month",
+      "dashboard_link": "dashboard://roi-metrics"
     },
     {
       "id": "kpi-004",
       "name": "Marketing ROI",
-      "description": "Revenue attributed to marketing divided by total marketing spend",
-      "target": "4:1 or higher",
-      "measurement": "ratio",
-      "baseline": 3,
-      "target_value": 4,
-      "threshold": 2,
-      "frequency": "quarterly",
-      "dashboard": "roi-metrics"
+      "description": "Revenue attributed to marketing divided by total marketing spend Measured as: ratio",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 4,
+        "warning": 2,
+        "baseline": 3,
+        "target_label": "4:1 or higher"
+      },
+      "aggregation_period": "month",
+      "dashboard_link": "dashboard://roi-metrics"
     },
     {
       "id": "kpi-005",
       "name": "Engagement Rate",
-      "description": "Average engagement rate across social media platforms (likes, comments, shares, saves)",
-      "target": "above industry average (2-3%)",
-      "measurement": "percentage",
-      "baseline": 2,
-      "target_value": 3.5,
-      "threshold": 1,
-      "frequency": "weekly",
-      "dashboard": "engagement-metrics"
+      "description": "Average engagement rate across social media platforms (likes, comments, shares, saves) Measured as: percentage",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 3.5,
+        "warning": 1,
+        "baseline": 2,
+        "target_label": "above industry average (2-3%)"
+      },
+      "aggregation_period": "week",
+      "dashboard_link": "dashboard://engagement-metrics"
     },
     {
       "id": "kpi-006",
       "name": "Brand Awareness",
-      "description": "Brand visibility measured by social reach, search volume, direct traffic, and social mentions",
-      "target": "increasing trend",
-      "measurement": "composite score",
-      "baseline": 100,
-      "target_value": 150,
-      "threshold": 80,
-      "frequency": "monthly",
-      "dashboard": "brand-metrics"
+      "description": "Brand visibility measured by social reach, search volume, direct traffic, and social mentions Measured as: composite score",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 150,
+        "warning": 80,
+        "baseline": 100,
+        "target_label": "increasing trend"
+      },
+      "aggregation_period": "month",
+      "dashboard_link": "dashboard://brand-metrics"
     },
     {
       "id": "kpi-007",
       "name": "Content Performance",
-      "description": "Content engagement metrics including page views, time on page, social shares, and lead generation from content assets",
-      "target": "increasing trend",
-      "measurement": "composite score",
-      "baseline": 500,
-      "target_value": 1000,
-      "threshold": 300,
-      "frequency": "monthly",
-      "dashboard": "content-metrics"
+      "description": "Content engagement metrics including page views, time on page, social shares, and lead generation from content assets Measured as: composite score",
+      "metric_type": "gauge",
+      "thresholds": {
+        "target": 1000,
+        "warning": 300,
+        "baseline": 500,
+        "target_label": "increasing trend"
+      },
+      "aggregation_period": "month",
+      "dashboard_link": "dashboard://content-metrics"
     }
   ],
   "integrations": [
@@ -796,7 +988,7 @@
       "name": "Brand Approval Policy",
       "description": "All customer-facing marketing materials must be reviewed and approved by the Marketing Manager or designated Designer before publication. Emergency content requires post-hoc approval within 4 hours. Brand guideline changes require Marketing Manager approval.",
       "scope": "content-approval",
-      "effective_from": "2026-07-17",
+      "effective_from": "2026-07-17T00:00:00Z",
       "review_frequency": "quarterly"
     },
     {
@@ -804,7 +996,7 @@
       "name": "Content Calendar Discipline",
       "description": "All marketing activities must be planned and tracked in the shared content calendar at least 2 weeks in advance. Emergency content is permitted but should not exceed 10% of total monthly content volume. Content calendar reviews occur weekly on Monday standup.",
       "scope": "content-planning",
-      "effective_from": "2026-07-17",
+      "effective_from": "2026-07-17T00:00:00Z",
       "review_frequency": "biannually"
     },
     {
@@ -812,8 +1004,54 @@
       "name": "Data Privacy and Consent Management",
       "description": "All lead data collection must include clear consent mechanisms. Double opt-in required for email subscriptions. Personal data must be stored in compliance with GDPR/CAN-SPAM. Unsubscribe and data deletion requests must be processed within 24 hours. Quarterly privacy compliance audit required.",
       "scope": "data-privacy",
-      "effective_from": "2026-07-17",
+      "effective_from": "2026-07-17T00:00:00Z",
       "review_frequency": "quarterly"
+    }
+  ],
+  "org_chart": [
+    {
+      "id": "pos-agent-mkt-mgr-001",
+      "title": "Marketing Manager",
+      "role_type": "manager",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-mkt-mgr-001",
+      "autonomy_tier": "coordinate"
+    },
+    {
+      "id": "pos-agent-content-spec-001",
+      "title": "Content Specialist",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-content-spec-001",
+      "reports_to": "pos-agent-mkt-mgr-001",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-agent-digital-mkt-001",
+      "title": "Digital Marketing Specialist",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-digital-mkt-001",
+      "reports_to": "pos-agent-mkt-mgr-001",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-agent-designer-001",
+      "title": "Designer/Creator",
+      "role_type": "specialist",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-designer-001",
+      "reports_to": "pos-agent-mkt-mgr-001",
+      "autonomy_tier": "draft"
+    },
+    {
+      "id": "pos-agent-mkt-gpo-001",
+      "title": "Marketing GPO",
+      "role_type": "support",
+      "holder_type": "ai_agent",
+      "agent_def_id": "agent-mkt-gpo-001",
+      "reports_to": "pos-agent-mkt-mgr-001",
+      "autonomy_tier": "recommend"
     }
   ]
 }
