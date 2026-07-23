@@ -1,202 +1,695 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
-<meta charset="utf-8">
-<title>Operan — Agentic Department Operating System</title>
-<link rel="icon" href="data:,">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operan — Empower Your Workforce. Replace Broken Work. Not People.</title>
+<meta name="description" content="Deploy AI-native departments in days, not months. Human-governed. Sovereign by design.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/app.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #050810;
+  --cyan: #00B4D8; --cyan-bright: #00D4FF; --gold: #D4A853;
+  --white: #F0F4F8; --gray-300: #94A3B8; --gray-500: #64748B;
+  --nav-h: 64px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-deep); color: var(--white); overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Nav */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; height: var(--nav-h); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  border-bottom: 1px solid transparent;
+  transition: background 0.4s, border-color 0.4s, backdrop-filter 0.4s;
+}
+.nav.scrolled {
+  background: rgba(5,8,16,0.85); backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border-bottom-color: rgba(0,180,216,0.1);
+}
+.nav-inner {
+  width: 100%; max-width: 1400px; padding: 0 40px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 16px; font-weight: 800; letter-spacing: 0.18em;
+  color: var(--white); text-decoration: none; position: relative;
+}
+.nav-logo::after {
+  content: ''; position: absolute; bottom: -3px; left: 0;
+  width: 100%; height: 2px;
+  background: linear-gradient(90deg, var(--cyan), var(--gold));
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.nav-logo:hover::after { transform: scaleX(1); }
+.nav-links { display: flex; align-items: center; gap: 32px; }
+.nav-link {
+  font-size: 13px; font-weight: 500; color: var(--gray-300);
+  text-decoration: none; letter-spacing: 0.02em; transition: color 0.3s; position: relative;
+}
+.nav-link::after {
+  content: ''; position: absolute; bottom: -4px; left: 0;
+  width: 0; height: 1.5px; background: var(--cyan-bright);
+  transition: width 0.3s cubic-bezier(0.16,1,0.3,1);
+}
+.nav-link:hover, .nav-link.active { color: var(--white); }
+.nav-link:hover::after, .nav-link.active::after { width: 100%; }
+.nav-cta {
+  display: inline-flex; align-items: center; padding: 8px 20px;
+  background: var(--cyan); color: var(--bg-deep);
+  font-size: 13px; font-weight: 600; border-radius: 6px;
+  text-decoration: none; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s;
+}
+.nav-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,180,216,0.35); }
+.nav-toggle {
+  display: none; flex-direction: column; gap: 5px; cursor: pointer; z-index: 1001;
+}
+.nav-toggle span { display: block; width: 22px; height: 2px; background: var(--gray-300); transition: transform 0.3s, opacity 0.3s; }
+
+/* Hero */
+.hero {
+  position: relative; width: 100%; height: 100vh; min-height: 600px;
+  padding-top: var(--nav-h);
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.rain-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+.rain-canvas::after { display: none; }
+#webgl-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; opacity: 0.92; }
+#webgl-canvas::after { display: none; }
+.hero::before {
+  content: ''; position: absolute; top: 40%; left: 50%;
+  transform: translate(-50%, -50%); width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(0,180,216,0.06), transparent 70%);
+  z-index: 0; pointer-events: none;
+}
+.hero::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(5, 8, 16, 0.78);
+  z-index: 3; pointer-events: none;
+}
+.hero-content {
+  position: relative; z-index: 10; text-align: center;
+  height: 100%; max-width: 900px; padding: 0 24px; width: 100%;
+}
+
+/* Slideshow */
+.slideshow {
+  position: relative; width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+}
+.slide-indicators {
+  position: absolute; bottom: 32px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 8px; z-index: 10;
+}
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1);
+  pointer-events: none;
+  padding: 0 24px;
+}
+.slide.active { opacity: 1; pointer-events: auto; }
+
+.slide-label {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--cyan); margin-bottom: 24px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  opacity: 0; animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s forwards;
+}
+.slide-label::before {
+  content: ''; width: 16px; height: 1px; background: var(--cyan);
+}
+.slide-title {
+  font-size: clamp(2.8rem, 6vw, 5.5rem);
+  font-weight: 900; line-height: 1.05;
+  letter-spacing: -0.03em; color: var(--white);
+  margin-bottom: 24px;
+  opacity: 0; animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.4s forwards;
+}
+.slide-title .accent {
+  background: linear-gradient(135deg, var(--cyan-bright), var(--gold));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.slide-subtitle {
+  font-size: clamp(1rem, 1.5vw, 1.2rem); font-weight: 400;
+  color: var(--gray-300); line-height: 1.7;
+  max-width: 560px; margin: 0 auto 32px;
+  opacity: 0; animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.6s forwards;
+}
+.slide-actions {
+  display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+  opacity: 0; animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.8s forwards;
+}
+.hero-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 28px; border-radius: 8px;
+  font-size: 14px; font-weight: 600; text-decoration: none;
+  cursor: pointer; transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s;
+  border: none;
+}
+.hero-btn-primary {
+  background: linear-gradient(135deg, var(--cyan) 0%, var(--cyan-bright) 100%);
+  color: var(--bg-deep); box-shadow: 0 0 20px rgba(0,180,216,0.15);
+}
+.hero-btn-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,180,216,0.35); }
+.hero-btn-outline {
+  border: 1px solid rgba(0,180,216,0.2);
+  color: var(--gray-300); background: rgba(0,180,216,0.04);
+  backdrop-filter: blur(8px);
+}
+.hero-btn-outline:hover { border-color: var(--cyan); color: var(--cyan-bright); transform: translateY(-2px); }
+
+.slide-trust {
+  display: flex; gap: 24px; justify-content: center; flex-wrap: wrap;
+  margin-top: 40px; font-size: 11px; color: var(--gray-500);
+  letter-spacing: 0.05em;
+  opacity: 0; animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 1s forwards;
+}
+
+/* Slide indicators */
+.slide-indicators {
+  position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 8px; z-index: 2;
+  opacity: 0; animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 1.1s forwards;
+}
+.slide-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--gray-600, #334155);
+  transition: background 0.3s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.slide-dot.active { background: var(--cyan); transform: scale(1.3); }
+
+.scroll-indicator {
+  position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  z-index: 2; color: var(--gray-500); font-size: 10px;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  opacity: 0; animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 1.2s forwards;
+}
+.scroll-line {
+  width: 1px; height: 40px;
+  background: linear-gradient(to bottom, var(--cyan), transparent);
+  animation: scrollLine 2s ease-in-out infinite;
+}
+@keyframes scrollLine {
+  0% { opacity: 0; transform: scaleY(0); transform-origin: top; }
+  50% { opacity: 1; transform: scaleY(1); transform-origin: top; }
+  51% { transform-origin: bottom; }
+  100% { opacity: 0; transform: scaleY(0); transform-origin: bottom; }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Content sections */
+.content { position: relative; z-index: 1; padding: 120px 0; }
+.content-inner { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+.content-dark { background: #0A1020; }
+
+.section-label {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 10px; font-weight: 500; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--cyan);
+  margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+.section-label::before { content: ''; width: 16px; height: 1px; background: var(--cyan); }
+.section-title {
+  font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 700;
+  line-height: 1.15; letter-spacing: -0.02em; color: var(--white); margin-bottom: 16px;
+}
+.section-title .accent {
+  background: linear-gradient(135deg, var(--cyan-bright), var(--gold));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.section-subtitle { font-size: 16px; color: var(--gray-300); line-height: 1.7; max-width: 680px; }
+.section-header { text-align: center; margin-bottom: 64px; }
+.section-header .section-subtitle { margin: 16px auto 0; }
+.divider { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, rgba(0,180,216,0.15), transparent); margin: 0; }
+
+.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; padding: 48px 0; }
+.metric {
+  text-align: center; padding: 24px; border-radius: 12px;
+  background: rgba(14,22,42,0.6); border: 1px solid rgba(0,180,216,0.08);
+  backdrop-filter: blur(10px); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), border-color 0.3s;
+}
+.metric:hover { transform: translateY(-4px); border-color: rgba(0,180,216,0.2); }
+.metric-value {
+  font-size: 2.5rem; font-weight: 800;
+  background: linear-gradient(135deg, var(--cyan-bright), var(--gold));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; line-height: 1.2;
+}
+.metric-label { font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+
+.problem-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.problem-item {
+  padding: 24px; border-radius: 12px;
+  background: rgba(14,22,42,0.5); border: 1px solid rgba(239,68,68,0.1);
+  transition: border-color 0.3s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.problem-item:hover { border-color: rgba(239,68,68,0.3); transform: translateY(-2px); }
+.problem-item .icon { font-size: 20px; margin-bottom: 12px; }
+.problem-item h4 { font-size: 14px; font-weight: 600; color: var(--white); margin-bottom: 6px; }
+.problem-item p { font-size: 13px; color: var(--gray-500); line-height: 1.5; }
+
+.dept-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.dept-card {
+  padding: 28px; border-radius: 14px;
+  background: rgba(14,22,42,0.6); border: 1px solid rgba(0,180,216,0.08);
+  backdrop-filter: blur(12px); transition: transform 0.5s cubic-bezier(0.34,1.56,0.64,1), border-color 0.3s, box-shadow 0.4s;
+  cursor: pointer; position: relative; overflow: hidden;
+}
+.dept-card::before {
+  content: ''; position: absolute; inset: 0; border-radius: 14px;
+  padding: 1px; background: linear-gradient(135deg, transparent 40%, var(--cyan) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: 0; transition: opacity 0.4s; pointer-events: none;
+}
+.dept-card:hover { transform: translateY(-6px); border-color: rgba(0,180,216,0.25); box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 30px rgba(0,180,216,0.08); }
+.dept-card:hover::before { opacity: 1; }
+.dept-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 16px; }
+.dept-icon-hr { background: rgba(0,180,216,0.1); } .dept-icon-finance { background: rgba(212,168,83,0.1); } .dept-icon-legal { background: rgba(139,92,246,0.1); }
+.dept-card h3 { font-size: 18px; font-weight: 700; color: var(--white); margin-bottom: 8px; }
+.dept-card p { font-size: 13px; color: var(--gray-500); line-height: 1.6; margin-bottom: 16px; }
+.dept-split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,180,216,0.08); }
+.dept-split .label { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+.dept-split .ai-label { color: var(--cyan); } .dept-split .human-label { color: var(--gold); }
+.dept-split ul { font-size: 11px; color: var(--gray-500); line-height: 1.5; }
+.dept-split ul li { margin-bottom: 2px; }
+
+.arch-layers { max-width: 720px; margin: 0 auto; }
+.arch-layer {
+  display: flex; align-items: center; gap: 16px; padding: 12px 20px;
+  border-radius: 10px; border: 1px solid rgba(0,180,216,0.08); margin-bottom: 4px;
+  background: rgba(14,22,42,0.4); transition: background 0.3s, border-color 0.3s;
+}
+.arch-layer:hover { background: rgba(0,180,216,0.03); border-color: rgba(0,180,216,0.15); }
+.arch-num {
+  flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(0,180,216,0.1); border: 1px solid rgba(0,180,216,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace; font-size: 13px;
+  color: var(--cyan); font-weight: 600;
+}
+.arch-name { font-size: 14px; font-weight: 500; color: var(--white); }
+.arch-desc { font-size: 12px; color: var(--gray-500); margin-left: 8px; }
+
+.pillar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.pillar-card {
+  padding: 28px; border-radius: 14px;
+  background: rgba(14,22,42,0.6); border: 1px solid rgba(0,180,216,0.08);
+  backdrop-filter: blur(10px); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), border-color 0.3s, box-shadow 0.4s;
+  position: relative; overflow: hidden;
+}
+.pillar-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--cyan), var(--gold));
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.5s cubic-bezier(0.16,1,0.3,1);
+}
+.pillar-card:hover { transform: translateY(-4px); border-color: rgba(0,180,216,0.2); box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+.pillar-card:hover::before { transform: scaleX(1); }
+.pillar-icon { font-size: 28px; margin-bottom: 12px; }
+.pillar-card h3 { font-size: 16px; font-weight: 700; color: var(--white); margin-bottom: 8px; }
+.pillar-card p { font-size: 13px; color: var(--gray-500); line-height: 1.6; }
+
+.cta-section { text-align: center; padding: 100px 0; position: relative; }
+.cta-section::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(0,180,216,0.06), transparent 70%);
+  pointer-events: none;
+}
+.cta-inner { position: relative; z-index: 2; max-width: 600px; margin: 0 auto; }
+.cta-inner h2 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; margin-bottom: 16px; }
+.cta-inner p { font-size: 16px; color: var(--gray-300); line-height: 1.7; margin-bottom: 32px; }
+
+/* Footer */
+.footer {
+  border-top: 1px solid rgba(255,255,255,0.04); padding: 48px 0 24px;
+  background: var(--bg-deep); position: relative; z-index: 1;
+}
+.footer-inner { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+.footer-grid { display: grid; grid-template-columns: 1.8fr repeat(3, 1fr); gap: 40px; margin-bottom: 40px; }
+.footer-brand { font-size: 16px; font-weight: 800; letter-spacing: 0.15em; color: var(--white); margin-bottom: 8px; }
+.footer-tagline { font-size: 13px; color: var(--gray-500); line-height: 1.5; }
+.footer-heading {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500;
+  letter-spacing: 0.15em; text-transform: uppercase; color: var(--gray-500); margin-bottom: 12px;
+}
+.footer-links { display: flex; flex-direction: column; gap: 8px; }
+.footer-link { font-size: 13px; color: var(--gray-500); text-decoration: none; transition: color 0.2s; }
+.footer-link:hover { color: var(--cyan); }
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.04); padding-top: 24px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; color: var(--gray-500); flex-wrap: wrap; gap: 8px;
+}
+
+/* Reveal */
+.reveal {
+  opacity: 0; transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .metrics, .problem-grid, .dept-grid, .pillar-grid { grid-template-columns: repeat(2, 1fr); }
+  .footer-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .nav-links {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(5,8,16,0.97); backdrop-filter: blur(20px);
+    flex-direction: column; justify-content: center; align-items: center;
+    gap: 24px; z-index: 999;
+  }
+  .nav-links.open { display: flex; }
+  .nav-link { font-size: 20px; }
+  .nav-toggle { display: flex; }
+  .metrics, .problem-grid, .dept-grid, .pillar-grid { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
 
-<!-- ═══ LANDING PAGE ═══ -->
-<div id="landing" style="display:none">
-  <nav class="landing-nav">
-    <div class="nav-inner">
-      <a class="nav-logo" href="#"><span class="logo">O</span> OPERAN</a>
-      <div class="nav-links">
-        <a href="#platform">Platform</a>
-        <a href="#departments">Departments</a>
-        <a href="#pricing">Pricing</a>
-        <a href="#security">Security</a>
-      </div>
-      <div class="nav-actions">
-        <button class="ghost" id="btnGoLogin">Sign In</button>
-        <button class="primary" id="btnLaunch">Launch Portal</button>
-      </div>
-    </div>
-  </nav>
+<!-- Rain Background -->
+<canvas id="rain-canvas" class="hero-canvas"></canvas>
+<canvas id="webgl-canvas" class="hero-canvas"></canvas>
 
-  <header class="hero">
-    <div class="hero-bg"></div>
-    <div class="hero-content">
-      <h1>Deploy AI Departments<br><span class="accent">in Days, Not Months</span></h1>
-      <p class="hero-sub">Human-governed. Sovereign by design. Deploy small, medium, or enterprise teams with policies, tasks, and full operational visibility.</p>
-      <div class="hero-actions">
-        <button class="primary lg" id="btnHeroLogin">Get Started</button>
-        <button class="ghost lg" id="btnHeroDemo">Watch Demo</button>
-      </div>
-      <div class="hero-stats">
-        <div class="hero-stat"><strong>20</strong> modules</div>
-        <div class="hero-stat"><strong>100%</strong> sovereign</div>
-        <div class="hero-stat"><strong>24/7</strong> operations</div>
-      </div>
+<!-- ═══ Navigation ═══ -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">OPERAN</a>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link active">Home</a>
+      <a href="platform.html" class="nav-link">Platform</a>
+      <a href="departments.html" class="nav-link">Departments</a>
+      <a href="industries.html" class="nav-link">Industries</a>
+      <a href="security.html" class="nav-link">Security</a>
+      <a href="about.html" class="nav-link">About</a>
+      <a href="/app/" class="nav-link">Sign In</a>
+      <a href="briefing.html" class="nav-cta">Request Briefing</a>
     </div>
-  </header>
+    <div class="nav-toggle" id="navToggle"><span></span><span></span><span></span></div>
+  </div>
+</nav>
 
-  <section id="platform" class="section">
-    <div class="section-inner">
-      <h2>Platform Capabilities</h2>
-      <p class="section-sub">Everything you need to run AI-native departments at scale</p>
-      <div class="feature-grid">
-        <div class="feature-card"><div class="f-icon">🏢</div><h3>Department Templates</h3><p>Deploy pre-configured teams: small (3-5), medium (10-25), or enterprise (50-100) with roles, policies, and governance built in.</p></div>
-        <div class="feature-card"><div class="f-icon">🤖</div><h3>Agent Workforce</h3><p>Registry and orchestration for AI agents with capability indexing, versioning, and lifecycle management.</p></div>
-        <div class="feature-card"><div class="f-icon">⚙️</div><h3>Workflow Engine</h3><p> DAG-based orchestration with human-in-the-loop approval gates, retry policies, and live monitoring.</p></div>
-        <div class="feature-card"><div class="f-icon">🛡</div><h3>Policy Governance</h3><p>Enforce compliance rules: GDPR, SOX, NESA, HIPAA with real-time evaluation and audit trails.</p></div>
-        <div class="feature-card"><div class="f-icon">📊</div><h3>Operational Dashboard</h3><p>Hourly, daily, weekly, and monthly reports with SLA tracking, cost monitoring, and KPI dashboards.</p></div>
-        <div class="feature-card"><div class="f-icon">🔌</div><h3>Enterprise Connectors</h3><p>Pre-built connectors for M365, Salesforce, SAP, ServiceNow, and custom APIs.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="pricing" class="section alt">
-    <div class="section-inner">
-      <h2>Team Sizes</h2>
-      <div class="pricing-grid">
-        <div class="pricing-card">
-          <div class="pricing-header"><h3>Small Team</h3><span class="pricing-tag">Startup / Pilot</span></div>
-          <ul>
-            <li>Up to 5 agents</li>
-            <li>10 workflows</li>
-            <li>3 department templates</li>
-            <li>Basic monitoring</li>
-            <li>Email support</li>
-          </ul>
+<!-- ═══ Hero Slideshow ═══ -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="slideshow" id="hero-slider">
+      <div class="slide active">
+        <div class="slide-label">Enterprise Agentic Workforce Infrastructure</div>
+        <h1 class="slide-title">
+          Empower Your<br><span class="accent">Workforce.</span>
+        </h1>
+        <p class="slide-subtitle">
+          Replace broken work. Not people. Agentic departments that handle routine tasks with compliance, quality, and 24/7 consistency.
+        </p>
+        <div class="slide-actions">
+          <a href="briefing.html" class="hero-btn hero-btn-primary">Request Executive Briefing</a>
+          <a href="platform.html" class="hero-btn hero-btn-outline">See How It Works →</a>
         </div>
-        <div class="pricing-card featured">
-          <div class="pricing-header"><h3>Medium Team</h3><span class="pricing-tag">Growing Business</span></div>
-          <ul>
-            <li>Up to 25 agents</li>
-            <li>50 workflows</li>
-            <li>10 department templates</li>
-            <li>Full observability</li>
-            <li>Priority support</li>
-          </ul>
-        </div>
-        <div class="pricing-card">
-          <div class="pricing-header"><h3>Enterprise</h3><span class="pricing-tag">Full Scale</span></div>
-          <ul>
-            <li>Up to 100 agents</li>
-            <li>200 workflows</li>
-            <li>50 department templates</li>
-            <li>Advanced analytics</li>
-            <li>Dedicated support</li>
-          </ul>
+        <div class="slide-trust">
+          <span>Government trusted</span>
+          <span>•</span>
+          <span>Human-governed</span>
+          <span>•</span>
+          <span>Air-gappable</span>
         </div>
       </div>
-    </div>
-  </section>
 
-  <footer class="footer">
-    <div class="footer-inner">
-      <div><span class="logo">O</span> OPERAN</div>
-      <div>Agentic Department Operating System</div>
-      <div>Sovereign by design. Built for enterprises that need control, compliance, and scale.</div>
-    </div>
-  </footer>
-</div>
+      <!-- Slide 2: Equip Your Team -->
+      <div class="slide">
+        <div class="slide-label">The Modern Workforce</div>
+        <h1 class="slide-title">
+          Don't Fire Your<br><span class="accent">Team.</span>
+        </h1>
+        <p class="slide-subtitle">
+          Equip them with AI superpowers. Agentic departments multiply productivity without replacing a single person. Powered by people. Governed by AI.
+        </p>
+        <div class="slide-actions">
+          <a href="briefing.html" class="hero-btn hero-btn-primary">See How It Works</a>
+          <a href="departments.html" class="hero-btn hero-btn-outline">Explore Departments →</a>
+        </div>
+        <div class="slide-trust">
+          <span>24/7 consistency</span>
+          <span>•</span>
+          <span>Human quality</span>
+          <span>•</span>
+          <span>Machine reliability</span>
+        </div>
+      </div>
 
-<!-- ═══ LOGIN PAGE ═══ -->
-<div id="login" style="display:none">
-  <div class="login-wrap">
-    <div class="login-card glass">
-      <div class="brand-lg"><span class="logo">O</span><div><h1>Operan</h1><p>Agentic Department Operating System</p></div></div>
-      <label>Admin password</label>
-      <input id="loginSecret" type="password" placeholder="Enter the platform admin password" autocomplete="off">
-      <label>Tenant ID</label>
-      <div class="frow">
-        <input id="loginTenant" placeholder="e.g. acme-corp">
-        <button class="ghost sm" id="btnNewTenant">New</button>
+      <!-- Slide 3: Replace Offshore -->
+      <div class="slide">
+        <div class="slide-label">Cost + Compliance + Quality</div>
+        <h1 class="slide-title">
+          Don't Pay for<br>Offshore Teams.
+        </h1>
+        <p class="slide-subtitle">
+          Deploy agentic departments on-prem. Arabic-first. Sovereign by design. Full compliance with PDPL, NCA, and Saudization — at a fraction of offshore cost.
+        </p>
+        <div class="slide-actions">
+          <a href="briefing.html" class="hero-btn hero-btn-primary">Request Executive Briefing</a>
+          <a href="security.html" class="hero-btn hero-btn-outline">Security Architecture →</a>
+        </div>
+        <div class="slide-trust">
+          <span>PDPL compliant</span>
+          <span>•</span>
+          <span>Arabic-first</span>
+          <span>•</span>
+          <span>On-prem ready</span>
+        </div>
       </div>
-      <button class="wide lg" id="btnConnect">Enter the platform</button>
-      <div class="err" id="loginMsg"></div>
-      <div class="login-footer">
-        <a class="ghost sm" onclick="renderLandingPage()">← Back to home</a>
-        <span>Need an account? <a href="#" onclick="renderRegisterPage(); return false;">Register</a></span>
-      </div>
+
+    </div><!-- /slideshow -->
+  </div>
+
+  <div class="slide-indicators">
+    <div class="slide-dot active"></div>
+    <div class="slide-dot"></div>
+    <div class="slide-dot"></div>
+  </div>
+</section>
+
+<!-- ═══ Metrics ═══ -->
+<div class="content">
+  <div class="content-inner">
+    <div class="metrics">
+      <div class="metric reveal"><div class="metric-value" data-target="20">0</div><div class="metric-label">Modules Deployed</div></div>
+      <div class="metric reveal" style="transition-delay:80ms;"><div class="metric-value" data-target="10">0</div><div class="metric-label">Department Templates</div></div>
+      <div class="metric reveal" style="transition-delay:160ms;"><div class="metric-value" data-target="1753">0</div><div class="metric-label">Tests Passing</div></div>
+      <div class="metric reveal" style="transition-delay:240ms;"><div class="metric-value" data-target="10">0</div><div class="metric-label">Industries Served</div></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ REGISTER PAGE ═══ -->
-<div id="register" style="display:none">
-  <div class="login-wrap">
-    <div class="login-card glass">
-      <div class="brand-lg"><span class="logo">O</span><div><h1>Create Account</h1><p>Set up your Operan tenant</p></div></div>
-      <label>Company name</label>
-      <input id="regName" type="text" placeholder="e.g. Acme Corporation">
-      <label>Subdomain</label>
-      <input id="regSlug" type="text" placeholder="e.g. acme-corp (auto-generated from name)">
-      <label>Plan</label>
-      <select id="regPlan">
-        <option value="small">Small Team — up to 5 agents</option>
-        <option value="medium" selected>Medium Team — up to 25 agents</option>
-        <option value="enterprise">Enterprise — up to 100 agents</option>
-      </select>
-      <button class="wide lg" id="btnRegister">Create Tenant</button>
-      <div class="err" id="regMsg"></div>
-      <div class="login-footer">
-        <a class="ghost sm" onclick="renderLoginPage()">← Back to login</a>
-      </div>
+<div class="divider"></div>
+
+<!-- ═══ Problem ═══ -->
+<section class="content content-dark">
+  <div class="content-inner">
+    <div class="section-header reveal">
+      <div class="section-label">The Challenge</div>
+      <h2 class="section-title">Most Work Is <span class="accent">Broken.</span></h2>
+      <p class="section-subtitle" style="margin:16px auto 0;">Organizations waste 60–70% of human effort on repetitive manual tasks, non-compliant practices, and inefficient processes. Not people—the work itself.</p>
+    </div>
+    <div class="problem-grid">
+      <div class="problem-item reveal" style="transition-delay:0ms;"><div class="icon">×</div><h4>Repetitive Manual Tasks</h4><p>Talent drains on routine work that AI can handle with quality and consistency.</p></div>
+      <div class="problem-item reveal" style="transition-delay:80ms;"><div class="icon">×</div><h4>Non-Compliant Practices</h4><p>Human error in compliance creates risk. Saudization, PDPL, SOX—the stakes keep rising.</p></div>
+      <div class="problem-item reveal" style="transition-delay:160ms;"><div class="icon">×</div><h4>Low-Quality Deliverables</h4><p>Inconsistent output erodes trust. Manual processes vary by person, shift, and fatigue.</p></div>
+      <div class="problem-item reveal" style="transition-delay:240ms;"><div class="icon">×</div><h4>Inefficient Workflows</h4><p>Disconnected tools and handoffs slow growth. Siloed data blocks decision-making.</p></div>
+    </div>
+    <div class="reveal" style="text-align:center;margin-top:48px;">
+      <p style="font-size:15px;color:var(--white);line-height:1.7;">
+        <strong style="color:var(--cyan-bright);">Operan's agentic departments handle this broken work—</strong> with governance, compliance, and 24/7 consistency.
+      </p>
     </div>
   </div>
-</div>
+</section>
 
-<!-- ═══ DASHBOARD SHELL ═══ -->
-<div id="shell" style="display:none">
-  <nav id="sidebar">
-    <div class="overlay"></div>
-    <div class="brand"><span class="logo">O</span><b>Operan</b></div>
-    <div class="nav-section">Operations</div>
-    <a data-view="dashboard" class="navlink active">⌂ Dashboard</a>
-    <a data-view="departments" class="navlink">🏢 Departments</a>
-    <a data-view="teams" class="navlink">👥 Teams</a>
-    <a data-view="tasks" class="navlink">📋 Tasks & Projects</a>
-    <a data-view="workflows" class="navlink">⚙️ Workflows</a>
-    <a data-view="supervision" class="navlink">🧑‍⚖️ Supervision</a>
-    <div class="nav-section">Governance</div>
-    <a data-view="policies" class="navlink">🛡 Policies</a>
-    <a data-view="reports" class="navlink">📊 Reports</a>
-    <a data-view="cost" class="navlink">💰 Costs</a>
-    <div class="nav-section">Platform</div>
-    <a data-view="agents" class="navlink">🤖 Agents</a>
-    <a data-view="ingestion" class="navlink">📚 Knowledge</a>
-    <a data-view="connectors" class="navlink">🔌 Connectors</a>
-    <a data-view="settings" class="navlink">⚙️ Settings</a>
-    <div class="navfoot">
-      <div class="tenantchip" id="tenantChip"></div>
-      <a id="btnLogout">Sign out</a>
+<div class="divider"></div>
+
+<!-- ═══ Departments ═══ -->
+<section class="content">
+  <div class="content-inner">
+    <div class="section-header reveal">
+      <div class="section-label">Department Templates</div>
+      <h2 class="section-title">Give Your Team <span class="accent">AI Superpowers.</span></h2>
+      <p class="section-subtitle" style="margin:16px auto 0;">Every department template empowers your professionals: AI handles routine tasks—you keep the judgment. 24/7 consistency—human quality, machine reliability.</p>
     </div>
-  </nav>
-
-  <div id="main">
-    <div id="topbar">
-      <div style="display:flex;align-items:center;gap:12px">
-        <button class="ghost sm menu-toggle" id="menuToggle">☰</button>
-        <div id="crumb">Dashboard</div>
-        <div style="flex:1"></div>
-        <div id="healthdots" class="health-dots"></div>
+    <div class="dept-grid">
+      <div class="dept-card reveal" style="transition-delay:0ms;">
+        <div class="dept-icon dept-icon-hr">👥</div>
+        <h3>Human Resources</h3>
+        <p>Complete HR department as digital workers. Policy, screening, onboarding, compliance.</p>
+        <div class="dept-split">
+          <div><div class="label ai-label">AI HANDLES</div><ul><li>Screening & matching</li><li>Policy generation</li><li>Onboarding flows</li></ul></div>
+          <div><div class="label human-label">HUMANS HANDLE</div><ul><li>Relationships</li><li>Strategy</li><li>Talent decisions</li></ul></div>
+        </div>
+      </div>
+      <div class="dept-card reveal" style="transition-delay:80ms;">
+        <div class="dept-icon dept-icon-finance">💰</div>
+        <h3>Finance</h3>
+        <p>Full financial operations: accounting, reporting, audit, budgeting—all governed.</p>
+        <div class="dept-split">
+          <div><div class="label ai-label">AI HANDLES</div><ul><li>Transaction monitoring</li><li>Report generation</li><li>Compliance checks</li></ul></div>
+          <div><div class="label human-label">HUMANS HANDLE</div><ul><li>Financial decisions</li><li>Strategy & planning</li><li>Stakeholder mgmt</li></ul></div>
+        </div>
+      </div>
+      <div class="dept-card reveal" style="transition-delay:160ms;">
+        <div class="dept-icon dept-icon-legal">📖</div>
+        <h3>Legal</h3>
+        <p>Legal operations: contract review, compliance, research, document drafting.</p>
+        <div class="dept-split">
+          <div><div class="label ai-label">AI HANDLES</div><ul><li>Contract review</li><li>Legal research</li><li>Document drafting</li></ul></div>
+          <div><div class="label human-label">HUMANS HANDLE</div><ul><li>Litigation strategy</li><li>Negotiation</li><li>Client counsel</li></ul></div>
+        </div>
       </div>
     </div>
-    <div id="view"></div>
+    <div style="text-align:center;margin-top:40px;" class="reveal">
+      <p style="color:var(--gray-500);font-size:13px;margin-bottom:16px;">10 departments × 3 enterprise sizes = 30 ways to empower your workforce</p>
+      <a href="departments.html" class="hero-btn hero-btn-outline">See All Departments →</a>
+    </div>
   </div>
-</div>
+</section>
 
-<div id="toasts"></div>
+<div class="divider"></div>
 
-<script type="module" src="/js/app.js"></script>
+<!-- ═══ Architecture ═══ -->
+<section class="content content-dark">
+  <div class="content-inner">
+    <div class="section-header reveal">
+      <div class="section-label">Architecture</div>
+      <h2 class="section-title">Six Layers of <span class="accent">Infrastructure.</span></h2>
+      <p class="section-subtitle" style="margin:16px auto 0;">A modular platform designed for sovereign operations at enterprise scale. Six layers, one integrated system.</p>
+    </div>
+    <div class="arch-layers">
+      <div class="arch-layer reveal"><div class="arch-num">1</div><span class="arch-name">Experience Layer</span><span class="arch-desc">API gateways, dashboards, integration points</span></div>
+      <div class="arch-layer reveal" style="transition-delay:60ms;"><div class="arch-num">2</div><span class="arch-name">Department Layer</span><span class="arch-desc">Configurable templates with org structures & workflows</span></div>
+      <div class="arch-layer reveal" style="transition-delay:120ms;"><div class="arch-num">3</div><span class="arch-name">Agent Layer</span><span class="arch-desc">Specialized digital workers with coordination protocols</span></div>
+      <div class="arch-layer reveal" style="transition-delay:180ms;"><div class="arch-num">4</div><span class="arch-name">Memory Layer</span><span class="arch-desc">Institutional knowledge fabric—searchable, compoundable</span></div>
+      <div class="arch-layer reveal" style="transition-delay:240ms;"><div class="arch-num">5</div><span class="arch-name">Governance Layer</span><span class="arch-desc">Policy engine, compliance monitoring, human oversight</span></div>
+      <div class="arch-layer reveal" style="transition-delay:300ms;"><div class="arch-num">6</div><span class="arch-name">Infrastructure Layer</span><span class="arch-desc">Multi-tenant fabric with sovereign data controls</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ Industries ═══ -->
+<section class="content">
+  <div class="content-inner">
+    <div class="section-header reveal">
+      <div class="section-label">Industry Solutions</div>
+      <h2 class="section-title">Built for Every <span class="accent">Sector.</span></h2>
+      <p class="section-subtitle" style="margin:16px auto 0;">Every industry in the GCC faces the same challenge: break work apart. Let AI handle the routine. Let humans handle the strategic.</p>
+    </div>
+    <div class="pillar-grid">
+      <div class="pillar-card reveal"><div class="pillar-icon">🏛</div><h3>Government & Public Sector</h3><p>Citizen service digitization, procurement compliance, Arabic delivery, data residency.</p></div>
+      <div class="pillar-card reveal" style="transition-delay:80ms;"><div class="pillar-icon">🛡</div><h3>Defense & Security</h3><p>Air-gapped deployment, immutable audit trails, zero-trust, per-tenant isolation.</p></div>
+      <div class="pillar-card reveal" style="transition-delay:160ms;"><div class="pillar-icon">🎥</div><h3>Healthcare</h3><p>Patient data sovereignty, Arabic clinical terminology, EHR integration, PDPL compliance.</p></div>
+      <div class="pillar-card reveal" style="transition-delay:0ms;"><div class="pillar-icon">⛅</div><h3>Energy</h3><p>Industrial data sovereignty, safety-critical auditability, multi-site deployment.</p></div>
+      <div class="pillar-card reveal" style="transition-delay:80ms;"><div class="pillar-icon">🏦</div><h3>Banking & Financial</h3><p>Financial data residency, SOX compliance, real-time fraud detection, legacy integration.</p></div>
+      <div class="pillar-card reveal" style="transition-delay:160ms;"><div class="pillar-icon">📱</div><h3>Telecommunications</h3><p>Multi-region compliance, high-volume processing, customer data governance.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ Security Pillars ═══ -->
+<section class="content content-dark">
+  <div class="content-inner">
+    <div class="section-header reveal">
+      <div class="section-label">Trust & Security</div>
+      <h2 class="section-title">Human-Governed. <span class="accent">Sovereign.</span> Auditable.</h2>
+      <p class="section-subtitle" style="margin:16px auto 0;">Every security capability is built into the platform—not layered on top. Seven pillars of protection.</p>
+    </div>
+    <div class="pillar-grid">
+      <div class="pillar-card reveal" style="transition-delay:0ms;"><div class="pillar-icon">💪</div><h3 style="color:var(--cyan-bright);">Human Empowerment</h3><p>Operan empowers workers, not replaces them. AI handles repetitive tasks. Humans handle strategic work.</p></div>
+      <div class="pillar-card reveal" style="transition-delay:80ms;"><div class="pillar-icon">🌐</div><h3>Data Sovereignty</h3><p>Your data never leaves your jurisdiction. Regional deployment isolation, private model hosting.</p></div>
+      <div class="pillar-card reveal" style="transition-delay:160ms;"><div class="pillar-icon">🗿</div><h3>On-Prem & Air-Gapped</h3><p>Operan runs behind your firewall. No cloud dependency. No external data flow.</p></div>
+      <div class="pillar-card reveal" style="transition-delay:0ms;"><div class="pillar-icon">🧭</div><h3>Human-Governed Autonomy</h3><p>Every critical action requires human approval. Humans can override any agent at any time.</p></div>
+      <div class="pillar-card reveal" style="transition-delay:80ms;"><div class="pillar-icon">📄</div><h3>Complete Audit Trail</h3><p>Every agent action becomes an event on Kafka. Distributed tracing. Immutable logs.</p></div>
+      <div class="pillar-card reveal" style="transition-delay:160ms;"><div class="pillar-icon">🔐</div><h3>Enterprise Encryption</h3><p>Encryption at rest and in transit. Enterprise-grade key management.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Final CTA ═══ -->
+<section class="cta-section">
+  <div class="cta-inner reveal">
+    <h2>Ready to Empower Your Workforce?</h2>
+    <p>Request an executive briefing. No sales pitch. Just a walkthrough of how Operan empowers Saudi professionals with agentic departments.</p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <a href="briefing.html" class="hero-btn hero-btn-primary">Request Executive Briefing</a>
+      <a href="departments.html" class="hero-btn hero-btn-outline">See Departments First</a>
+    </div>
+    <p style="color:var(--gray-500);font-size:11px;margin-top:24px;">A team member will contact you within 24 hours. Confidential.</p>
+  </div>
+</section>
+
+<!-- ═══ Footer ═══ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">OPERAN</div>
+        <p class="footer-tagline">The Operating System for Digital Departments.<br>Enterprise Agentic Workforce Infrastructure.</p>
+      </div>
+      <div>
+        <div class="footer-heading">Platform</div>
+        <div class="footer-links">
+          <a href="platform.html" class="footer-link">Architecture</a>
+          <a href="platform.html#modules" class="footer-link">Modules</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-heading">Solutions</div>
+        <div class="footer-links">
+          <a href="departments.html" class="footer-link">Departments</a>
+          <a href="industries.html" class="footer-link">Industries</a>
+          <a href="security.html" class="footer-link">Security</a>
+          <a href="private-cloud.html" class="footer-link">Private Cloud</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-heading">Company</div>
+        <div class="footer-links">
+          <a href="about.html" class="footer-link">About</a>
+          <a href="briefing.html" class="footer-link">Request Briefing</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Operan. All rights reserved.</span>
+      <span>Empower Your Workforce. Replace Broken Work. Not People.</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══ Scripts ═══ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>

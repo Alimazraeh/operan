@@ -108,11 +108,15 @@ func buildMux() *http.ServeMux {
 	}
 	fileServer := http.FileServer(http.FS(sub))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// SPA: unknown paths (no extension) fall back to index.html so the
-		// hash-less router still resolves after a refresh.
-		path := strings.TrimPrefix(r.URL.Path, "/")
-		if path != "" && !strings.Contains(path, ".") {
-			r.URL.Path = "/"
+		// The marketing site is served at the root; the product platform SPA
+		// lives under /app/. Only the SPA needs hash-less-route fallback:
+		// extensionless paths under /app/ resolve to app/index.html so the
+		// client router still works after a refresh or deep link.
+		if r.URL.Path == "/app" || strings.HasPrefix(r.URL.Path, "/app/") {
+			rest := strings.TrimPrefix(r.URL.Path, "/app")
+			if rest == "" || rest == "/" || !strings.Contains(rest, ".") {
+				r.URL.Path = "/app/"
+			}
 		}
 		fileServer.ServeHTTP(w, r)
 	})

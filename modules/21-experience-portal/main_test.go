@@ -8,10 +8,29 @@ import (
 	"testing"
 )
 
-func TestStaticShellAndSPAFallback(t *testing.T) {
+func TestMarketingSiteAtRoot(t *testing.T) {
 	mux := buildMux()
 
-	for _, path := range []string{"/", "/departments", "/agents/abc-123"} {
+	// The marketing site is served at the root and its pages by filename.
+	for _, path := range []string{"/", "/platform.html", "/departments.html"} {
+		req := httptest.NewRequest("GET", path, nil)
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("%s: status %d", path, w.Code)
+		}
+		if !strings.Contains(w.Body.String(), `class="nav-logo">OPERAN`) {
+			t.Errorf("%s did not serve the marketing site", path)
+		}
+	}
+}
+
+func TestSPAShellAndFallbackUnderApp(t *testing.T) {
+	mux := buildMux()
+
+	// The product platform SPA lives under /app/; extensionless deep links
+	// fall back to the shell so the client router still resolves.
+	for _, path := range []string{"/app", "/app/", "/app/departments", "/app/agents/abc-123"} {
 		req := httptest.NewRequest("GET", path, nil)
 		w := httptest.NewRecorder()
 		mux.ServeHTTP(w, req)
@@ -23,12 +42,12 @@ func TestStaticShellAndSPAFallback(t *testing.T) {
 		}
 	}
 
-	// Real assets serve as themselves.
-	req := httptest.NewRequest("GET", "/js/app.js", nil)
+	// Real SPA assets serve as themselves, not the shell.
+	req := httptest.NewRequest("GET", "/app/js/app.js", nil)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 	if w.Code != http.StatusOK || strings.Contains(w.Body.String(), "<title>") {
-		t.Errorf("/js/app.js: status %d, served HTML instead of JS", w.Code)
+		t.Errorf("/app/js/app.js: status %d, served HTML instead of JS", w.Code)
 	}
 }
 
