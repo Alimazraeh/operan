@@ -108,6 +108,12 @@ func buildMux() *http.ServeMux {
 	}
 	fileServer := http.FileServer(http.FS(sub))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Embedded files carry no modtime, so responses have no cache
+		// validators — browsers would heuristically cache pages and keep
+		// showing stale deploys. Force revalidation on every request; the
+		// whole bundle is small and same-origin.
+		w.Header().Set("Cache-Control", "no-cache, must-revalidate")
+
 		// The marketing site is served at the root; the product platform SPA
 		// lives under /app/. Only the SPA needs hash-less-route fallback:
 		// extensionless paths under /app/ resolve to app/index.html so the
