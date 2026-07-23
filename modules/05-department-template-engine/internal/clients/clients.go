@@ -17,7 +17,11 @@ import (
 
 const (
 	requestTimeout = 10 * time.Second
-	maxRetries     = 2
+	// Memory writes trigger real embedding generation (LiteLLM) per item and
+	// can legitimately take tens of seconds for a department's charter +
+	// service documents.
+	memoryTimeout = 120 * time.Second
+	maxRetries    = 2
 )
 
 // Caller carries the forwarded identity for provisioning calls.
@@ -26,13 +30,16 @@ type Caller struct {
 	TenantID      string
 }
 
-func doJSON(ctx context.Context, method, url string, caller Caller, payload interface{}, out interface{}) error {
+func doJSON(ctx context.Context, method, url string, caller Caller, payload interface{}, out interface{}, timeout time.Duration) error {
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("marshal: %w", err)
 	}
 
-	client := &http.Client{Timeout: requestTimeout}
+	if timeout <= 0 {
+		timeout = requestTimeout
+	}
+	client := &http.Client{Timeout: timeout}
 	var lastErr error
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		if attempt > 0 {
@@ -115,7 +122,7 @@ type CreatedAgent struct {
 // CreateAgent registers one agent; Module 04 assigns the id.
 func (c *RegistryClient) CreateAgent(ctx context.Context, caller Caller, req CreateAgentRequest) (*CreatedAgent, error) {
 	var out CreatedAgent
-	if err := doJSON(ctx, http.MethodPost, c.BaseURL+"/registry/agents", caller, req, &out); err != nil {
+	if err := doJSON(ctx, http.MethodPost, c.BaseURL+"/registry/agents", caller, req, &out, requestTimeout); err != nil {
 		return nil, err
 	}
 	if out.ID == "" {
@@ -167,7 +174,7 @@ func (c *MemoryClient) StoreVectors(ctx context.Context, caller Caller, items []
 		"tenant_id": caller.TenantID,
 		"items":     items,
 	}
-	if err := doJSON(ctx, http.MethodPost, c.BaseURL+"/vectors", caller, payload, nil); err != nil {
+	if err := doJSON(ctx, http.MethodPost, c.BaseURL+"/vectors", caller, payload, nil, memoryTimeout); err != nil {
 		return nil, err
 	}
 	ids := make([]string, 0, len(items))

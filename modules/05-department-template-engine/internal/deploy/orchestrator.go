@@ -99,7 +99,9 @@ func slugify(s string) string {
 func (o *Orchestrator) Run(auth, tenantID, userID string, tmpl *store.Template, dep *store.TemplateDeployment, dept *store.Department) {
 	timeout := o.Timeout
 	if timeout <= 0 {
-		timeout = 2 * time.Minute
+		// Memory provisioning triggers real embedding generation; give the
+		// whole pipeline generous headroom.
+		timeout = 5 * time.Minute
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
