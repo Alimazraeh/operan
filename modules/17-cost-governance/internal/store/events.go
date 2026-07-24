@@ -77,7 +77,7 @@ func (s *CostEventStore) List(ctx context.Context, tenantID, agentID, sourceModu
 		SELECT id, tenant_id, agent_id, source_module, source_id, model_name,
 		       cost_usd, prompt_tokens, completion_tokens, event_type,
 		       billing_tag, event_timestamp, recorded_at
-		FROM cost_events `+where+` ORDER BY event_timestamp DESC LIMIT $%d OFFSET $%d`,
+		FROM cost_events `+where+` ORDER BY event_timestamp DESC LIMIT $`+fmt.Sprint(argIdx)+` OFFSET $`+fmt.Sprint(argIdx+1)+``,
 		append(args, pageSize, offset)...,
 	)
 	if err != nil {

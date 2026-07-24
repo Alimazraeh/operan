@@ -18,6 +18,7 @@ func SetupRouter(
 	auditStore *store.AuditStore,
 	evaluateEngine *engine.Engine,
 	eventPub engine.EventPublisher,
+	jwtSecret, jwtIssuer string,
 ) http.Handler {
 	// Handlers
 	policyHandler := NewPolicyHandler(policyStore)
@@ -39,7 +40,7 @@ func SetupRouter(
 	// JWT + tenant middleware
 	r.Group(func(r chi.Router) {
 		// Routes are authenticated with JWT + tenant header
-		r.Use(middleware.JWTMiddleware(middleware.NewAuthValidator("", "operan-tenant-control-plane")))
+		r.Use(middleware.JWTMiddleware(middleware.NewAuthValidator(jwtSecret, jwtIssuer)))
 		r.Use(middleware.TenantMiddleware())
 
 		// Policy CRUD

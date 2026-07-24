@@ -1,27 +1,32 @@
 // Tenants: CRUD, quota management, lifecycle (Module 01).
-import { SVC, get, post, patch, del, uuid4 } from "../api.js";
+import { SVC, get, post, patch, del, uuid4, session } from "../api.js";
 import { $, esc, badge, rel, toast, rowItem } from "../ui.js";
 
 export async function viewTenants() {
-  let tR, quotaR, usageR;
+  let tR, aR;
   try {
-    [tR, quotaR, usageR] = await Promise.all([
+    [tR, aR] = await Promise.all([
       get(SVC.tenant + "/tenants?page_size=100"),
-      get(SVC.tenant + "/quotas"),
-      get(SVC.tenant + "/usage"),
+      get(SVC.registry + "/registry/agents?page_size=1"),
     ]);
   } catch (e) { return viewError("Failed to load tenants", e.message); }
 
   const tenants = (tR.data && tR.data.items) || [];
-  const quotas = quotaR.data || {};
-  const usage = usageR.data || {};
+  // The signed-in tenant's own record drives the quota card.
+  const current = tenants.find(t => t.id === session.tenant) || null;
+  const quotas = (current && current.quota) || {};
+  const agentsUsed = (aR.data && aR.data.total) || 0;
+  window._currentTenantRecordId = current ? current.id : null;
+  // Quota lives on each tenant record — aggregate rather than calling
+  // endpoints M01 doesn't have.
+  const maxAgents = tenants.reduce((sum, t) => sum + ((t.quota && t.quota.max_agents) || 0), 0);
 
   return `
     <div class="grid g4" style="margin-bottom:18px">
       <div class="card metric"><b>${tenants.length}</b><span>total tenants</span></div>
       <div class="card metric"><b>${tenants.filter(t=>t.status==='active').length}</b><span>active</span></div>
-      <div class="card metric"><b>${(quotas.total_agents||0)}</b><span>max agent capacity</span></div>
-      <div class="card metric"><b>${(usage.total_tokens||0)}</b><span>tokens consumed</span></div>
+      <div class="card metric"><b>${maxAgents}</b><span>max agent capacity</span></div>
+      <div class="card metric"><b>${tenants.filter(t=>t.status==='provisioning').length}</b><span>provisioning</span></div>
     </div>
 
     <div class="card" style="margin-bottom:18px">
@@ -61,15 +66,12 @@ export async function viewTenants() {
       </div>
       <div class="card">
         <h3>Resource usage</h3>
-        <div class="hint">Current consumption vs quota for this tenant.</div>
+        <div class="hint">Live consumption vs quota for this tenant (Module 04 registry).</div>
         <div class="kv">
-          <dt>Agents used</dt><dd>${esc(String(usage.agents_used || 0))} / ${esc(String(quotas.max_agents || 100))}</dd>
-          <dt>Tokens today</dt><dd>${esc(String(usage.tokens_today || 0))} / ${esc(String(quotas.max_tokens_per_day || 100000))}</dd>
-          <dt>Storage used</dt><dd>${esc(String(usage.storage_used_mb || 0))} MB / ${esc(String(quotas.max_storage_mb || 5120))} MB</dd>
-          <dt>Workflows today</dt><dd>${esc(String(usage.workflows_today || 0))} / ${esc(String(quotas.max_workflows_per_day || 1000))}</dd>
+          <dt>Agents registered</dt><dd>${esc(String(agentsUsed))} / ${esc(String(quotas.max_agents || "—"))}</dd>
         </div>
-        ${(usage.agents_used >= (quotas.max_agents || 100) || usage.tokens_today >= (quotas.max_tokens_per_day || 100000))
-          ? `<div class="error-box" style="margin-top:12px"><div class="err-title">Quota exceeded!</div><div class="err-msg">This tenant has reached its resource limit. Consider increasing quotas or suspending inactive agents.</div></div>`
+        ${(quotas.max_agents && agentsUsed >= quotas.max_agents)
+          ? `<div class="error-box" style="margin-top:12px"><div class="err-title">Agent quota reached</div><div class="err-msg">This tenant is at its agent limit — raise the quota or retire agents.</div></div>`
           : ""}
       </div>
     </div>`;
@@ -118,7 +120,8 @@ window.updateQuotas = async function () {
   if (storage) quotas.max_storage_mb = parseInt(storage);
   if (workflows) quotas.max_workflows_per_day = parseInt(workflows);
   if (!Object.keys(quotas).length) return;
-  const r = await post(SVC.tenant + "/quotas", quotas);
+  if (!window._currentTenantRecordId) { toast("No tenant record for this session tenant", "bad"); return; }
+  const r = await patch(SVC.tenant + "/tenants/" + window._currentTenantRecordId, { quota: quotas });
   if (r.ok) { toast("Quotas updated", "ok"); window.go("tenants"); }
   else toast("Failed: " + esc(JSON.stringify(r.data).slice(0, 100)), "bad");
 };

@@ -79,7 +79,7 @@ func (s *AlertStore) List(ctx context.Context, tenantID, severity, alertType str
 		SELECT id, tenant_id, budget_id, agent_id, alert_type, current_spend,
 		       budget_amount, percentage_used, severity, is_resolved, resolved_at,
 		       created_at
-		FROM cost_alerts `+where+` ORDER BY created_at DESC LIMIT $%d OFFSET $%d`,
+		FROM cost_alerts `+where+` ORDER BY created_at DESC LIMIT $`+fmt.Sprint(argIdx)+` OFFSET $`+fmt.Sprint(argIdx+1)+``,
 		append(args, pageSize, offset)...,
 	)
 	if err != nil {

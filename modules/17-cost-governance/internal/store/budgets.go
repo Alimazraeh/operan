@@ -120,7 +120,7 @@ func (s *BudgetStore) List(ctx context.Context, tenantID, agentID string, isActi
 		SELECT id, tenant_id, agent_id, description, budget_amount, currency,
 		       period, soft_limit_pct, hard_limit_pct, is_active, created_at,
 		       updated_at, started_at, ended_at
-		FROM cost_budgets `+where+` ORDER BY created_at DESC LIMIT $%d OFFSET $%d`,
+		FROM cost_budgets `+where+` ORDER BY created_at DESC LIMIT $`+fmt.Sprint(argIdx)+` OFFSET $`+fmt.Sprint(argIdx+1)+``,
 		append(args, pageSize, offset)...,
 	)
 	if err != nil {
