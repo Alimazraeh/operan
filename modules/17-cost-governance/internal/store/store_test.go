@@ -23,16 +23,16 @@ func TestCostBudget_DefaultValues(t *testing.T) {
 	desc := "Test budget"
 	now := time.Now()
 	b := CostBudget{
-		TenantID:       "tenant-1",
-		AgentID:        &agent,
-		Description:    &desc,
-		BudgetAmount:   100.0,
-		Currency:       "USD",
-		Period:         "monthly",
-		SoftLimitPct:   80,
-		HardLimitPct:   95,
-		IsActive:       true,
-		StartedAt:      now,
+		TenantID:     "tenant-1",
+		AgentID:      &agent,
+		Description:  &desc,
+		BudgetAmount: 100.0,
+		Currency:     "USD",
+		Period:       "monthly",
+		SoftLimitPct: 80,
+		HardLimitPct: 95,
+		IsActive:     true,
+		StartedAt:    now,
 	}
 	if b.TenantID != "tenant-1" {
 		t.Errorf("expected tenant-1, got %s", b.TenantID)
@@ -111,14 +111,14 @@ func TestCostAlert_ZeroValues(t *testing.T) {
 func TestCostAlert_ValidValues(t *testing.T) {
 	budgetID := "b1"
 	a := CostAlert{
-		TenantID:     "tenant-1",
-		BudgetID:     &budgetID,
-		AlertType:    "soft_limit",
-		CurrentSpend: 80.0,
-		BudgetAmount: 100.0,
+		TenantID:       "tenant-1",
+		BudgetID:       &budgetID,
+		AlertType:      "soft_limit",
+		CurrentSpend:   80.0,
+		BudgetAmount:   100.0,
 		PercentageUsed: 80.0,
-		Severity:     "warning",
-		IsResolved:   false,
+		Severity:       "warning",
+		IsResolved:     false,
 	}
 	if a.AlertType != "soft_limit" {
 		t.Errorf("expected soft_limit, got %s", a.AlertType)

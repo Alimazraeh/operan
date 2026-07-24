@@ -41,7 +41,7 @@ func main() {
 	eventPub := events.NewPublisher(cfg.EventBrokerURL)
 	policyEngine := engine.NewEngine(policyStore, eventPub)
 
-	router := handler.SetupRouter(policyStore, groupStore, auditStore, policyEngine, eventPub)
+	router := handler.SetupRouter(policyStore, groupStore, auditStore, policyEngine, eventPub, cfg.JWTSecret, cfg.Issuer)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.HTTPPort,

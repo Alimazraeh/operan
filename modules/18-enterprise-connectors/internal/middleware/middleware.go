@@ -58,8 +58,11 @@ func (a *AuthValidator) Validate(r *http.Request) (tenantID, userID string, role
 		}
 	}
 
-	// Extract tenant from JWT (sub claim)
-	if sub, ok := claims["sub"].(string); ok {
+	// Tenant comes from the tenant_id claim; sub is the user, kept only as
+	// a legacy fallback for tokens minted before tenant_id existed.
+	if tid, ok := claims["tenant_id"].(string); ok && tid != "" {
+		tenantID = tid
+	} else if sub, ok := claims["sub"].(string); ok {
 		tenantID = sub
 	}
 	if tenantID == "" {
