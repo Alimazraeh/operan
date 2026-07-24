@@ -33,17 +33,21 @@ func (s *JobsStore) Create(ctx context.Context, job *IngestionJob) error {
 // GetByID returns a job by ID.
 func (s *JobsStore) GetByID(ctx context.Context, id string) (*IngestionJob, error) {
 	var job IngestionJob
+	var jobErrMsg *string
 
 	err := s.pool.QueryRow(ctx, `
 		SELECT id, tenant_id, source_id, status, total_chunks, processed_chunks,
 		       error_message, started_at, completed_at, created_at
 		FROM ingestion_jobs WHERE id = $1`, id).Scan(
 		&job.ID, &job.TenantID, &job.SourceID, &job.Status,
-		&job.TotalChunks, &job.ProcessedChunks, &job.ErrorMessage,
+		&job.TotalChunks, &job.ProcessedChunks, &jobErrMsg,
 		&job.StartedAt, &job.CompletedAt, &job.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
+	}
+	if jobErrMsg != nil {
+		job.ErrorMessage = *jobErrMsg
 	}
 	return &job, nil
 }
@@ -108,12 +112,16 @@ func (s *JobsStore) ListByTenant(ctx context.Context, tenantID string, statusFil
 	var items []IngestionJob
 	for rows.Next() {
 		var item IngestionJob
+		var errMsg *string
 		if err := rows.Scan(
 			&item.ID, &item.TenantID, &item.SourceID, &item.Status,
-			&item.TotalChunks, &item.ProcessedChunks, &item.ErrorMessage,
+			&item.TotalChunks, &item.ProcessedChunks, &errMsg,
 			&item.StartedAt, &item.CompletedAt, &item.CreatedAt,
 		); err != nil {
 			return nil, 0, err
+		}
+		if errMsg != nil {
+			item.ErrorMessage = *errMsg
 		}
 		items = append(items, item)
 	}
@@ -183,12 +191,16 @@ func (s *JobsStore) ListPending(ctx context.Context) ([]*IngestionJob, error) {
 	var items []*IngestionJob
 	for rows.Next() {
 		var item IngestionJob
+		var itemErrMsg *string
 		if err := rows.Scan(
 			&item.ID, &item.TenantID, &item.SourceID, &item.Status,
-			&item.TotalChunks, &item.ProcessedChunks, &item.ErrorMessage,
+			&item.TotalChunks, &item.ProcessedChunks, &itemErrMsg,
 			&item.StartedAt, &item.CompletedAt, &item.CreatedAt,
 		); err != nil {
 			return nil, err
+		}
+		if itemErrMsg != nil {
+			item.ErrorMessage = *itemErrMsg
 		}
 		items = append(items, &item)
 	}
@@ -214,12 +226,16 @@ func (s *JobsStore) ListStuck(ctx context.Context) ([]*IngestionJob, error) {
 	var items []*IngestionJob
 	for rows.Next() {
 		var item IngestionJob
+		var itemErrMsg *string
 		if err := rows.Scan(
 			&item.ID, &item.TenantID, &item.SourceID, &item.Status,
-			&item.TotalChunks, &item.ProcessedChunks, &item.ErrorMessage,
+			&item.TotalChunks, &item.ProcessedChunks, &itemErrMsg,
 			&item.StartedAt, &item.CompletedAt, &item.CreatedAt,
 		); err != nil {
 			return nil, err
+		}
+		if itemErrMsg != nil {
+			item.ErrorMessage = *itemErrMsg
 		}
 		items = append(items, &item)
 	}
