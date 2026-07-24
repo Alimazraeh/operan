@@ -46,6 +46,7 @@ func main() {
 	deploymentStore := store.NewDeploymentStore()
 	versionStore := store.NewVersionStore()
 	departmentStore := store.NewDepartmentStore()
+	requestStore := store.NewRequestStore()
 
 	// ─── Persistence (snapshot restore + periodic save) ───────────────────
 	persistFiles := []persist.File{
@@ -54,6 +55,7 @@ func main() {
 		{Name: "deployments.json", Store: deploymentStore},
 		{Name: "versions.json", Store: versionStore},
 		{Name: "departments.json", Store: departmentStore},
+		{Name: "requests.json", Store: requestStore},
 	}
 	persist.Load(cfg.DataDir, persistFiles)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -83,6 +85,7 @@ func main() {
 		cfg.MaxPageSize,
 	)
 	h.DepartmentStore = departmentStore // shared with the persistence loop
+	h.RequestStore = requestStore
 	h.Orchestrator = &deploy.Orchestrator{
 		Deployments:   deploymentStore,
 		Departments:   departmentStore,

@@ -48,6 +48,11 @@ var DefaultConsumeTopics = []string{
 	"operan.templates.department.agent_provisioned", "operan.templates.department.operational",
 	"operan.templates.department.provisioning_failed", "operan.templates.department.updated",
 	"operan.templates.department.archived",
+	// Module 05 — service requests (the department work loop)
+	"operan.templates.request.created", "operan.templates.request.dispatched",
+	"operan.templates.request.awaiting_approval", "operan.templates.request.completed",
+	"operan.templates.request.rejected", "operan.templates.request.failed",
+	"operan.templates.request.sla_breached",
 	// Module 07 — memory fabric
 	"operan.memory.vector.ingested", "operan.memory.vector.searched",
 	"operan.memory.vector.updated", "operan.memory.vector.deleted",
