@@ -12,8 +12,8 @@ import (
 
 	"github.com/operan/modules/06-knowledge-ingestion/internal/chunker"
 	"github.com/operan/modules/06-knowledge-ingestion/internal/clients"
-	"github.com/operan/modules/06-knowledge-ingestion/internal/extract"
 	"github.com/operan/modules/06-knowledge-ingestion/internal/events"
+	"github.com/operan/modules/06-knowledge-ingestion/internal/extract"
 	"github.com/operan/modules/06-knowledge-ingestion/internal/store"
 )
 
@@ -235,8 +235,8 @@ func (w *Worker) runJob(parentCtx context.Context, jobID, jwtToken string) {
 	}
 
 	chunks := w.chunker.Chunk(text, chunker.ChunkOptions{
-		Strategy:   source.ChunkStrategy,
-		ChunkSize:  source.ChunkSize,
+		Strategy:     source.ChunkStrategy,
+		ChunkSize:    source.ChunkSize,
 		ChunkOverlap: source.ChunkOverlap,
 	})
 
@@ -316,15 +316,15 @@ func (w *Worker) runJob(parentCtx context.Context, jobID, jwtToken string) {
 
 		if err := w.resultsStore.Create(embedCtx, &store.IngestionResult{
 			TenantID:       job.TenantID,
-			JobID:           jobID,
-			SourceID:        source.ID,
-			ChunkIndex:      i,
-			ChunkHash:       hashHex,
-			ChunkText:       chunkText,
-			ChunkMetadata:   chunkMeta,
-			EmbeddingModel:  embeddingModel,
-			VectorDim:       vectorDim,
-			Status:          "pending",
+			JobID:          jobID,
+			SourceID:       source.ID,
+			ChunkIndex:     i,
+			ChunkHash:      hashHex,
+			ChunkText:      chunkText,
+			ChunkMetadata:  chunkMeta,
+			EmbeddingModel: embeddingModel,
+			VectorDim:      vectorDim,
+			Status:         "pending",
 		}); err != nil {
 			w.jobLogger("worker job %s chunk %d: store result failed: %v", jobID, i, err)
 		}
@@ -347,7 +347,9 @@ func (w *Worker) runJob(parentCtx context.Context, jobID, jwtToken string) {
 		defer storeCancel()
 
 		if err := w.m07Client.StoreVectors(storeCtx, jwtToken, job.TenantID, vectors); err != nil {
-			w.jobLogger("worker job %s: store vectors failed: %v", jobID, err)
+			// Losing the vectors IS a failed ingestion — never report success.
+			w.failJob(storeCtx, jobID, "store vectors: "+err.Error())
+			return
 		}
 	}
 
@@ -357,7 +359,7 @@ func (w *Worker) runJob(parentCtx context.Context, jobID, jwtToken string) {
 
 	now := time.Now()
 	if err := w.jobsStore.UpdateStatus(completeCtx, jobID, "completed", map[string]any{
-		"total_chunks":    len(chunks),
+		"total_chunks":     len(chunks),
 		"processed_chunks": len(chunks),
 		"completed_at":     now,
 	}); err != nil {
