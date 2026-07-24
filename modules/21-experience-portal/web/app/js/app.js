@@ -61,6 +61,13 @@ async function restoreSession() {
   const userId = localStorage.getItem("operan.userId");
   const email = localStorage.getItem("operan.email");
   if (jwt && tenant) {
+    // Never resurrect an expired token — it would render a shell where
+    // every call 401s. Fall through to the login page instead.
+    try {
+      const p = jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      const claims = JSON.parse(atob(p + "=".repeat((4 - p.length % 4) % 4)));
+      if (claims.exp && claims.exp * 1000 < Date.now()) return false;
+    } catch (_) { return false; }
     session.jwt = jwt;
     session.tenant = tenant;
     session.userId = userId || "";
@@ -204,18 +211,23 @@ async function updateHealthDots() {
   const container = $("healthdots");
   if (!container) return;
   container.innerHTML = "";
-  for (const [name, path] of probes) {
+  await Promise.all(probes.map(([name, path]) => {
     const dot = document.createElement("span");
     dot.className = "dot"; dot.id = "dot-" + name;
     dot.innerHTML = `<i></i>${name}`;
     container.appendChild(dot);
-    const ok = await probeService(path);
-    dot.className = "dot " + (ok ? "ok" : "bad");
-  }
+    return probeService(path).then(ok => {
+      dot.className = "dot " + (ok ? "ok" : "bad");
+    });
+  }));
 }
 
 // ── Init ───────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  // Rehydrate the in-memory session from localStorage before any auth
+  // check — otherwise a stored login never survives a page reload.
+  await restoreSession();
+
   // Login page
   const btnConnect = $("#btnConnect");
   if (btnConnect) btnConnect.addEventListener("click", handleLogin);

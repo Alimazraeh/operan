@@ -73,9 +73,12 @@ func newProxy(name, target string) http.Handler {
 		if r.URL.Path == "" {
 			r.URL.Path = "/"
 		}
-		if extraPrefix != "" && r.URL.Path != "/" {
+		// Liveness endpoints live at every module's root, outside the API
+		// base path — the shell's health chips must reach them unprefixed.
+		liveness := r.URL.Path == "/health" || r.URL.Path == "/healthz"
+		if extraPrefix != "" && !liveness && r.URL.Path != "/" {
 			r.URL.Path = extraPrefix + r.URL.Path
-		} else if extraPrefix != "" {
+		} else if extraPrefix != "" && !liveness {
 			r.URL.Path = extraPrefix + "/"
 		}
 		r.Host = u.Host
