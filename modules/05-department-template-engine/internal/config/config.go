@@ -20,6 +20,8 @@ type Config struct {
 	RegistryURL      string // Module 04 agent registry base URL (deploy orchestration)
 	MemoryURL        string // Module 07 memory fabric base URL (deploy orchestration)
 	OrchestrationURL string
+	CadenceHour      int    // local hour daily/weekly briefings fire
+	CadenceTick      string // e.g. "30s": test mode — fire every interval regardless of clock
 }
 
 func ParseConfig() Config {
@@ -37,6 +39,8 @@ func ParseConfig() Config {
 		RegistryURL:      env("MODULE05_REGISTRY_URL", "http://agent-registry.operan.svc.cluster.local:8083"),
 		MemoryURL:        env("MODULE05_MEMORY_URL", "http://memory-fabric.operan.svc.cluster.local:8007"),
 		OrchestrationURL: env("MODULE05_ORCHESTRATION_URL", "http://agent-orchestration.operan.svc.cluster.local:8080/api/v1/orchestration"),
+		CadenceHour:      envInt("MODULE05_CADENCE_HOUR", 7),
+		CadenceTick:      env("MODULE05_CADENCE_TICK", ""),
 	}
 }
 

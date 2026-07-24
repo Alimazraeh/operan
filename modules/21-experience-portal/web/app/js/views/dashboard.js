@@ -1,6 +1,8 @@
 // Dashboard — KPI overview at a glance
-import { esc, statCard, card } from "../ui.js";
-import { unwrapList, listAgents, listDepartments, listWorkflows, listSupervisionQueue, listCostEvents, listPolicies } from "../api.js";
+import { esc, rel, statCard, card } from "../ui.js";
+import { get, unwrapList, listAgents, listDepartments, listWorkflows, listSupervisionQueue, listCostEvents, listPolicies, listDeptRequests } from "../api.js";
+
+const OPEN_REQUEST_STATUSES = ["submitted", "dispatched", "in_progress", "awaiting_approval"];
 
 export default async function viewDashboard(page) {
   // Fetch stats in parallel
@@ -11,6 +13,7 @@ export default async function viewDashboard(page) {
     listSupervisionQueue(1, 10),
     listCostEvents(1, 10),
     listPolicies(1, 20),
+    get("/svc/templates/briefings?limit=1"),
   ];
   const results = await Promise.allSettled(fetches);
 
@@ -35,17 +38,39 @@ export default async function viewDashboard(page) {
     .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
   const supervisionData = items(results[3]);
   const policiesData = items(results[5], "policies");
-  const unreachable = results.filter(r => r.status !== "fulfilled" || !r.value?.ok).length;
+  const briefing = items(results[6])[0] || null;
+  const unreachable = results.slice(0, 6).filter(r => r.status !== "fulfilled" || !r.value?.ok).length;
+
+  // Open requests across live departments — the demand the operation owes.
+  const liveDepts = items(results[1]).filter(d => d.status === "operational" || d.status === "degraded");
+  const reqLists = await Promise.allSettled(liveDepts.map(d => listDeptRequests(d.id)));
+  const openRequests = reqLists.reduce((n, r) =>
+    n + (r.status === "fulfilled" && r.value.ok
+      ? unwrapList(r.value).filter(q => OPEN_REQUEST_STATUSES.includes(q.status)).length : 0), 0);
 
   return `
     <div class="stats-grid">
       ${statCard("🏢", "Departments", departmentsCount, "Deployed departments")}
+      ${statCard("📨", "Open Requests", openRequests, openRequests ? "Being worked now" : "Queue is clear")}
       ${statCard("👥", "Agents", agentsCount, "Registered agents")}
       ${statCard("⚙️", "Workflows", workflowsCount, "All runs")}
       ${statCard("🧑‍⚖️", "Pending Reviews", supervisionCount, "Awaiting approval")}
       ${statCard("🛡", "Policies", policiesCount, "Governance rules")}
-      ${statCard("💰", "Cost Events", costsCount, "All time")}
     </div>
+
+    ${briefing ? card("Latest briefing", `${esc(briefing.department_name || "")} · ${esc(briefing.cadence_name || "")} · ${rel(briefing.created_at)}`, `
+      <div class="card-body">
+        <div class="m" style="white-space:pre-wrap;line-height:1.65">${esc(String(briefing.content || "").slice(0, 1200))}${String(briefing.content || "").length > 1200 ? "…" : ""}</div>
+        <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+          <span class="sla-chip">${esc(String(briefing.stats?.open_requests ?? 0))} open</span>
+          <span class="sla-chip ${briefing.stats?.awaiting_approval ? "warn" : ""}">${esc(String(briefing.stats?.awaiting_approval ?? 0))} awaiting approval</span>
+          <span class="sla-chip ${briefing.stats?.sla_breached ? "bad" : "ok"}">${esc(String(briefing.stats?.sla_breached ?? 0))} SLA breached</span>
+          <span class="sla-chip ok">${esc(String(briefing.stats?.completed_last_24h ?? 0))} completed 24h</span>
+          ${briefing.model ? `<span class="sla-chip">${esc(briefing.model)} · ${esc(String(briefing.tokens || 0))} tokens</span>` : ""}
+          <button class="ghost sm" style="margin-left:auto" onclick="window.go('tasks')">Open the ledger →</button>
+        </div>
+      </div>
+    `) : ""}
 
     <div class="two-col">
       ${card("Recent Workflows", "", `

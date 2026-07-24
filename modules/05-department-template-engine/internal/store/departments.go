@@ -266,3 +266,15 @@ func (s *DepartmentStore) Import(data []byte) error {
 	}
 	return nil
 }
+
+// All returns a copy of every department across tenants. The cadence
+// scheduler iterates it to fire each live department's operating rhythm.
+func (s *DepartmentStore) All() []Department {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]Department, 0, len(s.departments))
+	for _, d := range s.departments {
+		out = append(out, *d)
+	}
+	return out
+}

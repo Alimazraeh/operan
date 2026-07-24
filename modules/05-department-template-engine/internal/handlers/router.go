@@ -39,4 +39,7 @@ func RegisterRoutes(mux *http.ServeMux, h *TemplateHandlers) {
 	// ─── Service requests (the department's front door) ───────────────────
 	mux.HandleFunc("GET /requests/", h.HandleRequestByID)
 	mux.HandleFunc("POST /requests/", h.HandleRequestByID)
+
+	// ─── Operating-cadence briefings ──────────────────────────────────────
+	mux.HandleFunc("GET /briefings", h.ListBriefings)
 }

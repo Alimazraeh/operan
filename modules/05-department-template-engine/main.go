@@ -25,6 +25,7 @@ import (
 	"github.com/operan/modules/05-department-template-engine/internal/persist"
 	"github.com/operan/modules/05-department-template-engine/internal/seed"
 	"github.com/operan/modules/05-department-template-engine/internal/store"
+	"github.com/operan/modules/05-department-template-engine/internal/cadence"
 	"github.com/operan/modules/05-department-template-engine/internal/workloop"
 )
 
@@ -48,6 +49,7 @@ func main() {
 	versionStore := store.NewVersionStore()
 	departmentStore := store.NewDepartmentStore()
 	requestStore := store.NewRequestStore()
+	briefingStore := cadence.NewBriefingStore()
 
 	// ─── Persistence (snapshot restore + periodic save) ───────────────────
 	persistFiles := []persist.File{
@@ -57,6 +59,7 @@ func main() {
 		{Name: "versions.json", Store: versionStore},
 		{Name: "departments.json", Store: departmentStore},
 		{Name: "requests.json", Store: requestStore},
+		{Name: "briefings.json", Store: briefingStore},
 	}
 	persist.Load(cfg.DataDir, persistFiles)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -92,7 +95,26 @@ func main() {
 	orchClient := &clients.OrchestrationClient{BaseURL: cfg.OrchestrationURL}
 	loop := workloop.New(requestStore, departmentStore, templateStore, orchClient, publisher)
 	h.Dispatcher = loop
+	h.Briefings = briefingStore
 	go loop.Run(ctx)
+
+	// ─── Operating cadence: scheduled department briefings ────────────────
+	sched := &cadence.Scheduler{
+		Departments: departmentStore,
+		Requests:    requestStore,
+		Briefings:   briefingStore,
+		Orch:        orchClient,
+		JWTSecret:   cfg.JWTSecret,
+		BriefHour:   cfg.CadenceHour,
+	}
+	if cfg.CadenceTick != "" {
+		if d, err := time.ParseDuration(cfg.CadenceTick); err == nil {
+			sched.TestEvery = d
+		} else {
+			log.Printf("[WARN] invalid MODULE05_CADENCE_TICK %q: %v", cfg.CadenceTick, err)
+		}
+	}
+	go sched.Run(ctx)
 	h.Orchestrator = &deploy.Orchestrator{
 		Deployments:   deploymentStore,
 		Departments:   departmentStore,
