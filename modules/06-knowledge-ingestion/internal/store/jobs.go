@@ -130,6 +130,9 @@ func (s *JobsStore) ListByTenant(ctx context.Context, tenantID string, statusFil
 
 // UpdateStatus updates a job's status and optionally processed_chunks, error_message, and completed_at.
 func (s *JobsStore) UpdateStatus(ctx context.Context, id string, status string, updates map[string]any) error {
+	if updates == nil {
+		updates = map[string]any{}
+	}
 	if updates["status"] == nil {
 		updates["status"] = status
 	}
