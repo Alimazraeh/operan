@@ -165,7 +165,7 @@ func (h *WorkflowHandler) ListWorkflows(w http.ResponseWriter, r *http.Request) 
 
 // GetWorkflow handles GET /workflows/{id}
 func (h *WorkflowHandler) GetWorkflow(w http.ResponseWriter, r *http.Request) {
-	id := extractIDFromPath(r.URL.Path, "/workflows/")
+	id := extractIDAfter(r.URL.Path, "/workflows/")
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "workflow id is required")
 		return
@@ -186,7 +186,7 @@ func (h *WorkflowHandler) GetWorkflow(w http.ResponseWriter, r *http.Request) {
 
 // CancelWorkflow handles DELETE /workflows/{id}
 func (h *WorkflowHandler) CancelWorkflow(w http.ResponseWriter, r *http.Request) {
-	id := extractIDFromPath(r.URL.Path, "/workflows/")
+	id := extractIDAfter(r.URL.Path, "/workflows/")
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "workflow id is required")
 		return
@@ -216,7 +216,7 @@ func (h *WorkflowHandler) CancelWorkflow(w http.ResponseWriter, r *http.Request)
 
 // PauseWorkflow handles POST /workflows/{id}/pause
 func (h *WorkflowHandler) PauseWorkflow(w http.ResponseWriter, r *http.Request) {
-	id := extractIDFromPath(r.URL.Path, "/workflows/")
+	id := extractIDAfter(r.URL.Path, "/workflows/")
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "workflow id is required")
 		return
@@ -245,7 +245,7 @@ func (h *WorkflowHandler) PauseWorkflow(w http.ResponseWriter, r *http.Request) 
 
 // ResumeWorkflow handles POST /workflows/{id}/resume
 func (h *WorkflowHandler) ResumeWorkflow(w http.ResponseWriter, r *http.Request) {
-	id := extractIDFromPath(r.URL.Path, "/workflows/")
+	id := extractIDAfter(r.URL.Path, "/workflows/")
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "workflow id is required")
 		return
@@ -273,7 +273,7 @@ func (h *WorkflowHandler) ResumeWorkflow(w http.ResponseWriter, r *http.Request)
 
 // GetWorkflowState handles GET /workflows/{id}/state
 func (h *WorkflowHandler) GetWorkflowState(w http.ResponseWriter, r *http.Request) {
-	id := extractIDFromPath(r.URL.Path, "/workflows/")
+	id := extractIDAfter(r.URL.Path, "/workflows/")
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "workflow id is required")
 		return
@@ -367,7 +367,7 @@ func (h *WorkflowHandler) GetWorkflowState(w http.ResponseWriter, r *http.Reques
 
 // CreateCheckpoint handles POST /workflows/{id}/checkpoint
 func (h *WorkflowHandler) CreateCheckpoint(w http.ResponseWriter, r *http.Request) {
-	id := extractIDFromPath(r.URL.Path, "/workflows/")
+	id := extractIDAfter(r.URL.Path, "/workflows/")
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "workflow id is required")
 		return
@@ -421,7 +421,7 @@ func (h *WorkflowHandler) CreateCheckpoint(w http.ResponseWriter, r *http.Reques
 
 // ReplayWorkflow handles POST /workflows/{id}/replay
 func (h *WorkflowHandler) ReplayWorkflow(w http.ResponseWriter, r *http.Request) {
-	id := extractIDFromPath(r.URL.Path, "/workflows/")
+	id := extractIDAfter(r.URL.Path, "/workflows/")
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "workflow id is required")
 		return
@@ -500,7 +500,7 @@ func (h *WorkflowHandler) ReplayWorkflow(w http.ResponseWriter, r *http.Request)
 
 // GetWorkflowVariables handles GET /workflows/{id}/variables
 func (h *WorkflowHandler) GetWorkflowVariables(w http.ResponseWriter, r *http.Request) {
-	id := extractIDFromPath(r.URL.Path, "/workflows/")
+	id := extractIDAfter(r.URL.Path, "/workflows/")
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "workflow id is required")
 		return
@@ -527,7 +527,7 @@ func (h *WorkflowHandler) GetWorkflowVariables(w http.ResponseWriter, r *http.Re
 
 // UpdateWorkflowVariables handles PATCH /workflows/{id}/variables
 func (h *WorkflowHandler) UpdateWorkflowVariables(w http.ResponseWriter, r *http.Request) {
-	id := extractIDFromPath(r.URL.Path, "/workflows/")
+	id := extractIDAfter(r.URL.Path, "/workflows/")
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "workflow id is required")
 		return
@@ -561,7 +561,7 @@ func (h *WorkflowHandler) UpdateWorkflowVariables(w http.ResponseWriter, r *http
 
 // ExecuteWorkflow handles POST /workflows/{id}/execute
 func (h *WorkflowHandler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request) {
-	id := extractIDFromPath(r.URL.Path, "/workflows/")
+	id := extractIDAfter(r.URL.Path, "/workflows/")
 	if id == "" {
 		h.WriteError(w, http.StatusBadRequest, 400, "workflow id is required")
 		return
