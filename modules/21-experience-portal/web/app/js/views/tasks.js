@@ -1,10 +1,10 @@
 // Tasks & Projects — Create, assign, track, SLA monitoring
 import { $, esc, statCard, card, btn, emptyState, toast } from "../ui.js";
-import { listWorkflows, createWorkflow, executeWorkflow, uuid4 } from "../api.js";
+import { listWorkflows, createWorkflow, executeWorkflow, uuid4, unwrapList } from "../api.js";
 
 export default async function viewTasks() {
   const res = await listWorkflows(1, 50);
-  const workflows = res.data?.items || res.data || [];
+  const workflows = unwrapList(res, "workflows");
 
   const byStatus = {
     running: workflows.filter(w => w.status === "running" || w.status === "in_progress").length,

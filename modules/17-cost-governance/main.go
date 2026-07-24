@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/operan/cost-governance/internal/config"
+	"github.com/operan/cost-governance/migrations"
 	"github.com/operan/cost-governance/internal/consumers"
 	"github.com/operan/cost-governance/internal/engine"
 	"github.com/operan/cost-governance/internal/events"
@@ -38,6 +39,11 @@ func main() {
 	defer pool.Close()
 
 	log.Println("connected to database")
+
+	if err := migrations.RunMigrations(pool); err != nil {
+		log.Fatalf("failed to run migrations: %v", err)
+	}
+	log.Println("migrations applied")
 
 	// Create event broker
 	broker := events.NewBroker()
