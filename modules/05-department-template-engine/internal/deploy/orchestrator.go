@@ -53,7 +53,7 @@ func MaterializeDepartment(tmpl *store.Template, dep *store.TemplateDeployment, 
 		Mission:             missionOf(tmpl),
 		BusinessLogic:       tmpl.BusinessLogic,
 		OrgChart:            append([]store.Position(nil), tmpl.OrgChart...),
-		Services:            append([]store.ServiceOffering(nil), tmpl.Services...),
+		Services:            servicesOf(tmpl),
 		ValueStreams:        append([]store.ValueStream(nil), tmpl.ValueStreams...),
 		Risks:               append([]store.RiskItem(nil), tmpl.Risks...),
 		QualityStandards:    append([]store.QualityStandard(nil), tmpl.QualityStandards...),
@@ -65,6 +65,41 @@ func MaterializeDepartment(tmpl *store.Template, dep *store.TemplateDeployment, 
 		Metadata:            map[string]interface{}{"template_metadata": tmpl.Metadata},
 		CreatedBy:           userID,
 	}
+}
+
+// servicesOf returns the template's service portfolio; when a template
+// defines none, the portfolio is derived from its workflows — each workflow
+// is an SOP the department delivers, owned by the org chart's root position.
+func servicesOf(t *store.Template) []store.ServiceOffering {
+	if len(t.Services) > 0 {
+		return append([]store.ServiceOffering(nil), t.Services...)
+	}
+	var rootPos string
+	for _, p := range t.OrgChart {
+		if p.ReportsTo == "" {
+			rootPos = p.ID
+			break
+		}
+	}
+	var consumers []string
+	if t.BusinessLogic != nil && len(t.BusinessLogic.Stakeholders) > 0 {
+		consumers = append(consumers, t.BusinessLogic.Stakeholders...)
+	} else {
+		consumers = []string{"internal"}
+	}
+	out := make([]store.ServiceOffering, 0, len(t.Workflows))
+	for _, wf := range t.Workflows {
+		out = append(out, store.ServiceOffering{
+			ID:                 "svc-" + wf.ID,
+			Name:               wf.Name,
+			Description:        wf.Description,
+			OwnerPositionID:    rootPos,
+			Consumers:          consumers,
+			DeliveryWorkflowID: wf.ID,
+			Status:             "active",
+		})
+	}
+	return out
 }
 
 func missionOf(t *store.Template) string {

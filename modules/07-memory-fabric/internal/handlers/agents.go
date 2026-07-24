@@ -18,11 +18,9 @@ func (h *MemoryHandlers) GetAgentMemory(w http.ResponseWriter, r *http.Request) 
 	tenantID := middleware.TenantIDFromContext(r.Context())
 	agentID := r.PathValue("id")
 
-	ids, latest, found := h.Vectors.AgentMemoryIDs(tenantID, agentID)
-	if !found {
-		writeError(w, r, http.StatusNotFound, "no memory recorded for agent")
-		return
-	}
+	// An agent with no recorded memories has a valid EMPTY memory state —
+	// return it rather than 404 so clients render "no memories yet".
+	ids, latest, _ := h.Vectors.AgentMemoryIDs(tenantID, agentID)
 	if ids == nil {
 		ids = []string{}
 	}
