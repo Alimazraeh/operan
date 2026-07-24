@@ -1,5 +1,7 @@
 // UI helpers for the real portal
-export const $ = id => document.getElementById(id);
+// Accepts both a bare element id ("view") and a "#id" selector ("#btnLaunch") —
+// app.js uses the selector form, the views use bare ids.
+export const $ = id => document.getElementById(id && id[0] === "#" ? id.slice(1) : id);
 
 export function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, c =>

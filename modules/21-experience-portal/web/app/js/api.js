@@ -50,6 +50,7 @@ export async function login(password, tenantId) {
   }
   const data = await resp.json();
   session.jwt = data.token;
+  session.tenant = tenantId || "default-tenant"; // every /svc call sends this as X-Tenant-ID
   session.userId = data.user_id;
   session.email = data.email;
   session.role = "admin";
