@@ -46,6 +46,7 @@ var serviceTargets = map[string]string{
 var pathPrefixes = map[string]string{
 	"iam":       "/api/v1/iam",
 	"knowledge": "/v1",
+	"tenant":    "/v1",
 }
 
 func env(key, fallback string) string {

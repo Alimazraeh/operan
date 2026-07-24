@@ -1,5 +1,5 @@
 // Operan Portal — Main App Router & Auth
-import { SVC, session, uuid4, login, registerTenant, probeService } from "./api.js";
+import { SVC, session, uuid4, login, registerTenant, probeService, get } from "./api.js";
 import { $, esc, toast } from "./ui.js";
 
 // ── Import new views ───────────────────────────────────────
@@ -140,6 +140,7 @@ async function handleLogin() {
     localStorage.setItem("operan.userId", session.userId);
     localStorage.setItem("operan.email", session.email);
     msg.textContent = "";
+    ensureTenantRecord(); // async bookkeeping — M01 record for this workspace
     renderDashboard();
     setupShell();
     await window.go("dashboard");
@@ -269,25 +270,34 @@ async function handleRegister() {
   msg.textContent = "Provisioning…";
   msg.className = "err loading";
 
-  try {
-    const tenantSlug = slug || name.toLowerCase().replace(/\s+/g, "-");
-    const resp = await registerTenant(name, tenantSlug, plan);
-    const tenantId = resp?.data?.id || tenantSlug;
-    // Hand off to the login page with the tenant prefilled so the user
-    // only has to enter the admin password.
-    renderLoginPage();
-    const lt = $("#loginTenant");
-    if (lt) lt.value = tenantId;
-    localStorage.setItem("operan.tenant", tenantId);
-    const lm = $("#loginMsg");
-    if (lm) {
-      lm.textContent = `Tenant “${name}” created — sign in with the platform admin password.`;
-      lm.className = "err ok";
-    }
-    const ls = $("#loginSecret");
-    if (ls) ls.focus();
-  } catch (e) {
-    msg.textContent = e.message || "Failed to create tenant";
-    msg.className = "err";
+  // Tenant creation in Module 01 requires an authenticated token, so the
+  // record is provisioned right after the first login (ensureTenantRecord).
+  // Registration reserves the workspace name and hands off to login.
+  const tenantSlug = slug || name.toLowerCase().replace(/\s+/g, "-");
+  localStorage.setItem("operan.pendingTenant", JSON.stringify({ id: tenantSlug, name, plan }));
+  renderLoginPage();
+  const lt = $("#loginTenant");
+  if (lt) lt.value = tenantSlug;
+  localStorage.setItem("operan.tenant", tenantSlug);
+  const lm = $("#loginMsg");
+  if (lm) {
+    lm.textContent = `Workspace “${name}” reserved — sign in with the platform admin password to provision it.`;
+    lm.className = "err ok";
   }
+  const ls = $("#loginSecret");
+  if (ls) ls.focus();
+}
+
+// After the first authenticated login, make sure Module 01 has a tenant
+// record for this workspace (idempotent: skips if it already exists).
+async function ensureTenantRecord() {
+  try {
+    const existing = await get(SVC.tenant + "/tenants/" + session.tenant);
+    if (existing.ok) return;
+    const pending = JSON.parse(localStorage.getItem("operan.pendingTenant") || "null");
+    const name = pending && pending.id === session.tenant ? pending.name : session.tenant;
+    const plan = (pending && pending.plan) || "medium";
+    const r = await registerTenant(name, session.tenant, plan);
+    if (r.ok) localStorage.removeItem("operan.pendingTenant");
+  } catch (_) { /* bookkeeping only — the platform works tenant-scoped regardless */ }
 }
