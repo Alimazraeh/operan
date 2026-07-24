@@ -268,16 +268,16 @@ tenant-scoped; templates are seeded per tenant so tenants can diverge safely.
 
 ---
 
-## 9. Known gaps (honest list — logged, not hidden)
+## 9. Former gaps — all closed 2026-07-24 (commits `4c12e08`…`33b2624`, live-verified)
 
-| # | Gap | Where | Path to close |
-|---|---|---|---|
-| G1 | **Department memory is not fed into agent drafts.** M03 `/agent/draft` retrieves only `agent_personal` memory; the charter/service docs (`embedding_type: department`) are provisioned but unused by drafting — fresh agents show "grounded in 0 memories". | M03 `internal/llm` | Add a department-scope memory query (agent → department_id → M07 search) to the draft prompt assembly. |
-| G2 | **Value streams populated on the 7 flagships only.** The other 24 templates render an empty value-chain section. | template JSONs | Content authoring per department (real analysis, not code). |
-| G3 | **M11 does not consume `operan.templates.department.*`** — department lifecycle is invisible in Observability (legacy `template.deployed` still emitted for partial compat). | M11 consumer topic list | Add the topic family to M11's Kafka consumer. |
-| G4 | **Workflows are declarative SOPs, not executed definitions.** `workflows[]` documents the SOP and backs service derivation; M03 executes only pipelines created at runtime — template workflows are not compiled into M03 workflow DAGs. | M05→M03 | A `deploy_workflows` stage translating WorkflowDefinition → M03 workflow graphs. |
-| G5 | **Human positions are unbound.** `holder_type: human` positions carry `human_ref` labels but no link to real IAM users (M02). | M05/M02 | Bind `human_ref` → M02 user ids; surface in org chart. |
-| G6 | **M06 ingestion→M07 API drift.** The knowledge-ingestion worker still targets an older M07 vector API shape (`/v1/vectors`, raw vectors + namespace); department knowledge flows through M05's provisioning instead. | M06 `internal/clients/m07.go` | Rewrite the client against the current M07 contract. |
+| # | Gap | How it was closed |
+|---|---|---|
+| G1 | Department memory not fed into drafts | M07 `/search` now **enforces** the metadata filters its contract declared; M03 `/agent/draft` accepts `department_id` and merges charter/service context into the prompt (portal passes it). Verified: fresh marketing lead's draft grounded in a department service doc. |
+| G2 | Value streams on flagships only | Authored per-category value chains grounded in each template's actual workflows (KPI-linked), applied to all 24 templates (`v1.1.0`); seeder **upserts** on catalog version bumps via `TemplateStore.RefreshFromCatalog`, so existing tenants receive enrichments. |
+| G3 | M11 blind to department lifecycle | All 7 `operan.templates.department.*` topics added to `DefaultConsumeTopics`. Verified: 23 department spans ingested after a live deploy. |
+| G4 | SOPs not executable | New `deploy_workflows` pipeline stage compiles each `WorkflowDefinition` into a real M03 workflow (typed nodes, sequential edges, agent refs resolved to live M04 ids); `department.workflow_ids` holds real M03 ids. Verified: 5 SOPs live in M03 with `department_id`. |
+| G5 | Human positions unbound | Org chart resolves `human_ref` against M02 `/users` at render — bound holders show the IAM identity, unmatched show an explicit "unbound" tag. `hr-large` now ships a human CHRO chair (GARDEN: 1 human + AI deputies). |
+| G6 | M06→M07 drift | Ingestion client rewritten to the current `/vectors` contract with forwarded caller identity; M07 embeds server-side (per-chunk M12 round-trip removed); store failure **fails the job**. Verified E2E: url source → 3 chunks → 3 `platform` vectors in M07. En route this surfaced and fixed: request-scoped ctx killing async jobs, a Go-slice-in-SQL bug, NULL-scan crashes, a nil-map panic, and missing boot migrations/columns in M06. |
 
 ---
 
