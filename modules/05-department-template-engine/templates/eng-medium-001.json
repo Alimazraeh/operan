@@ -3,7 +3,7 @@
   "name": "Medium Engineering Team",
   "description": "A medium-scale engineering team template for growing companies (100-1000 employees). This template covers a 10-30 FTE engineering department with an Engineering Manager, Tech Lead, 4-8 Senior Engineers, 2-4 Junior Engineers, a DevOps Engineer, a QA Lead, and a GPO pod. It supports multi-team structures with sprint planning, architectural review processes, code review gates, automated testing, and on-call rotations. Designed for organizations that need structure alongside agility, with clear quality gates and cross-team coordination mechanisms.",
   "category": "engineering",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "metadata": {
     "enterprise_size": "medium",
     "department_size": "10-30 FTE",
@@ -1251,6 +1251,62 @@
       "agent_def_id": "agent-eng-gpo-001",
       "reports_to": "pos-agent-eng-mgr-001",
       "autonomy_tier": "recommend"
+    }
+  ],
+  "value_streams": [
+    {
+      "id": "vs-delivery",
+      "name": "Idea-to-Production",
+      "description": "From planned work to running software.",
+      "stages": [
+        {
+          "name": "Plan",
+          "inputs": [
+            "backlog, incidents, tech debt"
+          ],
+          "activities": [
+            "sprint planning",
+            "architecture review"
+          ],
+          "outputs": [
+            "committed sprint"
+          ]
+        },
+        {
+          "name": "Build & Review",
+          "inputs": [
+            "committed sprint"
+          ],
+          "activities": [
+            "implementation",
+            "code review with quality gates"
+          ],
+          "outputs": [
+            "merged, reviewed changes"
+          ]
+        },
+        {
+          "name": "Ship & Operate",
+          "inputs": [
+            "merged changes"
+          ],
+          "activities": [
+            "deployment pipeline",
+            "incident response",
+            "post-mortems"
+          ],
+          "outputs": [
+            "running software, learning loops"
+          ]
+        }
+      ],
+      "outcome": "A reliable delivery engine with feedback loops",
+      "business_outcome": "Faster lead time at stable change-failure rate",
+      "value_metric_kpi_refs": [
+        "kpi-001",
+        "kpi-002",
+        "kpi-005"
+      ]
     }
   ]
 }

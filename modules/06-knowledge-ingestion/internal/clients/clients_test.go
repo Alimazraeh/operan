@@ -91,10 +91,10 @@ func TestM07Client_StoreVectors_Success(t *testing.T) {
 	defer server.Close()
 
 	client := NewM07Client(server.URL, 0)
-	err := client.StoreVectors(context.Background(), "namespace", []Vector{
-		{ID: "c1", Vector: []float64{0.1, 0.2}, Metadata: map[string]any{"chunk": 1}},
-		{ID: "c2", Vector: []float64{0.3, 0.4}, Metadata: map[string]any{"chunk": 2}},
-		{ID: "c3", Vector: []float64{0.5, 0.6}, Metadata: map[string]any{"chunk": 3}},
+	err := client.StoreVectors(context.Background(), "tok", "tenant-1", []VectorItem{
+		{DocumentID: "c1", EmbeddingType: "platform", SemanticContent: "alpha", Metadata: map[string]any{"chunk": 1}},
+		{DocumentID: "c2", EmbeddingType: "platform", SemanticContent: "beta", Metadata: map[string]any{"chunk": 2}},
+		{DocumentID: "c3", EmbeddingType: "platform", SemanticContent: "gamma", Metadata: map[string]any{"chunk": 3}},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -114,7 +114,7 @@ func TestM07Client_StoreVectors_Empty(t *testing.T) {
 	defer server.Close()
 
 	client := NewM07Client(server.URL, 0)
-	err := client.StoreVectors(context.Background(), "namespace", nil)
+	err := client.StoreVectors(context.Background(), "tok", "tenant-1", nil)
 	if err != nil {
 		t.Fatalf("unexpected error for empty vectors: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestM07Client_StoreVectors_Empty(t *testing.T) {
 func TestM07Client_StoreVectors_Timeout(t *testing.T) {
 	// Use a non-routable IP to trigger a connection timeout.
 	client := NewM07Client("http://192.0.2.1:12345", 100)
-	err := client.StoreVectors(context.Background(), "namespace", []Vector{{ID: "c1", Vector: []float64{0.1}}})
+	err := client.StoreVectors(context.Background(), "tok", "tenant-1", []VectorItem{{DocumentID: "c1", SemanticContent: "x"}})
 	if err == nil {
 		t.Fatal("expected timeout error")
 	}

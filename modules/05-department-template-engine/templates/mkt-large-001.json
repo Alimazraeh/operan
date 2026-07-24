@@ -3,7 +3,7 @@
   "name": "Large Enterprise Marketing Department",
   "description": "15–50+ person marketing department for large enterprises (500+ employees). Multi-regional marketing with specialized teams for product marketing, demand gen, content, brand, events, marketing ops, and analytics.",
   "category": "marketing",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "metadata": {
     "enterprise_size": "large",
     "department_size": "15-50+ FTE",
@@ -773,6 +773,60 @@
       "agent_def_id": "marketing-gpo-pod-01",
       "reports_to": "pos-cmo-01",
       "autonomy_tier": "recommend"
+    }
+  ],
+  "value_streams": [
+    {
+      "id": "vs-campaign",
+      "name": "Campaign-to-Pipeline",
+      "description": "From plan to measurable pipeline contribution.",
+      "stages": [
+        {
+          "name": "Plan",
+          "inputs": [
+            "objectives, audience data"
+          ],
+          "activities": [
+            "campaign planning",
+            "budgeting"
+          ],
+          "outputs": [
+            "campaign briefs"
+          ]
+        },
+        {
+          "name": "Produce & Publish",
+          "inputs": [
+            "campaign briefs"
+          ],
+          "activities": [
+            "content creation",
+            "social publishing"
+          ],
+          "outputs": [
+            "live campaigns"
+          ]
+        },
+        {
+          "name": "Nurture & Measure",
+          "inputs": [
+            "live campaigns"
+          ],
+          "activities": [
+            "lead nurturing",
+            "performance analysis"
+          ],
+          "outputs": [
+            "qualified leads, ROI reports"
+          ]
+        }
+      ],
+      "outcome": "Campaigns that produce accountable pipeline",
+      "business_outcome": "Marketing spend traced to revenue; CAC trends down",
+      "value_metric_kpi_refs": [
+        "mkt-kpi-l-001",
+        "mkt-kpi-l-002"
+      ]
     }
   ]
 }

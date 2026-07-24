@@ -3,7 +3,7 @@
   "name": "Large Enterprise Compliance Department",
   "description": "15–40 person compliance department for enterprise organizations (500+ employees). Multi-layered structure with Chief Compliance Officer, Regulatory Affairs, Risk Management, Internal Audit, and dedicated compliance specialists for each regulatory domain.",
   "category": "compliance",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "metadata": {
     "enterprise_size": "large",
     "department_size": "15-40 FTE",
@@ -657,6 +657,62 @@
       "agent_def_id": "compliance-gpo-01",
       "reports_to": "pos-cco-01",
       "autonomy_tier": "recommend"
+    }
+  ],
+  "value_streams": [
+    {
+      "id": "vs-assurance",
+      "name": "Risk-to-Assurance",
+      "description": "From identified risk to evidenced control.",
+      "stages": [
+        {
+          "name": "Assess",
+          "inputs": [
+            "risk register, regulatory calendar"
+          ],
+          "activities": [
+            "risk assessments",
+            "control mapping"
+          ],
+          "outputs": [
+            "prioritized risks"
+          ]
+        },
+        {
+          "name": "Control",
+          "inputs": [
+            "prioritized risks"
+          ],
+          "activities": [
+            "policy management",
+            "control testing",
+            "training"
+          ],
+          "outputs": [
+            "operating controls"
+          ]
+        },
+        {
+          "name": "Evidence",
+          "inputs": [
+            "operating controls"
+          ],
+          "activities": [
+            "incident response",
+            "audit reporting"
+          ],
+          "outputs": [
+            "audit-ready evidence"
+          ]
+        }
+      ],
+      "outcome": "Risks controlled and provable at any time",
+      "business_outcome": "Regulatory penalties avoided; audits pass with evidence produced as a by-product",
+      "value_metric_kpi_refs": [
+        "comp-kpi-l-002",
+        "comp-kpi-l-003",
+        "comp-kpi-l-004"
+      ]
     }
   ]
 }

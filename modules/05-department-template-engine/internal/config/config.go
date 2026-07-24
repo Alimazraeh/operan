@@ -19,6 +19,7 @@ type Config struct {
 	SnapshotInterval int    // seconds between snapshots
 	RegistryURL      string // Module 04 agent registry base URL (deploy orchestration)
 	MemoryURL        string // Module 07 memory fabric base URL (deploy orchestration)
+	OrchestrationURL string
 }
 
 func ParseConfig() Config {
@@ -35,6 +36,7 @@ func ParseConfig() Config {
 		SnapshotInterval: envInt("MODULE05_SNAPSHOT_INTERVAL", 10),
 		RegistryURL:      env("MODULE05_REGISTRY_URL", "http://agent-registry.operan.svc.cluster.local:8083"),
 		MemoryURL:        env("MODULE05_MEMORY_URL", "http://memory-fabric.operan.svc.cluster.local:8007"),
+		OrchestrationURL: env("MODULE05_ORCHESTRATION_URL", "http://agent-orchestration.operan.svc.cluster.local:8080/api/v1/orchestration"),
 	}
 }
 

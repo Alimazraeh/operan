@@ -43,6 +43,11 @@ var DefaultConsumeTopics = []string{
 	"operan.templates.template.deployed", "operan.templates.template.deployment_failed",
 	"operan.templates.template.undeployed", "operan.templates.template.deleted",
 	"operan.templates.template.versioned", "operan.templates.template.cloned",
+	// Module 05 — department lifecycle (operating-model instances)
+	"operan.templates.department.created", "operan.templates.department.stage_advanced",
+	"operan.templates.department.agent_provisioned", "operan.templates.department.operational",
+	"operan.templates.department.provisioning_failed", "operan.templates.department.updated",
+	"operan.templates.department.archived",
 	// Module 07 — memory fabric
 	"operan.memory.vector.ingested", "operan.memory.vector.searched",
 	"operan.memory.vector.updated", "operan.memory.vector.deleted",

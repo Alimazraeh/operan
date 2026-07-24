@@ -3,7 +3,7 @@
   "name": "Small Software Development Team",
   "description": "2-4 person software development team for small companies (up to 100 employees). Full-stack developers building a single product or application. Agile delivery with minimal overhead.",
   "category": "software-development",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "metadata": {
     "enterprise_size": "small",
     "department_size": "2-4 FTE",
@@ -433,6 +433,100 @@
       "agent_def_id": "dev-gpo-01",
       "reports_to": "pos-tech-lead-01",
       "autonomy_tier": "recommend"
+    }
+  ],
+  "value_streams": [
+    {
+      "id": "vs-feature",
+      "name": "Feature Delivery",
+      "description": "From requirement to released feature.",
+      "stages": [
+        {
+          "name": "Specify",
+          "inputs": [
+            "requirements"
+          ],
+          "activities": [
+            "design",
+            "estimation",
+            "sprint planning"
+          ],
+          "outputs": [
+            "ready stories"
+          ]
+        },
+        {
+          "name": "Develop",
+          "inputs": [
+            "ready stories"
+          ],
+          "activities": [
+            "implementation",
+            "code review",
+            "testing"
+          ],
+          "outputs": [
+            "release candidates"
+          ]
+        },
+        {
+          "name": "Release",
+          "inputs": [
+            "release candidates"
+          ],
+          "activities": [
+            "security review",
+            "deployment"
+          ],
+          "outputs": [
+            "released features"
+          ]
+        }
+      ],
+      "outcome": "Predictable, secure feature delivery",
+      "business_outcome": "Roadmap commitments met; defect escape rate contained",
+      "value_metric_kpi_refs": [
+        "dev-kpi-001"
+      ]
+    },
+    {
+      "id": "vs-quality",
+      "name": "Defect-to-Resolution",
+      "description": "From reported bug to verified fix.",
+      "stages": [
+        {
+          "name": "Triage",
+          "inputs": [
+            "bug reports"
+          ],
+          "activities": [
+            "reproduce",
+            "prioritize"
+          ],
+          "outputs": [
+            "triaged queue"
+          ]
+        },
+        {
+          "name": "Fix & Verify",
+          "inputs": [
+            "triaged queue"
+          ],
+          "activities": [
+            "fix",
+            "review",
+            "regression test"
+          ],
+          "outputs": [
+            "verified fixes"
+          ]
+        }
+      ],
+      "outcome": "Bugs die quickly and stay dead",
+      "business_outcome": "User-visible quality holds while velocity stays up",
+      "value_metric_kpi_refs": [
+        "dev-kpi-002"
+      ]
     }
   ]
 }

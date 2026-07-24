@@ -3,7 +3,7 @@
   "name": "Medium Software Development Team",
   "description": "10–30 person software development team for mid-market companies (100–1000 employees). Multiple development teams with tech leads, specialized roles (frontend, backend, mobile, QA), and structured delivery processes.",
   "category": "software-development",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "metadata": {
     "enterprise_size": "medium",
     "department_size": "10-30 FTE",
@@ -688,6 +688,100 @@
       "agent_def_id": "dev-gpo-pod-01",
       "reports_to": "pos-dev-director-01",
       "autonomy_tier": "recommend"
+    }
+  ],
+  "value_streams": [
+    {
+      "id": "vs-feature",
+      "name": "Feature Delivery",
+      "description": "From requirement to released feature.",
+      "stages": [
+        {
+          "name": "Specify",
+          "inputs": [
+            "requirements"
+          ],
+          "activities": [
+            "design",
+            "estimation",
+            "sprint planning"
+          ],
+          "outputs": [
+            "ready stories"
+          ]
+        },
+        {
+          "name": "Develop",
+          "inputs": [
+            "ready stories"
+          ],
+          "activities": [
+            "implementation",
+            "code review",
+            "testing"
+          ],
+          "outputs": [
+            "release candidates"
+          ]
+        },
+        {
+          "name": "Release",
+          "inputs": [
+            "release candidates"
+          ],
+          "activities": [
+            "security review",
+            "deployment"
+          ],
+          "outputs": [
+            "released features"
+          ]
+        }
+      ],
+      "outcome": "Predictable, secure feature delivery",
+      "business_outcome": "Roadmap commitments met; defect escape rate contained",
+      "value_metric_kpi_refs": [
+        "dev-kpi-m-001"
+      ]
+    },
+    {
+      "id": "vs-quality",
+      "name": "Defect-to-Resolution",
+      "description": "From reported bug to verified fix.",
+      "stages": [
+        {
+          "name": "Triage",
+          "inputs": [
+            "bug reports"
+          ],
+          "activities": [
+            "reproduce",
+            "prioritize"
+          ],
+          "outputs": [
+            "triaged queue"
+          ]
+        },
+        {
+          "name": "Fix & Verify",
+          "inputs": [
+            "triaged queue"
+          ],
+          "activities": [
+            "fix",
+            "review",
+            "regression test"
+          ],
+          "outputs": [
+            "verified fixes"
+          ]
+        }
+      ],
+      "outcome": "Bugs die quickly and stay dead",
+      "business_outcome": "User-visible quality holds while velocity stays up",
+      "value_metric_kpi_refs": [
+        "dev-kpi-m-002"
+      ]
     }
   ]
 }

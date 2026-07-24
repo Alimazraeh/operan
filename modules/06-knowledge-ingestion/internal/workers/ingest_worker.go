@@ -81,13 +81,20 @@ func NewWorker(
 }
 
 // M12Client is the embedding client interface.
+// M07 embeds all content with the platform gateway model.
+const (
+	embeddingModel = "qwen3-embedding-4b"
+	embeddingDim   = 2560
+)
+
 type M12Client interface {
 	EmbedChunk(ctx context.Context, model, text, jwtToken string) ([]float64, int, error)
 }
 
-// M07Client is the vector store client interface.
+// M07Client is the vector store client interface. M07 embeds content
+// server-side, so the worker ships semantic text, not raw vectors.
 type M07Client interface {
-	StoreVectors(ctx context.Context, namespace string, vectors []clients.Vector) error
+	StoreVectors(ctx context.Context, jwtToken, tenantID string, items []clients.VectorItem) error
 }
 
 // M19Client is the normalization client interface.
@@ -244,7 +251,7 @@ func (w *Worker) runJob(parentCtx context.Context, jobID, jwtToken string) {
 	embedCtx, embedCancel := context.WithTimeout(parentCtx, 30*time.Minute)
 	defer embedCancel()
 
-	vectors := make([]clients.Vector, 0, len(chunks))
+	vectors := make([]clients.VectorItem, 0, len(chunks))
 
 	for i, chunk := range chunks {
 		select {
@@ -277,43 +284,21 @@ func (w *Worker) runJob(parentCtx context.Context, jobID, jwtToken string) {
 			continue
 		}
 
-		// Embed
-		vector, _, err := w.m12Client.EmbedChunk(embedCtx, "text-embedding-3-small", chunkText, jwtToken)
-		if err != nil {
-			w.jobLogger("worker job %s chunk %d: embed failed: %v", jobID, i, err)
-			// Record as failed chunk
-			errMsg := err.Error()
-			_ = w.resultsStore.Create(embedCtx, &store.IngestionResult{
-				TenantID:     job.TenantID,
-				JobID:        jobID,
-				SourceID:     source.ID,
-				ChunkIndex:   i,
-				ChunkHash:    hashHex,
-				ChunkText:    chunkText,
-				ChunkMetadata: map[string]any{
-					"source":      source.Name,
-					"language":    "auto",
-					"word_count":  len(strings.Fields(chunkText)),
-				},
-				EmbeddingModel: "text-embedding-3-small",
-				Status:         "failed",
-				ErrorMessage:   errMsg,
-			})
-			continue
-		}
-
-		vectorDim := len(vector)
+		// M07 embeds server-side (qwen3-embedding-4b); ship the content.
+		vectorDim := embeddingDim
 		vectorID := fmt.Sprintf("%s-%d", jobID, i)
 
-		vectors = append(vectors, clients.Vector{
-			ID: vectorID,
-			Vector: vector,
+		vectors = append(vectors, clients.VectorItem{
+			DocumentID:      vectorID,
+			EmbeddingType:   "platform",
+			SemanticContent: chunkText,
 			Metadata: map[string]any{
 				"chunk_index": i,
 				"job_id":      jobID,
 				"source_id":   source.ID,
 				"chunk_hash":  hashHex,
 				"source":      source.Name,
+				"kind":        "knowledge",
 				"language":    "auto",
 				"word_count":  len(strings.Fields(chunkText)),
 			},
@@ -337,7 +322,7 @@ func (w *Worker) runJob(parentCtx context.Context, jobID, jwtToken string) {
 			ChunkHash:       hashHex,
 			ChunkText:       chunkText,
 			ChunkMetadata:   chunkMeta,
-			EmbeddingModel:  "text-embedding-3-small",
+			EmbeddingModel:  embeddingModel,
 			VectorDim:       vectorDim,
 			Status:          "pending",
 		}); err != nil {
@@ -346,7 +331,7 @@ func (w *Worker) runJob(parentCtx context.Context, jobID, jwtToken string) {
 
 		// Publish event
 		w.eventBroker.Publish(embedCtx, "operan.knowledge.chunk_created", []byte(jobID), []byte(fmt.Sprintf(`{"chunk_index":%d}`, i)))
-		w.eventBroker.Publish(embedCtx, "operan.knowledge.embedding_stored", []byte(jobID), []byte(fmt.Sprintf(`{"chunk_index":%d,"model":"text-embedding-3-small","vector_dim":%d}`, i, vectorDim)))
+		w.eventBroker.Publish(embedCtx, "operan.knowledge.embedding_stored", []byte(jobID), []byte(fmt.Sprintf(`{"chunk_index":%d,"model":"qwen3-embedding-4b","vector_dim":%d}`, i, vectorDim)))
 
 		// Update processed count
 		if err := w.jobsStore.UpdateStatus(embedCtx, jobID, "chunking", map[string]any{
@@ -361,7 +346,7 @@ func (w *Worker) runJob(parentCtx context.Context, jobID, jwtToken string) {
 		storeCtx, storeCancel := context.WithTimeout(parentCtx, 5*time.Minute)
 		defer storeCancel()
 
-		if err := w.m07Client.StoreVectors(storeCtx, source.Name, vectors); err != nil {
+		if err := w.m07Client.StoreVectors(storeCtx, jwtToken, job.TenantID, vectors); err != nil {
 			w.jobLogger("worker job %s: store vectors failed: %v", jobID, err)
 		}
 	}

@@ -36,7 +36,10 @@ type draftRequest struct {
 	Instruction   string `json:"instruction"`
 	MemoryQuery   string `json:"memory_query"`
 	EmbeddingType string `json:"embedding_type"`
-	MaxTokens     int    `json:"max_tokens"`
+	// DepartmentID grounds the draft in the department's own memory
+	// (charter, service portfolio) in addition to the agent's personal one.
+	DepartmentID string `json:"department_id"`
+	MaxTokens    int    `json:"max_tokens"`
 }
 
 type draftResponse struct {
@@ -74,15 +77,31 @@ func (h *AgentHandler) Draft(w http.ResponseWriter, r *http.Request) {
 	if memQuery == "" {
 		memQuery = req.Instruction
 	}
-	memories := h.recallMemory(r, memQuery, req.EmbeddingType)
+	memories := h.recallMemory(r, memQuery, req.EmbeddingType, nil)
+
+	// Department context: the charter and service portfolio provisioned at
+	// deploy time live in Module 07 as embedding_type "department", tagged
+	// with the department id.
+	var deptContext []string
+	if req.DepartmentID != "" {
+		deptContext = h.recallMemory(r, memQuery, "department",
+			map[string]interface{}{"department_id": req.DepartmentID})
+	}
 
 	// 2) Build the agent's prompt from its role + what it remembers.
 	system := fmt.Sprintf(
 		"You are %s, an AI agent operating inside a customer's Operan department. "+
-			"Use the agent's remembered facts to ground your work. Output only the work product "+
-			"requested — no preamble, no explanation of your reasoning.",
+			"Use the department context and the agent's remembered facts to ground your work. "+
+			"Output only the work product requested — no preamble, no explanation of your reasoning.",
 		fallback(req.Role, "a department agent"))
 	var b strings.Builder
+	if len(deptContext) > 0 {
+		b.WriteString("Your department's charter and services:\n")
+		for _, m := range deptContext {
+			b.WriteString("- " + m + "\n")
+		}
+		b.WriteString("\n")
+	}
 	if len(memories) > 0 {
 		b.WriteString("What you remember about this customer:\n")
 		for _, m := range memories {
@@ -91,6 +110,7 @@ func (h *AgentHandler) Draft(w http.ResponseWriter, r *http.Request) {
 		b.WriteString("\n")
 	}
 	b.WriteString("Task: " + req.Instruction)
+	memories = append(deptContext, memories...)
 
 	// 3) Reason.
 	res, err := h.llm.Complete(r.Context(), system, b.String(), req.MaxTokens)
@@ -109,13 +129,17 @@ func (h *AgentHandler) Draft(w http.ResponseWriter, r *http.Request) {
 
 // recallMemory queries Module 07 /search, forwarding caller credentials.
 // Best effort: a memory outage yields no context, not a failure.
-func (h *AgentHandler) recallMemory(r *http.Request, query, embeddingType string) []string {
+func (h *AgentHandler) recallMemory(r *http.Request, query, embeddingType string, filters map[string]interface{}) []string {
 	if h.memoryURL == "" {
 		return nil
 	}
-	body, _ := json.Marshal(map[string]interface{}{
+	payload := map[string]interface{}{
 		"query": query, "embedding_type": embeddingType, "relevance_threshold": 0.25, "top_n": 5,
-	})
+	}
+	if len(filters) > 0 {
+		payload["filters"] = filters
+	}
+	body, _ := json.Marshal(payload)
 	ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, h.memoryURL+"/search", bytes.NewReader(body))

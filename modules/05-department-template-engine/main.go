@@ -84,11 +84,12 @@ func main() {
 	)
 	h.DepartmentStore = departmentStore // shared with the persistence loop
 	h.Orchestrator = &deploy.Orchestrator{
-		Deployments: deploymentStore,
-		Departments: departmentStore,
-		Publisher:   publisher,
-		Registry:    &clients.RegistryClient{BaseURL: cfg.RegistryURL},
-		Memory:      &clients.MemoryClient{BaseURL: cfg.MemoryURL},
+		Deployments:   deploymentStore,
+		Departments:   departmentStore,
+		Publisher:     publisher,
+		Registry:      &clients.RegistryClient{BaseURL: cfg.RegistryURL},
+		Memory:        &clients.MemoryClient{BaseURL: cfg.MemoryURL},
+		Orchestration: &clients.OrchestrationClient{BaseURL: cfg.OrchestrationURL},
 	}
 
 	// ─── Router ───────────────────────────────────────────────────────────
