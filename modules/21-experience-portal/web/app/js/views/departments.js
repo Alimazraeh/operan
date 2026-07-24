@@ -1,7 +1,7 @@
 // Departments: real Module 05 catalog → server-orchestrated deploy pipeline →
 // department detail with the full operating model (org chart, chain of
 // command, service portfolio, value chain, risk/quality, compliance).
-import { SVC, get, post, uuid4, listTemplates, listDepartments, getDepartment,
+import { SVC, get, post, del, uuid4, listTemplates, listDepartments, getDepartment,
          getDeptOrgChart, deployTemplateReal, getDeployment } from "../api.js";
 import { $, esc, badge, rel, toast, rowItem } from "../ui.js";
 
@@ -177,7 +177,8 @@ export async function viewDepartment(departmentId) {
   return `
     <span class="back" onclick="window.go('departments')">← All departments</span>
     <div class="card" style="margin-bottom:14px">
-      <h3>${esc(d.name)} ${badge(d.status)} <span class="tag">${esc(d.category)}</span></h3>
+      <h3>${esc(d.name)} ${badge(d.status)} <span class="tag">${esc(d.category)}</span>
+        ${d.status !== "archived" ? `<button class="ghost sm" style="float:right" onclick="window.archiveDept('${esc(d.id)}')">Archive department</button>` : ""}</h3>
       <div class="hint">${esc(d.mission || d.description || "")}</div>
       <div class="kv">
         <dt>Positions</dt><dd>${(d.org_chart || []).length}</dd>
@@ -439,6 +440,13 @@ function tabStaff(d, staff, lead) {
 }
 
 // ── Agent work flow (unchanged behavior) ────────────────────
+window.archiveDept = async function (id) {
+  if (!confirm("Archive this department? Its agents stay registered in Module 04.")) return;
+  const r = await del("/svc/templates/departments/" + id);
+  if (r.ok) { toast("Department archived", "ok"); window.go("departments"); }
+  else toast("Archive failed: " + esc(JSON.stringify(r.data).slice(0, 100)), "bad");
+};
+
 window.agentDoWork = async function (agentId, agentName, role, departmentId) {
   const instruction = $("taskInstr").value.trim();
   if (!instruction) return;
@@ -452,14 +460,20 @@ window.agentDoWork = async function (agentId, agentName, role, departmentId) {
       return;
     }
     const text = draft.data.output;
-    await post(SVC.orchestration + "/pipeline", {
+    // Real chain: pipeline definition → execution → human task on that
+    // execution → supervision approval referencing the task.
+    const pipe = await post(SVC.orchestration + "/pipeline", {
       name: "agent-work", steps: [{ id: "s1", name: "agent-work", type: "agent" }, { id: "s2", name: "human-signoff", type: "human_gate" }],
     });
-    const pipeId = "pipe-" + uuid4();
+    if (!pipe.ok) throw new Error("pipeline create failed: " + JSON.stringify(pipe.data).slice(0, 120));
+    const exec = await post(SVC.orchestration + "/executions", { pipeline_id: pipe.data.id });
+    if (!exec.ok) throw new Error("execution start failed: " + JSON.stringify(exec.data).slice(0, 120));
     const task = await post(SVC.orchestration + "/human-tasks", {
-      pipeline_execution_id: pipeId, step_id: "s2", assignee_id: "manager", instructions: text,
+      pipeline_execution_id: exec.data.id, step_id: "s2", assignee_id: "manager", instructions: text,
     });
-    await post(SVC.supervision + "/approvals", { request_id: task.data.id, requester_id: agentId, type: "parallel", title: instruction.slice(0, 70) });
+    if (!task.ok) throw new Error("human task failed: " + JSON.stringify(task.data).slice(0, 120));
+    const appr = await post(SVC.supervision + "/approvals", { request_id: task.data.id, requester_id: agentId, type: "parallel", title: instruction.slice(0, 70) });
+    if (!appr.ok) throw new Error("approval gate failed: " + JSON.stringify(appr.data).slice(0, 120));
     $("workOut").innerHTML = `<div class="result"><div class="q">${esc(agentName)} · drafted by ${esc(draft.data.model)} · grounded in ${draft.data.memory_used.length} memor${draft.data.memory_used.length === 1 ? "y" : "ies"}</div><div class="a" style="white-space:pre-wrap">${esc(text)}</div><div class="meta"><span>${draft.data.tokens} tokens</span><span>awaiting sign-off in Supervision →</span></div></div>`;
     toast("Agent produced real work — sign off in Supervision", "ok");
   } catch (e) {

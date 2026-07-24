@@ -266,8 +266,15 @@ func TestAgentMemory(t *testing.T) {
 		t.Errorf("agent memory = %+v", mem)
 	}
 
-	if w := do(mux, "GET", "/agents/unknown-agent", nil); w.Code != http.StatusNotFound {
-		t.Errorf("unknown agent: status %d, want 404", w.Code)
+	// An agent with no memories has a valid empty state, not a 404.
+	if w := do(mux, "GET", "/agents/unknown-agent", nil); w.Code != http.StatusOK {
+		t.Errorf("unknown agent: status %d, want 200 empty state", w.Code)
+	} else {
+		var empty store.AgentMemory
+		json.Unmarshal(w.Body.Bytes(), &empty)
+		if len(empty.PersonalMemories) != 0 || empty.Status != "active" {
+			t.Errorf("empty agent memory = %+v", empty)
+		}
 	}
 }
 

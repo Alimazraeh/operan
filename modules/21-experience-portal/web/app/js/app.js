@@ -13,7 +13,7 @@ import viewSettings from "./views/settings.js";
 import { viewDepartments, viewDepartment } from "./views/departments.js";
 import { viewWorkflows } from "./views/workflows.js";
 import { viewSupervision } from "./views/supervision.js";
-import { viewAgents } from "./views/agents.js";
+import { viewAgents, viewAgent } from "./views/agents.js";
 import { viewIngestion } from "./views/ingestion.js";
 import { viewConnectors } from "./views/connectors.js";
 import { viewTenants } from "./views/tenants.js";
@@ -34,6 +34,7 @@ const VIEWS = {
   reports:      { title: "Reports",       render: viewReports },
   cost:         { title: "Costs",         render: viewCost },
   agents:       { title: "Agents",        render: viewAgents },
+  agent:        { title: "Agent",         render: viewAgent, parent: "agents" },
   ingestion:    { title: "Knowledge",     render: viewIngestion },
   connectors:   { title: "Connectors",    render: viewConnectors },
   settings:     { title: "Settings",      render: viewSettings },
