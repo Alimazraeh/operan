@@ -14,6 +14,7 @@ import (
 	"github.com/operan/policy-governance/internal/events"
 	"github.com/operan/policy-governance/internal/handler"
 	"github.com/operan/policy-governance/internal/store"
+	"github.com/operan/policy-governance/migrations"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -33,6 +34,11 @@ func main() {
 	if err := pool.Ping(context.Background()); err != nil {
 		log.Fatalf("failed to ping database: %v", err)
 	}
+
+	if err := migrations.RunMigrations(pool); err != nil {
+		log.Fatalf("failed to run migrations: %v", err)
+	}
+	log.Println("migrations applied")
 
 	policyStore := store.NewPolicyStore(pool)
 	groupStore := store.NewGroupStore(pool)
