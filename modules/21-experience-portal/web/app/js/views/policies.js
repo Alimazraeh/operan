@@ -1,226 +1,220 @@
-// Policy Governance (Module 10): policy CRUD, evaluation, policy groups, audit log.
-import { SVC, get, post, patch, del, uuid4, unwrapList } from "../api.js";
-import { $, esc, badge, rel, toast, rowItem } from "../ui.js";
+// Policies — the rulebook that bounds the automation.
+//
+// Two layers, honestly separated: DEPARTMENT rules ship on the template and
+// are live today (they shape gates, autonomy tiers and decision rights);
+// PLATFORM policies (Module 10) are groups of allow/deny/proxy rules with an
+// evaluation API — consulted on demand, not yet wired into run execution.
+import { SVC, get, post, del, unwrapList, listDepartments, getDepartment } from "../api.js";
+import { $, esc, badge, rel, toast } from "../ui.js";
 
-const POLICY_TYPES = ["allow", "deny"];
-const OPERATORS = ["equals", "not_equals", "contains", "exists", "in", "not_in"];
-const TARGET_SCOPES = ["all", "department", "team", "role", "user"];
+const ACTIONS = ["deny", "allow", "proxy"];
+const SCOPES = ["department", "agent", "tenant", "global"];
+const RESOURCE_TYPES = ["tool", "model", "workflow", "data", "all"];
+const EFFECTS = ["enforce", "warn", "log"];
+const ACTION_ICON = { allow: "✅", deny: "🚫", proxy: "🔁" };
 
 export async function viewPolicies() {
-  let policiesR, groupsR, auditR;
-  try {
-    [policiesR, groupsR, auditR] = await Promise.all([
-      get(SVC.policies + "/policies"),
-      get(SVC.policies + "/policy-groups"),
-      get(SVC.policies + "/audit"),
-    ]);
-  } catch (e) { return viewError("Failed to load policy data", e.message); }
+  const [policiesR, groupsR, auditR, deptR] = await Promise.allSettled([
+    get(SVC.policies + "/policies"),
+    get(SVC.policies + "/policy-groups"),
+    get(SVC.policies + "/audit?page_size=50"),
+    listDepartments(1, 50),
+  ]);
+  const ok = r => r.status === "fulfilled" ? r.value : null;
+  const policies = unwrapList(ok(policiesR), "policies");
+  const groups = unwrapList(ok(groupsR), "groups");
+  const audit = unwrapList(ok(auditR), "audits");
+  const depts = unwrapList(ok(deptR)).filter(d => d.status === "operational" || d.status === "degraded");
 
-  const policies = unwrapList(policiesR, "policies");
-  const groups = unwrapList(groupsR, "groups");
-  const audit = unwrapList(auditR, "audit");
+  // Department rules are on the full record.
+  const details = (await Promise.allSettled(depts.map(d => getDepartment(d.id))))
+    .filter(r => r.status === "fulfilled" && r.value.ok).map(r => r.value.data);
 
-  return `
+  const deptRules = details.flatMap(d => (d.governance_rules || []).map(g => ({ dept: d, rule: g })));
+  window._pol = { groups, depts };
+
+  return `<div id="polRoot">
     <div class="grid g4" style="margin-bottom:18px">
-      <div class="card metric"><b>${policies.length}</b><span>policies</span></div>
-      <div class="card metric"><b>${groups.length}</b><span>policy groups</span></div>
+      <div class="card metric"><b>${deptRules.length}</b><span>department rules (live)</span></div>
+      <div class="card metric"><b>${policies.length}</b><span>platform policies</span></div>
+      <div class="card metric"><b>${policies.filter(p => p.action === "deny").length}</b><span>deny rules</span></div>
       <div class="card metric"><b>${audit.length}</b><span>audit events</span></div>
-      <div class="card metric"><b>${policies.filter(p=>p.type==="deny").length}</b><span>deny rules</span></div>
     </div>
 
-    <!-- Tab navigation -->
+    <div class="card" style="margin-bottom:18px">
+      <h3>Department rules <span class="tag">live — shipped by the template</span></h3>
+      <div class="hint">These already govern the org: they define the gates, autonomy tiers and decision
+      rights you see on Teams and in every run.</div>
+      ${deptRules.length === 0
+        ? `<div class="empty">No operational departments with governance rules.</div>`
+        : deptRules.map(({ dept, rule }) => `
+          <div class="row-item">
+            <div class="grow"><div class="t">⚙️ ${esc(rule.name)} <span class="tag">${esc(dept.name)}</span></div>
+            <div class="m">${esc(rule.description || rule.type || "")}</div></div>
+            <div class="actions"><span class="badge ${esc(rule.enforcement || "enforce")}">${esc(rule.enforcement || "enforce")}</span></div>
+          </div>`).join("")}
+    </div>
+
     <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
-      <button class="sm policy-tab active" data-tab="policies">Policies</button>
-      <button class="sm policy-tab" data-tab="groups">Groups</button>
-      <button class="sm policy-tab" data-tab="evaluate">Evaluate</button>
-      <button class="sm policy-tab" data-tab="audit">Audit</button>
+      <button class="sm policy-tab active" data-tab="policies" onclick="window.polTab('policies', this)">Platform policies</button>
+      <button class="sm policy-tab" data-tab="groups" onclick="window.polTab('groups', this)">Groups</button>
+      <button class="sm policy-tab" data-tab="evaluate" onclick="window.polTab('evaluate', this)">Evaluate</button>
+      <button class="sm policy-tab" data-tab="audit" onclick="window.polTab('audit', this)">Audit</button>
     </div>
 
-    <!-- Policies tab -->
     <div class="policy-panel" id="panel-policies">
       <div class="card" style="margin-bottom:18px">
-        <h3>Policy rules <span class="tag">Module 10</span></h3>
-        <div class="hint">Create and manage governance policies. Policies enforce allow/deny rules on agent behavior, resource access, and execution limits.</div>
+        <h3>Platform policies <span class="tag">Module 10 · evaluation API — not yet enforced in the run path</span></h3>
+        <div class="hint">Allow/deny/proxy rules over tools, models, workflows and data. Policies live inside a
+        group${groups.length === 0 ? " — create one on the Groups tab first" : ""}.</div>
         <div class="frow" style="margin-bottom:14px">
-          <input id="policyName" placeholder="policy name (e.g. No-External-API-Calls)">
-          <select id="policyType" style="max-width:90px">
-            <option value="allow">Allow</option>
-            <option value="deny">Deny</option>
-          </select>
-          <button class="sm" onclick="window.polCreatePolicy()">Create policy</button>
+          <select id="polGroup" style="max-width:180px">${groups.length === 0
+            ? `<option value="">— no groups yet —</option>`
+            : groups.map(g => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join("")}</select>
+          <input id="policyName" placeholder="policy name (e.g. No external email tools)" style="flex:1;min-width:180px">
+          <select id="polAction" style="max-width:90px">${ACTIONS.map(a => `<option>${a}</option>`).join("")}</select>
+          <select id="polScope" style="max-width:120px">${SCOPES.map(s => `<option>${s}</option>`).join("")}</select>
+          <select id="polResType" style="max-width:110px">${RESOURCE_TYPES.map(rt => `<option>${rt}</option>`).join("")}</select>
+          <select id="polEffect" style="max-width:100px">${EFFECTS.map(e => `<option>${e}</option>`).join("")}</select>
+          <button class="sm" onclick="window.polCreatePolicy()">Create</button>
         </div>
         ${policies.length === 0
-          ? `<div class="empty">No policies defined. Create one above.</div>`
-          : policies.map(p => {
-              const conditions = (p.conditions || p.rules || []);
-              return `<div class="card" style="margin-bottom:12px">
-                <div class="frow">
-                  <h3 style="flex:1">${p.type === "deny" ? "🚫" : "✅"} ${esc(p.name || p.id.slice(0,8))}</h3>
-                  <button class="bad sm" onclick="window.polDeletePolicy('${esc(p.id)}')">Delete</button>
-                </div>
-                <div class="hint">${esc(p.description || p.scope || "No description")}</div>
-                ${conditions.length > 0 ? `<div style="margin-top:6px" class="frow" style="flex-wrap:wrap">
-                  ${conditions.map(c => {
-                    const label = c.rule_type || c.operator || c.target || c.condition || "?";
-                    return `<span class="badge" style="margin:2px">${esc(String(label))}</span>`;
-                  }).join("")}
-                </div>` : ""}
-                <div class="hint" style="margin-top:4px">created ${rel(p.created_at || p.createdAt || "")}</div>
-              </div>`;
-            }).join("")}
+          ? `<div class="empty">No platform policies yet.</div>`
+          : policies.map(p => `
+            <div class="row-item">
+              <div class="grow"><div class="t">${ACTION_ICON[p.action] || "•"} ${esc(p.name)}
+                <span class="tag">${esc(p.scope || "all")} · ${esc(p.resource_type || "all")}</span></div>
+              <div class="m">${esc(p.description || "")}${p.priority != null ? ` · priority ${esc(String(p.priority))}` : ""} · ${rel(p.created_at)}</div></div>
+              <div class="actions"><span class="badge ${p.is_active !== false ? "active" : "expired"}">${p.is_active !== false ? "active" : "inactive"}</span>
+                <span class="badge ${esc(p.effect || "enforce")}">${esc(p.effect || "enforce")}</span>
+                <button class="bad sm" onclick="window.polDeletePolicy('${esc(p.id)}')">Delete</button></div>
+            </div>`).join("")}
       </div>
     </div>
 
-    <!-- Groups tab -->
     <div class="policy-panel" id="panel-groups" style="display:none">
       <div class="card" style="margin-bottom:18px">
         <h3>Policy groups <span class="tag">Module 10</span></h3>
-        <div class="hint">Group policies together for scoped enforcement. Each group can be assigned to a department or role.</div>
+        <div class="hint">A group bundles related policies (e.g. "Finance guardrails"). Policies require one.</div>
         <div class="frow" style="margin-bottom:14px">
-          <input id="groupName" placeholder="group name (e.g. Finance Compliance)">
-          <select id="groupScope" style="max-width:120px">
-            ${TARGET_SCOPES.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join("")}
-          </select>
+          <input id="groupName" placeholder="group name (e.g. Finance guardrails)">
           <button class="sm" onclick="window.polCreateGroup()">Create group</button>
         </div>
         ${groups.length === 0
-          ? `<div class="empty">No policy groups defined.</div>`
-          : groups.map(g => rowItem({
-              title: `📋 ${esc(g.name || g.id.slice(0,8))}`,
-              meta: `scope: ${esc(g.scope || "all")} · policies: ${(g.policy_ids || g.policies || []).length} · created ${rel(g.created_at || g.createdAt || "")}`,
-              badges: badge(g.scope || "all"),
-              actions: `<button class="bad sm" onclick="window.polDeleteGroup('${esc(g.id)}')">Delete</button>`,
-            })).join("")}
+          ? `<div class="empty">No policy groups yet.</div>`
+          : groups.map(g => `
+            <div class="row-item">
+              <div class="grow"><div class="t">📋 ${esc(g.name)}</div>
+              <div class="m">${policies.filter(p => p.group_id === g.id).length} policy(ies) · created ${rel(g.created_at)}</div></div>
+              <div class="actions"><button class="bad sm" onclick="window.polDeleteGroup('${esc(g.id)}')">Delete</button></div>
+            </div>`).join("")}
       </div>
     </div>
 
-    <!-- Evaluate tab -->
     <div class="policy-panel" id="panel-evaluate" style="display:none">
       <div class="card" style="margin-bottom:18px">
-        <h3>Policy evaluation <span class="tag">Module 10</span></h3>
-        <div class="hint">Test whether an action is allowed under the current policy set. The engine evaluates all matching policies and returns a combined result.</div>
+        <h3>Policy evaluation <span class="tag">would this be allowed?</span></h3>
+        <div class="hint">Ask the engine directly. Deny beats allow; matches are audited.</div>
         <div class="grid g2">
-          <div><label>Action</label><input id="evalAction" placeholder="e.g. send_external_email"></div>
-          <div><label>Target</label><input id="evalTarget" placeholder="e.g. finance-dept"></div>
-          <div><label>Agent ID</label><input id="evalAgent" placeholder="agent-uuid"></div>
-          <div><label>User Role</label><select id="evalRole">
-            <option value="admin">admin</option>
-            <option value="manager">manager</option>
-            <option value="agent">agent</option>
-            <option value="viewer">viewer</option>
-          </select></div>
+          <div><label>Resource</label><input id="evalResource" placeholder="e.g. tool:external-email"></div>
+          <div><label>Action</label><input id="evalActionType" placeholder="e.g. execute"></div>
+          <div><label>Agent role</label><select id="evalRole">
+            <option value="">— any —</option><option>analyst</option><option>executor</option>
+            <option>manager</option><option>support</option><option>specialist</option></select></div>
+          <div><label>Department</label><select id="evalDept">
+            <option value="">— any —</option>
+            ${depts.map(d => `<option value="${esc(d.id)}">${esc(d.name)}</option>`).join("")}</select></div>
+          <div><label>Cost (USD, optional)</label><input id="evalCost" type="number" step="0.01" placeholder="0"></div>
         </div>
         <button class="sm" style="margin-top:12px" onclick="window.polEvaluate()">Evaluate</button>
         <div id="evalResult"></div>
       </div>
     </div>
 
-    <!-- Audit tab -->
     <div class="policy-panel" id="panel-audit" style="display:none">
       <div class="card">
-        <h3>Policy audit log <span class="tag">Module 10</span></h3>
-        <div class="hint">Record of all policy decisions, evaluations, and enforcement actions.</div>
+        <h3>Audit log <span class="tag">every evaluation, recorded</span></h3>
         ${audit.length === 0
-          ? `<div class="empty">No audit events recorded.</div>`
-          : `<div style="max-height:500px;overflow:auto">
-              <table>
-                <thead><tr><th>Time</th><th>Action</th><th>Result</th><th>Agent</th><th>Policy</th><th>Reason</th></tr></thead>
-                <tbody>${audit.map(a => `<tr>
-                  <td class="mono">${esc(rel(a.timestamp || a.created_at || ""))}</td>
-                  <td>${esc(a.action || a.event || "—")}</td>
-                  <td>${badge(a.result === "allowed" || a.result === "pass" ? "ok" : "rejected")}</td>
-                  <td class="mono">${esc((a.agent_id || a.actor || "").slice(0,8))}</td>
-                  <td class="mono">${esc((a.policy_id || a.policy || "").slice(0,8))}</td>
-                  <td>${esc(a.reason || a.details || "—")}</td>
-                </tr>`).join("")}</tbody>
-              </table>
-            </div>`}
+          ? `<div class="empty">No evaluations recorded yet — try one on the Evaluate tab.</div>`
+          : audit.map(a => `
+            <div class="row-item">
+              <div class="grow"><div class="t">${a.allowed === false ? "🚫" : "✅"} ${esc(a.resource || a.action_type || "evaluation")}</div>
+              <div class="m">${esc(a.action_type || "")}${a.agent_role ? " · role " + esc(a.agent_role) : ""}${a.policy_name ? " · matched " + esc(a.policy_name) : ""}${a.reason ? " · " + esc(a.reason) : ""} · ${rel(a.created_at || a.timestamp)}</div></div>
+              <div class="actions"><span class="badge ${a.allowed === false ? "rejected" : "approved"}">${a.allowed === false ? "denied" : "allowed"}</span></div>
+            </div>`).join("")}
       </div>
-    </div>`;
+    </div>
+  </div>`;
 }
 
-// ── Tab switching ──────────────────────────────────────────
-document.querySelectorAll(".policy-tab").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".policy-tab").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    document.querySelectorAll(".policy-panel").forEach(p => p.style.display = "none");
-    const panel = document.getElementById("panel-" + btn.dataset.tab);
-    if (panel) panel.style.display = "block";
-  });
-});
+// ── Panel switching (inline, so it works after every render) ─
+window.polTab = function (name, btn) {
+  document.querySelectorAll(".policy-tab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  document.querySelectorAll(".policy-panel").forEach(p => p.style.display = "none");
+  const panel = document.getElementById("panel-" + name);
+  if (panel) panel.style.display = "block";
+};
 
-// ── Policy CRUD ────────────────────────────────────────────
+// ── CRUD with the real Module 10 schema ─────────────────────
 window.polCreatePolicy = async function () {
+  const groupId = $("polGroup").value;
   const name = $("policyName").value.trim();
-  if (!name) { toast("Policy name required", "bad"); return; }
-  try {
-    const r = await post(SVC.policies + "/policies", {
-      id: uuid4(), name, type: $("policyType").value,
-      description: `Policy: ${name}`,
-      conditions: [], scope: "all",
-    });
-    if (r.ok) { toast("Policy " + esc(name) + " created", "ok"); window.go("policies"); }
-    else toast("Failed: " + esc(JSON.stringify(r.data).slice(0, 120)), "bad");
-  } catch (e) { toast("Error: " + esc(String(e)), "bad"); }
+  if (!groupId) { toast("Policies need a group — create one on the Groups tab", "warn"); return; }
+  if (!name) { toast("Give the policy a name", "warn"); return; }
+  const r = await post(SVC.policies + "/policies", {
+    group_id: groupId, name,
+    action: $("polAction").value, scope: $("polScope").value,
+    resource_type: $("polResType").value, effect: $("polEffect").value,
+  });
+  if (r.ok) { toast("Policy created", "ok"); window.go("policies"); }
+  else toast("Create failed: " + esc(r.data?.message || r.data?.error?.message || r.status), "bad");
 };
 
 window.polDeletePolicy = async function (id) {
   if (!confirm("Delete this policy?")) return;
   const r = await del(SVC.policies + "/policies/" + encodeURIComponent(id));
   if (r.ok) { toast("Policy deleted", "ok"); window.go("policies"); }
-  else toast("Failed: " + esc(JSON.stringify(r.data).slice(0, 100)), "bad");
+  else toast("Delete failed: " + esc(r.data?.message || r.status), "bad");
 };
 
-// ── Group CRUD ─────────────────────────────────────────────
 window.polCreateGroup = async function () {
   const name = $("groupName").value.trim();
-  if (!name) { toast("Group name required", "bad"); return; }
-  try {
-    const r = await post(SVC.policies + "/policy-groups", {
-      id: uuid4(), name, scope: $("groupScope").value,
-      policy_ids: [],
-    });
-    if (r.ok) { toast("Group " + esc(name) + " created", "ok"); window.go("policies"); }
-    else toast("Failed: " + esc(JSON.stringify(r.data).slice(0, 120)), "bad");
-  } catch (e) { toast("Error: " + esc(String(e)), "bad"); }
+  if (!name) { toast("Give the group a name", "warn"); return; }
+  const r = await post(SVC.policies + "/policy-groups", { name, metadata: {} });
+  if (r.ok) { toast("Group created", "ok"); window.go("policies"); }
+  else toast("Create failed: " + esc(r.data?.message || r.status), "bad");
 };
 
 window.polDeleteGroup = async function (id) {
   if (!confirm("Delete this group?")) return;
   const r = await del(SVC.policies + "/policy-groups/" + encodeURIComponent(id));
   if (r.ok) { toast("Group deleted", "ok"); window.go("policies"); }
-  else toast("Failed: " + esc(JSON.stringify(r.data).slice(0, 100)), "bad");
+  else toast("Delete failed: " + esc(r.data?.message || r.status), "bad");
 };
 
-// ── Policy evaluation ──────────────────────────────────────
 window.polEvaluate = async function () {
-  const action = $("evalAction").value.trim();
-  if (!action) { toast("Action required", "bad"); return; }
-  try {
-    const r = await post(SVC.policies + "/policies/evaluate", {
-      action,
-      target: $("evalTarget").value.trim() || "default",
-      agent_id: $("evalAgent").value.trim() || "unknown",
-      role: $("evalRole").value,
-      context: {
-        department: $("evalTarget").value.trim() || "default",
-      },
-    });
-    const result = r.data || {};
-    $("evalResult").innerHTML = `<div class="result" style="margin-top:10px">
-      <div class="q">${esc(action)} → ${esc($("evalTarget").value || "default")}</div>
-      <div class="a" style="color:${result.allowed !== false ? "var(--ok)" : "var(--bad)"}">
-        ${result.allowed !== false ? "✅ ALLOWED" : "🚫 DENIED"}
-      </div>
-      ${result.policy_match ? `<div class="meta"><span>Matched: ${esc(result.policy_match)}</span></div>` : ""}
-      ${result.reason ? `<div class="meta"><span>Reason: ${esc(result.reason)}</span></div>` : ""}
-      ${result.evaluated_at ? `<div class="meta"><span>Evaluated: ${esc(result.evaluated_at)}</span></div>` : ""}
-      ${result.policies_evaluated ? `<div class="meta"><span>Policies checked: ${esc(String(result.policies_evaluated))}</span></div>` : ""}
-    </div>`;
-  } catch (e) { $("evalResult").innerHTML = `<div class="error-box"><div class="err-msg">${esc(String(e))}</div></div>`; }
+  const resource = $("evalResource").value.trim();
+  if (!resource) { toast("Name the resource to evaluate", "warn"); return; }
+  const body = {
+    resource,
+    action_type: $("evalActionType").value.trim() || "execute",
+  };
+  if ($("evalRole").value) body.agent_role = $("evalRole").value;
+  if ($("evalDept").value) body.department_id = $("evalDept").value;
+  if ($("evalCost").value) body.cost = parseFloat($("evalCost").value);
+  const r = await post(SVC.policies + "/policies/evaluate", body);
+  if (!r.ok) {
+    $("evalResult").innerHTML = `<div class="error-box" style="margin-top:10px"><div class="err-msg">${esc(r.data?.message || "evaluation failed")}</div></div>`;
+    return;
+  }
+  const res = r.data || {};
+  $("evalResult").innerHTML = `<div class="card" style="margin-top:12px">
+    <div class="t" style="color:${res.allowed !== false ? "var(--ok)" : "var(--bad)"};font-weight:700">
+      ${res.allowed !== false ? "✅ ALLOWED" : "🚫 DENIED"}</div>
+    <div class="m" style="margin-top:4px">${esc(resource)} · ${esc(body.action_type)}
+      ${res.policy_name ? ` · matched <b>${esc(res.policy_name)}</b>` : ""}
+      ${res.reason ? ` · ${esc(res.reason)}` : ""}</div>
+    ${(res.warnings || []).length ? `<div class="m" style="margin-top:4px;color:var(--warn)">⚠ ${res.warnings.map(w => esc(typeof w === "string" ? w : w.policy_name || JSON.stringify(w))).join(" · ")}</div>` : ""}
+  </div>`;
 };
-
-function viewError(title, msg) {
-  return `<div class="error-box"><div class="err-title">${esc(title)}</div><div class="err-msg">${esc(msg)}</div><button onclick="window.go('policies')">Retry</button></div>`;
-}

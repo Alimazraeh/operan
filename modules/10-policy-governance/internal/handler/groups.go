@@ -52,6 +52,11 @@ func (h *GroupHandler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	if req.Priority != nil {
 		priority = *req.Priority
 	}
+	// metadata column is NOT NULL — a request without metadata must not 500.
+	metadata := req.Metadata
+	if metadata == nil {
+		metadata = map[string]interface{}{}
+	}
 
 	group := &store.PolicyGroup{
 		TenantID:    tenantID,
@@ -59,7 +64,7 @@ func (h *GroupHandler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		Description: req.Description,
 		Priority:    priority,
 		IsActive:    true,
-		Metadata:    req.Metadata,
+		Metadata:    metadata,
 	}
 
 	if err := h.store.Create(r.Context(), group); err != nil {
