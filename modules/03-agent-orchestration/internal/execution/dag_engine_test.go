@@ -532,7 +532,7 @@ func TestGetExecutionStats(t *testing.T) {
 
 func TestExecutionStats_EmptyWorkflow(t *testing.T) {
 	wf := &store.Workflow{
-		ID:    "wf-1",
+		ID:     "wf-1",
 		Status: store.WorkflowStatusPending,
 		Graph: store.WorkflowGraph{
 			Nodes: []store.WorkflowNode{},

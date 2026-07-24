@@ -25,6 +25,7 @@ import (
 	"github.com/operan/modules/05-department-template-engine/internal/persist"
 	"github.com/operan/modules/05-department-template-engine/internal/seed"
 	"github.com/operan/modules/05-department-template-engine/internal/store"
+	"github.com/operan/modules/05-department-template-engine/internal/workloop"
 )
 
 func main() {
@@ -86,6 +87,12 @@ func main() {
 	)
 	h.DepartmentStore = departmentStore // shared with the persistence loop
 	h.RequestStore = requestStore
+
+	// ─── The department work loop: request dispatch + run poller ─────────
+	orchClient := &clients.OrchestrationClient{BaseURL: cfg.OrchestrationURL}
+	loop := workloop.New(requestStore, departmentStore, templateStore, orchClient, publisher)
+	h.Dispatcher = loop
+	go loop.Run(ctx)
 	h.Orchestrator = &deploy.Orchestrator{
 		Deployments:   deploymentStore,
 		Departments:   departmentStore,
