@@ -2,6 +2,7 @@
 package handlers
 
 import (
+	"github.com/operan/modules/05-department-template-engine/internal/cadence"
 	"encoding/json"
 	"io"
 	"log"
@@ -27,6 +28,7 @@ type TemplateHandlers struct {
 	MaxPageSize         int
 	Orchestrator        DeployOrchestrator // server-side deploy pipeline; nil in legacy tests
 	Dispatcher          RequestDispatcher  // work-loop dispatch; nil until the runtime ships
+	Briefings           *cadence.BriefingStore // operating-cadence digests; nil in legacy tests
 }
 
 // DeployOrchestrator runs the server-side provisioning pipeline for a deploy.

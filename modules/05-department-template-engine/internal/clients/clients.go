@@ -277,3 +277,30 @@ func doGet(ctx context.Context, url string, caller Caller, out interface{}) erro
 	}
 	return json.Unmarshal(body, out)
 }
+
+// ── Agent draft (Module 03's /agent/draft — the real LLM path) ──
+
+type DraftRequest struct {
+	AgentID      string `json:"agent_id"`
+	Role         string `json:"role,omitempty"`
+	Instruction  string `json:"instruction"`
+	MemoryQuery  string `json:"memory_query,omitempty"`
+	DepartmentID string `json:"department_id,omitempty"`
+	MaxTokens    int    `json:"max_tokens,omitempty"`
+}
+
+type DraftResult struct {
+	Output string `json:"output"`
+	Model  string `json:"model"`
+	Tokens int    `json:"tokens"`
+}
+
+// DraftAgent asks Module 03 to produce real agent output. Drafting goes
+// through the reasoning model, so the timeout is generous.
+func (c *OrchestrationClient) DraftAgent(ctx context.Context, caller Caller, req DraftRequest) (*DraftResult, error) {
+	var out DraftResult
+	if err := doJSON(ctx, "POST", c.BaseURL+"/agent/draft", caller, req, &out, 180*time.Second); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
