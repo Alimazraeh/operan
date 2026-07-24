@@ -19,6 +19,7 @@ import (
 	"github.com/operan/modules/06-knowledge-ingestion/internal/middleware"
 	"github.com/operan/modules/06-knowledge-ingestion/internal/store"
 	"github.com/operan/modules/06-knowledge-ingestion/internal/workers"
+	"github.com/operan/modules/06-knowledge-ingestion/migrations"
 )
 
 func main() {
@@ -35,6 +36,10 @@ func main() {
 	if err := pool.Ping(context.Background()); err != nil {
 		log.Fatalf("cannot reach database: %v", err)
 	}
+	if err := migrations.RunMigrations(pool); err != nil {
+		log.Fatalf("failed to run migrations: %v", err)
+	}
+	log.Println("migrations applied")
 	defer pool.Close()
 
 	// Event broker.
