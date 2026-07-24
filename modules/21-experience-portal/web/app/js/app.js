@@ -270,9 +270,22 @@ async function handleRegister() {
   msg.className = "err loading";
 
   try {
-    await registerTenant(name, slug || name.toLowerCase().replace(/\s+/g, "-"), plan);
-    msg.textContent = "Tenant created! Now login with your admin password.";
-    msg.className = "err ok";
+    const tenantSlug = slug || name.toLowerCase().replace(/\s+/g, "-");
+    const resp = await registerTenant(name, tenantSlug, plan);
+    const tenantId = resp?.data?.id || tenantSlug;
+    // Hand off to the login page with the tenant prefilled so the user
+    // only has to enter the admin password.
+    renderLoginPage();
+    const lt = $("#loginTenant");
+    if (lt) lt.value = tenantId;
+    localStorage.setItem("operan.tenant", tenantId);
+    const lm = $("#loginMsg");
+    if (lm) {
+      lm.textContent = `Tenant “${name}” created — sign in with the platform admin password.`;
+      lm.className = "err ok";
+    }
+    const ls = $("#loginSecret");
+    if (ls) ls.focus();
   } catch (e) {
     msg.textContent = e.message || "Failed to create tenant";
     msg.className = "err";
