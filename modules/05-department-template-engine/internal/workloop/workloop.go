@@ -111,9 +111,16 @@ func (l *Loop) Dispatch(auth, tenantID string, req *store.ServiceRequest, dept *
 	l.auths[req.ID] = auth
 	l.mu.Unlock()
 
+	var gateNodes []string
+	for _, st := range wfDef.Steps {
+		if st.Type == "approval" || st.Type == "human_gate" {
+			gateNodes = append(gateNodes, st.ID)
+		}
+	}
 	l.Requests.Mutate(req.ID, func(sr *store.ServiceRequest) {
 		sr.Status = "in_progress"
 		sr.WorkflowRunRef = created.ID
+		sr.GateNodeIDs = gateNodes
 		sr.Timeline = append(sr.Timeline, store.RequestEvent{
 			At: time.Now().UTC(), Kind: "dispatched",
 			Detail: "SOP run started (" + wfDef.Name + ")"})
@@ -239,7 +246,13 @@ func (l *Loop) pollOne(ctx context.Context, req store.ServiceRequest) {
 					Detail: "sign-off: " + decision})
 			})
 		}
-		if n.Status == "running" && (nodeType == "human_gate" || strings.HasPrefix(n.NodeID, "gate")) {
+		isGate := nodeType == "human_gate" || strings.HasPrefix(n.NodeID, "gate")
+		for _, g := range req.GateNodeIDs {
+			if n.NodeID == g {
+				isGate = true
+			}
+		}
+		if n.Status == "running" && isGate {
 			gateActive = true
 		}
 	}
@@ -347,8 +360,13 @@ func hasEvent(timeline []store.RequestEvent, kind string) bool {
 }
 
 func boundStr(s string, n int) string {
-	if len(s) > n {
-		return s[:n] + "…"
+	if len(s) <= n {
+		return s
 	}
-	return s
+	// Truncate on a rune boundary — byte slicing can split UTF-8 mid-rune.
+	r := []rune(s)
+	if len(r) > n {
+		r = r[:n]
+	}
+	return string(r) + "…"
 }

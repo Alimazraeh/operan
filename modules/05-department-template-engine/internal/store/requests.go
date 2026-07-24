@@ -33,10 +33,13 @@ type ServiceRequest struct {
 
 	// WorkflowRunRef is the per-request M03 workflow id executing this
 	// request (workflow-per-run model).
-	WorkflowRunRef string         `json:"workflow_run_ref,omitempty"`
-	Output         string         `json:"output,omitempty"`
-	TokensUsed     int            `json:"tokens_used,omitempty"`
-	Timeline       []RequestEvent `json:"timeline,omitempty"`
+	WorkflowRunRef string `json:"workflow_run_ref,omitempty"`
+	// GateNodeIDs are the run's human_gate node ids (recorded at dispatch so
+	// the poller can flag awaiting_approval while a gate node is running).
+	GateNodeIDs []string       `json:"gate_node_ids,omitempty"`
+	Output      string         `json:"output,omitempty"`
+	TokensUsed  int            `json:"tokens_used,omitempty"`
+	Timeline    []RequestEvent `json:"timeline,omitempty"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
