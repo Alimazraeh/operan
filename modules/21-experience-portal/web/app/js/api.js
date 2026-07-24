@@ -158,6 +158,8 @@ export function seedTemplates() {
   return post("/svc/templates/templates/seed", {});
 }
 
+export function getTemplate(id) { return get("/svc/templates/templates/" + id); }
+
 // ── Departments (Module 05 instances — the operating model) ─
 export function listDepartments(page, pageSize) {
   const params = new URLSearchParams();
@@ -167,6 +169,17 @@ export function listDepartments(page, pageSize) {
 }
 
 export function getDepartment(id) { return get("/svc/templates/departments/" + id); }
+
+// The department's front door: a service request enters the work loop —
+// M05 compiles the service's SOP into a per-request M03 workflow and runs it.
+export function createServiceRequest(departmentId, serviceId, title, body, priority) {
+  return post(`/svc/templates/departments/${departmentId}/requests`,
+    { service_id: serviceId, title, body, priority });
+}
+
+export function listDeptRequests(departmentId) {
+  return get(`/svc/templates/departments/${departmentId}/requests`);
+}
 export function getDeptOrgChart(id) { return get(`/svc/templates/departments/${id}/org-chart`); }
 export function getDeptServices(id) { return get(`/svc/templates/departments/${id}/services`); }
 export function getDeptValueChain(id) { return get(`/svc/templates/departments/${id}/value-chain`); }
@@ -207,6 +220,10 @@ export function createWorkflow(name, nodes, edges) {
 
 export function executeWorkflow(id) {
   return post(`/svc/orchestration/api/v1/orchestration/workflows/${id}/execute`, {});
+}
+
+export function listHumanTasks() {
+  return get("/svc/orchestration/api/v1/orchestration/human-tasks");
 }
 
 // ── Human Supervision ──────────────────────────────────────
