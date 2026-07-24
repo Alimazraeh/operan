@@ -104,6 +104,21 @@ async function api(method, url, body) {
   return { ok: res.ok, status: res.status, data };
 }
 
+// unwrapList extracts the list payload from any of the platform's response
+// envelopes: bare arrays, {items:[]}, {data:[]}, or a module-specific named
+// key ({workflows:[]}, {budgets:[]}, …). Errors and non-list payloads yield []
+// so views never call .filter/.reduce on an error object.
+export function unwrapList(resp, key) {
+  if (!resp || !resp.ok) return [];
+  const d = resp.data;
+  if (Array.isArray(d)) return d;
+  if (!d || typeof d !== "object") return [];
+  if (Array.isArray(d.items)) return d.items;
+  if (Array.isArray(d.data)) return d.data;
+  if (key && Array.isArray(d[key])) return d[key];
+  return [];
+}
+
 export function get(url) { return api("GET", url); }
 export function post(url, body) { return api("POST", url, body); }
 export function patch(url, body) { return api("PATCH", url, body); }
@@ -222,7 +237,7 @@ export function listCostEvents(page, pageSize) {
   const params = new URLSearchParams();
   if (page) params.set("page", page);
   if (pageSize) params.set("page_size", pageSize);
-  return get("/svc/cost/events?" + params.toString());
+  return get("/svc/cost/v1/cost-events?" + params.toString());
 }
 
 export function listBudgets(page, pageSize) {

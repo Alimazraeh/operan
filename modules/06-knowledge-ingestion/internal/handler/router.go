@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"time"
 	"net/http"
 
 	chiMW "github.com/go-chi/chi/v5/middleware"
@@ -25,7 +26,9 @@ func SetupRouter(
 	r.Use(chiMW.RealIP)
 	r.Use(chiMW.Logger)
 	r.Use(chiMW.Recoverer)
-	r.Use(chiMW.Timeout(60000))
+	// Timeout takes a time.Duration — a bare 60000 is 60µs and killed every
+	// request's context before the first DB query.
+	r.Use(chiMW.Timeout(60 * time.Second))
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},

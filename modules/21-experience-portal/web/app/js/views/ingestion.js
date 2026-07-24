@@ -19,7 +19,7 @@ export async function viewIngestion() {
     [sourcesR, jobsR, knowledgeR] = await Promise.all([
       get(SVC.knowledge + "/sources?page_size=50"),
       get(SVC.knowledge + "/jobs?page_size=50"),
-      get(SVC.memory + "/vectors?embedding_type=knowledge&page_size=50"),
+      get(SVC.memory + "/vectors?embedding_type=department&page_size=50"),
     ]);
   } catch (e) { return viewError("Failed to load knowledge data", e.message); }
 

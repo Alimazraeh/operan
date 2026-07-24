@@ -128,7 +128,9 @@ func (h *AdminLoginHandler) Login(w http.ResponseWriter, r *http.Request) {
 		"email":      email,
 		"role":       "admin",
 		"roles":      []string{"admin"},
-		"iss":        "operan-iam",
+		// The platform's canonical issuer — M01/M10/M18 pin this exact value,
+		// M17/M06 accept the "operan-" prefix, M08/M11 don't check issuer.
+		"iss":        "operan-tenant-control-plane",
 		"iat":        now.Unix(),
 		"exp":        now.Add(time.Duration(expiryMinutes) * time.Minute).Unix(),
 	})

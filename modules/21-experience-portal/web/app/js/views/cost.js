@@ -1,5 +1,5 @@
 // Cost Governance (Module 17): budgets, cost events, alerts, summary, throttle.
-import { SVC, get, post, patch, del, uuid4 } from "../api.js";
+import { SVC, get, post, patch, del, uuid4, unwrapList } from "../api.js";
 import { $, esc, badge, rel, toast } from "../ui.js";
 
 export async function viewCost() {
@@ -15,9 +15,9 @@ export async function viewCost() {
   } catch (e) { return viewError("Failed to load cost data", e.message); }
 
   const summary = summaryR.data || {};
-  const budgets = (budgetsR.data && budgetsR.data.items) || budgetsR.data || [];
-  const events = (eventsR.data && eventsR.data.items) || eventsR.data || [];
-  const alerts = (alertsR.data && alertsR.data.items) || alertsR.data || [];
+  const budgets = unwrapList(budgetsR, "budgets");
+  const events = unwrapList(eventsR, "events");
+  const alerts = unwrapList(alertsR, "alerts");
   const throttle = throttleR.data || {};
 
   const totalSpent = summary.total_spent || summary.spend || 0;

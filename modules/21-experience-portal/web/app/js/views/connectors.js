@@ -1,5 +1,5 @@
 // Enterprise Connectors (Module 18): connector management, sync, tools, health.
-import { SVC, get, post, del, uuid4 } from "../api.js";
+import { SVC, get, post, del, uuid4, unwrapList } from "../api.js";
 import { $, esc, badge, rel, toast, rowItem } from "../ui.js";
 
 const CONNECTOR_TYPES = [
@@ -21,9 +21,9 @@ export async function viewConnectors() {
     ]);
   } catch (e) { return viewError("Failed to load connector data", e.message); }
 
-  const connectors = (connectorsR.data && connectorsR.data.items) || connectorsR.data || [];
-  const syncHistory = (syncR.data && syncR.data.items) || syncR.data || [];
-  const tools = (toolsR.data && toolsR.data.items) || toolsR.data || [];
+  const connectors = unwrapList(connectorsR, "connectors");
+  const syncHistory = unwrapList(syncR, "history");
+  const tools = unwrapList(toolsR, "tools");
 
   return `
     <div class="grid g4" style="margin-bottom:18px">

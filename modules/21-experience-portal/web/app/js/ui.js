@@ -3,6 +3,10 @@
 // app.js uses the selector form, the views use bare ids.
 export const $ = id => document.getElementById(id && id[0] === "#" ? id.slice(1) : id);
 
+// Inline onclick handlers in view-generated HTML run in global scope; give
+// them the two helpers they reach for.
+window.$ = $;
+
 export function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, c =>
     ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
@@ -149,3 +153,4 @@ export function kvHtml(entries) {
     return `<dt>${esc(k)}</dt><dd>${vHtml}</dd>`;
   }).join("");
 }
+window.toast = toast;

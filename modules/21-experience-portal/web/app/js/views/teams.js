@@ -1,10 +1,10 @@
 // Teams — Agent roster, roles, hiring flow
 import { $, esc, statCard, card, btn, emptyState, toast } from "../ui.js";
-import { listAgents, createAgent, uuid4 } from "../api.js";
+import { listAgents, createAgent, uuid4, unwrapList } from "../api.js";
 
 export default async function viewTeams() {
   const res = await listAgents(1, 100);
-  const agents = res.data?.items || res.data || [];
+  const agents = unwrapList(res, "agents");
   const active = agents.filter(a => a.status === "active").length;
   const totalCaps = agents.reduce((sum, a) => sum + (a.capabilities?.length || 0), 0);
 

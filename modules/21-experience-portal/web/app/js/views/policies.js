@@ -1,5 +1,5 @@
 // Policy Governance (Module 10): policy CRUD, evaluation, policy groups, audit log.
-import { SVC, get, post, patch, del, uuid4 } from "../api.js";
+import { SVC, get, post, patch, del, uuid4, unwrapList } from "../api.js";
 import { $, esc, badge, rel, toast, rowItem } from "../ui.js";
 
 const POLICY_TYPES = ["allow", "deny"];
@@ -16,9 +16,9 @@ export async function viewPolicies() {
     ]);
   } catch (e) { return viewError("Failed to load policy data", e.message); }
 
-  const policies = (policiesR.data && policiesR.data.items) || policiesR.data || [];
-  const groups = (groupsR.data && groupsR.data.items) || groupsR.data || [];
-  const audit = (auditR.data && auditR.data.items) || auditR.data || [];
+  const policies = unwrapList(policiesR, "policies");
+  const groups = unwrapList(groupsR, "groups");
+  const audit = unwrapList(auditR, "audit");
 
   return `
     <div class="grid g4" style="margin-bottom:18px">
