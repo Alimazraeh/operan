@@ -63,7 +63,9 @@ func (h *IngestHandler) IngestSource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.worker.ProcessJob(r.Context(), job.ID, h.serviceToken)
+	// The job outlives this request — never hand it the request context
+	// (it cancels the moment the response is written).
+	h.worker.ProcessJob(context.Background(), job.ID, h.serviceToken)
 
 	WriteJSON(w, http.StatusOK, map[string]any{
 		"job_id":       job.ID,

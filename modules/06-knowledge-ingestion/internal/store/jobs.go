@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -137,41 +138,25 @@ func (s *JobsStore) UpdateStatus(ctx context.Context, id string, status string, 
 		updates["status"] = status
 	}
 
-	// Build dynamic update.
+	// Build the dynamic update: status always, optional columns only when
+	// the caller provided them.
 	setClauses := []string{"status = $1", "updated_at = NOW()"}
 	args := []any{status}
 	idx := 2
 
-	if v, ok := updates["processed_chunks"]; ok {
-		setClauses = append(setClauses, fmt.Sprintf("processed_chunks = $%d", idx))
-		args = append(args, v)
-		idx++
+	for _, col := range []string{"processed_chunks", "total_chunks", "error_message", "started_at", "completed_at"} {
+		if v, ok := updates[col]; ok {
+			setClauses = append(setClauses, fmt.Sprintf("%s = $%d", col, idx))
+			args = append(args, v)
+			idx++
+		}
 	}
-	if v, ok := updates["error_message"]; ok {
-		setClauses = append(setClauses, fmt.Sprintf("error_message = $%d", idx))
-		args = append(args, v)
-		idx++
-	}
-	if v, ok := updates["started_at"]; ok {
-		setClauses = append(setClauses, fmt.Sprintf("started_at = $%d", idx))
-		args = append(args, v)
-		idx++
-	}
-	if v, ok := updates["completed_at"]; ok {
-		setClauses = append(setClauses, fmt.Sprintf("completed_at = $%d", idx))
-		args = append(args, v)
-		idx++
-	}
-
-	setClauses = append(setClauses, fmt.Sprintf("total_chunks = $%d", idx))
-	args = append(args, updates["total_chunks"])
-	idx++
 
 	args = append(args, id)
 
 	_, err := s.pool.Exec(ctx,
 		fmt.Sprintf("UPDATE ingestion_jobs SET %s WHERE id = $%d",
-			fmt.Sprintf("%s", setClauses[1:]), idx),
+			strings.Join(setClauses, ", "), idx),
 		args...)
 	return err
 }
