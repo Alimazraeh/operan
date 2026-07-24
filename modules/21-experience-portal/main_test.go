@@ -97,6 +97,33 @@ func TestProxyStripsPrefixAndForwards(t *testing.T) {
 	}
 }
 
+func TestProxyHealthBypassesAPIPrefix(t *testing.T) {
+	// M02 serves its API under /api/v1/iam but liveness at the root; the
+	// health chips probe /svc/iam/health, which must reach /health upstream.
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"path": r.URL.Path})
+	}))
+	defer upstream.Close()
+	t.Setenv("MODULE21_SVC_IAM", upstream.URL)
+
+	mux := buildMux()
+	for probe, want := range map[string]string{
+		"/svc/iam/health":      "/health",
+		"/svc/iam/healthz":     "/healthz",
+		"/svc/iam/admin/login": "/api/v1/iam/admin/login",
+	} {
+		req := httptest.NewRequest("GET", probe, nil)
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, req)
+		var got map[string]string
+		json.Unmarshal(w.Body.Bytes(), &got)
+		if got["path"] != want {
+			t.Errorf("%s: upstream path = %q, want %q", probe, got["path"], want)
+		}
+	}
+}
+
 func TestProxyUpstreamDownReturns502JSON(t *testing.T) {
 	t.Setenv("MODULE21_SVC_TOOLS", "http://127.0.0.1:1")
 	mux := buildMux()
