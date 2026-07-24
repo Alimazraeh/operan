@@ -22,9 +22,11 @@ type TemplateHandlers struct {
 	DeploymentStore     *store.DeploymentStore
 	VersionStore        *store.VersionStore
 	DepartmentStore     *store.DepartmentStore
+	RequestStore        *store.RequestStore
 	EventPublisher      *events.Publisher
 	MaxPageSize         int
 	Orchestrator        DeployOrchestrator // server-side deploy pipeline; nil in legacy tests
+	Dispatcher          RequestDispatcher  // work-loop dispatch; nil until the runtime ships
 }
 
 // DeployOrchestrator runs the server-side provisioning pipeline for a deploy.

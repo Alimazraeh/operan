@@ -161,6 +161,12 @@ func (h *TemplateHandlers) HandleDepartmentByID(w http.ResponseWriter, r *http.R
 	case sub == "compliance" && r.Method == http.MethodGet:
 		writeJSON(w, http.StatusOK, complianceResponse(dept))
 
+	case sub == "requests" && r.Method == http.MethodGet:
+		h.listRequests(w, r, dept)
+
+	case sub == "requests" && r.Method == http.MethodPost:
+		h.createRequest(w, r, reqID, dept)
+
 	default:
 		writeError(w, http.StatusMethodNotAllowed, "about:blank", "Method Not Allowed",
 			"Invalid operation", r.URL.Path, reqID)
