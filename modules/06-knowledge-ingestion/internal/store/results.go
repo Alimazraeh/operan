@@ -112,13 +112,17 @@ func (s *ResultsStore) GetByJobID(ctx context.Context, jobID string) ([]Ingestio
 	for rows.Next() {
 		var item IngestionResult
 		var metaBytes []byte
+		var itemErrMsg *string
 		if err := rows.Scan(
 			&item.ID, &item.TenantID, &item.JobID, &item.SourceID,
 			&item.ChunkIndex, &item.ChunkHash, &item.ChunkText, &metaBytes,
 			&item.EmbeddingModel, &item.VectorDim, &item.Status,
-			&item.ErrorMessage, &item.CreatedAt,
+			&itemErrMsg, &item.CreatedAt,
 		); err != nil {
 			return nil, err
+		}
+		if itemErrMsg != nil {
+			item.ErrorMessage = *itemErrMsg
 		}
 		_ = json.Unmarshal(metaBytes, &item.ChunkMetadata)
 		items = append(items, item)
