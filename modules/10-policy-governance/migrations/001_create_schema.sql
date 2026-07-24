@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS policy_groups (
     UNIQUE(tenant_id, name)
 );
 
-CREATE INDEX idx_groups_tenant ON policy_groups(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_groups_tenant ON policy_groups(tenant_id);
 
 -- Individual policy rules
 CREATE TABLE IF NOT EXISTS policies (
@@ -37,10 +37,10 @@ CREATE TABLE IF NOT EXISTS policies (
     updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_policies_group ON policies(group_id);
-CREATE INDEX idx_policies_tenant ON policies(tenant_id, is_active);
-CREATE INDEX idx_policies_scope ON policies(tenant_id, scope);
-CREATE INDEX idx_policies_resource ON policies(tenant_id, resource_type, resource_target);
+CREATE INDEX IF NOT EXISTS idx_policies_group ON policies(group_id);
+CREATE INDEX IF NOT EXISTS idx_policies_tenant ON policies(tenant_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_policies_scope ON policies(tenant_id, scope);
+CREATE INDEX IF NOT EXISTS idx_policies_resource ON policies(tenant_id, resource_type, resource_target);
 
 -- Policy evaluation audit log
 CREATE TABLE IF NOT EXISTS policy_audits (
@@ -61,5 +61,5 @@ CREATE TABLE IF NOT EXISTS policy_audits (
     created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_audits_tenant ON policy_audits(tenant_id, created_at DESC);
-CREATE INDEX idx_audits_policy ON policy_audits(policy_id);
+CREATE INDEX IF NOT EXISTS idx_audits_tenant ON policy_audits(tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audits_policy ON policy_audits(policy_id);

@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS channels (
     updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(tenant_id, name)
 );
-CREATE INDEX idx_channels_tenant ON channels(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_channels_tenant ON channels(tenant_id);
 
 CREATE TABLE IF NOT EXISTS channel_members (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS channel_members (
     joined_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(channel_id, agent_id)
 );
-CREATE INDEX idx_members_channel ON channel_members(channel_id);
-CREATE INDEX idx_members_agent  ON channel_members(agent_id);
+CREATE INDEX IF NOT EXISTS idx_members_channel ON channel_members(channel_id);
+CREATE INDEX IF NOT EXISTS idx_members_agent  ON channel_members(agent_id);
 
 CREATE TABLE IF NOT EXISTS messages (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -39,9 +39,9 @@ CREATE TABLE IF NOT EXISTS messages (
     created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_messages_channel ON messages(channel_id, created_at DESC);
-CREATE INDEX idx_messages_parent  ON messages(parent_id);
-CREATE INDEX idx_messages_sender  ON messages(tenant_id, sender_id);
+CREATE INDEX IF NOT EXISTS idx_messages_channel ON messages(channel_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_parent  ON messages(parent_id);
+CREATE INDEX IF NOT EXISTS idx_messages_sender  ON messages(tenant_id, sender_id);
 
 CREATE TABLE IF NOT EXISTS handoffs (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -62,9 +62,9 @@ CREATE TABLE IF NOT EXISTS handoffs (
     created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_handoffs_tenant ON handoffs(tenant_id, status);
-CREATE INDEX idx_handoffs_to     ON handoffs(tenant_id, to_agent_id, status);
-CREATE INDEX idx_handoffs_from   ON handoffs(tenant_id, from_agent_id);
+CREATE INDEX IF NOT EXISTS idx_handoffs_tenant ON handoffs(tenant_id, status);
+CREATE INDEX IF NOT EXISTS idx_handoffs_to     ON handoffs(tenant_id, to_agent_id, status);
+CREATE INDEX IF NOT EXISTS idx_handoffs_from   ON handoffs(tenant_id, from_agent_id);
 
 CREATE TABLE IF NOT EXISTS presence (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -75,4 +75,4 @@ CREATE TABLE IF NOT EXISTS presence (
     metadata                JSONB NOT NULL DEFAULT '{}',
     UNIQUE(tenant_id, agent_id)
 );
-CREATE INDEX idx_presence_tenant ON presence(tenant_id, status);
+CREATE INDEX IF NOT EXISTS idx_presence_tenant ON presence(tenant_id, status);

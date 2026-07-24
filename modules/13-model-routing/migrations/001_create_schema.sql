@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS routing_rules (
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_rules_tenant ON routing_rules(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_rules_tenant ON routing_rules(tenant_id);
 
 CREATE TABLE IF NOT EXISTS routing_rule_models (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS routing_rule_models (
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(rule_id, model_id)
 );
-CREATE INDEX idx_rule_models_rule ON routing_rule_models(rule_id);
+CREATE INDEX IF NOT EXISTS idx_rule_models_rule ON routing_rule_models(rule_id);
 
 CREATE TABLE IF NOT EXISTS routing_performance (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -43,5 +43,5 @@ CREATE TABLE IF NOT EXISTS routing_performance (
     last_call_at        TIMESTAMPTZ,
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_perf_tenant_model ON routing_performance(tenant_id, model_id);
-CREATE INDEX idx_perf_task ON routing_performance(tenant_id, task_type);
+CREATE INDEX IF NOT EXISTS idx_perf_tenant_model ON routing_performance(tenant_id, model_id);
+CREATE INDEX IF NOT EXISTS idx_perf_task ON routing_performance(tenant_id, task_type);
