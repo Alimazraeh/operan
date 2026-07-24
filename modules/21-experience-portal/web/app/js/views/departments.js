@@ -62,8 +62,8 @@ export async function viewDepartments() {
       ${departments.length === 0
         ? `<div class="empty">No departments yet — deploy one from the catalog below.</div>`
         : departments.map(d => rowItem({
-            title: d.name,
-            meta: `${d.category} · ${d.environment || "production"} · ${d.positions_count || 0} positions · ${d.services_count || 0} services · ${d.agents_count || 0} agents · ${d.risks_count || 0} risks · created ${rel(d.created_at)}`,
+            title: esc(d.name),
+            meta: `${esc(d.category)} · ${esc(d.environment || "production")} · ${d.positions_count || 0} positions · ${d.services_count || 0} services · ${d.agents_count || 0} agents · ${d.risks_count || 0} risks · created ${rel(d.created_at)}`,
             badges: d.status,
             onClick: `window.go('department','${d.id}')`,
           })).join("")}
@@ -231,7 +231,7 @@ window.deptTab = function (id) {
 function tabOverview(d) {
   const bl = d.business_logic || {};
   const cadence = (bl.operating_cadence || []).map(c =>
-    rowItem({ title: "🗓 " + c.name, meta: c.description || "", badges: c.frequency })).join("");
+    rowItem({ title: "🗓 " + esc(c.name), meta: esc(c.description || ""), badges: c.frequency })).join("");
 
   const kpiById = {};
   for (const k of (d.kpis || [])) kpiById[k.id] = k;
@@ -358,15 +358,15 @@ function tabGovernance(d) {
     <div class="card" style="margin-bottom:12px">
       <h4>🛡 ${esc(fw)} <span class="tag">${list.length} controls</span></h4>
       ${list.map(c => rowItem({
-        title: c.control_id ? `${c.name} [${c.control_id}]` : c.name,
-        meta: c.description || "",
+        title: c.control_id ? `${esc(c.name)} [${esc(c.control_id)}]` : esc(c.name),
+        meta: esc(c.description || ""),
         badges: c.status || "implemented",
       })).join("")}
     </div>`).join("");
 
   const rules = (d.governance_rules || []).map(g => rowItem({
-    title: "⚙️ " + g.name,
-    meta: g.description || g.type || "",
+    title: "⚙️ " + esc(g.name),
+    meta: esc(g.description || g.type || ""),
     badges: g.enforcement || "enforce",
   })).join("");
 
@@ -396,8 +396,8 @@ function tabRisk(d) {
   const kpiById = {};
   for (const k of (d.kpis || [])) kpiById[k.id] = k;
   const quality = (d.quality_standards || []).map(q => rowItem({
-    title: "✅ " + q.name,
-    meta: `Target: ${q.target}${q.measure_kpi_ref && kpiById[q.measure_kpi_ref] ? " · measured by " + kpiById[q.measure_kpi_ref].name : ""}`,
+    title: "✅ " + esc(q.name),
+    meta: esc(`Target: ${q.target}${q.measure_kpi_ref && kpiById[q.measure_kpi_ref] ? " · measured by " + kpiById[q.measure_kpi_ref].name : ""}`),
     badges: q.type || "slo",
   })).join("");
 
@@ -424,8 +424,8 @@ function tabKPIs(d) {
     if (th.warning !== undefined) parts.push("warn " + th.warning);
     if (th.critical !== undefined) parts.push("crit " + th.critical);
     return rowItem({
-      title: "📈 " + k.name,
-      meta: `${k.metric_type}${k.unit ? " · " + k.unit : ""}${parts.length ? " · " + parts.join(" / ") : ""}${k.aggregation_period ? " · per " + k.aggregation_period : ""}`,
+      title: "📈 " + esc(k.name),
+      meta: `${esc(k.metric_type)}${k.unit ? " · " + k.unit : ""}${parts.length ? " · " + parts.join(" / ") : ""}${k.aggregation_period ? " · per " + k.aggregation_period : ""}`,
     });
   }).join("");
   return `<div class="card">
@@ -445,8 +445,8 @@ function tabStaff(d, staff, lead) {
     : staff.map(a => {
         const p = posByAgentId[a.id];
         return rowItem({
-          title: "🤖 " + a.name + (p ? ` — ${p.title}` : ""),
-          meta: `${a.role}${p && p.unit ? " · " + p.unit : ""} · autonomy: ${p ? (p.autonomy_tier || "—") : "—"}`,
+          title: "🤖 " + esc(a.name) + (p ? ` — ${esc(p.title)}` : ""),
+          meta: `${esc(a.role)}${p && p.unit ? " · " + esc(p.unit) : ""} · autonomy: ${p ? (p.autonomy_tier || "—") : "—"}`,
           badges: a.status || "active",
           onClick: `window.go('agent','${a.id}')`,
         });

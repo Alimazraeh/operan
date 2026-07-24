@@ -117,21 +117,27 @@ export function spinner(size = "24px") {
   return `<div class="spinner" style="width:${size};height:${size};border-width:2px"></div>`;
 }
 
-// ── Row item card (used by old views) ──────────────────────
-export function rowItem({ title, meta, badges, icon, onClick }) {
+// ── Row item card ──────────────────────────────────────────
+// Contract: title/meta/actions are HTML — callers esc() their data (they
+// compose emoji, tags and buttons). badges accepts pre-built badge() HTML
+// (any string starting with "<"), a plain label, or an array of labels /
+// {label, color} objects. actions renders on the row's trailing edge —
+// this is where Approve/Reject/Delete buttons live.
+export function rowItem({ title, meta, badges, icon, onClick, actions }) {
   const badgeHtml = badges ? (Array.isArray(badges) ? badges.map(b => {
-    if (typeof b === 'string') return `<span class="badge ${b}">${esc(b)}</span>`;
+    if (typeof b === 'string') return `<span class="badge ${esc(b)}">${esc(b)}</span>`;
     const c = b.color || 'info';
     const l = b.label || b;
-    return `<span class="badge ${c}">${esc(l)}</span>`;
-  }).join("") : badge(badges)) : "";
+    return `<span class="badge ${esc(c)}">${esc(l)}</span>`;
+  }).join("") : (String(badges).trimStart().startsWith("<") ? badges : badge(badges))) : "";
   return `<div class="row-item"${onClick ? ` onclick="${onClick}"` : ""}>
     ${icon ? `<div class="stat-icon">${esc(icon)}</div>` : ""}
     <div class="grow">
-      <div class="t">${esc(title)}</div>
-      ${meta ? `<div class="m">${esc(meta)}</div>` : ""}
+      <div class="t">${title}</div>
+      ${meta ? `<div class="m">${meta}</div>` : ""}
       ${badgeHtml ? `<div style="margin-top:6px">${badgeHtml}</div>` : ""}
     </div>
+    ${actions ? `<div class="actions" onclick="event.stopPropagation()">${actions}</div>` : ""}
   </div>`;
 }
 

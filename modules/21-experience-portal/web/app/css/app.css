@@ -908,3 +908,27 @@ html[dir="rtl"] .toast.warn { border-right-color: var(--warn); }
 
 /* flagship catalog card */
 .tmpl.flagship { border-color: rgba(102,181,255,0.4); box-shadow: 0 0 0 1px rgba(102,181,255,0.15); }
+
+/* ── Workflows: SOP step chains, run details, run forms ──── */
+.wfsteps { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.wfstep {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 999px; font-size: 11px; line-height: 1.5;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  color: var(--text-dim); white-space: nowrap;
+}
+.wfstep.agent      { border-color: rgba(76,141,255,0.35); color: var(--accent2); }
+.wfstep.human_gate { border-color: rgba(255,166,87,0.4); color: var(--gate); }
+.wfstep.condition  { border-color: rgba(176,124,255,0.4); color: var(--purple); }
+.wfstep.done   { background: var(--ok-bg); border-color: rgba(52,210,123,0.35); color: var(--ok); }
+.wfstep.active { background: var(--warn-bg); border-color: rgba(232,181,62,0.5); color: var(--warn); animation: wfpulse 1.6s ease-in-out infinite; }
+.wfstep.failed { background: var(--bad-bg); border-color: rgba(240,86,79,0.5); color: var(--bad); }
+.wfstep.pending { opacity: 0.55; }
+.wfarrow { color: var(--text-muted); font-size: 11px; }
+@keyframes wfpulse { 50% { opacity: 0.55; } }
+.wf-sop { border-bottom: 1px solid rgba(255,255,255,0.04); }
+.wf-sop:last-child { border-bottom: none; }
+.wf-form { padding: 10px 12px 14px; background: rgba(255,255,255,0.02); border-radius: 10px; margin: 0 0 10px; }
+.wf-form textarea { width: 100%; margin-top: 8px; }
+.wf-run-detail { border-top: 1px dashed var(--border); margin-top: 8px; padding-top: 4px; cursor: default; }
+html[dir="rtl"] .wfsteps { direction: rtl; }
