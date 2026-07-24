@@ -13,7 +13,7 @@ export async function viewTenants() {
 
   const tenants = (tR.data && tR.data.items) || [];
   // The signed-in tenant's own record drives the quota card.
-  const current = tenants.find(t => t.id === session.tenant) || null;
+  const current = tenants.find(t => t.id === session.tenant || t.slug === session.tenant) || null;
   const quotas = (current && current.quota) || {};
   const agentsUsed = (aR.data && aR.data.total) || 0;
   window._currentTenantRecordId = current ? current.id : null;
