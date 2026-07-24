@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/operan/modules/03-agent-orchestration/internal/execution"
 	"github.com/operan/modules/03-agent-orchestration/internal/events"
+	"github.com/operan/modules/03-agent-orchestration/internal/execution"
 	"github.com/operan/modules/03-agent-orchestration/internal/middleware"
 	"github.com/operan/modules/03-agent-orchestration/internal/repository"
 	"github.com/operan/modules/03-agent-orchestration/internal/store"
@@ -59,14 +59,14 @@ func (h *WorkflowHandler) CreateWorkflow(w http.ResponseWriter, r *http.Request)
 	tenantID := middleware.TenantIDFromContext(r.Context())
 
 	var req struct {
-		TenantID      string                 `json:"tenant_id"`
-		DepartmentID  string                 `json:"department_id,omitempty"`
-		Name          string                 `json:"name"`
-		Version       string                 `json:"version,omitempty"`
-		Graph         *store.WorkflowGraph   `json:"graph"`
-		Variables     map[string]interface{} `json:"variables,omitempty"`
-		Priority      int                    `json:"priority,omitempty"`
-		Description   string                 `json:"description,omitempty"`
+		TenantID     string                 `json:"tenant_id"`
+		DepartmentID string                 `json:"department_id,omitempty"`
+		Name         string                 `json:"name"`
+		Version      string                 `json:"version,omitempty"`
+		Graph        *store.WorkflowGraph   `json:"graph"`
+		Variables    map[string]interface{} `json:"variables,omitempty"`
+		Priority     int                    `json:"priority,omitempty"`
+		Description  string                 `json:"description,omitempty"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.WriteError(w, http.StatusBadRequest, 400, "Invalid workflow definition")
@@ -79,16 +79,16 @@ func (h *WorkflowHandler) CreateWorkflow(w http.ResponseWriter, r *http.Request)
 	}
 
 	wf := &store.Workflow{
-		TenantID:       tenantID,
-		DepartmentID:   req.DepartmentID,
-		Name:           req.Name,
-		Version:        req.Version,
-		Status:         store.WorkflowStatusPending,
-		Graph:          *req.Graph.DeepCopy(),
-		Variables:      req.Variables,
-		Priority:       req.Priority,
-		Description:    req.Description,
-		CreatedBy:      middleware.UserIDFromContext(r.Context()),
+		TenantID:     tenantID,
+		DepartmentID: req.DepartmentID,
+		Name:         req.Name,
+		Version:      req.Version,
+		Status:       store.WorkflowStatusPending,
+		Graph:        *req.Graph.DeepCopy(),
+		Variables:    req.Variables,
+		Priority:     req.Priority,
+		Description:  req.Description,
+		CreatedBy:    middleware.UserIDFromContext(r.Context()),
 	}
 	if wf.Priority < 1 {
 		wf.Priority = 5
@@ -300,9 +300,21 @@ func (h *WorkflowHandler) GetWorkflowState(w http.ResponseWriter, r *http.Reques
 
 	// Map nodeID -> latest event status
 	nodeEventStatus := make(map[string]string)
+	nodeEventOutput := make(map[string]map[string]interface{})
 	for _, evt := range events {
 		if nodeID, ok := evt.Details["node_id"].(string); ok {
 			nodeEventStatus[nodeID] = evt.EventType
+			if evt.EventType == "node_completed" {
+				out := map[string]interface{}{}
+				for _, k := range []string{"output", "tokens", "decision", "action", "node_type"} {
+					if v, ok := evt.Details[k]; ok {
+						out[k] = v
+					}
+				}
+				if len(out) > 0 {
+					nodeEventOutput[nodeID] = out
+				}
+			}
 		}
 	}
 
@@ -315,18 +327,23 @@ func (h *WorkflowHandler) GetWorkflowState(w http.ResponseWriter, r *http.Reques
 		}
 		if evtStatus, ok := nodeEventStatus[n.ID]; ok {
 			switch evtStatus {
-			case "failed":
+			case "failed", "node_failed":
 				status = store.NodeStatusFailed
-			case "skipped":
+			case "skipped", "node_skipped":
 				status = store.NodeStatusSkipped
-			case "running":
+			case "running", "node_start":
 				status = store.NodeStatusRunning
+			case "node_completed":
+				status = store.NodeStatusCompleted
 			}
 		}
 
 		ns := store.NodeState{
 			NodeID: n.ID,
 			Status: status,
+		}
+		if out, ok := nodeEventOutput[n.ID]; ok {
+			ns.Output = out
 		}
 		if cp, ok := nodeCheckpoint[n.ID]; ok && cp != nil && cp.StateSnapshot != nil {
 			ns.Output = cp.StateSnapshot
@@ -366,7 +383,7 @@ func (h *WorkflowHandler) CreateCheckpoint(w http.ResponseWriter, r *http.Reques
 	}
 
 	var req struct {
-		NodeID     string                 `json:"node_id,omitempty"`
+		NodeID        string                 `json:"node_id,omitempty"`
 		StateSnapshot map[string]interface{} `json:"state_snapshot,omitempty"`
 	}
 	json.NewDecoder(r.Body).Decode(&req)
@@ -390,10 +407,10 @@ func (h *WorkflowHandler) CreateCheckpoint(w http.ResponseWriter, r *http.Reques
 	// Publish checkpoint created event
 	if h.Events != nil {
 		h.Events.PublishWorkflowCheckpointed(events.StackLangGraph, events.WorkflowCheckpointedPayload{
-			WorkflowID:  id,
-			NodeID:      nodeID,
+			WorkflowID:   id,
+			NodeID:       nodeID,
 			CheckpointID: cp.ID,
-			Timestamp:   cp.Timestamp,
+			Timestamp:    cp.Timestamp,
 		})
 	}
 
@@ -428,15 +445,15 @@ func (h *WorkflowHandler) ReplayWorkflow(w http.ResponseWriter, r *http.Request)
 	// Replay means creating a new workflow instance from the original graph
 	// with the same definition, optionally resetting variables
 	newWf := &store.Workflow{
-		TenantID:       wf.TenantID,
-		DepartmentID:   wf.DepartmentID,
-		Name:           wf.Name + " (replay)",
-		Version:        wf.Version,
-		Status:         store.WorkflowStatusPending,
-		Graph:          *wf.Graph.DeepCopy(),
-		Priority:       wf.Priority,
-		Description:    wf.Description,
-		CreatedBy:      wf.CreatedBy,
+		TenantID:     wf.TenantID,
+		DepartmentID: wf.DepartmentID,
+		Name:         wf.Name + " (replay)",
+		Version:      wf.Version,
+		Status:       store.WorkflowStatusPending,
+		Graph:        *wf.Graph.DeepCopy(),
+		Priority:     wf.Priority,
+		Description:  wf.Description,
+		CreatedBy:    wf.CreatedBy,
 	}
 
 	if req.Variables != nil {
@@ -558,9 +575,16 @@ func (h *WorkflowHandler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Start execution on DAG engine (if available)
+	// Start execution on DAG engine (if available), carrying the caller's
+	// identity so node executors (LLM drafts, human gates) act as the
+	// requester.
 	if h.DAGEngine != nil {
-		if err := h.DAGEngine.StartWorkflow(id); err != nil {
+		auth := execution.RunAuth{
+			Authorization: r.Header.Get("Authorization"),
+			TenantID:      tenantID,
+			UserID:        middleware.UserIDFromContext(r.Context()),
+		}
+		if err := h.DAGEngine.StartWorkflowWithAuth(id, auth); err != nil {
 			h.WriteError(w, http.StatusInternalServerError, 500, "failed to start execution: "+err.Error())
 			return
 		}

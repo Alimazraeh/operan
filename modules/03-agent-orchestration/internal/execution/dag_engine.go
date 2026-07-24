@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/operan/modules/03-agent-orchestration/internal/events"
 	"github.com/operan/modules/03-agent-orchestration/internal/repository"
 	"github.com/operan/modules/03-agent-orchestration/internal/store"
-	"github.com/google/uuid"
 )
 
 // NodeHandler is a function that executes a single workflow node.
@@ -43,12 +43,19 @@ func NewEngine(store repository.WorkflowStoreIface, eventPub *events.Publisher, 
 
 // StartWorkflow initiates execution of a workflow by its ID.
 func (e *Engine) StartWorkflow(workflowID string) error {
+	return e.StartWorkflowWithAuth(workflowID, RunAuth{})
+}
+
+// StartWorkflowWithAuth initiates execution carrying the caller's identity in
+// the run context (memory only — never persisted), so node executors act
+// under the requester's credentials.
+func (e *Engine) StartWorkflowWithAuth(workflowID string, auth RunAuth) error {
 	e.mu.Lock()
 	if _, isRunning := e.running[workflowID]; isRunning {
 		e.mu.Unlock()
 		return errors.New("workflow " + workflowID + " is already running")
 	}
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(WithRunAuth(context.Background(), auth))
 	e.running[workflowID] = cancel
 	e.mu.Unlock()
 
@@ -68,12 +75,27 @@ func (e *Engine) StartWorkflow(workflowID string) error {
 		Details:   map[string]interface{}{"workflow_id": workflowID},
 	})
 
-	// Publish event
+	// Publish event with the real initial ready set (in-degree 0).
 	if e.eventPub != nil {
+		initial := []string{}
+		if wf, err := e.store.GetByID(workflowID); err == nil {
+			inDeg := map[string]int{}
+			for _, n := range wf.Graph.Nodes {
+				inDeg[n.ID] = 0
+			}
+			for _, edge := range wf.Graph.Edges {
+				inDeg[edge.To]++
+			}
+			for _, n := range wf.Graph.Nodes {
+				if inDeg[n.ID] == 0 {
+					initial = append(initial, n.ID)
+				}
+			}
+		}
 		e.eventPub.PublishWorkflowStarted(e.stackType, events.WorkflowStartedPayload{
-			WorkflowID: workflowID,
-			StartedAt:  time.Now().UTC(),
-			InitialNodes: []string{"node-1"}, // Placeholder - would be computed from DAG
+			WorkflowID:   workflowID,
+			StartedAt:    time.Now().UTC(),
+			InitialNodes: initial,
 		})
 	}
 
@@ -209,6 +231,10 @@ func (e *Engine) execute(ctx context.Context, workflowID string) {
 		currentBatch := ready
 		ready = nil
 
+		// Persist live progress so state survives observers (read via
+		// GET /workflows/{id}); previously tracked only in local maps.
+		e.store.UpdateCurrentNodes(workflowID, currentBatch)
+
 		// Execute all ready nodes in parallel (bounded by concurrency).
 		// batchMu guards the shared completed/failed maps and the ready slice,
 		// which the per-node goroutines below write concurrently.
@@ -244,6 +270,15 @@ func (e *Engine) execute(ctx context.Context, workflowID string) {
 					ns.Status = store.NodeStatusCompleted
 					batchMu.Lock()
 					completed[nid] = true
+					// Chain agent work products into later steps' context.
+					if result != nil {
+						if text, ok := result["text"].(string); ok && text != "" {
+							if wf.Variables == nil {
+								wf.Variables = map[string]interface{}{}
+							}
+							wf.Variables["last_agent_output"] = text
+						}
+					}
 					batchMu.Unlock()
 				} else {
 					ns.Error = err.Error()
@@ -312,7 +347,17 @@ func (e *Engine) execute(ctx context.Context, workflowID string) {
 }
 
 // executeNode runs a single node using the registered node handler.
-func (e *Engine) executeNode(ctx context.Context, nodeID string, node store.WorkflowNode, workflowID string, variables map[string]interface{}, state *store.NodeState) (map[string]interface{}, error) {
+func (e *Engine) executeNode(ctx context.Context, nodeID string, node store.WorkflowNode, workflowID string, variables map[string]interface{}, state *store.NodeState) (output map[string]interface{}, err error) {
+	// A panicking or missing handler must fail the node, never the process.
+	defer func() {
+		if rec := recover(); rec != nil {
+			err = fmt.Errorf("node %s: handler panicked: %v", nodeID, rec)
+		}
+	}()
+	if e.nodeHandler == nil {
+		return nil, fmt.Errorf("node %s: no node handler configured", nodeID)
+	}
+
 	state.Status = store.NodeStatusRunning
 	startedAt := time.Now().UTC()
 	state.StartedAt = &startedAt
@@ -330,7 +375,7 @@ func (e *Engine) executeNode(ctx context.Context, nodeID string, node store.Work
 	})
 
 	// Execute the node
-	output, err := e.nodeHandler(ctx, node, workflowID, variables)
+	output, err = e.nodeHandler(ctx, node, workflowID, variables)
 
 	if err != nil {
 		completedAt := time.Now().UTC()
@@ -358,14 +403,33 @@ func (e *Engine) executeNode(ctx context.Context, nodeID string, node store.Work
 	state.Output = output
 	state.Status = store.NodeStatusCompleted
 
+	details := map[string]interface{}{
+		"node_id":   nodeID,
+		"node_type": string(node.Type),
+		"action":    node.Action,
+	}
+	// Carry the work product (bounded) so state reconstruction and pollers
+	// can surface it without engine-local memory.
+	if output != nil {
+		if text, ok := output["text"].(string); ok && text != "" {
+			if len(text) > 8000 {
+				text = text[:8000] + "…"
+			}
+			details["output"] = text
+		}
+		if tokens, ok := output["tokens"]; ok {
+			details["tokens"] = tokens
+		}
+		if decision, ok := output["decision"]; ok {
+			details["decision"] = decision
+		}
+	}
 	e.store.AddEvent(workflowID, store.ExecutionEvent{
 		EventID:   uuid.New().String(),
 		NodeID:    nodeID,
 		EventType: "node_completed",
 		Timestamp: time.Now().UTC(),
-		Details: map[string]interface{}{
-			"node_id": nodeID,
-		},
+		Details:   details,
 	})
 
 	return output, nil
@@ -385,7 +449,7 @@ func (e *Engine) finalizeWorkflow(workflowID string, status store.WorkflowStatus
 		switch status {
 		case store.WorkflowStatusCompleted:
 			e.eventPub.PublishWorkflowCompleted(e.stackType, events.WorkflowCompletedPayload{
-				WorkflowID: workflowID,
+				WorkflowID:  workflowID,
 				CompletedAt: time.Now().UTC(),
 				FinalStatus: string(status),
 			})
@@ -540,9 +604,9 @@ type ExecutionStats struct {
 // GetExecutionStats returns execution statistics for a workflow.
 func GetExecutionStats(wf *store.Workflow, nodeStates []store.NodeState) *ExecutionStats {
 	stats := &ExecutionStats{
-		WorkflowID:   wf.ID,
-		Status:       wf.Status,
-		TotalNodes:   len(wf.Graph.Nodes),
+		WorkflowID: wf.ID,
+		Status:     wf.Status,
+		TotalNodes: len(wf.Graph.Nodes),
 	}
 
 	if wf.StartedAt != nil {
@@ -570,9 +634,9 @@ func GetExecutionStats(wf *store.Workflow, nodeStates []store.NodeState) *Execut
 
 // RetryableError wraps an error with retry metadata.
 type RetryableError struct {
-	Err       error
+	Err         error
 	ShouldRetry bool
-	DelayMs   int
+	DelayMs     int
 }
 
 // NewRetryableError creates a new retryable error.

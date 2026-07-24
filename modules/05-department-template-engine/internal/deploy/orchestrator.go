@@ -265,7 +265,7 @@ func (o *Orchestrator) Run(auth, tenantID, userID string, tmpl *store.Template, 
 		var wfErr error
 		for wi := range tmpl.Workflows {
 			wf := &tmpl.Workflows[wi]
-			created, err := o.Orchestration.CreateWorkflow(ctx, caller, compileWorkflow(wf, dept.ID, agentByDef))
+			created, err := o.Orchestration.CreateWorkflow(ctx, caller, CompileWorkflow(wf, dept.ID, agentByDef))
 			if err != nil {
 				wfErr = fmt.Errorf("workflow %s: %w", wf.ID, err)
 				break
@@ -458,7 +458,7 @@ func memoryItems(dept *store.Department, tmpl *store.Template) []clients.VectorI
 // compileWorkflow translates a template SOP (WorkflowDefinition) into a
 // Module 03 workflow-create request. Steps become nodes; sequential edges
 // mirror authoring order; agent references resolve to live M04 agent ids.
-func compileWorkflow(wf *store.WorkflowDefinition, departmentID string, agentByDef map[string]string) clients.WorkflowCreateRequest {
+func CompileWorkflow(wf *store.WorkflowDefinition, departmentID string, agentByDef map[string]string) clients.WorkflowCreateRequest {
 	nodes := make([]clients.WorkflowNode, 0, len(wf.Steps))
 	edges := make([]clients.WorkflowEdge, 0, len(wf.Steps))
 	for i, s := range wf.Steps {

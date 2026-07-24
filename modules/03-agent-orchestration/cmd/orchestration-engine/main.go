@@ -75,8 +75,25 @@ func main() {
 		}
 	}
 
-	// ─── Initialize DAG engine (LangGraph stack) ──────────────────────────────
-	dagEngine := execution.NewEngine(store.WorkflowStore(), pub, nil, events.StackLangGraph)
+	// ─── Agent reasoning (shared by /agent/draft and the node handler) ───────
+	var llmClient *llm.Client
+	if cfg.LLMBaseURL != "" {
+		llmClient = llm.New(cfg.LLMBaseURL, cfg.LLMAPIKey, cfg.LLMModel)
+		log.Printf("agent reasoning enabled: %s (model %s)", cfg.LLMBaseURL, cfg.LLMModel)
+	} else {
+		log.Printf("agent reasoning disabled (set LLM_BASE_URL); /agent/draft will report 503")
+	}
+	agentHandler := handler.NewAgentHandler(llmClient, cfg.MemoryURL)
+
+	// ─── Initialize DAG engine (LangGraph stack) with a REAL node handler ─────
+	// agent → grounded LLM draft; human_gate → human task + M09 approval
+	// (US-402 resumes it); action/condition → recorded pass-through.
+	nodeHandler := execution.NewNodeHandler(execution.NodeHandlerDeps{
+		Draft:      agentHandler.Engine(),
+		Tasks:      store.HumanTaskStore(),
+		M09BaseURL: cfg.SupervisionURL,
+	})
+	dagEngine := execution.NewEngine(store.WorkflowStore(), pub, nodeHandler, events.StackLangGraph)
 
 	// ─── Initialize handlers ──────────────────────────────────────────────────
 	wfHandler := handler.NewWorkflowHandler(store.WorkflowStore(), store.ScheduleStore(), store.AgentStore())
@@ -91,15 +108,6 @@ func main() {
 	exHandler.WithEvents(pub)
 	htHandler := handler.NewHumanTaskHandler(store.HumanTaskStore(), store.ExecutionStore())
 	htHandler.WithEvents(pub)
-	var llmClient *llm.Client
-	if cfg.LLMBaseURL != "" {
-		llmClient = llm.New(cfg.LLMBaseURL, cfg.LLMAPIKey, cfg.LLMModel)
-		log.Printf("agent reasoning enabled: %s (model %s)", cfg.LLMBaseURL, cfg.LLMModel)
-	} else {
-		log.Printf("agent reasoning disabled (set LLM_BASE_URL); /agent/draft will report 503")
-	}
-	agentHandler := handler.NewAgentHandler(llmClient, cfg.MemoryURL)
-
 	escHandler := handler.NewEscalationHandler(store.EscalationStore(), store.WorkflowStore())
 	escHandler.Events = pub
 	retryHdlr := handler.NewRetryHandler(store.RetryRecordStore(), store.WorkflowStore(), store.ExecutionStore())

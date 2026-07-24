@@ -212,6 +212,7 @@ type WorkflowCreateRequest struct {
 	Name         string                 `json:"name"`
 	Description  string                 `json:"description,omitempty"`
 	Graph        map[string]interface{} `json:"graph"`
+	Variables    map[string]interface{} `json:"variables,omitempty"`
 }
 
 type CreatedWorkflow struct {
@@ -225,4 +226,54 @@ func (c *OrchestrationClient) CreateWorkflow(ctx context.Context, caller Caller,
 		return nil, err
 	}
 	return &out, nil
+}
+
+// ExecuteWorkflow starts a run of an M03 workflow under the caller identity.
+func (c *OrchestrationClient) ExecuteWorkflow(ctx context.Context, caller Caller, workflowID string) error {
+	return doJSON(ctx, http.MethodPost, c.BaseURL+"/workflows/"+workflowID+"/execute", caller, map[string]string{}, nil, requestTimeout)
+}
+
+// WorkflowNodeState mirrors the M03 state-endpoint node entry (subset).
+type WorkflowNodeState struct {
+	NodeID string                 `json:"node_id"`
+	Status string                 `json:"status"`
+	Output map[string]interface{} `json:"output,omitempty"`
+}
+
+// WorkflowState mirrors GET /workflows/{id}/state (subset we use).
+type WorkflowState struct {
+	WorkflowID string              `json:"workflow_id"`
+	Status     string              `json:"status"`
+	Nodes      []WorkflowNodeState `json:"nodes"`
+}
+
+// GetWorkflowState reads a run's live state. Returns (nil, err) with err
+// wrapping the upstream status for 404s so callers can count misses.
+func (c *OrchestrationClient) GetWorkflowState(ctx context.Context, caller Caller, workflowID string) (*WorkflowState, error) {
+	var out WorkflowState
+	if err := doGet(ctx, c.BaseURL+"/workflows/"+workflowID+"/state", caller, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// doGet performs an authorized GET decoding JSON into out.
+func doGet(ctx context.Context, url string, caller Caller, out interface{}) error {
+	client := &http.Client{Timeout: requestTimeout}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", caller.Authorization)
+	req.Header.Set("X-Tenant-ID", caller.TenantID)
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("GET %s: upstream %d", url, resp.StatusCode)
+	}
+	return json.Unmarshal(body, out)
 }
