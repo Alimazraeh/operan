@@ -275,6 +275,9 @@ AsyncAPI events: 4/9 covered (provisioned, suspended, deprovisioned, quota_excee
 
 ### Module 05 — Department Lifecycle Engine (formerly Template Engine): operating-model upgrade 2026-07-23
 
+> **Full design & data-flow reference:** `Documentation/Departments-Design-and-Architecture.md`
+> (entity model, deploy pipeline, business-logic capture, events, API surface, known gaps).
+
 | PRD Requirement | Status | Notes |
 |-----------------|--------|-------|
 | Template CRUD | ✅ | Full CRUD for department templates with versioning |
