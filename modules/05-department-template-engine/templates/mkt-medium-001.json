@@ -3,7 +3,7 @@
   "name": "Medium Marketing Department",
   "description": "5–15 person marketing department for mid-market companies (100–500 employees). Multi-channel marketing with content, demand generation, brand, and marketing operations teams.",
   "category": "marketing",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "metadata": {
     "enterprise_size": "medium",
     "department_size": "5-15 FTE",
@@ -611,6 +611,61 @@
       "agent_def_id": "marketing-gpo-01",
       "reports_to": "pos-cmo-01",
       "autonomy_tier": "recommend"
+    }
+  ],
+  "value_streams": [
+    {
+      "id": "vs-campaign",
+      "name": "Campaign-to-Pipeline",
+      "description": "From plan to measurable pipeline contribution.",
+      "stages": [
+        {
+          "name": "Plan",
+          "inputs": [
+            "objectives, audience data"
+          ],
+          "activities": [
+            "campaign planning",
+            "budgeting"
+          ],
+          "outputs": [
+            "campaign briefs"
+          ]
+        },
+        {
+          "name": "Produce & Publish",
+          "inputs": [
+            "campaign briefs"
+          ],
+          "activities": [
+            "content creation",
+            "social publishing"
+          ],
+          "outputs": [
+            "live campaigns"
+          ]
+        },
+        {
+          "name": "Nurture & Measure",
+          "inputs": [
+            "live campaigns"
+          ],
+          "activities": [
+            "lead nurturing",
+            "performance analysis"
+          ],
+          "outputs": [
+            "qualified leads, ROI reports"
+          ]
+        }
+      ],
+      "outcome": "Campaigns that produce accountable pipeline",
+      "business_outcome": "Marketing spend traced to revenue; CAC trends down",
+      "value_metric_kpi_refs": [
+        "mkt-kpi-m-001",
+        "mkt-kpi-m-003",
+        "mkt-kpi-m-004"
+      ]
     }
   ]
 }

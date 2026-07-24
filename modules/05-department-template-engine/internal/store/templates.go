@@ -3,13 +3,14 @@ package store
 import (
 	"encoding/json"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 // TemplateStore provides tenant-isolated CRUD for department templates.
 type TemplateStore struct {
-	mu       sync.RWMutex
+	mu        sync.RWMutex
 	templates map[string]*Template // id -> template
 	byTenant  map[string][]string  // tenantID -> []templateIDs
 }
@@ -249,4 +250,38 @@ func (s *TemplateStore) Delete(id, tenantID string) error {
 	}
 
 	return nil
+}
+
+// RefreshFromCatalog replaces a tenant template's content with a newer
+// built-in catalog version, preserving identity (id, tenant, catalog_id,
+// created_*). Used by the seeder's upsert path on version bumps.
+func (s *TemplateStore) RefreshFromCatalog(id, tenantID string, ct *Template) (*Template, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	t, ok := s.templates[id]
+	if !ok || t.TenantID != tenantID {
+		return nil, ErrNotFound
+	}
+	t.Name = ct.Name
+	t.Description = ct.Description
+	t.Category = ct.Category
+	t.Version = ct.Version
+	t.Tags = append([]string(nil), ct.Tags...)
+	t.BusinessLogic = ct.BusinessLogic
+	t.Agents = append([]AgentDefinition(nil), ct.Agents...)
+	t.Workflows = append([]WorkflowDefinition(nil), ct.Workflows...)
+	t.OrgChart = append([]Position(nil), ct.OrgChart...)
+	t.Services = append([]ServiceOffering(nil), ct.Services...)
+	t.ValueStreams = append([]ValueStream(nil), ct.ValueStreams...)
+	t.Risks = append([]RiskItem(nil), ct.Risks...)
+	t.QualityStandards = append([]QualityStandard(nil), ct.QualityStandards...)
+	t.ComplianceControls = append([]ComplianceControl(nil), ct.ComplianceControls...)
+	t.GovernanceRules = append([]GovernanceRule(nil), ct.GovernanceRules...)
+	t.KPIS = append([]KPIDefinition(nil), ct.KPIS...)
+	t.OperationalPolicies = append([]OperationalPolicy(nil), ct.OperationalPolicies...)
+	t.MemoryTopology = ct.MemoryTopology
+	t.Integrations = append([]IntegrationDefinition(nil), ct.Integrations...)
+	t.UpdatedAt = time.Now().UTC()
+	return t, nil
 }

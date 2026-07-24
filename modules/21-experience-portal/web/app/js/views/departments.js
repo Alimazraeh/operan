@@ -5,10 +5,11 @@ import { SVC, get, post, del, uuid4, listTemplates, listDepartments, getDepartme
          getDeptOrgChart, deployTemplateReal, getDeployment } from "../api.js";
 import { $, esc, badge, rel, toast, rowItem } from "../ui.js";
 
-export const STAGES = ["select", "configure", "connect_data", "provision_memory", "deploy_swarm", "operational"];
+export const STAGES = ["select", "configure", "connect_data", "provision_memory", "deploy_swarm", "deploy_workflows", "operational"];
 const STAGE_LABELS = {
   select: "Selected", configure: "Validated", connect_data: "Data connected",
-  provision_memory: "Memory provisioned", deploy_swarm: "Swarm deployed", operational: "Operational",
+  provision_memory: "Memory provisioned", deploy_swarm: "Swarm deployed",
+  deploy_workflows: "SOPs compiled", operational: "Operational",
 };
 const CATEGORY_META = {
   "it":                   { icon: "🖥", label: "Information Technology" },
@@ -147,9 +148,32 @@ window.deployDept = async function (templateId) {
 };
 
 // ── Department detail: the operating model, tabbed ──────────
+
+// ── Human position binding: resolve human_ref against Module 02 users ──
+let _iamUsers = null;
+async function loadIamUsers() {
+  if (_iamUsers !== null) return _iamUsers;
+  try {
+    const r = await get(SVC.iam + "/users");
+    const items = (r.data && (r.data.items || r.data.users)) || (Array.isArray(r.data) ? r.data : []);
+    _iamUsers = Array.isArray(items) ? items : [];
+  } catch (_) { _iamUsers = []; }
+  return _iamUsers;
+}
+function resolveHuman(ref) {
+  if (!ref || !_iamUsers) return null;
+  const norm = String(ref).toLowerCase();
+  return _iamUsers.find(u =>
+    String(u.id || "").toLowerCase() === norm ||
+    String(u.username || "").toLowerCase() === norm ||
+    String(u.email || "").toLowerCase() === norm ||
+    String(u.display_name || "").toLowerCase() === norm) || null;
+}
+
 export async function viewDepartment(departmentId) {
   let dRes, orgRes, agentsRes;
   try {
+    loadIamUsers(); // warm the M02 user cache for human-position binding
     [dRes, orgRes, agentsRes] = await Promise.all([
       getDepartment(departmentId),
       getDeptOrgChart(departmentId),
@@ -266,7 +290,10 @@ function tabOrg(d, org, staff) {
   const node = (id) => {
     const p = byId[id];
     if (!p) return "";
-    const holder = p.holder_type === "human" ? "🧑 " + esc(p.human_ref || "human")
+    const iamu = p.holder_type === "human" ? resolveHuman(p.human_ref) : null;
+    const holder = p.holder_type === "human"
+      ? (iamu ? `🧑 ${esc(iamu.display_name || iamu.username || iamu.email || p.human_ref)} <span class="tag ok">IAM</span>`
+              : `🧑 ${esc(p.human_ref || "human")} <span class="tag warn" title="No matching Module 02 user">unbound</span>`)
       : p.agent_id && agentName[p.agent_id] ? `🤖 <a onclick="window.go('agent','${p.agent_id}')" style="cursor:pointer;text-decoration:underline">${esc(agentName[p.agent_id])}</a>`
       : p.holder_type === "vacant" ? "◌ vacant" : "🤖 " + esc(p.agent_def_id || "agent");
     const rights = (p.decision_rights || []).map(r =>
@@ -453,7 +480,8 @@ window.agentDoWork = async function (agentId, agentName, role, departmentId) {
   $("workOut").innerHTML = `<div class="hint" style="margin-top:10px"><span class="pulse-dot"></span>${esc(agentName)} is reasoning…</div>`;
   try {
     const draft = await post(SVC.orchestration + "/agent/draft", {
-      agent_id: agentId, role, instruction, memory_query: "department services and preferences",
+      agent_id: agentId, role, instruction, department_id: departmentId,
+      memory_query: "department services and preferences",
     });
     if (!draft.ok || !draft.data?.output) {
       $("workOut").innerHTML = `<div class="error-box"><div class="err-title">Agent reasoning failed</div><div class="err-msg">${esc(JSON.stringify(draft.data?.error?.message || draft.data).slice(0, 200))}</div></div>`;

@@ -3,7 +3,7 @@
   "name": "Large Enterprise Legal Department",
   "description": "15–40 person legal department for enterprise organizations (500+ employees). Multi-layer structure: General Counsel, Deputy GC, Contract Management Lead, IP Counsel, Employment Counsel, Compliance Counsel, Litigation Manager, Paralegals, and GPO pod. Handles multi-layer contract approval, regulatory compliance, M&A support, IP portfolio management, litigation management, and regulatory filings. Frameworks: SOX, GDPR, industry-specific regulations.",
   "category": "legal",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "metadata": {
     "enterprise_size": "large",
     "department_size": "15-40 FTE",
@@ -1758,6 +1758,105 @@
       "agent_def_id": "legal-gpo-pod-01",
       "reports_to": "pos-legal-gc-01",
       "autonomy_tier": "recommend"
+    }
+  ],
+  "value_streams": [
+    {
+      "id": "vs-contracts",
+      "name": "Contract Lifecycle",
+      "description": "From request to signed, tracked obligations.",
+      "stages": [
+        {
+          "name": "Draft & Review",
+          "inputs": [
+            "contract requests"
+          ],
+          "activities": [
+            "template selection",
+            "clause review",
+            "risk flags"
+          ],
+          "outputs": [
+            "reviewed drafts"
+          ]
+        },
+        {
+          "name": "Negotiate & Sign",
+          "inputs": [
+            "counterparty redlines"
+          ],
+          "activities": [
+            "negotiation support",
+            "approvals",
+            "execution"
+          ],
+          "outputs": [
+            "executed contracts"
+          ]
+        },
+        {
+          "name": "Track",
+          "inputs": [
+            "executed contracts"
+          ],
+          "activities": [
+            "obligation tracking",
+            "renewal alerts"
+          ],
+          "outputs": [
+            "met obligations, timely renewals"
+          ]
+        }
+      ],
+      "outcome": "Contracts move fast without unreviewed risk",
+      "business_outcome": "Deal velocity up, contractual exposure down",
+      "value_metric_kpi_refs": [
+        "leg-lg-kpi-001",
+        "leg-lg-kpi-002",
+        "leg-lg-kpi-003"
+      ]
+    },
+    {
+      "id": "vs-counsel",
+      "name": "Advisory & IP Protection",
+      "description": "Legal counsel and intellectual-property defense for the business.",
+      "stages": [
+        {
+          "name": "Advise",
+          "inputs": [
+            "business questions, employment matters"
+          ],
+          "activities": [
+            "research",
+            "written guidance",
+            "policy updates"
+          ],
+          "outputs": [
+            "actionable guidance"
+          ]
+        },
+        {
+          "name": "Protect",
+          "inputs": [
+            "inventions, marks, disputes"
+          ],
+          "activities": [
+            "filings",
+            "portfolio management",
+            "dispute handling"
+          ],
+          "outputs": [
+            "protected IP, resolved matters"
+          ]
+        }
+      ],
+      "outcome": "The business acts with legal confidence",
+      "business_outcome": "Avoided liabilities and preserved IP value",
+      "value_metric_kpi_refs": [
+        "leg-lg-kpi-005",
+        "leg-lg-kpi-006",
+        "leg-lg-kpi-007"
+      ]
     }
   ]
 }

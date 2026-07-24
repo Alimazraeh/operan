@@ -3,7 +3,7 @@
   "name": "Small/Medium Marketing Team",
   "description": "A marketing department template for small to medium companies (up to 500 employees). This template covers a 3-10 FTE marketing department with a Marketing Manager, Content Specialist, Digital Marketing Specialist, Designer/Creator, and a General Purpose Operator (GPO). It provides end-to-end marketing capabilities including content creation, social media management, SEO/SEM, email campaigns, brand management, and lead generation. Designed for agile marketing teams that need to move fast across multiple channels while maintaining brand consistency and measurable ROI.",
   "category": "marketing",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "metadata": {
     "enterprise_size": "small",
     "department_size": "3-10 FTE",
@@ -1052,6 +1052,61 @@
       "agent_def_id": "agent-mkt-gpo-001",
       "reports_to": "pos-agent-mkt-mgr-001",
       "autonomy_tier": "recommend"
+    }
+  ],
+  "value_streams": [
+    {
+      "id": "vs-campaign",
+      "name": "Campaign-to-Pipeline",
+      "description": "From plan to measurable pipeline contribution.",
+      "stages": [
+        {
+          "name": "Plan",
+          "inputs": [
+            "objectives, audience data"
+          ],
+          "activities": [
+            "campaign planning",
+            "budgeting"
+          ],
+          "outputs": [
+            "campaign briefs"
+          ]
+        },
+        {
+          "name": "Produce & Publish",
+          "inputs": [
+            "campaign briefs"
+          ],
+          "activities": [
+            "content creation",
+            "social publishing"
+          ],
+          "outputs": [
+            "live campaigns"
+          ]
+        },
+        {
+          "name": "Nurture & Measure",
+          "inputs": [
+            "live campaigns"
+          ],
+          "activities": [
+            "lead nurturing",
+            "performance analysis"
+          ],
+          "outputs": [
+            "qualified leads, ROI reports"
+          ]
+        }
+      ],
+      "outcome": "Campaigns that produce accountable pipeline",
+      "business_outcome": "Marketing spend traced to revenue; CAC trends down",
+      "value_metric_kpi_refs": [
+        "kpi-001",
+        "kpi-002",
+        "kpi-004"
+      ]
     }
   ]
 }

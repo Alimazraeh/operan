@@ -3,7 +3,7 @@
   "name": "Small Business HR Department",
   "description": "2–5 person HR department for SMBs. Generalist model with shared functions. Handles hiring, payroll basics, benefits admin, employee relations, and compliance for organizations with up to 50 employees.",
   "category": "hr",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "metadata": {
     "enterprise_size": "small",
     "department_size": "2-5 FTE",
@@ -770,6 +770,113 @@
       "agent_def_id": "hr-gpo-01",
       "reports_to": "pos-hr-generalist-01",
       "autonomy_tier": "recommend"
+    }
+  ],
+  "value_streams": [
+    {
+      "id": "vs-talent",
+      "name": "Talent Acquisition & Onboarding",
+      "description": "From open role to productive employee.",
+      "stages": [
+        {
+          "name": "Attract & Screen",
+          "inputs": [
+            "open role, job description"
+          ],
+          "activities": [
+            "post role",
+            "screen candidates",
+            "schedule interviews"
+          ],
+          "outputs": [
+            "qualified candidates"
+          ]
+        },
+        {
+          "name": "Hire",
+          "inputs": [
+            "interview feedback"
+          ],
+          "activities": [
+            "offer approval",
+            "offer letter",
+            "background checks"
+          ],
+          "outputs": [
+            "signed offer"
+          ]
+        },
+        {
+          "name": "Onboard",
+          "inputs": [
+            "signed offer"
+          ],
+          "activities": [
+            "provision accounts",
+            "orientation",
+            "30/60/90 plan"
+          ],
+          "outputs": [
+            "ramped employee"
+          ]
+        }
+      ],
+      "outcome": "Roles filled with qualified people who reach productivity fast",
+      "business_outcome": "Lower time-to-fill and early attrition; hiring capacity scales without added HR headcount",
+      "value_metric_kpi_refs": [
+        "hr-kpi-001"
+      ]
+    },
+    {
+      "id": "vs-lifecycle",
+      "name": "Employee Lifecycle & Compliance",
+      "description": "Keep every employee supported, reviewed, and compliant from day one to exit.",
+      "stages": [
+        {
+          "name": "Support",
+          "inputs": [
+            "employee requests, leave requests"
+          ],
+          "activities": [
+            "answer policy questions",
+            "process leave"
+          ],
+          "outputs": [
+            "resolved requests"
+          ]
+        },
+        {
+          "name": "Develop",
+          "inputs": [
+            "review cycle"
+          ],
+          "activities": [
+            "run performance reviews",
+            "track goals"
+          ],
+          "outputs": [
+            "completed reviews, development plans"
+          ]
+        },
+        {
+          "name": "Comply & Exit",
+          "inputs": [
+            "regulatory calendar, resignations"
+          ],
+          "activities": [
+            "compliance training",
+            "offboarding"
+          ],
+          "outputs": [
+            "audit-ready records, clean exits"
+          ]
+        }
+      ],
+      "outcome": "A supported, reviewed, compliant workforce",
+      "business_outcome": "Reduced compliance exposure and turnover; HR effort per employee drops",
+      "value_metric_kpi_refs": [
+        "hr-kpi-002"
+      ]
     }
   ]
 }

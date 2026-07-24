@@ -3,7 +3,7 @@
   "name": "Medium Enterprise Finance Department",
   "description": "5–15 person finance department for mid-market companies (50–500 employees). Specialized roles: Finance Manager, Senior Accountant, Junior Accountant, AP/AR Clerks, Financial Analyst, and GPO. Formal SOPs, segregation of duties, monthly close process, budgeting & forecasting, audit preparation. Frameworks: GAAP, SOX (if applicable).",
   "category": "finance",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "metadata": {
     "enterprise_size": "medium",
     "department_size": "5-15 FTE",
@@ -1434,6 +1434,90 @@
       "agent_def_id": "finance-gpo-01",
       "reports_to": "pos-finance-manager-01",
       "autonomy_tier": "recommend"
+    }
+  ],
+  "value_streams": [
+    {
+      "id": "vs-p2p",
+      "name": "Procure-to-Pay & Order-to-Cash",
+      "description": "Money out and money in, controlled end to end.",
+      "stages": [
+        {
+          "name": "Payables",
+          "inputs": [
+            "invoices"
+          ],
+          "activities": [
+            "3-way match",
+            "approval routing",
+            "payment runs"
+          ],
+          "outputs": [
+            "paid invoices"
+          ]
+        },
+        {
+          "name": "Receivables",
+          "inputs": [
+            "customer invoices"
+          ],
+          "activities": [
+            "invoicing",
+            "collections",
+            "cash application"
+          ],
+          "outputs": [
+            "collected cash"
+          ]
+        }
+      ],
+      "outcome": "Vendors paid on time, cash collected on time",
+      "business_outcome": "Working capital protected; DSO/DPO within targets",
+      "value_metric_kpi_refs": [
+        "fin-med-kpi-003"
+      ]
+    },
+    {
+      "id": "vs-close",
+      "name": "Record-to-Report",
+      "description": "From transactions to trusted statements.",
+      "stages": [
+        {
+          "name": "Close",
+          "inputs": [
+            "ledger transactions"
+          ],
+          "activities": [
+            "reconciliations",
+            "accruals",
+            "close checklist"
+          ],
+          "outputs": [
+            "closed books"
+          ]
+        },
+        {
+          "name": "Report & Plan",
+          "inputs": [
+            "closed books"
+          ],
+          "activities": [
+            "management reporting",
+            "budget vs actuals",
+            "forecasting"
+          ],
+          "outputs": [
+            "statements, forecasts"
+          ]
+        }
+      ],
+      "outcome": "Fast, accurate close and forward visibility",
+      "business_outcome": "Decisions made on current numbers; audit and SOX findings minimized",
+      "value_metric_kpi_refs": [
+        "fin-med-kpi-001",
+        "fin-med-kpi-002",
+        "fin-med-kpi-004"
+      ]
     }
   ]
 }

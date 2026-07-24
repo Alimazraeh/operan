@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -64,6 +65,25 @@ func (h *MemoryHandlers) SearchMemory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scored := h.Vectors.Search(tenantID, req.Query, queryVector, req.EmbeddingType, req.TopN, req.RelevanceThreshold, req.VectorIDs)
+
+	// Apply metadata equality filters (e.g. {"department_id": "..."}) — the
+	// contract has always declared them; enforce them.
+	if len(req.Filters) > 0 {
+		kept := scored[:0]
+		for _, sv := range scored {
+			match := true
+			for k, want := range req.Filters {
+				if got, ok := sv.Vector.Metadata[k]; !ok || fmt.Sprintf("%v", got) != fmt.Sprintf("%v", want) {
+					match = false
+					break
+				}
+			}
+			if match {
+				kept = append(kept, sv)
+			}
+		}
+		scored = kept
+	}
 
 	items := make([]map[string]interface{}, 0, len(scored))
 	for i, sv := range scored {

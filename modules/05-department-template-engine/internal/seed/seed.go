@@ -95,14 +95,15 @@ func EnsureTenant(ts *store.TemplateStore, tenantID, createdBy string) []string 
 		return nil
 	}
 
-	// Collect catalog_ids the tenant already has.
-	have := map[string]bool{}
+	// Collect the tenant's existing catalog templates: id + stored version.
+	type existing struct{ id, version string }
+	have := map[string]existing{}
 	page := 1
 	for {
 		templates, _, hasMore := ts.List(tenantID, page, 200, nil)
 		for _, t := range templates {
 			if cid, ok := t.Metadata["catalog_id"].(string); ok {
-				have[cid] = true
+				have[cid] = existing{id: t.ID, version: t.Version}
 			}
 		}
 		if !hasMore {
@@ -114,7 +115,18 @@ func EnsureTenant(ts *store.TemplateStore, tenantID, createdBy string) []string 
 	var seeded []string
 	for _, ct := range cat {
 		cid, _ := ct.Metadata["catalog_id"].(string)
-		if cid == "" || have[cid] {
+		if cid == "" {
+			continue
+		}
+		if ex, ok := have[cid]; ok {
+			// Upsert: when the built-in catalog carries a newer version,
+			// refresh the tenant's copy in place (same template id).
+			if ex.version != ct.Version {
+				cp := ct
+				if _, err := ts.RefreshFromCatalog(ex.id, tenantID, &cp); err == nil {
+					seeded = append(seeded, cid+"@"+ct.Version)
+				}
+			}
 			continue
 		}
 		cp := ct

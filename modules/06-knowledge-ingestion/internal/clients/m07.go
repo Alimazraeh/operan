@@ -1,3 +1,8 @@
+// Module 07 (Memory Fabric) vector-store client.
+//
+// Current M07 contract: POST /vectors with semantic content; M07 generates
+// the embeddings itself (LiteLLM gateway). Callers forward identity headers
+// so writes stay tenant-scoped.
 package clients
 
 import (
@@ -21,38 +26,44 @@ func NewM07Client(baseURL string, timeoutMs int) *M07Client {
 	}
 }
 
-type Vector struct {
-	ID       string         `json:"id"`
-	Vector   []float64      `json:"vector"`
-	Metadata map[string]any `json:"metadata"`
+// VectorItem mirrors Module 07's vector-write item (subset we use).
+type VectorItem struct {
+	DocumentID      string         `json:"document_id"`
+	EmbeddingType   string         `json:"embedding_type"`
+	SemanticContent string         `json:"semantic_content"`
+	Metadata        map[string]any `json:"metadata,omitempty"`
 }
 
-type M07StoreRequest struct {
-	Namespace string    `json:"namespace"`
-	Vectors   []Vector  `json:"vectors"`
+type m07StoreRequest struct {
+	TenantID string       `json:"tenant_id"`
+	Items    []VectorItem `json:"items"`
 }
 
-func (c *M07Client) StoreVectors(ctx context.Context, namespace string, vectors []Vector) error {
-	reqBody, err := json.Marshal(M07StoreRequest{Namespace: namespace, Vectors: vectors})
+// StoreVectors ingests knowledge chunks; M07 embeds them server-side, so
+// this can legitimately take tens of seconds for large batches.
+func (c *M07Client) StoreVectors(ctx context.Context, jwtToken, tenantID string, items []VectorItem) error {
+	reqBody, err := json.Marshal(m07StoreRequest{TenantID: tenantID, Items: items})
 	if err != nil {
-		return fmt.Errorf("m07 marshal: %w", err)
+		return fmt.Errorf("marshal store request: %w", err)
 	}
-
-	client := &http.Client{Timeout: c.timeout}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/v1/vectors", bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/vectors", bytes.NewReader(reqBody))
 	if err != nil {
-		return fmt.Errorf("m07 request: %w", err)
+		return fmt.Errorf("build store request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if jwtToken != "" {
+		req.Header.Set("Authorization", "Bearer "+jwtToken)
+	}
+	req.Header.Set("X-Tenant-ID", tenantID)
 
+	client := &http.Client{Timeout: c.timeout}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("m07 store: %w", err)
+		return fmt.Errorf("store vectors: %w", err)
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("m07 store: HTTP %d", resp.StatusCode)
+	if resp.StatusCode >= 300 {
+		return fmt.Errorf("store vectors: M07 returned %d", resp.StatusCode)
 	}
 	return nil
 }

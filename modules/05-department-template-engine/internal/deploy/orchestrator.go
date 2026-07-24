@@ -25,11 +25,12 @@ import (
 
 // Orchestrator drives the provisioning pipeline for one deployment at a time.
 type Orchestrator struct {
-	Deployments *store.DeploymentStore
-	Departments *store.DepartmentStore
-	Publisher   *events.Publisher
-	Registry    *clients.RegistryClient
-	Memory      *clients.MemoryClient
+	Deployments   *store.DeploymentStore
+	Departments   *store.DepartmentStore
+	Publisher     *events.Publisher
+	Registry      *clients.RegistryClient
+	Memory        *clients.MemoryClient
+	Orchestration *clients.OrchestrationClient
 	// Timeout bounds the whole async pipeline.
 	Timeout time.Duration
 }
@@ -251,6 +252,41 @@ func (o *Orchestrator) Run(auth, tenantID, userID string, tmpl *store.Template, 
 	}
 	o.completeStage(dep.ID, dept.ID, tenantID, "deploy_swarm", fmt.Sprintf("%d agents registered", len(provisioned)))
 
+	// ─── deploy_workflows: compile template SOPs into Module 03 workflows ─
+	if o.Orchestration != nil && len(tmpl.Workflows) > 0 {
+		o.beginStage(dep.ID, dept.ID, tenantID, "deploy_workflows")
+		// agent def id → live M04 agent id, resolved during deploy_swarm.
+		agentByDef := map[string]string{}
+		for pi := range dept.OrgChart {
+			if dept.OrgChart[pi].AgentDefID != "" && dept.OrgChart[pi].AgentID != "" {
+				agentByDef[dept.OrgChart[pi].AgentDefID] = dept.OrgChart[pi].AgentID
+			}
+		}
+		var wfErr error
+		for wi := range tmpl.Workflows {
+			wf := &tmpl.Workflows[wi]
+			created, err := o.Orchestration.CreateWorkflow(ctx, caller, compileWorkflow(wf, dept.ID, agentByDef))
+			if err != nil {
+				wfErr = fmt.Errorf("workflow %s: %w", wf.ID, err)
+				break
+			}
+			dept.WorkflowIDs = append(dept.WorkflowIDs, created.ID)
+		}
+		if wfErr != nil {
+			fail("deploy_workflows", wfErr)
+			return
+		}
+		o.Departments.Replace(dept)
+		o.Deployments.Mutate(dep.ID, func(d *store.TemplateDeployment) {
+			if d.ProvisionedEntities == nil {
+				d.ProvisionedEntities = map[string]interface{}{}
+			}
+			d.ProvisionedEntities["workflows"] = dept.WorkflowIDs
+		})
+		o.completeStage(dep.ID, dept.ID, tenantID, "deploy_workflows",
+			fmt.Sprintf("%d SOPs compiled into Module 03", len(dept.WorkflowIDs)))
+	}
+
 	// ─── operational ─────────────────────────────────────────────────────
 	now := time.Now()
 	o.Deployments.Mutate(dep.ID, func(d *store.TemplateDeployment) {
@@ -417,4 +453,66 @@ func memoryItems(dept *store.Department, tmpl *store.Template) []clients.VectorI
 		})
 	}
 	return items
+}
+
+// compileWorkflow translates a template SOP (WorkflowDefinition) into a
+// Module 03 workflow-create request. Steps become nodes; sequential edges
+// mirror authoring order; agent references resolve to live M04 agent ids.
+func compileWorkflow(wf *store.WorkflowDefinition, departmentID string, agentByDef map[string]string) clients.WorkflowCreateRequest {
+	nodes := make([]clients.WorkflowNode, 0, len(wf.Steps))
+	edges := make([]clients.WorkflowEdge, 0, len(wf.Steps))
+	for i, s := range wf.Steps {
+		n := clients.WorkflowNode{
+			ID:     s.ID,
+			Type:   nodeTypeFor(s.Type),
+			Action: s.Name,
+		}
+		if n.Action == "" {
+			n.Action = s.ID
+		}
+		if s.TimeoutSeconds > 0 {
+			n.TimeoutMs = s.TimeoutSeconds * 1000
+		}
+		// Resolve the acting agent when the step names one.
+		if def, ok := s.Config["agent_id"].(string); ok {
+			if live, ok := agentByDef[def]; ok {
+				n.AgentID = live
+			}
+		} else if def, ok := s.Config["agent"].(string); ok {
+			if live, ok := agentByDef[def]; ok {
+				n.AgentID = live
+			}
+		}
+		if len(s.Config) > 0 {
+			n.Parameters = s.Config
+		}
+		if i+1 < len(wf.Steps) {
+			n.OnSuccess = wf.Steps[i+1].ID
+			edges = append(edges, clients.WorkflowEdge{From: s.ID, To: wf.Steps[i+1].ID})
+		}
+		nodes = append(nodes, n)
+	}
+	return clients.WorkflowCreateRequest{
+		DepartmentID: departmentID,
+		Name:         wf.Name,
+		Description:  wf.Description,
+		Graph: map[string]interface{}{
+			"nodes": nodes,
+			"edges": edges,
+		},
+	}
+}
+
+// nodeTypeFor maps template step types onto Module 03's node-type enum.
+func nodeTypeFor(stepType string) string {
+	switch stepType {
+	case "agent_call":
+		return "agent"
+	case "approval", "human_gate":
+		return "human_gate"
+	case "conditional":
+		return "condition"
+	default: // api_call, data_fetch, transformation, notification, tool_call
+		return "action"
+	}
 }

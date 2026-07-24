@@ -3,7 +3,7 @@
   "name": "Small Business Finance Department",
   "description": "2–3 person finance department for SMBs. Generalist model with Controller, Bookkeeper, and GPO. Handles daily bookkeeping, AP/AR, payroll coordination, tax filing basics, budget tracking, and financial reporting for organizations with up to 50 employees. Light compliance (standard GAAP).",
   "category": "finance",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "metadata": {
     "enterprise_size": "small",
     "department_size": "2-3 FTE",
@@ -1150,6 +1150,87 @@
       "agent_def_id": "finance-gpo-01",
       "reports_to": "pos-finance-controller-01",
       "autonomy_tier": "recommend"
+    }
+  ],
+  "value_streams": [
+    {
+      "id": "vs-p2p",
+      "name": "Procure-to-Pay & Order-to-Cash",
+      "description": "Money out and money in, controlled end to end.",
+      "stages": [
+        {
+          "name": "Payables",
+          "inputs": [
+            "invoices"
+          ],
+          "activities": [
+            "3-way match",
+            "approval routing",
+            "payment runs"
+          ],
+          "outputs": [
+            "paid invoices"
+          ]
+        },
+        {
+          "name": "Receivables",
+          "inputs": [
+            "customer invoices"
+          ],
+          "activities": [
+            "invoicing",
+            "collections",
+            "cash application"
+          ],
+          "outputs": [
+            "collected cash"
+          ]
+        }
+      ],
+      "outcome": "Vendors paid on time, cash collected on time",
+      "business_outcome": "Working capital protected; DSO/DPO within targets"
+    },
+    {
+      "id": "vs-close",
+      "name": "Record-to-Report",
+      "description": "From transactions to trusted statements.",
+      "stages": [
+        {
+          "name": "Close",
+          "inputs": [
+            "ledger transactions"
+          ],
+          "activities": [
+            "reconciliations",
+            "accruals",
+            "close checklist"
+          ],
+          "outputs": [
+            "closed books"
+          ]
+        },
+        {
+          "name": "Report & Plan",
+          "inputs": [
+            "closed books"
+          ],
+          "activities": [
+            "management reporting",
+            "budget vs actuals",
+            "forecasting"
+          ],
+          "outputs": [
+            "statements, forecasts"
+          ]
+        }
+      ],
+      "outcome": "Fast, accurate close and forward visibility",
+      "business_outcome": "Decisions made on current numbers; audit and SOX findings minimized",
+      "value_metric_kpi_refs": [
+        "fin-kpi-001",
+        "fin-kpi-002",
+        "fin-kpi-004"
+      ]
     }
   ]
 }

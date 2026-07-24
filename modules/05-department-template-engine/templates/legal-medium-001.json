@@ -3,7 +3,7 @@
   "name": "Medium Enterprise Legal Department",
   "description": "5–15 person legal department for mid-market companies (100–500 employees). Specialized roles for corporate law, contracts, IP, employment law, and compliance support.",
   "category": "legal",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "metadata": {
     "enterprise_size": "medium",
     "department_size": "5-15 FTE",
@@ -589,6 +589,102 @@
       "agent_def_id": "legal-gpo-01",
       "reports_to": "pos-general-counsel-01",
       "autonomy_tier": "recommend"
+    }
+  ],
+  "value_streams": [
+    {
+      "id": "vs-contracts",
+      "name": "Contract Lifecycle",
+      "description": "From request to signed, tracked obligations.",
+      "stages": [
+        {
+          "name": "Draft & Review",
+          "inputs": [
+            "contract requests"
+          ],
+          "activities": [
+            "template selection",
+            "clause review",
+            "risk flags"
+          ],
+          "outputs": [
+            "reviewed drafts"
+          ]
+        },
+        {
+          "name": "Negotiate & Sign",
+          "inputs": [
+            "counterparty redlines"
+          ],
+          "activities": [
+            "negotiation support",
+            "approvals",
+            "execution"
+          ],
+          "outputs": [
+            "executed contracts"
+          ]
+        },
+        {
+          "name": "Track",
+          "inputs": [
+            "executed contracts"
+          ],
+          "activities": [
+            "obligation tracking",
+            "renewal alerts"
+          ],
+          "outputs": [
+            "met obligations, timely renewals"
+          ]
+        }
+      ],
+      "outcome": "Contracts move fast without unreviewed risk",
+      "business_outcome": "Deal velocity up, contractual exposure down",
+      "value_metric_kpi_refs": [
+        "legal-kpi-m-001",
+        "legal-kpi-m-002"
+      ]
+    },
+    {
+      "id": "vs-counsel",
+      "name": "Advisory & IP Protection",
+      "description": "Legal counsel and intellectual-property defense for the business.",
+      "stages": [
+        {
+          "name": "Advise",
+          "inputs": [
+            "business questions, employment matters"
+          ],
+          "activities": [
+            "research",
+            "written guidance",
+            "policy updates"
+          ],
+          "outputs": [
+            "actionable guidance"
+          ]
+        },
+        {
+          "name": "Protect",
+          "inputs": [
+            "inventions, marks, disputes"
+          ],
+          "activities": [
+            "filings",
+            "portfolio management",
+            "dispute handling"
+          ],
+          "outputs": [
+            "protected IP, resolved matters"
+          ]
+        }
+      ],
+      "outcome": "The business acts with legal confidence",
+      "business_outcome": "Avoided liabilities and preserved IP value",
+      "value_metric_kpi_refs": [
+        "legal-kpi-m-003"
+      ]
     }
   ]
 }

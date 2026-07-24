@@ -159,7 +159,7 @@ type mockM07Client struct {
 	lastError  error
 }
 
-func (m *mockM07Client) StoreVectors(ctx context.Context, namespace string, vectors []clients.Vector) error {
+func (m *mockM07Client) StoreVectors(ctx context.Context, jwtToken, tenantID string, items []clients.VectorItem) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.storeCount++
@@ -294,8 +294,9 @@ func TestWorker_ProcessJob_ValidPipeline(t *testing.T) {
 	if updatedJob.Status != "completed" {
 		t.Errorf("expected job status completed, got %s", updatedJob.Status)
 	}
-	if m12Client.embedCount == 0 {
-		t.Error("expected M12 client to be called for embeddings")
+	// M07 embeds server-side now — M12 must NOT be called by ingestion.
+	if m12Client.embedCount != 0 {
+		t.Error("M12 must not be called: M07 embeds content server-side")
 	}
 	if m07Client.storeCount == 0 {
 		t.Error("expected M07 client to be called for vector storage")
@@ -566,8 +567,9 @@ func TestWorker_ProcessJob_EmbeddingError(t *testing.T) {
 	if updatedJob.Status != "completed" {
 		t.Errorf("expected job to complete with failed chunks, got %s", updatedJob.Status)
 	}
-	// M07 should NOT be called since no vectors were created.
-	if m07Client.storeCount > 0 {
-		t.Error("expected M07 client NOT to be called when embedding fails")
+	// Chunks always ship to M07 now (it embeds server-side), even when the
+	// legacy embedding path would have failed.
+	if m07Client.storeCount == 0 {
+		t.Error("expected M07 client to be called")
 	}
 }

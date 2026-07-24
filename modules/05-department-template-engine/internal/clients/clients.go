@@ -183,3 +183,46 @@ func (c *MemoryClient) StoreVectors(ctx context.Context, caller Caller, items []
 	}
 	return ids, nil
 }
+
+// ─── Module 03 (agent orchestration) ─────────────────────────────────────────
+
+// OrchestrationClient creates real M03 workflows from template SOPs.
+type OrchestrationClient struct {
+	BaseURL string // e.g. http://agent-orchestration...:8080/api/v1/orchestration
+}
+
+// WorkflowNode / WorkflowEdge mirror Module 03's graph contract.
+type WorkflowNode struct {
+	ID         string                 `json:"id"`
+	Type       string                 `json:"type"` // agent, action, human_gate, condition
+	AgentID    string                 `json:"agent_id,omitempty"`
+	Action     string                 `json:"action,omitempty"`
+	TimeoutMs  int                    `json:"timeout_ms,omitempty"`
+	OnSuccess  string                 `json:"on_success,omitempty"`
+	Parameters map[string]interface{} `json:"parameters,omitempty"`
+}
+
+type WorkflowEdge struct {
+	From string `json:"from"`
+	To   string `json:"to"`
+}
+
+type WorkflowCreateRequest struct {
+	DepartmentID string                 `json:"department_id,omitempty"`
+	Name         string                 `json:"name"`
+	Description  string                 `json:"description,omitempty"`
+	Graph        map[string]interface{} `json:"graph"`
+}
+
+type CreatedWorkflow struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func (c *OrchestrationClient) CreateWorkflow(ctx context.Context, caller Caller, req WorkflowCreateRequest) (*CreatedWorkflow, error) {
+	var out CreatedWorkflow
+	if err := doJSON(ctx, http.MethodPost, c.BaseURL+"/workflows", caller, req, &out, requestTimeout); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}

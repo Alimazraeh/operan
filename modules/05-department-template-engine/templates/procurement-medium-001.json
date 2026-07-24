@@ -3,7 +3,7 @@
   "name": "Medium Enterprise Procurement Department",
   "description": "5–15 person procurement department for mid-market companies (50–500 employees). Manages sourcing, vendor management, purchase orders, contract negotiations, procurement compliance, and supply chain risk. Operates with formalized approval workflows and spend governance.",
   "category": "procurement",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "metadata": {
     "enterprise_size": "medium",
     "department_size": "5-15 FTE",
@@ -746,6 +746,61 @@
       "agent_def_id": "procurement-gpo-01",
       "reports_to": "pos-procurement-manager-01",
       "autonomy_tier": "recommend"
+    }
+  ],
+  "value_streams": [
+    {
+      "id": "vs-s2p",
+      "name": "Source-to-Pay",
+      "description": "From need to fulfilled order at the right price and risk.",
+      "stages": [
+        {
+          "name": "Source",
+          "inputs": [
+            "purchase needs"
+          ],
+          "activities": [
+            "sourcing",
+            "vendor evaluation"
+          ],
+          "outputs": [
+            "selected vendors"
+          ]
+        },
+        {
+          "name": "Purchase",
+          "inputs": [
+            "selected vendors"
+          ],
+          "activities": [
+            "PO creation",
+            "approvals"
+          ],
+          "outputs": [
+            "confirmed orders"
+          ]
+        },
+        {
+          "name": "Manage",
+          "inputs": [
+            "confirmed orders"
+          ],
+          "activities": [
+            "vendor performance",
+            "spend analysis"
+          ],
+          "outputs": [
+            "savings, managed risk"
+          ]
+        }
+      ],
+      "outcome": "Spend under control with reliable suppliers",
+      "business_outcome": "Realized savings and reduced supplier risk",
+      "value_metric_kpi_refs": [
+        "proc-kpi-001",
+        "proc-kpi-002",
+        "proc-kpi-003"
+      ]
     }
   ]
 }
