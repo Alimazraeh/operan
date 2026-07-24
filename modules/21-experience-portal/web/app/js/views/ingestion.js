@@ -1,16 +1,15 @@
 // Knowledge Ingestion Pipeline (Module 06).
-import { SVC, get, post, patch, del, uuid4 } from "../api.js";
+import { SVC, get, post, del, unwrapList } from "../api.js";
 import { $, esc, badge, rel, toast, rowItem } from "../ui.js";
 
+// The source types Module 06 actually accepts (DB-enforced enum).
 const DATA_SOURCES = [
-  { id: "sharepoint", name: "SharePoint", icon: "📁", description: "Microsoft SharePoint sites and document libraries" },
-  { id: "confluence", name: "Confluence", icon: "📝", description: "Atlassian Confluence spaces and pages" },
-  { id: "jira", name: "Jira", icon: "🎫", description: "Jira issues, epics, and project documentation" },
-  { id: "email", name: "Email", icon: "📧", description: "Outlook/Gmail mailboxes (ingest relevant threads)" },
-  { id: "files", name: "File Upload", icon: "📄", description: "PDF, DOCX, TXT, CSV — direct upload" },
-  { id: "database", name: "Database", icon: "🗄️", description: "PostgreSQL, MySQL — query-based ingestion" },
-  { id: "api", name: "REST API", icon: "🔗", description: "Custom API endpoints returning JSON" },
-  { id: "git", name: "Git Repository", icon: "🐙", description: "GitHub/GitLab repositories" },
+  { id: "url", name: "URL", icon: "🔗", description: "Fetch and ingest a single web page or document URL" },
+  { id: "web_crawl", name: "Web crawl", icon: "🕸️", description: "Crawl a site from a starting URL" },
+  { id: "file", name: "File", icon: "📄", description: "A file reachable by path or URL (PDF, DOCX, TXT, CSV)" },
+  { id: "sharepoint", name: "SharePoint", icon: "📁", description: "Microsoft SharePoint site or library URL" },
+  { id: "email", name: "Email", icon: "📧", description: "Mailbox ingestion endpoint" },
+  { id: "s3", name: "S3 bucket", icon: "🪣", description: "S3/MinIO bucket or object URL" },
 ];
 
 export async function viewIngestion() {
@@ -23,9 +22,9 @@ export async function viewIngestion() {
     ]);
   } catch (e) { return viewError("Failed to load knowledge data", e.message); }
 
-  const sources = (sourcesR.data && sourcesR.data.items) || [];
-  const jobs = (jobsR.data && jobsR.data.items) || [];
-  const vectors = (knowledgeR.data && knowledgeR.data.items) || [];
+  const sources = unwrapList(sourcesR, "sources");
+  const jobs = unwrapList(jobsR, "jobs");
+  const vectors = unwrapList(knowledgeR, "items");
 
   return `
     <div class="grid g4" style="margin-bottom:18px">
@@ -49,12 +48,10 @@ export async function viewIngestion() {
         ? `<div class="empty">No data sources connected yet.</div>`
         : sources.map(s => rowItem({
             title: `${esc(s.icon || "📁")} ${esc(s.name || s.source_type)}`,
-            meta: `${esc(s.endpoint || s.url || "—")} · ${esc(s.status || "inactive")} · ${rel(s.created_at)}`,
+            meta: `${esc(s.source_url || s.endpoint || "—")} · ${rel(s.created_at)}`,
             badges: badge(s.status || "inactive"),
-            actions: s.status === "active"
-              ? `<button class="ghost sm" onclick="window.testSource('${esc(s.id)}')">Test</button>
-                 <button class="sm bad" onclick="window.removeSource('${esc(s.id)}')">Remove</button>`
-              : `<button class="ok sm" onclick="window.enableSource('${esc(s.id)}')">Enable</button>`,
+            actions: `<button class="sm" onclick="window.ingestSource('${esc(s.id)}')">Ingest now</button>
+                 <button class="sm bad" onclick="window.removeSource('${esc(s.id)}')">Remove</button>`,
           })).join("")}
     </div>
 
@@ -77,12 +74,9 @@ export async function viewIngestion() {
           <dt>Total chunks</dt><dd>${esc(String(vectors.length))}</dd>
           <dt>Departments covered</dt><dd>${esc(String(new Set(vectors.map(v=>v.metadata?.department_id)).size))}</dd>
           <dt>Embedding model</dt><dd>${esc(vectors[0]?.embedding_model || "—")}</dd>
-          <dt>Duplicate rate</dt><dd>${esc("0.0")}%</dd>
         </div>
-        <div style="margin-top:14px">
-          <button class="sm" onclick="window.runDedup()">Run deduplication</button>
-          <button class="ghost sm" style="margin-left:8px" onclick="window.refreshAllSources()">Refresh all sources</button>
-        </div>
+        <div class="hint" style="margin-top:10px">Chunk-level dedup is automatic: previously seen content
+        hashes are skipped across jobs, so re-ingesting unchanged sources adds nothing.</div>
       </div>
     </div>`;
 }
@@ -93,9 +87,10 @@ window.addSource = async function () {
   if (!url) { toast("URL/connection string required", "bad"); return; }
   const source = DATA_SOURCES.find(s => s.id === type);
   try {
+    let ext = ((url.match(/\.(pdf|txt|html?|docx|md|csv)(\?|$)/i) || [])[1] || "html").toLowerCase();
+    const fileType = ext === "htm" ? "html" : ext;
     const r = await post(SVC.knowledge + "/sources", {
-      id: uuid4(), source_type: type, name: source?.name || type,
-      endpoint: url, status: "inactive",
+      name: source?.name || type, source_type: type, source_url: url, file_type: fileType,
     });
     if (r.ok) { toast("Source " + esc(source?.name || type) + " added", "ok"); window.go("ingestion"); }
     else toast("Failed: " + esc(JSON.stringify(r.data).slice(0, 120)), "bad");
@@ -109,37 +104,11 @@ window.removeSource = async function (id) {
   else toast("Failed", "bad");
 };
 
-window.enableSource = async function (id) {
-  const r = await patch(SVC.knowledge + "/sources/" + id, { status: "active" });
-  if (r.ok) { toast("Source enabled", "ok"); window.go("ingestion"); }
-  else toast("Failed", "bad");
-};
-
-window.testSource = async function (id) {
-  toast("Testing connection...", "ok");
-  try {
-    const r = await post(SVC.knowledge + "/sources/" + id + "/test");
-    if (r.ok) toast("Connection successful!", "ok");
-    else toast("Connection failed: " + esc(JSON.stringify(r.data).slice(0, 120)), "bad");
-  } catch (e) { toast("Test error: " + esc(String(e)), "bad"); }
-};
-
-window.runDedup = async function () {
-  toast("Running deduplication...", "ok");
-  try {
-    const r = await post(SVC.knowledge + "/dedup");
-    if (r.ok) toast("Deduplication complete — " + esc(String(r.data?.removed || 0)) + " duplicates removed", "ok");
-    else toast("Failed: " + esc(JSON.stringify(r.data).slice(0, 120)), "bad");
-  } catch (e) { toast("Error: " + esc(String(e)), "bad"); }
-};
-
-window.refreshAllSources = async function () {
-  toast("Refreshing all sources...", "ok");
-  try {
-    const r = await post(SVC.knowledge + "/sources/refresh");
-    if (r.ok) toast("Refresh triggered for all sources", "ok");
-    else toast("Failed: " + esc(JSON.stringify(r.data).slice(0, 120)), "bad");
-  } catch (e) { toast("Error: " + esc(String(e)), "bad"); }
+// The real pipeline trigger: source → job → chunks → platform vectors (M07).
+window.ingestSource = async function (id) {
+  const r = await post(SVC.knowledge + "/ingest", { source_id: id });
+  if (r.ok) { toast("Ingestion job started — chunks land in the knowledge base", "ok"); setTimeout(() => window.go("ingestion"), 1200); }
+  else toast("Ingest failed: " + esc(r.data?.error?.message || r.data?.message || JSON.stringify(r.data || {}).slice(0, 120)), "bad");
 };
 
 function viewError(title, msg) {

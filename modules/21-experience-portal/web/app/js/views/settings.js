@@ -1,12 +1,20 @@
 // Settings — Admin settings, API keys, integrations, billing
 import { $, esc, card, btn, emptyState, toast } from "../ui.js";
-import { listConnectors, createConnector, listPolicies, session, del, SVC, unwrapList } from "../api.js";
+import { listConnectors, createConnector, listPolicies, session, unwrapList, generateAdminPassword } from "../api.js";
 
 export default async function viewSettings() {
   const [connRes, polRes] = await Promise.all([
     listConnectors(1, 20),
     listPolicies(1, 20),
   ]);
+  // Fill in the portal build after render — from its own healthz, not a hardcoded claim.
+  setTimeout(async () => {
+    try {
+      const h = await (await fetch("/healthz")).json();
+      const el = document.getElementById("setPortalVer");
+      if (el) el.textContent = `${h.module || "experience-portal"} v${h.version || "?"} · ${h.status || "?"}`;
+    } catch (_) { /* leave the placeholder */ }
+  }, 50);
 
   const connectors = unwrapList(connRes, "connectors");
   const policies = unwrapList(polRes, "policies");
@@ -26,10 +34,8 @@ export default async function viewSettings() {
       ${card("Platform", "Operan instance", `
         <div class="card-body">
           <div class="kv">
-            <dt>Version</dt><dd>v21.0.0</dd>
-            <dt>Modules</dt><dd>20 deployed</dd>
-            <dt>PostgreSQL</dt><dd><span class="badge ok">Connected</span></dd>
-            <dt>Kafka</dt><dd><span class="badge ok">Connected</span></dd>
+            <dt>Portal</dt><dd id="setPortalVer">checking…</dd>
+            <dt>Services healthy</dt><dd>${document.querySelectorAll("#healthdots .dot.ok").length}/${document.querySelectorAll("#healthdots .dot").length} <span class="hint" style="margin:0">(header probes)</span></dd>
           </div>
         </div>
       `)}
@@ -50,8 +56,8 @@ export default async function viewSettings() {
           ? "<div class='empty'>No policies configured</div>"
           : policies.slice(0, 20).map(p => `<div class="row-item">
               <div class="grow"><div class="t">${esc(p.name || "Untitled")}</div>
-              <div class="m">${esc(p.category || "custom")} · ${esc(p.type || "allow")}</div></div>
-              <span class="badge ${p.is_active !== false ? 'ok' : 'error'}">${esc(p.enforcement || "log")}</span>
+              <div class="m">${esc(p.action || "allow")} · ${esc(p.scope || "all")} · ${esc(p.resource_type || "all")}</div></div>
+              <span class="badge ${p.is_active !== false ? 'ok' : 'expired'}">${esc(p.effect || "enforce")}</span>
             </div>`).join("")}
       </div>
     `)}
@@ -83,8 +89,10 @@ window.openAddConnector = function() {
         <div class="form-group"><label>Type</label>
           <select id="connType">
             <option value="m365">Microsoft 365</option><option value="salesforce">Salesforce</option>
-            <option value="sap">SAP</option><option value="servicenow">ServiceNow</option>
-            <option value="slack">Slack</option><option value="jira">Jira</option><option value="custom">Custom API</option>
+            <option value="sap">SAP</option><option value="sharepoint">SharePoint</option>
+            <option value="slack">Slack</option><option value="hubspot">HubSpot</option>
+            <option value="generic_rest">REST API</option><option value="smtp">SMTP</option>
+            <option value="custom">Custom</option>
           </select>
         </div>
         <div class="form-group"><label>Config (JSON)</label>
@@ -92,30 +100,40 @@ window.openAddConnector = function() {
       </div>
       <div class="modal-footer">
         <button class="ghost" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
-        <button class="primary" onclick="doAddConnector()">Add</button>
+        <button class="primary" onclick="window.doAddConnector()">Add</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
 };
 
-async function doAddConnector() {
+window.doAddConnector = async function () {
   const name = document.getElementById("connName").value.trim();
   const type = document.getElementById("connType").value;
   const configStr = document.getElementById("connConfig").value.trim();
   let config = {};
-  if (configStr) { try { config = JSON.parse(configStr); } catch { toast("Invalid JSON config", "error"); return; } }
-  if (!name) { toast("Enter a connector name", "error"); return; }
+  if (configStr) { try { config = JSON.parse(configStr); } catch { toast("Invalid JSON config", "warn"); return; } }
+  if (!name) { toast("Enter a connector name", "warn"); return; }
   try {
-    await createConnector(name, type, config);
-    toast(`Connector "${name}" added`, "success");
+    const r = await createConnector(name, type, config);
+    if (!r.ok) throw new Error(r.data?.message || r.data?.error?.message || "status " + r.status);
+    toast(`Connector "${esc(name)}" added`, "ok");
     document.querySelector(".modal-overlay").remove();
     window.go("settings");
-  } catch (e) { toast(e.message || "Failed to add connector", "error"); }
-}
+  } catch (e) { toast(esc(e.message || "Failed to add connector"), "bad"); }
+};
 
-window.resetPassword = function() {
-  if (!confirm("This will generate a new random admin password. Save it — you won't see it again.")) return;
-  toast("Password reset endpoint called — check the M02 logs for the new password", "info");
+window.resetPassword = async function () {
+  if (!confirm("This ROTATES the platform admin password for every workspace login. The new password is shown exactly once. Continue?")) return;
+  try {
+    const data = await generateAdminPassword();
+    const modal = document.createElement("div");
+    modal.className = "modal-overlay show";
+    modal.innerHTML = `<div class="modal"><div class="modal-header"><h3>New admin password</h3></div>
+      <div class="modal-body"><p>Store this now — it is not shown again, and the old password no longer works:</p>
+      <p><code style="font-family:var(--mono);font-size:14px;user-select:all">${esc(data.password || "(no password in response)")}</code></p></div>
+      <div class="modal-footer"><button class="primary" onclick="this.closest('.modal-overlay').remove()">I saved it</button></div></div>`;
+    document.body.appendChild(modal);
+  } catch (e) { toast("Rotation failed: " + esc(String(e.message || e)), "bad"); }
 };
 
 function connectorRow(c) {

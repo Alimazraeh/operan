@@ -59,22 +59,24 @@ export async function login(password, tenantId) {
 
 // ── Auth: register a new tenant (M01) ─────────────────────
 // POST /svc/tenant/tenants → { tenant object }
+// M01's real contract: {name, plan saas|enterprise|sovereign, region,
+// isolation_level} — the record's name carries the workspace slug, the
+// human title goes in display_name, and M01 assigns the UUID id.
 export async function registerTenant(name, slug, plan) {
+  const planMap = { small: "saas", medium: "saas", starter: "saas", saas: "saas", enterprise: "enterprise", sovereign: "sovereign" };
+  const p = planMap[plan] || "saas";
   return post("/svc/tenant/tenants", {
-    name, slug: slug || name.toLowerCase().replace(/\s+/g, "-"),
-    plan: plan || "enterprise",
-    status: "provisioning",
-    isolation_config: {
-      namespace: slug || name.toLowerCase().replace(/\s+/g, "-"),
-      encryption_algorithm: "aes-256-gcm",
-      network_policy: "default-deny",
-    },
+    name: slug || name.toLowerCase().replace(/\s+/g, "-"),
+    display_name: name,
+    plan: p,
+    region: "me-east-1",
+    isolation_level: "namespace",
     quota: {
-      max_agents: plan === "small" ? 5 : plan === "medium" ? 25 : 100,
-      max_workflows: plan === "small" ? 10 : plan === "medium" ? 50 : 200,
-      max_templates: plan === "small" ? 3 : plan === "medium" ? 10 : 50,
-      cpu_limit_millicores: plan === "small" ? 2000 : plan === "medium" ? 8000 : 32000,
-      memory_limit_mb: plan === "small" ? 4096 : plan === "medium" ? 16384 : 65536,
+      max_agents: p === "saas" ? 25 : 100,
+      max_workflows_per_day: p === "saas" ? 200 : 1000,
+      max_storage_gb: p === "saas" ? 20 : 100,
+      max_monthly_tokens: p === "saas" ? 5000000 : 50000000,
+      max_concurrent_workflows: p === "saas" ? 10 : 50,
     },
   });
 }
@@ -282,16 +284,20 @@ export function evaluatePolicy(context) {
   });
 }
 
-// ── Connectors ─────────────────────────────────────────────
+// ── Connectors (Module 18: base path /v1, connector_type key) ─
 export function listConnectors(page, pageSize) {
   const params = new URLSearchParams();
   if (page) params.set("page", page);
   if (pageSize) params.set("page_size", pageSize);
-  return get("/svc/connectors/connectors?" + params.toString());
+  return get("/svc/connectors/v1/connectors?" + params.toString());
 }
 
-export function createConnector(name, type, config) {
-  return post("/svc/connectors/connectors", { name, type, config, status: "disconnected" });
+export function createConnector(name, connectorType, config) {
+  return post("/svc/connectors/v1/connectors", {
+    name, connector_type: connectorType,
+    auth_method: "api_key", config: config || {}, credentials: {},
+    sync_frequency: "manual",
+  });
 }
 
 // ── Health probe ───────────────────────────────────────────
