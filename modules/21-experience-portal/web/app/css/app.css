@@ -932,3 +932,10 @@ html[dir="rtl"] .toast.warn { border-right-color: var(--warn); }
 .wf-form textarea { width: 100%; margin-top: 8px; }
 .wf-run-detail { border-top: 1px dashed var(--border); margin-top: 8px; padding-top: 4px; cursor: default; }
 html[dir="rtl"] .wfsteps { direction: rtl; }
+
+/* ── Teams: per-department org chart groups ─────────────── */
+.team-dept { margin-bottom: 14px; }
+.team-dept-h { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px;
+  padding: 8px 0 6px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+.team-seat { border-left: 2px solid rgba(76,141,255,0.15); }
+html[dir="rtl"] .team-seat { border-left: none; border-right: 2px solid rgba(76,141,255,0.15); }

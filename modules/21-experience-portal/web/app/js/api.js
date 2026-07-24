@@ -195,11 +195,14 @@ export function listAgents(page, pageSize) {
   return get("/svc/registry/registry/agents?" + params.toString());
 }
 
+// M04 contract: capabilities is a []string; the server assigns the id and
+// sets status=active. tenant_id must match the X-Tenant-ID header.
 export function createAgent(name, role, capabilities, departmentId) {
   return post("/svc/registry/registry/agents", {
-    id: uuid4(), tenant_id: session.tenant,
-    name, role, capabilities, department_id: departmentId,
-    status: "active", version: "1.0.0",
+    tenant_id: session.tenant,
+    name, role,
+    capabilities: (capabilities || []).map(c => typeof c === "string" ? c : c.capability || c.name || String(c)),
+    department_id: departmentId || "",
   });
 }
 
