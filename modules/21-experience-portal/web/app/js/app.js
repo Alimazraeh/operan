@@ -16,6 +16,7 @@ import { viewSupervision } from "./views/supervision.js";
 import { viewAgents } from "./views/agents.js";
 import { viewIngestion } from "./views/ingestion.js";
 import { viewConnectors } from "./views/connectors.js";
+import { viewTenants } from "./views/tenants.js";
 import { viewPolicies } from "./views/policies.js";
 import { viewCost } from "./views/cost.js";
 import { viewObservability } from "./views/observability.js";
@@ -36,6 +37,7 @@ const VIEWS = {
   ingestion:    { title: "Knowledge",     render: viewIngestion },
   connectors:   { title: "Connectors",    render: viewConnectors },
   settings:     { title: "Settings",      render: viewSettings },
+  tenants:      { title: "Tenants",       render: viewTenants },
   observability:{ title: "Observability", render: viewObservability },
 };
 
@@ -292,8 +294,10 @@ async function handleRegister() {
 // record for this workspace (idempotent: skips if it already exists).
 async function ensureTenantRecord() {
   try {
-    const existing = await get(SVC.tenant + "/tenants/" + session.tenant);
-    if (existing.ok) return;
+    // M01 assigns UUID ids; workspace tenants are slugs — match either.
+    const listR = await get(SVC.tenant + "/tenants?page_size=100");
+    const items = (listR.data && listR.data.items) || [];
+    if (items.some(t => t.id === session.tenant || t.slug === session.tenant)) return;
     const pending = JSON.parse(localStorage.getItem("operan.pendingTenant") || "null");
     const name = pending && pending.id === session.tenant ? pending.name : session.tenant;
     const plan = (pending && pending.plan) || "medium";

@@ -1,6 +1,6 @@
 // Settings — Admin settings, API keys, integrations, billing
 import { $, esc, card, btn, emptyState, toast } from "../ui.js";
-import { listConnectors, createConnector, listPolicies, session, del, SVC } from "../api.js";
+import { listConnectors, createConnector, listPolicies, session, del, SVC, unwrapList } from "../api.js";
 
 export default async function viewSettings() {
   const [connRes, polRes] = await Promise.all([
@@ -8,8 +8,8 @@ export default async function viewSettings() {
     listPolicies(1, 20),
   ]);
 
-  const connectors = connRes.data?.items || connRes.data || [];
-  const policies = polRes.data?.items || polRes.data || [];
+  const connectors = unwrapList(connRes, "connectors");
+  const policies = unwrapList(polRes, "policies");
 
   return `
     <div class="two-col">

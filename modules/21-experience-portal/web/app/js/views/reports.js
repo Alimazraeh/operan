@@ -1,6 +1,6 @@
 // Reports — Hourly, daily, weekly, monthly operational reports
 import { $, esc, statCard, card, btn, toast } from "../ui.js";
-import { listSpans, listCostEvents } from "../api.js";
+import { listSpans, listCostEvents, unwrapList } from "../api.js";
 
 export default async function viewReports(period) {
   period = period || "daily";
@@ -11,8 +11,8 @@ export default async function viewReports(period) {
     listCostEvents(1, 100),
   ]);
 
-  const spanData = spansRes.status === 'fulfilled' ? (spansRes.value.data?.items || spansRes.value.data || []) : [];
-  const costData = costsRes.status === 'fulfilled' ? (costsRes.value.data?.items || costsRes.value.data || []) : [];
+  const spanData = spansRes.status === 'fulfilled' ? unwrapList(spansRes.value, "items") : [];
+  const costData = costsRes.status === 'fulfilled' ? unwrapList(costsRes.value, "events") : [];
 
   const byStatus = {};
   spanData.forEach(s => { const st = s.status || "unknown"; byStatus[st] = (byStatus[st] || 0) + 1; });
