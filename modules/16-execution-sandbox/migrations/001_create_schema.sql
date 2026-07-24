@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS sandbox_profiles (
     UNIQUE(tenant_id, name)
 );
 
-CREATE INDEX idx_profiles_tenant ON sandbox_profiles(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_tenant ON sandbox_profiles(tenant_id);
 
 CREATE TABLE IF NOT EXISTS sandbox_instances (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -38,5 +38,5 @@ CREATE TABLE IF NOT EXISTS sandbox_instances (
     created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_instances_tenant ON sandbox_instances(tenant_id, created_at DESC);
-CREATE INDEX idx_instances_agent  ON sandbox_instances(tenant_id, agent_id);
+CREATE INDEX IF NOT EXISTS idx_instances_tenant ON sandbox_instances(tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_instances_agent  ON sandbox_instances(tenant_id, agent_id);
