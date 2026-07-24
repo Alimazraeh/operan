@@ -1426,12 +1426,35 @@
   ],
   "org_chart": [
     {
+      "id": "pos-chro-human-01",
+      "title": "Chief Human Resources Officer",
+      "role_type": "director",
+      "holder_type": "human",
+      "human_ref": "admin",
+      "unit": "Executive",
+      "autonomy_tier": "execute",
+      "decision_rights": [
+        {
+          "decision": "final authority on hiring, termination, and compensation",
+          "authority": "decide"
+        },
+        {
+          "decision": "HR strategy and budget",
+          "authority": "decide"
+        }
+      ],
+      "escalates_to": "",
+      "approval_gate_refs": []
+    },
+    {
       "id": "pos-hr-vp-01",
       "title": "VP of People / Chief HR Officer",
       "role_type": "director",
       "holder_type": "ai_agent",
       "agent_def_id": "hr-vp-01",
-      "autonomy_tier": "coordinate"
+      "autonomy_tier": "coordinate",
+      "reports_to": "pos-chro-human-01",
+      "escalates_to": "pos-chro-human-01"
     },
     {
       "id": "pos-hrbp-senior-01",
