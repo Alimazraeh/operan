@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -97,6 +98,34 @@ func (h *EvaluateHandler) EvaluatePolicy(w http.ResponseWriter, r *http.Request)
 			"effect":      rm.Effect,
 			"description": rm.Description,
 		}
+	}
+
+	// The audit trail is the point of an evaluation API — record every call.
+	// Best-effort: an audit failure must not turn an answered evaluation
+	// into a 500.
+	auditResult := "denied"
+	if result.Allowed {
+		auditResult = "allowed"
+	}
+	audit := &store.PolicyAudit{
+		TenantID:        tenantID,
+		ResourceType:    req.Resource,
+		RequestedAction: req.ActionType,
+		Result:          auditResult,
+	}
+	if req.AgentID != "" {
+		audit.AgentID = &req.AgentID
+	}
+	if result.PolicyName != "" {
+		audit.MatchedPolicyName = &result.PolicyName
+	}
+	if req.AgentRole != "" || req.DepartmentID != "" || result.Reason != "" {
+		audit.RequestData = map[string]interface{}{
+			"agent_role": req.AgentRole, "department_id": req.DepartmentID, "reason": result.Reason,
+		}
+	}
+	if err := h.auditStore.Create(r.Context(), audit); err != nil {
+		log.Printf("[M10] audit write failed (evaluation still answered): %v", err)
 	}
 
 	response := map[string]interface{}{

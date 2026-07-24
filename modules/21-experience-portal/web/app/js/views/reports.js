@@ -1,99 +1,137 @@
-// Reports — Hourly, daily, weekly, monthly operational reports
-import { $, esc, statCard, card, btn, toast } from "../ui.js";
-import { listSpans, listCostEvents, unwrapList } from "../api.js";
+// Reports — how the departments actually performed.
+//
+// Every number here is computed from the real ledger: service requests (with
+// their SLA clocks and token counts) and human-gate turnarounds. KPI
+// definitions ship on the templates; measured values arrive when the
+// measurement endpoint lands — until then they are honestly marked.
+import { esc, rel, statCard, toast } from "../ui.js";
+import { unwrapList, listDepartments, getDepartment, listDeptRequests, listHumanTasks } from "../api.js";
+
+const PERIODS = { "7d": 7 * 864e5, "30d": 30 * 864e5, "all": Infinity };
 
 export default async function viewReports(period) {
-  period = period || "daily";
-  const from = getPeriodStart(period);
+  period = PERIODS[period] ? period : "30d";
+  const cutoff = Date.now() - PERIODS[period];
 
-  const [spansRes, costsRes] = await Promise.allSettled([
-    listSpans(null, from.toISOString(), new Date().toISOString(), 1, 500),
-    listCostEvents(1, 100),
-  ]);
+  const [deptR, tasksR] = await Promise.allSettled([listDepartments(1, 50), listHumanTasks()]);
+  const depts = (deptR.status === "fulfilled" ? unwrapList(deptR.value) : [])
+    .filter(d => d.status === "operational" || d.status === "degraded");
+  const gates = (tasksR.status === "fulfilled" ? unwrapList(tasksR.value, "tasks") : [])
+    .filter(t => t.responded_at && new Date(t.created_at).getTime() >= cutoff);
 
-  const spanData = spansRes.status === 'fulfilled' ? unwrapList(spansRes.value, "items") : [];
-  const costData = costsRes.status === 'fulfilled' ? unwrapList(costsRes.value, "events") : [];
+  const details = (await Promise.allSettled(depts.map(d => getDepartment(d.id))))
+    .filter(r => r.status === "fulfilled" && r.value.ok).map(r => r.value.data);
+  const reqLists = await Promise.allSettled(depts.map(d => listDeptRequests(d.id)));
 
-  const byStatus = {};
-  spanData.forEach(s => { const st = s.status || "unknown"; byStatus[st] = (byStatus[st] || 0) + 1; });
+  // ── Per-department performance from requests ──
+  const perf = depts.map((dept, i) => {
+    const reqs = (reqLists[i].status === "fulfilled" && reqLists[i].value.ok ? unwrapList(reqLists[i].value) : [])
+      .filter(r => new Date(r.created_at).getTime() >= cutoff);
+    const completed = reqs.filter(r => r.status === "completed");
+    const failed = reqs.filter(r => r.status === "failed" || r.status === "cancelled");
+    const respMet = reqs.filter(r => r.first_response_at && r.sla_response_due &&
+      new Date(r.first_response_at) <= new Date(r.sla_response_due));
+    const respMeasured = reqs.filter(r => r.first_response_at && r.sla_response_due);
+    const resMet = completed.filter(r => !r.sla_resolution_due || !r.completed_at ||
+      new Date(r.completed_at) <= new Date(r.sla_resolution_due));
+    const cycles = completed.filter(r => r.completed_at)
+      .map(r => new Date(r.completed_at) - new Date(r.created_at)).sort((a, b) => a - b);
+    const tokens = reqs.reduce((s, r) => s + (r.tokens_used || 0), 0);
+    const byService = {};
+    reqs.forEach(r => {
+      const k = r.service_name || r.service_id || "unknown";
+      byService[k] = byService[k] || { total: 0, completed: 0, tokens: 0 };
+      byService[k].total++;
+      if (r.status === "completed") byService[k].completed++;
+      byService[k].tokens += r.tokens_used || 0;
+    });
+    return { dept, detail: details.find(d => d.id === dept.id), reqs, completed, failed,
+      respMet, respMeasured, resMet, cycles, tokens, byService };
+  }).filter(p => p.reqs.length > 0 || (p.detail?.kpis || []).length > 0);
 
-  const totalSpans = spanData.length;
-  const errorSpans = byStatus["error"] || byStatus["failed"] || 0;
-  const successRate = totalSpans > 0 ? ((totalSpans - errorSpans) / totalSpans * 100).toFixed(1) : "—";
-  const totalCost = costData.reduce((sum, c) => sum + (c.amount || c.cost || c.usage || 0), 0);
+  const allReqs = perf.flatMap(p => p.reqs);
+  const allCompleted = perf.flatMap(p => p.completed);
+  const allCycles = perf.flatMap(p => p.cycles).sort((a, b) => a - b);
+  const gateTimes = gates.map(t => new Date(t.responded_at) - new Date(t.created_at)).sort((a, b) => a - b);
+  const slaMet = perf.reduce((s, p) => s + p.respMet.length, 0);
+  const slaMeasured = perf.reduce((s, p) => s + p.respMeasured.length, 0);
 
-  return `
+  window._reportPerf = perf;
+  window._reportPeriod = period;
+
+  return `<div id="reportsRoot">
     <div class="toolbar">
       <div style="display:flex;gap:6px">
-        ${timeBtn(period, "hourly")}${timeBtn(period, "daily")}${timeBtn(period, "weekly")}${timeBtn(period, "monthly")}
+        ${Object.keys(PERIODS).map(p =>
+          `<button class="${p === period ? "primary" : "ghost"} sm" onclick="window.go('reports','${p}')">${p}</button>`).join("")}
       </div>
       <div style="flex:1"></div>
-      ${btn("Export CSV", "ghost sm", "toast('Export — requires backend CSV endpoint', 'info')")}
+      <button class="ghost sm" onclick="window.reportExportCsv()">Export CSV</button>
     </div>
 
     <div class="stats-grid">
-      ${statCard("📡", "Total Events", totalSpans, "Operational events")}
-      ${statCard("✅", "Success Rate", successRate + "%", totalSpans + " events tracked")}
-      ${statCard("❌", "Errors", errorSpans, "Failed events")}
-      ${statCard("💰", "Total Cost", "$" + totalCost.toFixed(2), "In the selected period")}
+      ${statCard("📨", "Requests", allReqs.length, `${period} window`)}
+      ${statCard("✅", "Completed", allCompleted.length, allReqs.length ? Math.round(allCompleted.length / allReqs.length * 100) + "% of requests" : "—")}
+      ${statCard("⏱", "SLA first-response", slaMeasured ? Math.round(slaMet / slaMeasured * 100) + "%" : "—", slaMeasured ? `${slaMet}/${slaMeasured} inside SLA` : "no measured responses")}
+      ${statCard("🔁", "Median cycle time", allCycles.length ? dur(allCycles[Math.floor(allCycles.length / 2)]) : "—", "request → completion")}
+      ${statCard("🧑‍⚖️", "Gate turnaround", gateTimes.length ? dur(gateTimes[Math.floor(gateTimes.length / 2)]) : "—", gateTimes.length ? `median of ${gateTimes.length} decisions` : "no decided gates")}
     </div>
 
-    ${card("Event Breakdown", `Events by status (${period})`, `
-      <div class="card-body">
-        ${Object.keys(byStatus).length === 0
-          ? "<div class='empty'>No data for this period</div>"
-          : `<div class="kv">${Object.entries(byStatus).map(([s, c]) => `<dt>${s}</dt><dd>${c}</dd>`).join("")}</div>`}
-      </div>
-    `)}
-
-    ${card("Recent Cost Events", "Last 20", `
-      <div class="card-body" style="padding:0">
-        ${costData.slice(0, 20).length === 0
-          ? "<div class='empty'>No cost data</div>"
-          : costData.slice(0, 20).map(costRow).join("")}
-      </div>
-    `)}
-
-    ${card("Recent Activity", "Latest events", `
-      <div class="card-body" style="padding:0">
-        ${spanData.slice(0, 15).length === 0
-          ? "<div class='empty'>No activity data</div>"
-          : spanData.slice(0, 15).map(spanRow).join("")}
-      </div>
-    `)}
-  `;
-}
-
-function timeBtn(active, period) {
-  return `<button class="${active === period ? 'primary' : 'ghost'} sm" onclick="window.go('reports', '${period}')">${period}</button>`;
-}
-
-function getPeriodStart(period) {
-  const now = new Date();
-  const from = new Date(now);
-  if (period === "hourly") from.setHours(now.getHours() - 1);
-  else if (period === "daily") from.setDate(now.getDate() - 1);
-  else if (period === "weekly") from.setDate(now.getDate() - 7);
-  else if (period === "monthly") from.setMonth(now.getMonth() - 1);
-  return from;
-}
-
-function costRow(c) {
-  const amount = c.amount || c.cost || c.usage || 0;
-  return `<div class="row-item">
-    <div class="grow"><div class="t">${esc(c.agent_name || c.agent_id || c.entity || "Unknown")}</div>
-    <div class="m">${esc(c.event_type || c.type || "cost")}${c.description ? ` · ${esc(c.description)}` : ""}</div></div>
-    <div style="font-weight:700;color:var(--gold)">$${parseFloat(amount).toFixed(2)}</div>
+    ${perf.length === 0
+      ? `<div class="card"><div class="empty">No department activity in this window.</div></div>`
+      : perf.map(p => deptReport(p)).join("")}
   </div>`;
 }
 
-function spanRow(s) {
-  const statusBadge = (s.status === "ok" || s.status === "success") ? "ok"
-    : (s.status === "error" || s.status === "failed") ? "error" : "pending";
-  return `<div class="row-item">
-    <div class="grow"><div class="t">${esc(s.span_name || s.name || "Event")}</div>
-    <div class="m">${esc(s.service || "unknown")}${s.trace_id ? ` · trace ${esc(s.trace_id.slice(0, 8))}` : ""}
-    ${s.start_time ? ` · ${new Date(s.start_time).toLocaleTimeString()}` : ""}</div></div>
-    <span class="badge ${statusBadge}">${esc(s.status || "unknown")}</span>
+function deptReport(p) {
+  const kpis = p.detail?.kpis || [];
+  const respPct = p.respMeasured.length ? Math.round(p.respMet.length / p.respMeasured.length * 100) : null;
+  const resPct = p.completed.length ? Math.round(p.resMet.length / p.completed.length * 100) : null;
+  const median = p.cycles.length ? dur(p.cycles[Math.floor(p.cycles.length / 2)]) : "—";
+  return `<div class="card" style="margin-bottom:18px">
+    <h3>${esc(p.dept.name)} <span class="tag">${p.reqs.length} request(s)</span></h3>
+    <div class="m" style="margin:6px 0 10px">
+      ${p.completed.length} completed · ${p.failed.length} failed/cancelled
+      ${respPct != null ? ` · first response in SLA <b>${respPct}%</b>` : ""}
+      ${resPct != null ? ` · resolved in SLA <b>${resPct}%</b>` : ""}
+      · median cycle <b>${median}</b> · ${p.tokens.toLocaleString()} tokens</div>
+    ${Object.entries(p.byService).map(([svc, v]) => `
+      <div class="row-item">
+        <div class="grow"><div class="t">${esc(svc)}</div>
+        <div class="m">${v.total} request(s) · ${v.completed} completed · ${v.tokens.toLocaleString()} tokens</div></div>
+      </div>`).join("")}
+    ${kpis.length ? `
+      <div class="hint" style="margin:12px 0 4px">KPI definitions (from the template) — measured values land with the
+      measurement endpoint; not invented here.</div>
+      ${kpis.slice(0, 8).map(k => `
+        <div class="row-item">
+          <div class="grow"><div class="t">📈 ${esc(k.name)}</div>
+          <div class="m">${esc(k.metric_type || "")}${k.unit ? " · " + esc(k.unit) : ""}</div></div>
+          <div class="actions"><span class="badge draft">not yet measured</span></div>
+        </div>`).join("")}` : ""}
   </div>`;
 }
+
+function dur(ms) {
+  const s = Math.round(ms / 1000);
+  if (s < 60) return s + "s";
+  if (s < 3600) return Math.floor(s / 60) + "m " + (s % 60) + "s";
+  if (s < 86400) return Math.floor(s / 3600) + "h " + Math.floor((s % 3600) / 60) + "m";
+  return Math.floor(s / 86400) + "d " + Math.floor((s % 86400) / 3600) + "h";
+}
+
+// Real export: the computed per-service table, straight to a CSV download.
+window.reportExportCsv = function () {
+  const perf = window._reportPerf || [];
+  if (perf.length === 0) { toast("Nothing to export in this window", "warn"); return; }
+  const rows = [["department", "service", "requests", "completed", "tokens"]];
+  perf.forEach(p => Object.entries(p.byService).forEach(([svc, v]) =>
+    rows.push([p.dept.name, svc, v.total, v.completed, v.tokens])));
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.download = `operan-report-${window._reportPeriod || "30d"}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("Report exported", "ok");
+};
