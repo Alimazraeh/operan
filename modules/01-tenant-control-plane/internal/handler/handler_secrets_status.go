@@ -292,6 +292,11 @@ func GetModuleStatus(h *middleware.Handler) http.HandlerFunc {
 func extractPathParam(r *http.Request, name string) (string, bool) {
 	path := r.URL.Path
 	rawParts := strings.Split(strings.Trim(path, "/"), "/")
+	// Routes are served under the /v1 base path — the segment matching
+	// below expects resource-rooted parts ("tenants", ...), so strip it.
+	if len(rawParts) > 0 && rawParts[0] == "v1" {
+		rawParts = rawParts[1:]
+	}
 	n := len(rawParts)
 
 	switch n {

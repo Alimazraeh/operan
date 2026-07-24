@@ -16,7 +16,7 @@ export async function viewAgents() {
             title: "🤖 " + esc(a.name),
             meta: `${esc(a.role)} · ${(a.capabilities||[]).map(esc).join(", ") || "—"} · v${esc(a.version||"1.0.0")}`,
             badges: badge(a.status || "active"),
-            click: `window.go('agent','${a.id}')`,
+            onClick: `window.go('agent','${esc(a.id)}')`,
           })).join("")}
     </div>
     <div class="card">

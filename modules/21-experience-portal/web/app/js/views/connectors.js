@@ -1,14 +1,18 @@
 // Enterprise Connectors (Module 18): connector management, sync, tools, health.
-import { SVC, get, post, del, uuid4, unwrapList } from "../api.js";
+import { SVC, get, post, del, unwrapList } from "../api.js";
 import { $, esc, badge, rel, toast, rowItem } from "../ui.js";
 
+// The connector types Module 18 actually accepts (DB-enforced enum).
 const CONNECTOR_TYPES = [
   { id: "m365", name: "Microsoft 365", icon: "🟦", desc: "Outlook, SharePoint, Teams, OneDrive" },
   { id: "salesforce", name: "Salesforce", icon: "🔵", desc: "Accounts, Contacts, Opportunities" },
   { id: "sap", name: "SAP", icon: "🔷", desc: "ERP modules: FI, CO, SD, MM" },
   { id: "hubspot", name: "HubSpot", icon: "🟠", desc: "CRM, Marketing, Service Hub" },
-  { id: "rest", name: "REST API", icon: "🔗", desc: "Custom API endpoint" },
+  { id: "sharepoint", name: "SharePoint", icon: "📁", desc: "Sites and document libraries" },
+  { id: "slack", name: "Slack", icon: "💬", desc: "Channels and messages" },
+  { id: "generic_rest", name: "REST API", icon: "🔗", desc: "Custom API endpoint" },
   { id: "smtp", name: "SMTP", icon: "📧", desc: "Email connector" },
+  { id: "custom", name: "Custom", icon: "🧩", desc: "Custom integration" },
 ];
 
 export async function viewConnectors() {
@@ -35,9 +39,9 @@ export async function viewConnectors() {
 
     <!-- Tab navigation -->
     <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
-      <button class="sm conn-tab active" data-tab="connectors">Connectors</button>
-      <button class="sm conn-tab" data-tab="sync">Sync History</button>
-      <button class="sm conn-tab" data-tab="tools">Tools</button>
+      <button class="sm conn-tab active" onclick="window.connTab('connectors', this)">Connectors</button>
+      <button class="sm conn-tab" onclick="window.connTab('sync', this)">Sync History</button>
+      <button class="sm conn-tab" onclick="window.connTab('tools', this)">Tools</button>
     </div>
 
     <!-- Connectors tab -->
@@ -54,15 +58,13 @@ export async function viewConnectors() {
         ${connectors.length === 0
           ? `<div class="empty">No connectors configured. Add one above.</div>`
           : connectors.map(c => {
-              const typeInfo = CONNECTOR_TYPES.find(t => t.id === c.type || t.id === c.connector_type);
+              const typeInfo = CONNECTOR_TYPES.find(t => t.id === c.connector_type || t.id === c.type);
               return `<div class="card" style="margin-bottom:12px">
                 <div class="frow">
                   <h3 style="flex:1">${esc(typeInfo?.icon || "🔗")}${esc(c.name || c.id.slice(0,8))}</h3>
                   <div class="frow">
-                    ${c.status === "active"
-                      ? `<button class="sm" onclick="window.connSync('${esc(c.id)}')">Sync now</button>
-                         <button class="ghost sm" onclick="window.connHealth('${esc(c.id)}')">Health</button>`
-                      : `<button class="ok sm" onclick="window.connEnable('${esc(c.id)}')">Enable</button>`}
+                    <button class="sm" onclick="window.connSync('${esc(c.id)}')">Sync now</button>
+                    <button class="ghost sm" onclick="window.connHealth('${esc(c.id)}')">Health</button>
                     <button class="bad sm" onclick="window.connDelete('${esc(c.id)}')">Delete</button>
                   </div>
                 </div>
@@ -113,16 +115,14 @@ export async function viewConnectors() {
     </div>`;
 }
 
-// ── Tab switching ──────────────────────────────────────────
-document.querySelectorAll(".conn-tab").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".conn-tab").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    document.querySelectorAll(".conn-panel").forEach(p => p.style.display = "none");
-    const panel = document.getElementById("panel-" + btn.dataset.tab);
-    if (panel) panel.style.display = "block";
-  });
-});
+// ── Tab switching (inline handlers survive re-renders) ─────
+window.connTab = function (name, btn) {
+  document.querySelectorAll(".conn-tab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  document.querySelectorAll(".conn-panel").forEach(p => p.style.display = "none");
+  const panel = document.getElementById("panel-" + name);
+  if (panel) panel.style.display = "block";
+};
 
 // ── Connector CRUD ─────────────────────────────────────────
 window.connCreate = async function () {
@@ -130,11 +130,11 @@ window.connCreate = async function () {
   const typeInfo = CONNECTOR_TYPES.find(t => t.id === type);
   try {
     const r = await post(SVC.connectors + "/v1/connectors", {
-      id: uuid4(),
       name: typeInfo?.name || type,
-      type,
-      status: "inactive",
-      config: { endpoint: "" },
+      connector_type: type,
+      auth_method: "api_key",
+      config: {}, credentials: {},
+      sync_frequency: "manual",
     });
     if (r.ok) { toast("Connector " + esc(typeInfo?.name || type) + " added", "ok"); window.go("connectors"); }
     else toast("Failed: " + esc(JSON.stringify(r.data).slice(0, 120)), "bad");
@@ -146,16 +146,6 @@ window.connDelete = async function (id) {
   const r = await del(SVC.connectors + "/v1/connectors/" + encodeURIComponent(id));
   if (r.ok) { toast("Connector deleted", "ok"); window.go("connectors"); }
   else toast("Failed: " + esc(JSON.stringify(r.data).slice(0, 100)), "bad");
-};
-
-window.connEnable = async function (id) {
-  try {
-    const r = await patch(SVC.connectors + "/v1/connectors/" + encodeURIComponent(id), {
-      status: "active",
-    });
-    if (r.ok) { toast("Connector enabled", "ok"); window.go("connectors"); }
-    else toast("Failed: " + esc(JSON.stringify(r.data).slice(0, 100)), "bad");
-  } catch (e) { toast("Error: " + esc(String(e)), "bad"); }
 };
 
 window.connSync = async function (id) {

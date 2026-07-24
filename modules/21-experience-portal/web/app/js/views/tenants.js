@@ -1,5 +1,5 @@
 // Tenants: CRUD, quota management, lifecycle (Module 01).
-import { SVC, get, post, patch, del, uuid4, session } from "../api.js";
+import { SVC, get, patch, del, session, registerTenant } from "../api.js";
 import { $, esc, badge, rel, toast, rowItem } from "../ui.js";
 
 export async function viewTenants() {
@@ -13,7 +13,7 @@ export async function viewTenants() {
 
   const tenants = (tR.data && tR.data.items) || [];
   // The signed-in tenant's own record drives the quota card.
-  const current = tenants.find(t => t.id === session.tenant || t.slug === session.tenant) || null;
+  const current = tenants.find(t => t.id === session.tenant || t.slug === session.tenant || t.name === session.tenant) || null;
   const quotas = (current && current.quota) || {};
   const agentsUsed = (aR.data && aR.data.total) || 0;
   window._currentTenantRecordId = current ? current.id : null;
@@ -35,7 +35,7 @@ export async function viewTenants() {
       <div class="frow" style="margin-bottom:14px">
         <input id="tenantName" placeholder="tenant name (e.g. acme-corp)">
         <select id="tenantPlan" style="max-width:140px">
-          <option>starter</option><option>enterprise</option><option>sovereign</option>
+          <option selected>saas</option><option>enterprise</option><option>sovereign</option>
         </select>
         <button class="sm" onclick="window.createTenant()">Create tenant</button>
       </div>
@@ -58,8 +58,8 @@ export async function viewTenants() {
         <div class="hint">Set per-tenant resource limits for agents, tokens, storage, and execution throughput.</div>
         <div class="grid g2">
           <div><label>Max agents</label><input id="quotaAgents" type="number" value="${esc(String(quotas.max_agents || 100))}"></div>
-          <div><label>Max tokens/day</label><input id="quotaTokens" type="number" value="${esc(String(quotas.max_tokens_per_day || 100000))}"></div>
-          <div><label>Max storage (MB)</label><input id="quotaStorage" type="number" value="${esc(String(quotas.max_storage_mb || 5120))}"></div>
+          <div><label>Max tokens/month</label><input id="quotaTokens" type="number" value="${esc(String(quotas.max_monthly_tokens || 5000000))}"></div>
+          <div><label>Max storage (GB)</label><input id="quotaStorage" type="number" value="${esc(String(quotas.max_storage_gb || 20))}"></div>
           <div><label>Max workflows/day</label><input id="quotaWorkflows" type="number" value="${esc(String(quotas.max_workflows_per_day || 1000))}"></div>
         </div>
         <div style="margin-top:12px"><button class="sm" onclick="window.updateQuotas()">Update quotas</button></div>
@@ -79,14 +79,13 @@ export async function viewTenants() {
 
 window.createTenant = async function () {
   const name = $("tenantName").value.trim();
-  if (!name) { toast("Tenant name is required", "bad"); return; }
+  if (!name) { toast("Tenant name is required", "warn"); return; }
   try {
-    const r = await post(SVC.tenant + "/tenants", {
-      id: uuid4(), name, plan: $("tenantPlan").value || "starter",
-      status: "active", created_by: "portal-admin",
-    });
+    // Same payload shape the login flow provisions with — M01 assigns the
+    // UUID id; the slug is how workspaces reference the tenant.
+    const r = await registerTenant(name, name.toLowerCase().replace(/\s+/g, "-"), $("tenantPlan").value || "medium");
     if (r.ok) { toast("Tenant " + esc(name) + " created", "ok"); window.go("tenants"); }
-    else toast("Failed: " + esc(JSON.stringify(r.data).slice(0, 120)), "bad");
+    else toast("Failed: " + esc(r.data?.detail || r.data?.error?.message || JSON.stringify(r.data || {}).slice(0, 120)), "bad");
   } catch (e) { toast("Error: " + esc(String(e)), "bad"); }
 };
 
@@ -116,8 +115,8 @@ window.updateQuotas = async function () {
   const storage = $("quotaStorage").value;
   const workflows = $("quotaWorkflows").value;
   if (agents) quotas.max_agents = parseInt(agents);
-  if (tokens) quotas.max_tokens_per_day = parseInt(tokens);
-  if (storage) quotas.max_storage_mb = parseInt(storage);
+  if (tokens) quotas.max_monthly_tokens = parseInt(tokens);
+  if (storage) quotas.max_storage_gb = parseInt(storage);
   if (workflows) quotas.max_workflows_per_day = parseInt(workflows);
   if (!Object.keys(quotas).length) return;
   if (!window._currentTenantRecordId) { toast("No tenant record for this session tenant", "bad"); return; }

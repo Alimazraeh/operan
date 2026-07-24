@@ -310,7 +310,7 @@ async function ensureTenantRecord() {
     // M01 assigns UUID ids; workspace tenants are slugs — match either.
     const listR = await get(SVC.tenant + "/tenants?page_size=100");
     const items = (listR.data && listR.data.items) || [];
-    if (items.some(t => t.id === session.tenant || t.slug === session.tenant)) return;
+    if (items.some(t => t.id === session.tenant || t.slug === session.tenant || t.name === session.tenant)) return;
     const pending = JSON.parse(localStorage.getItem("operan.pendingTenant") || "null");
     const name = pending && pending.id === session.tenant ? pending.name : session.tenant;
     const plan = (pending && pending.plan) || "medium";
