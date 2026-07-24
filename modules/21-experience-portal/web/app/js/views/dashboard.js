@@ -1,12 +1,12 @@
 // Dashboard — KPI overview at a glance
 import { $, esc, statCard, card, btn } from "../ui.js";
-import { get, listAgents, listTemplates, listWorkflows, listSupervisionQueue, listCostEvents, listPolicies } from "../api.js";
+import { get, listAgents, listDepartments, listWorkflows, listSupervisionQueue, listCostEvents, listPolicies } from "../api.js";
 
 export default async function viewDashboard(page) {
   // Fetch stats in parallel
   const fetches = [
     listAgents(1, 50),
-    listTemplates(1, 10),
+    listDepartments(1, 50),
     listWorkflows(1, 20),
     listSupervisionQueue(1, 10),
     listCostEvents(1, 10),
@@ -17,11 +17,14 @@ export default async function viewDashboard(page) {
   function items(r) {
     if (r.status !== 'fulfilled') return [];
     const d = r.value?.data;
-    return d?.items || d || [];
+    if (Array.isArray(d)) return d;
+    if (Array.isArray(d?.items)) return d.items;
+    if (Array.isArray(d?.data)) return d.data;
+    return [];
   }
 
   const agentsCount = items(results[0]).length;
-  const templatesCount = items(results[1]).length;
+  const departmentsCount = items(results[1]).length;
   const workflowsCount = items(results[2]).length;
   const supervisionCount = items(results[3]).length;
   const costsCount = items(results[4]).length;
@@ -33,7 +36,7 @@ export default async function viewDashboard(page) {
 
   return `
     <div class="stats-grid">
-      ${statCard("🏢", "Departments", templatesCount, "Templates available")}
+      ${statCard("🏢", "Departments", departmentsCount, "Deployed departments")}
       ${statCard("👥", "Agents", agentsCount, "Registered agents")}
       ${statCard("⚙️", "Workflows", workflowsCount, "Active workflows")}
       ${statCard("🧑‍⚖️", "Pending Reviews", supervisionCount, "Awaiting approval")}
@@ -65,7 +68,7 @@ export default async function viewDashboard(page) {
           <dt>Agents Online</dt><dd>${agentsCount}</dd>
           <dt>Workflows Running</dt><dd>${workflowsData.filter(w => w.status === "running" || w.status === "in_progress").length}</dd>
           <dt>Policies Active</dt><dd>${policiesData.filter(p => p.is_active !== false).length || policiesCount}</dd>
-          <dt>Department Templates</dt><dd>${templatesCount} available</dd>
+          <dt>Departments</dt><dd>${departmentsCount} deployed</dd>
         </div>
       </div>
     `)}
