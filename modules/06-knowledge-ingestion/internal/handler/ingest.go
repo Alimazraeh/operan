@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/operan/modules/06-knowledge-ingestion/internal/ctxkeys"
@@ -64,8 +65,14 @@ func (h *IngestHandler) IngestSource(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// The job outlives this request — never hand it the request context
-	// (it cancels the moment the response is written).
-	h.worker.ProcessJob(context.Background(), job.ID, h.serviceToken)
+	// (it cancels the moment the response is written). Forward the caller's
+	// token so downstream writes (M07) run under the caller's identity;
+	// the configured service token is only a fallback for recovery runs.
+	token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if token == "" {
+		token = h.serviceToken
+	}
+	h.worker.ProcessJob(context.Background(), job.ID, token)
 
 	WriteJSON(w, http.StatusOK, map[string]any{
 		"job_id":       job.ID,
