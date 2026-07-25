@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/operan/modules/02-identity-access/internal/authentik"
 	"github.com/operan/modules/02-identity-access/internal/middleware"
 	"github.com/operan/modules/02-identity-access/internal/models"
+	"github.com/operan/modules/02-identity-access/internal/store"
 )
 
 // ---------------------------------------------------------------------------
@@ -59,6 +61,9 @@ type DelegationHandler struct {
 	Auth delegationAuthClient
 
 	Publisher publisher
+
+	// Roles is the local store, used when Authentik is unreachable.
+	Roles *store.DelegationRoleStore
 
 	// groupIndex maps "tenant::roleName" → Authentik group UUID.
 	groupIndex map[string]string
@@ -268,6 +273,15 @@ func (h *DelegationHandler) Create(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(role)
 }
 
+// roles returns the local store, creating one if a construction path left it
+// nil — a nil store must not panic a request.
+func (h *DelegationHandler) roles() *store.DelegationRoleStore {
+	if h.Roles == nil {
+		h.Roles = store.NewDelegationRoleStore()
+	}
+	return h.Roles
+}
+
 // ---------------------------------------------------------------------------
 // List — GET /api/v1/iam/admin/delegations
 // ---------------------------------------------------------------------------
@@ -293,9 +307,21 @@ func (h *DelegationHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
+	// Authentik is an optional upstream; where it is unreachable the local
+	// store answers. Fifth site with this shape — see 954d3b1 and 3c84925.
 	allGroups, err := h.Auth.Groups().List(ctx)
 	if err != nil {
-		http.Error(w, `{"error":"failed to list delegation roles"}`, http.StatusInternalServerError)
+		log.Printf("[IAM] Authentik unavailable (%v) — listing delegation roles from the local store", err)
+		local, localTotal, lerr := h.roles().List(tenantID, page, pageSize)
+		if lerr != nil {
+			http.Error(w, `{"error":"failed to list delegation roles"}`, http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"delegations": local, "total": localTotal,
+			"page": page, "page_size": pageSize,
+		})
 		return
 	}
 

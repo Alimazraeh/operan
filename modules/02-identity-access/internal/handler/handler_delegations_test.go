@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -864,5 +865,33 @@ func TestExtractDelegationRoleIDWithSlashes(t *testing.T) {
 	got := extractDelegationRoleID("/api/v1/iam/admin/delegations/role-456/")
 	if got != "role-456" {
 		t.Errorf("extractDelegationRoleID with trailing slash = %v, want role-456", got)
+	}
+}
+
+// Fifth site with the same shape: Authentik unreachable meant a flat 500
+// rather than the local store answering. See the roles and identity fixes.
+type unreachableGroups struct{ *delegMockGroups }
+
+func (unreachableGroups) List(_ context.Context) ([]*authentik.Group, error) {
+	return nil, errors.New("dial tcp: no such host")
+}
+
+type unreachableAuth struct{ *delegMockAuthClient }
+
+func (m unreachableAuth) Groups() authentik.GroupsAPIOps {
+	return unreachableGroups{m.GroupsAPI}
+}
+
+func TestDelegationListFallsBackToTheLocalStore(t *testing.T) {
+	h := &DelegationHandler{Auth: unreachableAuth{newDelegMockAuthClient()}}
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/admin/delegations?page_size=20", nil)
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+	req = setPrincipalInContext(req, &middleware.JWTToken{
+		Subject: "user-1", UserType: "user", TenantID: "tenant-1", Roles: []string{"admin"},
+	})
+	w := httptest.NewRecorder()
+	h.List(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("List() = %d, want 200 (%s)", w.Code, w.Body.String())
 	}
 }

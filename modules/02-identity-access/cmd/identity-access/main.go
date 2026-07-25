@@ -306,10 +306,13 @@ func main() {
 
 	// GET /api/v1/iam/audit/trails
 	mux.HandleFunc("/api/v1/iam/audit/", func(w http.ResponseWriter, r *http.Request) {
-		sub := ""
-		if len(r.URL.Path) > len("/api/v1/iam/audit/") {
-			sub = r.URL.Path[len("/api/v1/iam/audit/"):]
-			sub = sub[:len(sub)-1]
+		// The last character was stripped unconditionally, so the documented
+		// path /api/v1/iam/audit/trails became "trail" and 404'd — the
+		// endpoint only worked with a trailing slash nobody sends. Take the
+		// first path segment instead.
+		sub := strings.TrimPrefix(r.URL.Path, "/api/v1/iam/audit/")
+		if i := strings.IndexByte(sub, '/'); i >= 0 {
+			sub = sub[:i]
 		}
 
 		switch r.Method {
