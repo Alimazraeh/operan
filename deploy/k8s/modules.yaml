@@ -537,6 +537,20 @@ spec:
               key: secret
         - name: MODULE08_EVENT_BROKER_URL
           value: kafka.operan.svc.cluster.local:9092
+        # The capability layer: bindings are customer configuration and
+        # invocations are the audit trail — durable, or the service refuses to
+        # start. DSN from the operan-postgres secret (see agent-registry).
+        - name: MODULE08_DB_URL
+          valueFrom:
+            secretKeyRef:
+              name: operan-postgres
+              key: dsn
+        - name: MODULE08_POLICY_URL
+          value: http://policy-governance.operan.svc.cluster.local:8010
+        # Demo bootstrap: these tenants get the simulated provider bound to
+        # every capability, idempotently, at boot.
+        - name: MODULE08_SEED_SIMULATED_TENANTS
+          value: smoke-tenant
         readinessProbe:
           httpGet:
             path: /health

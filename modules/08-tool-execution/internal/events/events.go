@@ -1,11 +1,12 @@
 // Package events publishes AsyncAPI events for Module 08 (Tool Execution).
 // Topics:
-//   operan.tools.tool_registered
-//   operan.tools.tool_version_changed
-//   operan.tools.execution.requested
-//   operan.tools.execution.started
-//   operan.tools.execution.completed
-//   operan.tools.execution.failed
+//
+//	operan.tools.tool_registered
+//	operan.tools.tool_version_changed
+//	operan.tools.execution.requested
+//	operan.tools.execution.started
+//	operan.tools.execution.completed
+//	operan.tools.execution.failed
 package events
 
 import (

@@ -233,9 +233,9 @@ func (lw *loggingResponseWriter) WriteHeader(code int) {
 
 // ─── Context accessors ───────────────────────────────────────────────────────
 
-func TenantIDFromContext(ctx context.Context) string  { return ctxkeys.TenantIDFrom(ctx) }
-func UserIDFromContext(ctx context.Context) string     { return ctxkeys.UserIDFrom(ctx) }
-func RequestIDFromContext(ctx context.Context) string  { return ctxkeys.RequestIDFrom(ctx) }
+func TenantIDFromContext(ctx context.Context) string    { return ctxkeys.TenantIDFrom(ctx) }
+func UserIDFromContext(ctx context.Context) string      { return ctxkeys.UserIDFrom(ctx) }
+func RequestIDFromContext(ctx context.Context) string   { return ctxkeys.RequestIDFrom(ctx) }
 func UserRolesFromContext(ctx context.Context) []string { return ctxkeys.UserRolesFrom(ctx) }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

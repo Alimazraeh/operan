@@ -1,450 +1,210 @@
 openapi: "3.0.3"
 info:
-  title: Operan Tool Execution API
-  description: Tool registration, execution, and cost tracking. Module 08.
-  version: 1.0.0
+  title: Operan Capability & Execution API
+  description: |
+    Module 08 — the doing layer.
+
+    SOPs name business verbs (capabilities), never vendors. Which system
+    performs a verb for a tenant is a binding; every execution goes through one
+    governed funnel — resolve binding → validate input against the capability
+    contract → policy check (Module 10, deny closed) → authority check (the
+    acting seat's autonomy tier against the capability's minimum) → dispatch →
+    immutable invocation record. Refusals are first-class recorded outcomes.
+
+    Only the simulated provider executes today; it is flagged `simulated` on
+    every record it produces, and swapping it for a live provider is a binding
+    change, not a code change.
+
+    The legacy tool registry (`/tools*`) remains readable. The legacy echo
+    executor is gone: `POST /execute` and `POST /executions/{id}/retry` answer
+    410 and point at `/invoke`.
+  version: 2.0.0
   contact:
     name: Platform Architecture
     email: arch@operan.io
 
 servers:
-  - url: https://api.operan.io/v1/tools
-    description: Production
-  - url: https://api-staging.operan.io/v1/tools
-    description: Staging
+  - url: http://tool-execution.operan.svc.cluster.local:8008
+    description: In-cluster
 
 security:
   - BearerAuth: []
-  - TenantHeader: []
 
 paths:
-  /register:
+  /capabilities:
+    get:
+      operationId: listCapabilities
+      summary: The capability vocabulary
+      description: >
+        Product-owned and global: tenants differ in bindings, never in verbs.
+        Every entry is a permanent contract, added on evidence from the SOP
+        catalogue.
+      tags: [Capabilities]
+      responses:
+        "200":
+          description: The vocabulary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  capabilities:
+                    type: array
+                    items: { $ref: "#/components/schemas/Capability" }
+
+  /providers:
+    get:
+      operationId: listProviders
+      summary: The tenant's providers
+      tags: [Providers]
+      responses:
+        "200":
+          description: Providers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  providers:
+                    type: array
+                    items: { $ref: "#/components/schemas/Provider" }
     post:
-      operationId: registerTool
-      summary: Register a new tool
-      tags: [Registration]
+      operationId: createProvider
+      summary: Register a provider
+      description: >
+        Credentials are never accepted inline — a provider carries a
+        credential_ref naming a secret held elsewhere. The simulated provider
+        needs none.
+      tags: [Providers]
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/ToolRegisterRequest'
+            schema: { $ref: "#/components/schemas/Provider" }
       responses:
-        '201':
-          description: Tool registered
+        "201":
+          description: Created
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-        '400':
-          description: Invalid request body or parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '401':
-          description: Unauthorized — invalid or expired bearer token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden — insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: "#/components/schemas/Provider" }
+        "400": { $ref: "#/components/responses/BadRequest" }
 
-  /:
+  /bindings:
     get:
-      operationId: listTools
-      summary: List available tools
-      tags: [Registration]
-      parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
-        - name: category
-          in: query
-          required: false
-          description: Filter by tool category
-          schema:
-            type: string
-            enum: [knowledge, communication, enterprise, utility, business_logic, security, ai_model]
-        - name: status
-          in: query
-          required: false
-          description: Filter by tool status
-          schema:
-            type: string
-            enum: [active, deprecated, disabled]
+      operationId: listBindings
+      summary: The tenant's capability bindings
+      tags: [Bindings]
       responses:
-        '200':
-          description: Tool list
+        "200":
+          description: Bindings
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ToolList'
-        '401':
-          description: Unauthorized — invalid or expired bearer token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden — insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /{id}:
-    parameters:
-      - $ref: '#/components/parameters/TenantIdPath'
-      - name: id
-        in: path
-        required: true
-        description: UUID of the tool
-        schema:
-          type: string
-          format: uuid
-    get:
-      operationId: getTool
-      summary: Get tool details
-      tags: [Registration]
-      responses:
-        '200':
-          description: Tool details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-        '401':
-          description: Unauthorized — invalid or expired bearer token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden — insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Tool not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-    put:
-      operationId: updateTool
-      summary: Update tool metadata
-      tags: [Registration]
+                type: object
+                properties:
+                  bindings:
+                    type: array
+                    items: { $ref: "#/components/schemas/CapabilityBinding" }
+    post:
+      operationId: putBinding
+      summary: Create or update a binding
+      description: >
+        The customer-specific join between a capability and the provider that
+        performs it. A department-scoped binding overrides the tenant default.
+        `simulated` is derived from the provider's kind, never asserted by the
+        caller.
+      tags: [Bindings]
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/ToolUpdateRequest'
+            schema: { $ref: "#/components/schemas/CapabilityBinding" }
       responses:
-        '200':
-          description: Tool updated
+        "201":
+          description: Stored
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-        '400':
-          description: Invalid request body or parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '401':
-          description: Unauthorized — invalid or expired bearer token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden — insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Tool not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: "#/components/schemas/CapabilityBinding" }
+        "422":
+          description: Unknown capability or provider
 
-  /{id}/versions:
-    parameters:
-      - $ref: '#/components/parameters/TenantIdPath'
-      - name: id
-        in: path
+  /invoke:
+    post:
+      operationId: invokeCapability
+      summary: Perform a capability through the governed funnel
+      description: >
+        The single door. A refusal — blocked_no_binding, invalid_input,
+        denied_policy, denied_authority — is a recorded outcome returned with
+        200, not a transport error: the invocation states which stage stopped
+        it and why. 422 is reserved for requests malformed before anything
+        could be recorded (unknown capability, missing tenant).
+      tags: [Execution]
+      requestBody:
         required: true
-        description: UUID of the tool
-        schema:
-          type: string
-          format: uuid
-    get:
-      operationId: listToolVersions
-      summary: List tool versions
-      tags: [Versions]
-      parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
-        - name: status
-          in: query
-          required: false
-          description: Filter by version status
-          schema:
-            type: string
-            enum: [active, deprecated, draft]
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InvokeRequest" }
       responses:
-        '200':
-          description: Version list
+        "200":
+          description: The recorded invocation, completed or refused
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Invocation" }
+        "422":
+          description: Malformed before recording
+
+  /invocations:
+    get:
+      operationId: listInvocations
+      summary: The immutable invocation trail
+      tags: [Execution]
+      parameters:
+        - { name: capability_id, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: request_id, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 50, maximum: 200 } }
+      responses:
+        "200":
+          description: Invocations, newest first
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ToolVersionList'
-        '401':
-          description: Unauthorized — invalid or expired bearer token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden — insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  invocations:
+                    type: array
+                    items: { $ref: "#/components/schemas/Invocation" }
+                  total: { type: integer }
 
   /execute:
     post:
-      operationId: executeTool
-      summary: Execute a tool
-      tags: [Execution]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ToolExecutionRequest'
+      deprecated: true
+      operationId: executeToolGone
+      summary: "Removed: the echo executor"
+      description: >
+        Answers 410. The in-process executor echoed its input back as output
+        and stamped records completed; capabilities are performed via /invoke.
+      tags: [Legacy]
       responses:
-        '202':
-          description: Execution accepted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ToolExecutionRecord'
-        '400':
-          description: Invalid execution request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '401':
-          description: Unauthorized — invalid or expired bearer token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden — insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Tool not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '429':
-          description: Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+        "410": { description: Gone — use POST /invoke }
+
+  /tools:
+    get:
+      operationId: listTools
+      summary: Legacy tool registry (read)
+      deprecated: true
+      tags: [Legacy]
+      responses:
+        "200": { description: Registered tool definitions }
 
   /executions:
     get:
-      operationId: listExecutions
-      summary: List tool execution records
-      tags: [Execution]
-      parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
-        - name: status
-          in: query
-          required: false
-          description: Filter by execution status
-          schema:
-            type: string
-            enum: [queued, running, completed, failed, cancelled]
-        - name: tool
-          in: query
-          required: false
-          description: Filter by tool name
-          schema:
-            type: string
-        - name: agent_id
-          in: query
-          required: false
-          description: Filter by agent ID
-          schema:
-            type: string
-            format: uuid
+      operationId: listLegacyExecutions
+      summary: Legacy execution records (read)
+      deprecated: true
+      tags: [Legacy]
       responses:
-        '200':
-          description: Execution list
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ExecutionList'
-        '401':
-          description: Unauthorized — invalid or expired bearer token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden — insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /executions/{id}:
-    parameters:
-      - $ref: '#/components/parameters/TenantIdPath'
-      - name: id
-        in: path
-        required: true
-        description: UUID of the execution record
-        schema:
-          type: string
-          format: uuid
-    get:
-      operationId: getExecution
-      summary: Get execution details
-      tags: [Execution]
-      responses:
-        '200':
-          description: Execution details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ToolExecutionRecord'
-        '401':
-          description: Unauthorized — invalid or expired bearer token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden — insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Execution not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /executions/{id}/retry:
-    parameters:
-      - $ref: '#/components/parameters/TenantIdPath'
-      - name: id
-        in: path
-        required: true
-        description: UUID of the execution record to retry
-        schema:
-          type: string
-          format: uuid
-    post:
-      operationId: retryExecution
-      summary: Retry a failed execution
-      tags: [Execution]
-      responses:
-        '202':
-          description: Retry accepted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ToolExecutionRecord'
-        '401':
-          description: Unauthorized — invalid or expired bearer token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden — insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Execution not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /cost:
-    get:
-      operationId: getToolCost
-      summary: Get cost summary for tool executions
-      tags: [Cost]
-      parameters:
-        - $ref: '#/components/parameters/TenantIdParam'
-        - name: tool
-          in: query
-          required: false
-          description: Filter by tool name
-          schema:
-            type: string
-        - name: start
-          in: query
-          required: false
-          description: Start of time period
-          schema:
-            type: string
-            format: date-time
-        - name: end
-          in: query
-          required: false
-          description: End of time period
-          schema:
-            type: string
-            format: date-time
-      responses:
-        '200':
-          description: Cost summary
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CostSummary'
-        '401':
-          description: Unauthorized — invalid or expired bearer token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden — insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+        "200": { description: Records produced before the funnel existed }
 
 components:
   securitySchemes:
@@ -452,387 +212,125 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT Bearer token with tenant-scoped claims
-    TenantHeader:
-      type: apiKey
-      in: header
-      name: X-Tenant-ID
-      description: Tenant identifier header required on every request
-
-  parameters:
-    TenantIdPath:
-      name: id
-      in: path
-      required: true
-      description: UUID of the tenant
-      schema:
-        type: string
-        format: uuid
-    TenantIdParam:
-      name: tenant_id
-      in: query
-      required: true
-      description: UUID of the tenant
-      schema:
-        type: string
-        format: uuid
-    PageParam:
-      name: page
-      in: query
-      required: false
-      description: Page number for pagination
-      schema:
-        type: integer
-        minimum: 1
-        default: 1
-    PageSizeParam:
-      name: page_size
-      in: query
-      required: false
-      description: Number of items per page
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 20
-
+  responses:
+    BadRequest:
+      description: Invalid request
   schemas:
-    ToolRegisterRequest:
+    Capability:
       type: object
-      required: [tenant_id, name]
+      required: [id, domain, name, side_effect, min_autonomy, input_schema]
       properties:
-        tenant_id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        description:
-          type: string
-        category:
-          type: string
-          enum: [knowledge, communication, enterprise, utility, business_logic, security, ai_model]
+        id: { type: string, example: itsm.ticket.assign }
+        domain: { type: string, enum: [itsm, identity, itops, comms] }
+        name: { type: string }
+        description: { type: string }
         input_schema:
           type: object
-        output_schema:
-          type: object
-        auth_requirements:
-          type: array
-          items:
-            type: string
-        rate_limit:
-          $ref: '#/components/schemas/RateLimit'
-        cost_per_call:
-          $ref: '#/components/schemas/CostPerCall'
-        security_requirements:
-          type: array
-          items:
-            type: string
-      additionalProperties: false
+          description: JSON Schema. Enforced — invalid input never reaches a provider.
+        output_schema: { type: object }
+        side_effect: { type: string, enum: [read, write, destructive] }
+        min_autonomy:
+          type: string
+          enum: [recommend, draft, execute, coordinate]
+          description: Least autonomy tier the acting seat must hold.
 
-    ToolUpdateRequest:
+    Provider:
+      type: object
+      required: [kind, name]
+      properties:
+        id: { type: string, format: uuid }
+        tenant_id: { type: string, readOnly: true }
+        kind: { type: string, enum: [simulated, mcp, native, http] }
+        name: { type: string }
+        endpoint: { type: string }
+        credential_ref:
+          type: string
+          description: Names a secret held elsewhere. Never a secret itself.
+        status: { type: string, enum: [active, disabled] }
+        created_at: { type: string, format: date-time, readOnly: true }
+        updated_at: { type: string, format: date-time, readOnly: true }
+
+    CapabilityBinding:
+      type: object
+      required: [capability_id, provider_id]
+      properties:
+        id: { type: string, format: uuid }
+        tenant_id: { type: string, readOnly: true }
+        department_id:
+          type: string
+          description: Empty = tenant default; set = overrides it for that department.
+        capability_id: { type: string }
+        provider_id: { type: string }
+        provider_tool: { type: string, description: Defaults to the capability id. }
+        enabled: { type: boolean }
+        simulated: { type: boolean, readOnly: true }
+        created_at: { type: string, format: date-time, readOnly: true }
+        updated_at: { type: string, format: date-time, readOnly: true }
+
+    Actor:
       type: object
       properties:
-        description:
+        type: { type: string, enum: [agent, user, system] }
+        id: { type: string }
+        position_id: { type: string }
+        autonomy_tier:
           type: string
-        category:
-          type: string
-          enum: [knowledge, communication, enterprise, utility, business_logic, security, ai_model]
-        input_schema:
-          type: object
-        output_schema:
-          type: object
-        rate_limit:
-          $ref: '#/components/schemas/RateLimit'
-        status:
-          type: string
-          enum: [active, deprecated, disabled]
-        cost_per_call:
-          $ref: '#/components/schemas/CostPerCall'
-      additionalProperties: false
+          description: >
+            The acting seat's tier. Unknown ranks below every tier — unknown
+            authority is not authority.
 
-    Tool:
-      type: object
-      required: [id, tenant_id, name]
-      properties:
-        id:
-          type: string
-          format: uuid
-        tenant_id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        version:
-          type: string
-          pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
-        description:
-          type: string
-        category:
-          type: string
-          enum: [knowledge, communication, enterprise, utility, business_logic, security, ai_model]
-        input_schema:
-          type: object
-        output_schema:
-          type: object
-        auth_requirements:
-          type: array
-          items:
-            type: string
-        rate_limit:
-          $ref: '#/components/schemas/RateLimit'
-        status:
-          type: string
-          enum: [active, deprecated, disabled]
-        cost_per_call:
-          $ref: '#/components/schemas/CostPerCall'
-        security_requirements:
-          type: array
-          items:
-            type: string
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-      additionalProperties: false
-
-    ToolList:
+    Correlation:
       type: object
       properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/Tool'
-        total:
-          type: integer
-        page:
-          type: integer
-        page_size:
-          type: integer
-        has_more:
+        request_id: { type: string }
+        workflow_id: { type: string }
+        node_id: { type: string }
+        department_id: { type: string }
+
+    ExternalRef:
+      type: object
+      required: [system, kind, id]
+      description: >
+        The canonical pointer to whatever the provider touched — the only
+        vendor data Operan canonicalizes. Payloads stay opaque.
+      properties:
+        system: { type: string }
+        kind: { type: string }
+        id: { type: string }
+        url: { type: string }
+
+    InvokeRequest:
+      type: object
+      required: [capability_id, input]
+      properties:
+        capability_id: { type: string }
+        input: { type: object }
+        actor: { $ref: "#/components/schemas/Actor" }
+        correlation: { $ref: "#/components/schemas/Correlation" }
+
+    Invocation:
+      type: object
+      required: [id, tenant_id, capability_id, status, simulated, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        tenant_id: { type: string }
+        capability_id: { type: string }
+        side_effect: { type: string }
+        provider_id: { type: string }
+        provider_kind: { type: string }
+        provider_tool: { type: string }
+        actor: { $ref: "#/components/schemas/Actor" }
+        correlation: { $ref: "#/components/schemas/Correlation" }
+        input: { type: object }
+        output: { type: object }
+        external_ref: { $ref: "#/components/schemas/ExternalRef" }
+        simulated:
           type: boolean
-      required:
-        - items
-        - total
-        - page
-        - page_size
-        - has_more
-      additionalProperties: false
-
-    RateLimit:
-      type: object
-      properties:
-        max_requests_per_minute:
-          type: integer
-        max_burst:
-          type: integer
-        retry_after_ms:
-          type: integer
-      additionalProperties: false
-
-    CostPerCall:
-      type: object
-      required: [currency, amount]
-      properties:
-        currency:
-          type: string
-        amount:
-          type: number
-      additionalProperties: false
-
-    ToolExecutionRequest:
-      type: object
-      required: [tenant_id, agent_id, tool, input]
-      properties:
-        tenant_id:
-          type: string
-          format: uuid
-        agent_id:
-          type: string
-          format: uuid
-        tool:
-          type: string
-        tool_version:
-          type: string
-          pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
-        input:
-          type: object
-        cost_estimate:
-          $ref: '#/components/schemas/CostPerCall'
-        timeout_ms:
-          type: integer
-        priority:
-          type: integer
-          minimum: 1
-          maximum: 10
-          default: 5
-      additionalProperties: false
-
-    ToolExecutionRecord:
-      type: object
-      required: [id, tenant_id, agent_id, tool, status, retry_count, created_at, updated_at]
-      properties:
-        id:
-          type: string
-          format: uuid
-        tenant_id:
-          type: string
-          format: uuid
-        agent_id:
-          type: string
-          format: uuid
-        tool:
-          type: string
-        tool_version:
-          type: string
-          pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          description: True whenever the performing provider is simulated. Never hidden.
+        policy_decision: { type: string }
         status:
           type: string
-          enum: [queued, running, completed, failed, cancelled]
-        input:
-          type: object
-        output:
-          type: object
-        execution_time_ms:
-          type: integer
-        error_code:
-          type: string
-        error_message:
-          type: string
-        retry_count:
-          type: integer
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-      additionalProperties: false
-
-    ExecutionList:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/ToolExecutionRecord'
-        total:
-          type: integer
-        page:
-          type: integer
-        page_size:
-          type: integer
-        has_more:
-          type: boolean
-      required:
-        - items
-        - total
-        - page
-        - page_size
-        - has_more
-      additionalProperties: false
-
-    ToolVersion:
-      type: object
-      required: [id, tool_id, version]
-      properties:
-        id:
-          type: string
-          format: uuid
-        tool_id:
-          type: string
-          format: uuid
-        version:
-          type: string
-          pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
-        created_at:
-          type: string
-          format: date-time
-        created_by:
-          type: string
-          format: uuid
-        change_summary:
-          type: string
-          enum: [major, minor, patch, breaking]
-        input_schema:
-          type: object
-        output_schema:
-          type: object
-        status:
-          type: string
-          enum: [active, deprecated, draft]
-      additionalProperties: false
-
-    ToolVersionList:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/ToolVersion'
-        total:
-          type: integer
-        page:
-          type: integer
-        page_size:
-          type: integer
-        has_more:
-          type: boolean
-      required:
-        - items
-        - total
-        - page
-        - page_size
-        - has_more
-      additionalProperties: false
-
-    CostSummary:
-      type: object
-      properties:
-        tool:
-          type: string
-        total_calls:
-          type: integer
-        total_cost:
-          $ref: '#/components/schemas/CostPerCall'
-        avg_cost_per_call:
-          $ref: '#/components/schemas/CostPerCall'
-        period:
-          type: object
-          properties:
-            start:
-              type: string
-              format: date-time
-            end:
-              type: string
-              format: date-time
-          additionalProperties: false
-      additionalProperties: false
-
-    Error:
-      type: object
-      properties:
-        code:
-          type: integer
-        message:
-          type: string
-        details:
-          type: string
-        request_id:
-          type: string
-          format: uuid
-      required:
-        - code
-        - message
-        - request_id
-
-    ErrorList:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/Error"
-      required:
-        - errors
+          enum: [completed, blocked_no_binding, invalid_input, denied_policy, denied_authority, failed]
+        error: { type: string }
+        duration_ms: { type: integer }
+        created_at: { type: string, format: date-time }
