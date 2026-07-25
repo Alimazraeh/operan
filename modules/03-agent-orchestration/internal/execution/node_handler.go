@@ -115,12 +115,26 @@ func NewNodeHandler(deps NodeHandlerDeps) NodeHandler {
 			if prior := str(variables["last_agent_output"]); prior != "" {
 				instructions += "\n\nAgent work product:\n" + bound(prior, 4000)
 			}
+			// Who must sign this off. Module 05 resolves the SOP's
+			// config.required_by (an agent-definition id) against the org chart
+			// at compile time and passes the seat holder through here. With
+			// nobody bound to that seat the gate goes to a role — a target
+			// Module 09 models — and never to an invented user.
+			assigneeType, assigneeID := "role", "department_head"
+			var requiredApprovers []map[string]string
+			if u := str(node.Parameters["required_approver_user_id"]); u != "" {
+				assigneeType, assigneeID = "user", u
+				requiredApprovers = []map[string]string{{"user_id": u}}
+			} else {
+				requiredApprovers = []map[string]string{{"role": "department_head"}}
+			}
+
 			task, err := deps.Tasks.Create(&store.HumanTask{
 				TenantID:            auth.TenantID,
 				PipelineExecutionID: workflowID, // run-scoped correlation
 				StepID:              node.ID,
-				AssigneeType:        "role",
-				AssigneeID:          "manager",
+				AssigneeType:        store.HumanTaskAssigneeType(assigneeType),
+				AssigneeID:          assigneeID,
 				TaskType:            "approval",
 				Instructions:        instructions,
 				Label:               bound(title, 120),
@@ -133,10 +147,11 @@ func NewNodeHandler(deps NodeHandlerDeps) NodeHandler {
 			// Raise the M09 approval — request_id = task id is exactly the
 			// correlation the US-402 gates consumer resolves back onto the task.
 			approval := map[string]interface{}{
-				"request_id":   task.ID,
-				"requester_id": str(variables["department_id"]),
-				"type":         "parallel",
-				"title":        bound(title, 100),
+				"request_id":         task.ID,
+				"requester_id":       str(variables["department_id"]),
+				"type":               "parallel",
+				"title":              bound(title, 100),
+				"required_approvers": requiredApprovers,
 			}
 			ab, _ := json.Marshal(approval)
 			req, err := http.NewRequestWithContext(ctx, http.MethodPost,
