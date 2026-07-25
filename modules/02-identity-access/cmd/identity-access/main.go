@@ -75,7 +75,7 @@ func main() {
 	agentIDHandler := handler.NewAgentIdentityHandler(authClient, publisher)
 	ssoHandler := handler.NewSSOHandler(authClient, publisher)
 	scimHandler := handler.NewSCIMHandler(authClient, publisher)
-	auditHandler := handler.NewAuditHandler(authClient)
+	auditHandler := handler.NewAuditHandler(authClient, memAudit)
 	rbacHandler := handler.NewRBACHandler(authClient)
 	ldapHandler := handler.NewLDAPHandler(authClient, publisher)
 	adHandler := handler.NewADHandler(authClient, publisher)

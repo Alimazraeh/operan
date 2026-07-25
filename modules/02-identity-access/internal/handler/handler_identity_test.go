@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -594,5 +595,39 @@ func TestIdentityListsSurviveANilStore(t *testing.T) {
 	h.List(w, req)
 	if w.Code >= 500 {
 		t.Fatalf("nil-store handler returned %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// Giving the handlers a store stopped the panic but did not make them work:
+// the guard reads `h.Auth == nil || h.Store == nil`, so with a store present it
+// took the Authentik path, which fails in this deployment, and 500'd. The
+// question a guard has to ask is whether Authentik *worked*, not whether it
+// exists.
+type unreachableUsers struct{ mockAuthentikUsers }
+
+func (*unreachableUsers) List(ctx context.Context) ([]*authentik.User, error) {
+	return nil, errors.New("dial tcp: no such host")
+}
+
+func TestAgentIdentityListFallsBackWhenAuthentikFails(t *testing.T) {
+	h := NewAgentIdentityHandler(&authentik.Client{UsersAPI: &unreachableUsers{}}, events.NewPublisher(""))
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/agent-identities?page_size=50", nil)
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+	req = setPrincipalInContext(req, &middleware.JWTToken{
+		Subject: "user-1", UserType: "user", TenantID: "tenant-1", Roles: []string{"admin"},
+	})
+	w := httptest.NewRecorder()
+	h.List(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("List() = %d, want 200 (%s)", w.Code, w.Body.String())
+	}
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	// Same envelope key as the Authentik path — a list that renames itself by
+	// backend is how a client ends up showing nothing.
+	if _, ok := resp["agent_identities"]; !ok {
+		t.Fatalf("fallback used a different envelope key: %v", resp)
 	}
 }

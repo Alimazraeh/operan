@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"sort"
@@ -16,17 +17,34 @@ import (
 	"github.com/operan/modules/02-identity-access/internal/events"
 	"github.com/operan/modules/02-identity-access/internal/middleware"
 	"github.com/operan/modules/02-identity-access/internal/models"
+	"github.com/operan/modules/02-identity-access/internal/store"
 )
 
 // AuditHandler handles audit-related HTTP endpoints by delegating to Authentik.
 type AuditHandler struct {
 	Auth *authentik.Client
+	// Events is the local audit store. M02 already writes every audit event
+	// here (see the user and role handlers), so where Authentik is not
+	// deployed there is a real trail to read — this endpoint just never had a
+	// way to reach it.
+	Events *store.AuditStore
 }
 
-// NewAuditHandler creates a new audit handler backed by Authentik.
-func NewAuditHandler(auth *authentik.Client) *AuditHandler {
+// events returns the local store, creating one if a construction path left it
+// nil, so a missing store cannot panic a request.
+func (h *AuditHandler) events() *store.AuditStore {
+	if h.Events == nil {
+		h.Events = store.NewAuditStore()
+	}
+	return h.Events
+}
+
+// NewAuditHandler creates a new audit handler backed by Authentik, falling
+// back to the local audit store.
+func NewAuditHandler(auth *authentik.Client, events *store.AuditStore) *AuditHandler {
 	return &AuditHandler{
-		Auth: auth,
+		Events: events,
+		Auth:   auth,
 	}
 }
 
@@ -82,14 +100,19 @@ func (h *AuditHandler) GetTrails(w http.ResponseWriter, r *http.Request) {
 		path += "?" + v.Encode()
 	}
 
-	// Fetch all matching events via Authentik's paginated API.
+	// Fetch all matching events via Authentik's paginated API, falling back to
+	// the local store when it is absent or unreachable — the same shape as
+	// every other handler in this module. This endpoint used to 500 here, so
+	// the audit trail was unreadable in any deployment without Authentik even
+	// though the events were being recorded all along.
 	var allEvents []*authentik.Event
 	currentPath := path
 	ctx := r.Context()
-	for {
+	for h.Auth != nil {
 		var page authentik.PaginatedEventResponse
 		if err := h.Auth.Call(ctx, http.MethodGet, currentPath, nil, &page); err != nil {
-			http.Error(w, `{"error":"failed to list audit events from Authentik"}`, http.StatusInternalServerError)
+			log.Printf("[IAM] Authentik unavailable (%v) — reading the audit trail from the local store", err)
+			h.writeLocalTrails(w, middleware.GetTenantID(r.Context()), actorID, action, from, to, limit, offset)
 			return
 		}
 
@@ -99,6 +122,10 @@ func (h *AuditHandler) GetTrails(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		currentPath = page.Next
+	}
+	if h.Auth == nil {
+		h.writeLocalTrails(w, middleware.GetTenantID(r.Context()), actorID, action, from, to, limit, offset)
+		return
 	}
 
 	// Map Authentik events to Operan AuditEvent format.
@@ -137,6 +164,28 @@ func (h *AuditHandler) GetTrails(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"audit_trails": trails,
+		"total":        total,
+		"limit":        limit,
+		"offset":       offset,
+	})
+}
+
+// writeLocalTrails answers from the store M02 has been writing to all along.
+// The response shape matches the Authentik path exactly — an endpoint that
+// renames its own list depending on which backend answered is how a client
+// ends up showing nothing.
+func (h *AuditHandler) writeLocalTrails(w http.ResponseWriter, tenantID, actorID, action string, from, to *time.Time, limit, offset int) {
+	events, total, err := h.events().List(tenantID, actorID, action, from, to, limit, offset)
+	if err != nil {
+		http.Error(w, `{"error":"failed to list audit events"}`, http.StatusInternalServerError)
+		return
+	}
+	if events == nil {
+		events = []models.AuditEvent{}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"audit_trails": events,
 		"total":        total,
 		"limit":        limit,
 		"offset":       offset,

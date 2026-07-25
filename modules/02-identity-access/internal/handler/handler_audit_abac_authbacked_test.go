@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/operan/modules/02-identity-access/internal/store"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,7 +11,7 @@ import (
 )
 
 func TestAuditHandler_GetSessionReplay_AuthBacked(t *testing.T) {
-	h := NewAuditHandler(ssoAuthClient(t))
+	h := NewAuditHandler(ssoAuthClient(t), store.NewAuditStore())
 
 	rr := httptest.NewRecorder()
 	h.GetSessionReplay(rr, tenantReq(http.MethodGet, "/api/v1/iam/audit/session-replay/sess-123", ""))
