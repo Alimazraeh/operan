@@ -155,30 +155,109 @@ func splitStatements(sql string) []string {
 	var statements []string
 	var current strings.Builder
 
-	inQuote := false
-	quoteChar := rune(0)
-
-	for _, r := range sql {
-		switch {
-		case r == '"' && !inQuote:
-			inQuote = true
-			quoteChar = r
-		case r == quoteChar && inQuote:
-			inQuote = false
-		case r == ';' && !inQuote:
+	runes := []rune(sql)
+	flush := func() {
+		if strings.TrimSpace(current.String()) != "" {
 			statements = append(statements, current.String())
-			current.Reset()
-		default:
+		}
+		current.Reset()
+	}
+
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
+
+		// Line comment — copy to end of line; a ';' inside it is not a
+		// statement boundary.
+		if r == '-' && i+1 < len(runes) && runes[i+1] == '-' {
+			for i < len(runes) && runes[i] != '\n' {
+				current.WriteRune(runes[i])
+				i++
+			}
+			if i < len(runes) {
+				current.WriteRune(runes[i])
+			}
+			continue
+		}
+
+		// Block comment.
+		if r == '/' && i+1 < len(runes) && runes[i+1] == '*' {
+			for i < len(runes) {
+				current.WriteRune(runes[i])
+				if runes[i] == '/' && i > 0 && runes[i-1] == '*' && i > 1 {
+					break
+				}
+				i++
+			}
+			continue
+		}
+
+		// Dollar-quoted body: $$...$$ or $tag$...$tag$. Everything inside is
+		// literal, including semicolons — this is what a DO block uses, and
+		// splitting through one produces fragments that are not valid SQL.
+		if r == '$' {
+			if tag, ok := dollarTag(runes, i); ok {
+				current.WriteString(tag)
+				i += len([]rune(tag))
+				for i < len(runes) {
+					if runes[i] == '$' {
+						if t2, ok2 := dollarTag(runes, i); ok2 && t2 == tag {
+							current.WriteString(tag)
+							i += len([]rune(tag)) - 1
+							break
+						}
+					}
+					current.WriteRune(runes[i])
+					i++
+				}
+				continue
+			}
+		}
+
+		// Quoted string or identifier — '' and "" escape by doubling.
+		if r == '\'' || r == '"' {
+			quote := r
 			current.WriteRune(r)
+			i++
+			for i < len(runes) {
+				current.WriteRune(runes[i])
+				if runes[i] == quote {
+					if i+1 < len(runes) && runes[i+1] == quote {
+						i++
+						current.WriteRune(runes[i])
+					} else {
+						break
+					}
+				}
+				i++
+			}
+			continue
+		}
+
+		if r == ';' {
+			flush()
+			continue
+		}
+		current.WriteRune(r)
+	}
+	flush()
+	return statements
+}
+
+// dollarTag reports the dollar-quote delimiter starting at i ("$$" or "$tag$").
+func dollarTag(runes []rune, i int) (string, bool) {
+	if runes[i] != '$' {
+		return "", false
+	}
+	for j := i + 1; j < len(runes); j++ {
+		if runes[j] == '$' {
+			return string(runes[i : j+1]), true
+		}
+		if !(runes[j] == '_' || (runes[j] >= 'a' && runes[j] <= 'z') ||
+			(runes[j] >= 'A' && runes[j] <= 'Z') || (runes[j] >= '0' && runes[j] <= '9')) {
+			return "", false
 		}
 	}
-
-	// Add last statement if any
-	if trimmed := strings.TrimSpace(current.String()); trimmed != "" {
-		statements = append(statements, current.String())
-	}
-
-	return statements
+	return "", false
 }
 
 // HealthCheck verifies the database connection is working.
