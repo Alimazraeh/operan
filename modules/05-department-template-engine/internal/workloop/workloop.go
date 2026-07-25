@@ -224,6 +224,15 @@ func (l *Loop) pollOne(ctx context.Context, req store.ServiceRequest) {
 		}
 		nodeType, _ := out["node_type"].(string)
 		if n.Status == "completed" && !seen[n.NodeID+":agent_output"] && text != "" {
+			// A draft the model was cut off mid-way through is real work but
+			// not finished work. The flag is set on the node by Module 03; it
+			// has to reach the timeline too, because the timeline is what the
+			// approver actually reads — recording it where nobody looks is the
+			// same as not recording it.
+			detail := boundStr(text, 4000)
+			if truncated, _ := out["truncated"].(bool); truncated {
+				detail = "⚠ INCOMPLETE — the model reached its token budget before finishing this draft.\n\n" + detail
+			}
 			l.Requests.Mutate(req.ID, func(sr *store.ServiceRequest) {
 				now := time.Now().UTC()
 				if sr.FirstResponseAt == nil {
@@ -231,7 +240,7 @@ func (l *Loop) pollOne(ctx context.Context, req store.ServiceRequest) {
 				}
 				sr.Timeline = append(sr.Timeline, store.RequestEvent{
 					At: now, Kind: "agent_output", Node: n.NodeID,
-					Detail: boundStr(text, 4000)})
+					Detail: detail})
 			})
 		}
 		if text != "" {

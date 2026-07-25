@@ -3,6 +3,7 @@ package execution
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -703,5 +704,64 @@ func TestConditionsMetHonoursGuardedEdges(t *testing.T) {
 	other := []store.WorkflowEdge{{From: "a", To: "elsewhere", Condition: "nope == yes"}}
 	if !e.conditionsMet("target", other, nil) {
 		t.Error("a guarded edge into another node must not block this one")
+	}
+}
+
+// A truncated draft must carry its warning into the next step's context. The
+// next step is usually the human gate, and the whole point of flagging
+// truncation is that the person signing off knows the assessment they are
+// reading is unfinished.
+func TestTruncatedAgentOutputCarriesItsWarningForward(t *testing.T) {
+	wf := &store.Workflow{
+		ID: "wf-trunc", TenantID: "t1", Status: store.WorkflowStatusPending,
+		Graph: store.WorkflowGraph{
+			Nodes: []store.WorkflowNode{
+				{ID: "n1", Type: store.WorkflowNodeAgent, Action: "Draft"},
+				{ID: "n2", Type: store.WorkflowNodeHumanGate, Action: "Sign off"},
+			},
+			Edges: []store.WorkflowEdge{{From: "n1", To: "n2"}},
+		},
+	}
+	st := store.NewWorkflowStore()
+	if _, err := st.Create(wf); err != nil {
+		t.Fatal(err)
+	}
+
+	// What the gate node was handed is the thing under test: the approver reads
+	// exactly this.
+	var mu sync.Mutex
+	var seenByGate string
+	handler := func(ctx context.Context, node store.WorkflowNode, workflowID string, vars map[string]interface{}) (map[string]interface{}, error) {
+		if node.ID == "n1" {
+			return map[string]interface{}{"text": "the assessment is incomp", "truncated": true}, nil
+		}
+		mu.Lock()
+		seenByGate, _ = vars["last_agent_output"].(string)
+		mu.Unlock()
+		return map[string]interface{}{"decision": "approved"}, nil
+	}
+
+	eng := NewEngine(st, events.NewPublisher(), handler, events.StackLangGraph)
+	if err := eng.StartWorkflow(wf.ID); err != nil {
+		t.Fatalf("start: %v", err)
+	}
+	for i := 0; i < 100; i++ {
+		time.Sleep(20 * time.Millisecond)
+		got, err := st.GetByID(wf.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Status == store.WorkflowStatusCompleted || got.Status == store.WorkflowStatusFailed {
+			break
+		}
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if !strings.Contains(seenByGate, "INCOMPLETE") {
+		t.Fatalf("the gate was handed a truncated draft with no warning: %q", seenByGate)
+	}
+	if !strings.Contains(seenByGate, "the assessment is incomp") {
+		t.Fatalf("the draft itself was lost: %q", seenByGate)
 	}
 }
