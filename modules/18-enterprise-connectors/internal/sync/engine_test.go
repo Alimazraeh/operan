@@ -36,7 +36,7 @@ func TestEngine_RunSync_UnknownConnector(t *testing.T) {
 	engine := NewEngine(connStore, syncStore, nil, eventPub, registry)
 
 	unknownID := uuid.New()
-	_, err = engine.RunSync(context.Background(), unknownID.String(), "full")
+	_, err = engine.RunSync(context.Background(), "t1", unknownID, "full")
 	require.Error(t, err)
 }
 
@@ -49,7 +49,7 @@ func TestEngine_HealthCheck_UnknownConnector(t *testing.T) {
 	registry := connectors.NewRegistry()
 	engine := NewEngine(connStore, syncStore, nil, eventPub, registry)
 
-	_, err = engine.HealthCheck(context.Background(), uuid.New().String())
+	_, err = engine.HealthCheck(context.Background(), "t1", uuid.New())
 	require.Error(t, err)
 }
 

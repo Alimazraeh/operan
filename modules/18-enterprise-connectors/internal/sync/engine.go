@@ -36,12 +36,16 @@ func NewEngine(connectorStore *store.ConnectorStore, syncStore *store.SyncStore,
 }
 
 // RunSync executes a sync operation for a connector.
-func (e *Engine) RunSync(ctx context.Context, connectorID string, syncType string) (*connectors.SyncResult, error) {
+//
+// tenantID is required: the store scopes every lookup by tenant, so passing
+// an empty string here matched no row and made every sync fail with
+// "connector not found" against a real database.
+func (e *Engine) RunSync(ctx context.Context, tenantID string, connectorID uuid.UUID, syncType string) (*connectors.SyncResult, error) {
 	if syncType == "" {
 		syncType = "full"
 	}
 
-	conn, err := e.connectorStore.GetByID(ctx, uuid.MustParse(connectorID), "")
+	conn, err := e.connectorStore.GetByID(ctx, connectorID, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("connector not found: %w", err)
 	}
@@ -116,8 +120,8 @@ func (e *Engine) RunSync(ctx context.Context, connectorID string, syncType strin
 }
 
 // HealthCheck performs a health check for a connector.
-func (e *Engine) HealthCheck(ctx context.Context, connectorID string) (*connectors.HealthCheckResult, error) {
-	conn, err := e.connectorStore.GetByID(ctx, uuid.MustParse(connectorID), "")
+func (e *Engine) HealthCheck(ctx context.Context, tenantID string, connectorID uuid.UUID) (*connectors.HealthCheckResult, error) {
+	conn, err := e.connectorStore.GetByID(ctx, connectorID, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("connector not found: %w", err)
 	}

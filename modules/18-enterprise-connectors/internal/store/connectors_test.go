@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -212,5 +213,40 @@ func TestConnector_ModelDefaults(t *testing.T) {
 	}
 	if c.ToolsRegistered {
 		t.Error("expected ToolsRegistered false")
+	}
+}
+
+// A connector must never carry secret material into a response body.
+// Regression guard: Credentials was `json:"credentials,omitempty"`, so
+// GET /v1/connectors returned every client_secret and access_token in
+// cleartext.
+func TestConnectorJSONNeverIncludesCredentials(t *testing.T) {
+	c := Connector{
+		ID:            uuid.New(),
+		TenantID:      "t1",
+		Name:          "Jira Production",
+		ConnectorType: "generic_rest",
+		Config:        map[string]interface{}{"endpoint": "https://example.invalid"},
+		Credentials: map[string]interface{}{
+			"client_secret": "super-secret-value",
+			"access_token":  "tok-should-not-leak",
+			"password":      "hunter2",
+		},
+	}
+	blob, err := json.Marshal(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(blob)
+	for _, forbidden := range []string{
+		"super-secret-value", "tok-should-not-leak", "hunter2", "credentials",
+	} {
+		if strings.Contains(body, forbidden) {
+			t.Errorf("serialized connector leaks %q: %s", forbidden, body)
+		}
+	}
+	// The non-secret fields must still be there.
+	if !strings.Contains(body, "Jira Production") {
+		t.Errorf("connector JSON lost its name: %s", body)
 	}
 }

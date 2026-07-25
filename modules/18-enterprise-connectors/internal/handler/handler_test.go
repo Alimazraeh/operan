@@ -73,11 +73,11 @@ func setupTestRouter(t *testing.T) (*httptest.Server, func()) {
 
 type mockSyncEngine struct{}
 
-func (m *mockSyncEngine) RunSync(ctx context.Context, connectorID string, syncType string) (*connectors.SyncResult, error) {
+func (m *mockSyncEngine) RunSync(ctx context.Context, tenantID string, connectorID uuid.UUID, syncType string) (*connectors.SyncResult, error) {
 	return &connectors.SyncResult{ObjectsFetched: 5, ObjectsUpdated: 5, ObjectsFailed: 0}, nil
 }
 
-func (m *mockSyncEngine) HealthCheck(ctx context.Context, connectorID string) (*connectors.HealthCheckResult, error) {
+func (m *mockSyncEngine) HealthCheck(ctx context.Context, tenantID string, connectorID uuid.UUID) (*connectors.HealthCheckResult, error) {
 	return &connectors.HealthCheckResult{Healthy: true, Message: "ok"}, nil
 }
 

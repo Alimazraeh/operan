@@ -31,10 +31,14 @@ func ValidateProfile(p SandboxProfile) error {
 }
 
 // IsToolAllowed checks if a tool is in the profile's allowed list.
+//
+// An empty allow-list denies everything. The tool name is used directly as
+// the binary to execute, so "empty means permit all" combined with the
+// database default of '{}' meant any binary on the image could be run by a
+// profile whose author never thought about it. Allowing must be deliberate.
 func IsToolAllowed(profile SandboxProfile, toolName string) bool {
 	if len(profile.AllowedTools) == 0 {
-		// Empty allowed_tools means all tools are allowed (permissive mode)
-		return true
+		return false
 	}
 	for _, t := range profile.AllowedTools {
 		if t == toolName {

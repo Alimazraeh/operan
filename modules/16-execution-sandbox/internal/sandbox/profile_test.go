@@ -76,10 +76,18 @@ func TestValidateProfile_MinimumValid(t *testing.T) {
 	}
 }
 
-func TestIsToolAllowed_AllowAll(t *testing.T) {
+// An empty allow-list must deny. The tool name becomes the binary that runs,
+// and the database default for allowed_tools is '{}' — permissive-by-default
+// meant an unconfigured profile could execute anything on the image.
+func TestIsToolAllowed_EmptyListDeniesEverything(t *testing.T) {
 	p := SandboxProfile{AllowedTools: []string{}}
-	if !IsToolAllowed(p, "anything") {
-		t.Error("expected true for empty allowed_tools (permissive)")
+	for _, tool := range []string{"anything", "bash", "curl", ""} {
+		if IsToolAllowed(p, tool) {
+			t.Errorf("empty allow-list must deny %q", tool)
+		}
+	}
+	if IsToolAllowed(SandboxProfile{}, "bash") {
+		t.Error("nil allow-list must deny too")
 	}
 }
 

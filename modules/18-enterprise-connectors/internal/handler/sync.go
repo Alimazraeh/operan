@@ -15,8 +15,8 @@ import (
 
 // SyncEngine defines the interface for sync operations.
 type SyncEngine interface {
-	RunSync(ctx context.Context, connectorID string, syncType string) (*connectors.SyncResult, error)
-	HealthCheck(ctx context.Context, connectorID string) (*connectors.HealthCheckResult, error)
+	RunSync(ctx context.Context, tenantID string, connectorID uuid.UUID, syncType string) (*connectors.SyncResult, error)
+	HealthCheck(ctx context.Context, tenantID string, connectorID uuid.UUID) (*connectors.HealthCheckResult, error)
 }
 
 // SyncHandler handles HTTP requests for sync operations.
@@ -67,7 +67,7 @@ func (h *SyncHandler) TriggerSync(w http.ResponseWriter, r *http.Request) {
 		syncType = "full"
 	}
 
-	result, err := h.syncEngine.RunSync(r.Context(), id.String(), syncType)
+	result, err := h.syncEngine.RunSync(r.Context(), tenantID, id, syncType)
 	if err != nil {
 		http.Error(w, `{"error":"sync-failed","message":"`+err.Error()+`"}`, http.StatusInternalServerError)
 		return
@@ -101,7 +101,7 @@ func (h *SyncHandler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.syncEngine.HealthCheck(r.Context(), id.String())
+	result, err := h.syncEngine.HealthCheck(r.Context(), tenantID, id)
 	if err != nil {
 		http.Error(w, `{"error":"health-check-failed","message":"`+err.Error()+`"}`, http.StatusInternalServerError)
 		return

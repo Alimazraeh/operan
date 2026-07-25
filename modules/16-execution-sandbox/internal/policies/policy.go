@@ -9,12 +9,13 @@ import (
 	"time"
 )
 
-// PolicyCheckRequest is sent to M10 to check if a tool execution is allowed.
+// PolicyCheckRequest is sent to M10's evaluation endpoint. The shape is
+// M10's contract (internal/handler/evaluate.go): resource + action_type are
+// required; tenancy travels in the header, not the body.
 type PolicyCheckRequest struct {
-	TenantID string `json:"tenant_id"`
-	AgentID  string `json:"agent_id"`
-	ToolName string `json:"tool_name"`
-	Action   string `json:"action"`
+	AgentID    string `json:"agent_id,omitempty"`
+	Resource   string `json:"resource"`
+	ActionType string `json:"action_type"`
 }
 
 // PolicyCheckResult is the response from M10 policy engine.
@@ -42,10 +43,9 @@ func NewPolicyClient(baseURL string) *PolicyClient {
 // CanExecute checks M10 policy to see if a tool execution is allowed.
 func (c *PolicyClient) CanExecute(ctx context.Context, tenantID, agentID, toolName string) (*PolicyCheckResult, error) {
 	reqBody := PolicyCheckRequest{
-		TenantID: tenantID,
-		AgentID:  agentID,
-		ToolName: toolName,
-		Action:   "execute",
+		AgentID:    agentID,
+		Resource:   "tool:" + toolName,
+		ActionType: "execute",
 	}
 
 	payload, err := json.Marshal(reqBody)
@@ -53,12 +53,13 @@ func (c *PolicyClient) CanExecute(ctx context.Context, tenantID, agentID, toolNa
 		return nil, fmt.Errorf("marshal policy request: %w", err)
 	}
 
-	url := c.baseURL + "/v1/policies/check"
+	url := c.baseURL + "/policies/evaluate"
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(payload))
 	if err != nil {
 		return nil, fmt.Errorf("create policy request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Tenant-ID", tenantID)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -77,7 +78,11 @@ func (c *PolicyClient) CanExecute(ctx context.Context, tenantID, agentID, toolNa
 
 	var result PolicyCheckResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decode policy response: %w", err)
+		// Deny on an unreadable answer. Returning (nil, err) here used to let
+		// the caller's nil-check skip the deny branch entirely — allow-on-
+		// malformed-response, the exact opposite of the intent.
+		return &PolicyCheckResult{Allowed: false, Reason: "policy response unreadable"},
+			fmt.Errorf("decode policy response: %w", err)
 	}
 
 	return &result, nil
