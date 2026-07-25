@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/operan/modules/03-agent-orchestration/internal/capability"
 	"github.com/operan/modules/03-agent-orchestration/internal/config"
 	"github.com/operan/modules/03-agent-orchestration/internal/events"
 	"github.com/operan/modules/03-agent-orchestration/internal/execution"
@@ -93,6 +94,7 @@ func main() {
 		Tasks:          store.HumanTaskStore(),
 		M09BaseURL:     cfg.SupervisionURL,
 		AgentMaxTokens: cfg.LLMMaxTokens,
+		Capabilities:   capability.New(cfg.CapabilityURL),
 	})
 	dagEngine := execution.NewEngine(store.WorkflowStore(), pub, nodeHandler, events.StackLangGraph)
 

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/operan/modules/03-agent-orchestration/internal/capability"
 	"github.com/operan/modules/03-agent-orchestration/internal/draft"
 	"github.com/operan/modules/03-agent-orchestration/internal/execution/condition"
 	"github.com/operan/modules/03-agent-orchestration/internal/llm"
@@ -56,6 +57,10 @@ type NodeHandlerDeps struct {
 	// llm.DefaultMaxTokens, which is sized from what a real SOP step costs
 	// against a reasoning model — see the constant.
 	AgentMaxTokens int
+	// Capabilities is the Module 08 client. Nil keeps capability-bearing
+	// action nodes on the recorded pass-through — the honest state for a
+	// deployment without the capability service.
+	Capabilities *capability.Client
 }
 
 // NewNodeHandler builds the production NodeHandler executing each node type
@@ -258,12 +263,112 @@ func NewNodeHandler(deps NodeHandlerDeps) NodeHandler {
 			return out, nil
 
 		default: // action and anything future
+			// A step that names a capability goes through Module 08's governed
+			// funnel — binding, schema validation, policy, authority, audit —
+			// and its refusals fail the node with the recorded reason, because
+			// an unbound or denied action must stop the run, not pass silently.
+			// A step that names no capability stays a recorded pass-through:
+			// stated, never faked.
+			if capID := str(node.Parameters["capability"]); capID != "" && deps.Capabilities != nil {
+				return runCapability(ctx, deps, node, capID, workflowID, variables, auth)
+			}
 			return map[string]interface{}{
 				"note":   "no executor bound for node type " + string(node.Type) + " — recorded as pass-through",
 				"action": node.Action,
 			}, nil
 		}
 	}
+}
+
+// runCapability dispatches one action node through the capability funnel.
+func runCapability(ctx context.Context, deps NodeHandlerDeps, node store.WorkflowNode, capID, workflowID string, variables map[string]interface{}, auth RunAuth) (map[string]interface{}, error) {
+	input := substituteInputs(node.Parameters["inputs"], variables)
+	req := capability.InvokeRequest{
+		CapabilityID: capID,
+		Input:        input,
+		Actor: capability.Actor{
+			Type:         "agent",
+			ID:           str(node.Parameters["actor_agent_id"]),
+			PositionID:   str(node.Parameters["actor_position_id"]),
+			AutonomyTier: str(node.Parameters["actor_autonomy_tier"]),
+		},
+		Correlation: capability.Correlation{
+			RequestID:    str(variables["request_id"]),
+			WorkflowID:   workflowID,
+			NodeID:       node.ID,
+			DepartmentID: str(variables["department_id"]),
+		},
+	}
+	inv, err := deps.Capabilities.Invoke(ctx, auth.Authorization, auth.TenantID, req)
+	if err != nil {
+		return nil, fmt.Errorf("capability node %s (%s): %w", node.ID, capID, err)
+	}
+	if inv.Status != "completed" {
+		// The funnel already recorded the refusal; the node carries it to the
+		// run so the request fails with the stage and reason on the record.
+		return nil, fmt.Errorf("capability node %s: %s refused — %s: %s", node.ID, capID, inv.Status, inv.Error)
+	}
+
+	result := map[string]interface{}{
+		"capability":      inv.CapabilityID,
+		"execution_id":    inv.ID,
+		"status":          inv.Status,
+		"simulated":       inv.Simulated,
+		"provider_kind":   inv.ProviderKind,
+		"policy_decision": inv.PolicyDecision,
+		"action":          node.Action,
+		// summary, not "text": text chains into last_agent_output and would
+		// overwrite the agent draft a later gate needs to show its approver.
+		"summary": capabilitySummary(inv),
+	}
+	if inv.ExternalRef != nil {
+		result["external_ref"] = map[string]interface{}{
+			"system": inv.ExternalRef.System, "kind": inv.ExternalRef.Kind,
+			"id": inv.ExternalRef.ID, "url": inv.ExternalRef.URL,
+		}
+	}
+	if inv.Output != nil {
+		result["output"] = inv.Output
+	}
+	return result, nil
+}
+
+// substituteInputs resolves {{variable}} references in the step's declared
+// inputs against the run's variables. Values are bounded so a long agent
+// draft cannot balloon a capability payload.
+func substituteInputs(raw interface{}, variables map[string]interface{}) map[string]interface{} {
+	out := map[string]interface{}{}
+	m, ok := raw.(map[string]interface{})
+	if !ok {
+		return out
+	}
+	for k, v := range m {
+		sv, isStr := v.(string)
+		if !isStr {
+			out[k] = v
+			continue
+		}
+		resolved := sv
+		for name, val := range variables {
+			needle := "{{" + name + "}}"
+			if strings.Contains(resolved, needle) {
+				resolved = strings.ReplaceAll(resolved, needle, str(val))
+			}
+		}
+		out[k] = bound(resolved, 2000)
+	}
+	return out
+}
+
+func capabilitySummary(inv *capability.Invocation) string {
+	label := inv.CapabilityID
+	if inv.Simulated {
+		label += " (SIMULATED)"
+	}
+	if inv.ExternalRef != nil {
+		return fmt.Sprintf("%s → %s/%s %s", label, inv.ExternalRef.System, inv.ExternalRef.Kind, inv.ExternalRef.ID)
+	}
+	return label
 }
 
 func buildInstruction(node store.WorkflowNode, variables map[string]interface{}) string {
