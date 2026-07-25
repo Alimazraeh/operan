@@ -1,5 +1,5 @@
 // IAM: 3-principal identity system, RBAC, delegation, ABAC, audit (Module 02).
-import { SVC, get, post, patch, del, uuid4 } from "../api.js";
+import { SVC, get, post, patch, del, uuid4, unwrapList } from "../api.js";
 import { $, esc, badge, rel, toast, rowItem } from "../ui.js";
 
 const SVC_IAM = "/svc/iam";
@@ -16,23 +16,25 @@ export async function viewIAM() {
   // so this screen was never reachable at all. A partial outage is shown as a
   // partial outage: the sections that loaded render, the ones that did not say
   // so by name.
+  // The named key matters: M02 answers {"users":[…]} and {"roles":[…]}, not
+  // {"items":[…]}, so reading .items showed 0 users when there were two.
   const paths = {
-    users: "/users?page_size=100",
-    roles: "/roles?page_size=100",
-    services: "/service-identities?page_size=50",
-    agents: "/agent-identities?page_size=50",
-    delegations: "/admin/delegations?page_size=20",
-    abac: "/abac/policies?page_size=20",
-    audit: "/audit/trails?page_size=20",
+    users: ["/users?page_size=100", "users"],
+    roles: ["/roles?page_size=100", "roles"],
+    services: ["/service-identities?page_size=50", "service_identities"],
+    agents: ["/agent-identities?page_size=50", "agent_identities"],
+    delegations: ["/admin/delegations?page_size=20", "delegations"],
+    abac: ["/abac/policies?page_size=20", "policies"],
+    audit: ["/audit/trails?page_size=20", "trails"],
   };
   const keys = Object.keys(paths);
-  const settled = await Promise.allSettled(keys.map(k => get(SVC_IAM + paths[k])));
+  const settled = await Promise.allSettled(keys.map(k => get(SVC_IAM + paths[k][0])));
   const data = {};
   const unavailable = [];
   keys.forEach((k, i) => {
     const s = settled[i];
     const ok = s.status === "fulfilled" && s.value && s.value.ok;
-    data[k] = ok ? ((s.value.data && s.value.data.items) || []) : [];
+    data[k] = ok ? unwrapList(s.value, paths[k][1]) : [];
     if (!ok) {
       const why = s.status === "rejected"
         ? (s.reason && s.reason.message) || "unreachable"
