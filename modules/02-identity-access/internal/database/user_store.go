@@ -204,3 +204,50 @@ func (s *UserStore) CountTotal(ctx context.Context) (int, error) {
 	}
 	return count, nil
 }
+// SetPassword stores a bcrypt hash for a user and stamps when it changed.
+func (s *UserStore) SetPassword(ctx context.Context, userID, hash string) error {
+	tag, err := s.pool.Exec(ctx, `
+		UPDATE users SET password_hash = $2, password_set_at = NOW(), updated_at = NOW()
+		WHERE id = $1
+	`, userID, hash)
+	if err != nil {
+		return fmt.Errorf("set password: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("set password: no such user %s", userID)
+	}
+	return nil
+}
+
+// LoadAll returns every user across all tenants, including password hashes.
+// It exists so the process can rehydrate its in-memory view at boot: without
+// it, rows written to Postgres are invisible after a restart because every
+// read is served from memory.
+func (s *UserStore) LoadAll(ctx context.Context) ([]models.User, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, tenant_id, email, display_name, status, authentication_method,
+		       mfa_enabled, roles_json, created_at, updated_at, last_login_at,
+		       COALESCE(password_hash, ''), password_set_at
+		FROM users ORDER BY created_at
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("load users: %w", err)
+	}
+	defer rows.Close()
+
+	var out []models.User
+	for rows.Next() {
+		var u models.User
+		if err := rows.Scan(&u.ID, &u.TenantID, &u.Email, &u.DisplayName, &u.Status,
+			&u.AuthenticationMethod, &u.MFAEnabled, &u.RolesJSON,
+			&u.CreatedAt, &u.UpdatedAt, &u.LastLoginAt,
+			&u.PasswordHash, &u.PasswordSetAt); err != nil {
+			return nil, fmt.Errorf("scan user: %w", err)
+		}
+		if u.RolesJSON != "" {
+			_ = json.Unmarshal([]byte(u.RolesJSON), &u.RoleIDs)
+		}
+		out = append(out, u)
+	}
+	return out, rows.Err()
+}

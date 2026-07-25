@@ -177,3 +177,37 @@ func (s *PersistentAuditStore) GetByID(id string) (*models.AuditEvent, error) {
 func (s *PersistentAuditStore) CountTotal() (int, error) {
 	return 0, nil
 }
+
+// SetPassword records a credential in memory and persists it.
+func (s *PersistentUserStore) SetPassword(id, hash string) error {
+	if err := s.mem.SetPasswordHash(id, hash); err != nil {
+		return err
+	}
+	if s.pool != nil {
+		if err := s.db().SetPassword(context.Background(), id, hash); err != nil {
+			// A credential that is not durable would silently stop working at
+			// the next restart, so this is a failure, not a warning.
+			return err
+		}
+	}
+	return nil
+}
+
+// Hydrate loads persisted users into the in-memory view.
+//
+// Every read in this store is served from memory, so without this the rows
+// written to PostgreSQL are invisible after a restart — persistence would be
+// write-only. Called once at boot.
+func (s *PersistentUserStore) Hydrate(ctx context.Context) (int, error) {
+	if s.pool == nil {
+		return 0, nil
+	}
+	users, err := s.db().LoadAll(ctx)
+	if err != nil {
+		return 0, err
+	}
+	for i := range users {
+		s.mem.Put(&users[i])
+	}
+	return len(users), nil
+}
