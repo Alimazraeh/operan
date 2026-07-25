@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,17 +16,25 @@ import (
 	"github.com/operan/modules/02-identity-access/internal/events"
 	"github.com/operan/modules/02-identity-access/internal/middleware"
 	"github.com/operan/modules/02-identity-access/internal/models"
+	"github.com/operan/modules/02-identity-access/internal/store"
 )
 
 // RoleHandler handles role-related HTTP endpoints, delegating to Authentik for RBAC.
 type RoleHandler struct {
 	RBAC      authentik.RBACOperations
 	Publisher *events.Publisher
+	// Roles is the local store. Authentik is an optional upstream and this
+	// deployment has none reachable, so without a local path every roles
+	// endpoint returned 500 — the RBAC console had nothing to show.
+	Roles *store.RoleStore
 }
 
 // NewRoleHandler creates a new role handler.
-func NewRoleHandler(auth *authentik.Client, publisher *events.Publisher) *RoleHandler {
-	h := &RoleHandler{Publisher: publisher}
+func NewRoleHandler(auth *authentik.Client, roles *store.RoleStore, publisher *events.Publisher) *RoleHandler {
+	h := &RoleHandler{Publisher: publisher, Roles: roles}
+	if roles == nil {
+		h.Roles = store.NewRoleStore()
+	}
 	if auth != nil {
 		h.RBAC = auth.RBACAPI
 	}
@@ -38,7 +47,18 @@ func NewTestRoleHandler(auth authentik.RBACOperations, publisher *events.Publish
 	return &RoleHandler{
 		RBAC:      auth,
 		Publisher: publisher,
+		Roles:     store.NewRoleStore(),
 	}
+}
+
+// roles returns the local store, creating one if a construction path left it
+// nil. A nil store would panic the process on the first roles request, which
+// is a poor trade for a field somebody forgot to set.
+func (h *RoleHandler) roles() *store.RoleStore {
+	if h.Roles == nil {
+		h.Roles = store.NewRoleStore()
+	}
+	return h.Roles
 }
 
 // Create handles POST /api/v1/iam/roles
@@ -69,25 +89,33 @@ func (h *RoleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:   now,
 	}
 
-	// If authentik is configured, delegate role creation to authentik
+	// Authentik is an optional upstream; where it is unreachable the local
+	// store is the system of record. A genuine conflict from Authentik still
+	// conflicts — same shape as user creation.
+	created := false
 	if h.RBAC != nil {
-		authRoleName := "operan-" + tenantID + "-" + req.Name
-		authCtx := r.Context()
-
-		authRole, err := h.RBAC.Create(authCtx, authentik.CreateRoleRequest{
-			Name:        authRoleName,
+		authRole, err := h.RBAC.Create(r.Context(), authentik.CreateRoleRequest{
+			Name:        "operan-" + tenantID + "-" + req.Name,
 			Permissions: req.Permissions,
 		})
-		if err != nil {
+		switch {
+		case err == nil:
+			role.ID = authRole.UUID
+			role.Permissions = authRole.Permissions
+			created = true
+		case isConflictError(err):
+			http.Error(w, `{"error":"failed to create role: `+err.Error()+`"}`, http.StatusConflict)
+			return
+		default:
+			log.Printf("[IAM] Authentik unavailable (%v) — creating role %q in the local store", err, req.Name)
+		}
+	}
+	if err := h.roles().Create(role); err != nil {
+		if !created {
 			http.Error(w, `{"error":"failed to create role: `+err.Error()+`"}`, http.StatusConflict)
 			return
 		}
-
-		role.ID = authRole.UUID
-		role.Permissions = authRole.Permissions
-	} else {
-		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
-		return
+		log.Printf("[IAM] role %s created upstream but not stored locally: %v", role.ID, err)
 	}
 
 	// Publish event
@@ -123,12 +151,18 @@ func (h *RoleHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	var filtered []models.Role
 	var total int
+	listed := false
 	if h.RBAC != nil {
 		// Fetch all Authentik roles, then filter by tenant prefix
 		allRoles, err := h.RBAC.List(r.Context())
 		if err != nil {
-			http.Error(w, `{"error":"failed to list roles"}`, http.StatusInternalServerError)
-			return
+			// Falling back rather than 500ing: this deployment has no reachable
+			// Authentik, and an empty-but-honest local list beats an error page
+			// where the RBAC console should be.
+			log.Printf("[IAM] Authentik unavailable (%v) — listing roles from the local store", err)
+			allRoles = nil
+		} else {
+			listed = true
 		}
 
 		prefix := "operan-" + tenantID + "-"
@@ -140,12 +174,12 @@ func (h *RoleHandler) List(w http.ResponseWriter, r *http.Request) {
 			roleName := strings.TrimPrefix(ar.Name, prefix)
 
 			role := models.Role{
-				ID:              ar.UUID,
-				TenantID:        tenantID,
-				Name:            roleName,
-				Permissions:     ar.Permissions,
-				CreatedAt:       time.Now().UTC(),
-				UpdatedAt:       time.Now().UTC(),
+				ID:          ar.UUID,
+				TenantID:    tenantID,
+				Name:        roleName,
+				Permissions: ar.Permissions,
+				CreatedAt:   time.Now().UTC(),
+				UpdatedAt:   time.Now().UTC(),
 			}
 			filtered = append(filtered, role)
 		}
@@ -161,9 +195,14 @@ func (h *RoleHandler) List(w http.ResponseWriter, r *http.Request) {
 			end = total
 		}
 		filtered = filtered[start:end]
-	} else {
-		http.Error(w, `{"error":"authentik client not configured"}`, http.StatusInternalServerError)
-		return
+	}
+	if !listed {
+		local, localTotal, err := h.roles().List(tenantID, page, pageSize)
+		if err != nil {
+			http.Error(w, `{"error":"failed to list roles"}`, http.StatusInternalServerError)
+			return
+		}
+		filtered, total = local, localTotal
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -195,12 +234,12 @@ func (h *RoleHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 			authRole, err := h.RBAC.GetByID(r.Context(), roleID)
 			if err == nil {
 				role := models.Role{
-					ID:              authRole.UUID,
-					TenantID:        tenantID,
-					Name:            strings.TrimPrefix(authRole.Name, prefix),
-					Permissions:     authRole.Permissions,
-					CreatedAt:       time.Now().UTC(),
-					UpdatedAt:       time.Now().UTC(),
+					ID:          authRole.UUID,
+					TenantID:    tenantID,
+					Name:        strings.TrimPrefix(authRole.Name, prefix),
+					Permissions: authRole.Permissions,
+					CreatedAt:   time.Now().UTC(),
+					UpdatedAt:   time.Now().UTC(),
 				}
 				w.Header().Set("Content-Type", "application/json")
 				json.NewEncoder(w).Encode(role)
@@ -220,12 +259,12 @@ func (h *RoleHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 			fullName := prefix + roleID
 			if ar.Name == fullName || ar.UUID == roleID {
 				role := models.Role{
-					ID:              ar.UUID,
-					TenantID:        tenantID,
-					Name:            strings.TrimPrefix(ar.Name, prefix),
-					Permissions:     ar.Permissions,
-					CreatedAt:       time.Now().UTC(),
-					UpdatedAt:       time.Now().UTC(),
+					ID:          ar.UUID,
+					TenantID:    tenantID,
+					Name:        strings.TrimPrefix(ar.Name, prefix),
+					Permissions: ar.Permissions,
+					CreatedAt:   time.Now().UTC(),
+					UpdatedAt:   time.Now().UTC(),
 				}
 				w.Header().Set("Content-Type", "application/json")
 				json.NewEncoder(w).Encode(role)

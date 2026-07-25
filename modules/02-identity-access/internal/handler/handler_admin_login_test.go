@@ -20,8 +20,8 @@ import (
 func adminHandler(t *testing.T, passFile, tokenSecret string) http.Handler {
 	t.Helper()
 	cfg := &config.Config{
-		TokenSecret:  tokenSecret,
-		TokenExpiry:  480,
+		TokenSecret: tokenSecret,
+		TokenExpiry: 480,
 	}
 	h := NewAdminLoginHandler(cfg)
 	mux := http.NewServeMux()

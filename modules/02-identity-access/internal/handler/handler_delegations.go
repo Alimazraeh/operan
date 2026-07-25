@@ -169,8 +169,8 @@ func extractRoleName(fullName string) (string, bool) {
 
 // findUserUUID tries to resolve a user identifier to an Authentik user UUID.
 // Strategy:
-//   1. Treat the identifier as a UUID and try GetByID directly.
-//   2. Fall back to listing all users and matching by email.
+//  1. Treat the identifier as a UUID and try GetByID directly.
+//  2. Fall back to listing all users and matching by email.
 func (h *DelegationHandler) findUserUUID(ctx context.Context, identifier string) (string, error) {
 	// Fast path: assume it's a UUID
 	_, err := h.Auth.Users().GetByID(ctx, identifier)
@@ -240,22 +240,27 @@ func (h *DelegationHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	// Build response object matching the old store response shape.
 	role := models.DelegationRole{
-		ID:                   newGroup.UUID,
-		TenantID:             tenantID,
-		Name:                 req.Name,
-		Description:          req.Description,
-		Scope:                req.Scope,
-		Permissions:          req.Permissions,
-		MaxDelegationDepth:   func() int { if req.MaxDelegationDepth != nil { return *req.MaxDelegationDepth }; return 0 }(),
-		IsSystem:             false,
-		CreatedAt:            time.Now().UTC(),
-		UpdatedAt:            time.Now().UTC(),
+		ID:          newGroup.UUID,
+		TenantID:    tenantID,
+		Name:        req.Name,
+		Description: req.Description,
+		Scope:       req.Scope,
+		Permissions: req.Permissions,
+		MaxDelegationDepth: func() int {
+			if req.MaxDelegationDepth != nil {
+				return *req.MaxDelegationDepth
+			}
+			return 0
+		}(),
+		IsSystem:  false,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 
 	h.Publisher.Publish(ctx, "delegation_role.created", tenantID, "", time.Now().UTC().Format(time.RFC3339), map[string]interface{}{
-		"name":    role.Name,
-		"scope":   role.Scope,
-		"group":   newGroup.UUID,
+		"name":  role.Name,
+		"scope": role.Scope,
+		"group": newGroup.UUID,
 	})
 
 	w.Header().Set("Content-Type", "application/json")
@@ -327,11 +332,11 @@ func (h *DelegationHandler) List(w http.ResponseWriter, r *http.Request) {
 		}
 
 		roles = append(roles, models.DelegationRole{
-			ID:                   g.UUID,
-			TenantID:             tenantID,
-			Name:                 roleName,
-			Description:          g.Name, // store full name as description since group lacks a separate desc field
-			Scope:                func() string {
+			ID:          g.UUID,
+			TenantID:    tenantID,
+			Name:        roleName,
+			Description: g.Name, // store full name as description since group lacks a separate desc field
+			Scope: func() string {
 				if g.Properties != nil {
 					if sc, ok := g.Properties["scope"].(string); ok {
 						return sc
@@ -339,11 +344,11 @@ func (h *DelegationHandler) List(w http.ResponseWriter, r *http.Request) {
 				}
 				return ""
 			}(),
-			Permissions:          perms,
-			MaxDelegationDepth:   depth,
-			IsSystem:             false,
-			CreatedAt:            time.Now().UTC(),
-			UpdatedAt:            time.Now().UTC(),
+			Permissions:        perms,
+			MaxDelegationDepth: depth,
+			IsSystem:           false,
+			CreatedAt:          time.Now().UTC(),
+			UpdatedAt:          time.Now().UTC(),
 		})
 	}
 
@@ -420,11 +425,11 @@ func (h *DelegationHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(models.DelegationRole{
-		ID:                   g.UUID,
-		TenantID:             tenantID,
-		Name:                 roleName,
-		Description:          g.Name,
-		Scope:                func() string {
+		ID:          g.UUID,
+		TenantID:    tenantID,
+		Name:        roleName,
+		Description: g.Name,
+		Scope: func() string {
 			if g.Properties != nil {
 				if sc, ok := g.Properties["scope"].(string); ok {
 					return sc
@@ -432,11 +437,11 @@ func (h *DelegationHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 			}
 			return ""
 		}(),
-		Permissions:          perms,
-		MaxDelegationDepth:   depth,
-		IsSystem:             false,
-		CreatedAt:            time.Now().UTC(),
-		UpdatedAt:            time.Now().UTC(),
+		Permissions:        perms,
+		MaxDelegationDepth: depth,
+		IsSystem:           false,
+		CreatedAt:          time.Now().UTC(),
+		UpdatedAt:          time.Now().UTC(),
 	})
 }
 
@@ -528,12 +533,12 @@ func (h *DelegationHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(models.DelegationRole{
-		ID:              updated.UUID,
-		TenantID:        tenantID,
-		Name:            roleName,
-		Description:     updated.Name,
-		Scope:           props["scope"].(string),
-		Permissions:     func() []string {
+		ID:          updated.UUID,
+		TenantID:    tenantID,
+		Name:        roleName,
+		Description: updated.Name,
+		Scope:       props["scope"].(string),
+		Permissions: func() []string {
 			if pp, ok := props["permissions"].([]interface{}); ok {
 				var r []string
 				for _, v := range pp {
@@ -551,7 +556,7 @@ func (h *DelegationHandler) Update(w http.ResponseWriter, r *http.Request) {
 			}
 			return 0
 		}(),
-		IsSystem: false,
+		IsSystem:  false,
 		UpdatedAt: time.Now().UTC(),
 	})
 }

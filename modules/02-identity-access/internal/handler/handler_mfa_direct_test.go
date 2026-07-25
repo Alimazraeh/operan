@@ -15,10 +15,10 @@ import (
 
 func TestParseAuthenticatorDevicesDirect(t *testing.T) {
 	tests := []struct {
-		name     string
-		rawInput []json.RawMessage
-		wantLen  int
-		wantType string
+		name      string
+		rawInput  []json.RawMessage
+		wantLen   int
+		wantType  string
 		wantLabel string
 	}{
 		{

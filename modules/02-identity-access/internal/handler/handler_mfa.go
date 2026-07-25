@@ -231,9 +231,9 @@ func (h *MFAHandler) Verify(w http.ResponseWriter, r *http.Request) {
 
 	verifyReq := map[string]interface{}{
 		"flow_data": map[string]interface{}{
-			"uid":     req.Code,
-			"token":   req.Code,
-			"method":  req.Method,
+			"uid":    req.Code,
+			"token":  req.Code,
+			"method": req.Method,
 		},
 	}
 

@@ -45,21 +45,21 @@ func (h *ADHandler) Configure(w http.ResponseWriter, r *http.Request) {
 	host, port := extractHostPort(req.DomainController)
 
 	authMap := map[string]interface{}{
-		"hostname":              host,
-		"port":                  port,
-		"connection_security":   "ssl",
-		"bind_dn":               req.BindDN,
-		"bind_password":         req.BindPassword,
-		"active_directory":      true,
-		"domain_name":           req.DomainName,
-		"user_search_base":      req.OrganizationUnit,
-		"group_search_base":     req.OrganizationUnit,
-		"user_dn_template":      "cn={username},ou=People," + req.OrganizationUnit,
-		"group_dn_template":     "cn={name},ou=Groups," + req.OrganizationUnit,
+		"hostname":            host,
+		"port":                port,
+		"connection_security": "ssl",
+		"bind_dn":             req.BindDN,
+		"bind_password":       req.BindPassword,
+		"active_directory":    true,
+		"domain_name":         req.DomainName,
+		"user_search_base":    req.OrganizationUnit,
+		"group_search_base":   req.OrganizationUnit,
+		"user_dn_template":    "cn={username},ou=People," + req.OrganizationUnit,
+		"group_dn_template":   "cn={name},ou=Groups," + req.OrganizationUnit,
 	}
 
 	ingestionMap := map[string]interface{}{
-		"user_search_base": req.OrganizationUnit,
+		"user_search_base":  req.OrganizationUnit,
 		"group_search_base": req.OrganizationUnit,
 	}
 
@@ -69,9 +69,9 @@ func (h *ADHandler) Configure(w http.ResponseWriter, r *http.Request) {
 	}
 
 	source, err := h.Auth.LDAPSources().Create(r.Context(), authentik.CreateLDAPSourceRequest{
-		Name:         "operan-" + tenantID + "-ad",
+		Name:           "operan-" + tenantID + "-ad",
 		Authentication: authMap,
-		Ingestion:    ingestionMap,
+		Ingestion:      ingestionMap,
 	})
 	if err != nil {
 		http.Error(w, `{"error":"failed to create AD source: `+err.Error()+`"}`, http.StatusConflict)
@@ -79,8 +79,8 @@ func (h *ADHandler) Configure(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Publisher.Publish(r.Context(), "ad.configured", tenantID, "", time.Now().UTC().Format(time.RFC3339), map[string]interface{}{
-		"domain_name":         req.DomainName,
-		"domain_controller":   req.DomainController,
+		"domain_name":       req.DomainName,
+		"domain_controller": req.DomainController,
 	})
 
 	w.Header().Set("Content-Type", "application/json")
@@ -158,12 +158,12 @@ func (h *ADHandler) Test(w http.ResponseWriter, r *http.Request) {
 	host, port := extractHostPort(domainController)
 
 	authMap := map[string]interface{}{
-		"hostname":         host,
-		"port":             port,
+		"hostname":            host,
+		"port":                port,
 		"connection_security": "ssl",
-		"bind_dn":          bindDN,
-		"bind_password":    bindPassword,
-		"active_directory": true,
+		"bind_dn":             bindDN,
+		"bind_password":       bindPassword,
+		"active_directory":    true,
 	}
 
 	ingestionMap := map[string]interface{}{
@@ -171,9 +171,9 @@ func (h *ADHandler) Test(w http.ResponseWriter, r *http.Request) {
 	}
 
 	source, err := h.Auth.LDAPSources().Create(r.Context(), authentik.CreateLDAPSourceRequest{
-		Name:         "operan-" + tenantID + "-ad-test",
+		Name:           "operan-" + tenantID + "-ad-test",
 		Authentication: authMap,
-		Ingestion:    ingestionMap,
+		Ingestion:      ingestionMap,
 	})
 	if err != nil {
 		http.Error(w, `{"error":"failed to create test AD source: `+err.Error()+`"}`, http.StatusBadRequest)
@@ -243,19 +243,19 @@ func (h *ADHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := struct {
-		UUID            string                 `json:"uuid"`
-		Name            string                 `json:"name"`
-		Connected       bool                   `json:"connected"`
-		Authentication  map[string]interface{} `json:"authentication"`
-		Ingestion       map[string]interface{} `json:"ingestion"`
-		Properties      map[string]interface{} `json:"properties,omitempty"`
+		UUID           string                 `json:"uuid"`
+		Name           string                 `json:"name"`
+		Connected      bool                   `json:"connected"`
+		Authentication map[string]interface{} `json:"authentication"`
+		Ingestion      map[string]interface{} `json:"ingestion"`
+		Properties     map[string]interface{} `json:"properties,omitempty"`
 	}{
-		UUID:         found.UUID,
-		Name:         found.Name,
-		Connected:    found.Connected,
+		UUID:           found.UUID,
+		Name:           found.Name,
+		Connected:      found.Connected,
 		Authentication: found.Authentication,
-		Ingestion:    found.Ingestion,
-		Properties:   found.Properties,
+		Ingestion:      found.Ingestion,
+		Properties:     found.Properties,
 	}
 
 	// Mask bind password in response
@@ -336,7 +336,7 @@ func (h *ADHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 
 	updateMap := map[string]interface{}{
 		"authentication": authMap,
-		"ingestion":    ingestionMap,
+		"ingestion":      ingestionMap,
 	}
 	if req.DisplayName != nil {
 		updateMap["name"] = *req.DisplayName

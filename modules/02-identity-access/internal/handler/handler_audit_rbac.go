@@ -362,19 +362,19 @@ func (h *RBACHandler) checkPermissionViaGroups(ctx context.Context, user *authen
 // logEvaluateEvent records the RBAC evaluation result as an audit event in Authentik.
 func (h *RBACHandler) logEvaluateEvent(ctx context.Context, actorID string, req models.PermissionCheckRequest, hasDirect, allowed bool, reason, _ string) {
 	event := map[string]interface{}{
-		"type":      "operan_rbac_evaluate",
-		"actor":     actorID,
-		"object":    req.ActorID,
+		"type":        "operan_rbac_evaluate",
+		"actor":       actorID,
+		"object":      req.ActorID,
 		"object_type": "operan.permission",
 		"data": map[string]interface{}{
-			"action":           "rbac_evaluate",
-			"allowed":          allowed,
-			"reason":           reason,
-			"actor_id":         req.ActorID,
-			"requested_action": req.Action,
-			"requested_resource": req.Resource,
+			"action":                "rbac_evaluate",
+			"allowed":               allowed,
+			"reason":                reason,
+			"actor_id":              req.ActorID,
+			"requested_action":      req.Action,
+			"requested_resource":    req.Resource,
 			"has_direct_permission": hasDirect,
-			"resolved_permission": mapResourceActionToAuthenticPermission(req.Resource, req.Action),
+			"resolved_permission":   mapResourceActionToAuthenticPermission(req.Resource, req.Action),
 		},
 	}
 	body, _ := json.Marshal(event)
@@ -610,7 +610,7 @@ func (h *SessionReplayHandler) DeleteSession(w http.ResponseWriter, r *http.Requ
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"deleted":   true,
+		"deleted":    true,
 		"session_id": sessionID,
 	})
 }
@@ -760,7 +760,8 @@ func extractSessionReplayID(path string) string {
 
 // extractSessionRequestsID extracts the session_id from the URL path.
 // Handles: /api/v1/iam/session-replay/sessions/{id}/requests and
-//          /api/v1/iam/session-replay/sessions/{id}
+//
+//	/api/v1/iam/session-replay/sessions/{id}
 func extractSessionRequestsID(path string) string {
 	// Strip the base path prefix.
 	path = strings.TrimPrefix(path, "/api/v1/iam/session-replay/sessions/")

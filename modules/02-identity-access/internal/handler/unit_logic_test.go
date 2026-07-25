@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"github.com/operan/modules/02-identity-access/internal/store"
 	"testing"
 
 	"github.com/operan/modules/02-identity-access/internal/authentik"
@@ -92,7 +93,7 @@ func TestIdentityHandlerConstructors(t *testing.T) {
 	if NewAgentIdentityHandler(nil, nil) == nil {
 		t.Error("NewAgentIdentityHandler returned nil")
 	}
-	if NewRoleHandler(nil, nil) == nil {
+	if NewRoleHandler(nil, store.NewRoleStore(), nil) == nil {
 		t.Error("NewRoleHandler returned nil")
 	}
 	if NewSessionReplayHandler(nil, nil, nil) == nil {

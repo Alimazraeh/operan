@@ -60,11 +60,11 @@ func (r *ABACEvaluateRequest) Validate() error {
 
 // ABACEvaluateResult is the response for ABAC evaluation.
 type ABACEvaluateResult struct {
-	Allowed      bool                `json:"allowed"`
-	Reason       string              `json:"reason"`
-	RBACGranted  bool                `json:"rbac_granted,omitempty"`
-	ABACPolicies []ABACPolicyResult  `json:"abac_policies,omitempty"`
-	EvaluatedAt  string              `json:"evaluated_at"`
+	Allowed      bool               `json:"allowed"`
+	Reason       string             `json:"reason"`
+	RBACGranted  bool               `json:"rbac_granted,omitempty"`
+	ABACPolicies []ABACPolicyResult `json:"abac_policies,omitempty"`
+	EvaluatedAt  string             `json:"evaluated_at"`
 }
 
 // ABACPolicyResult is the result of a single ABAC policy evaluation.
@@ -111,9 +111,9 @@ func (r *ABACPolicyCreateRequest) Validate() error {
 // ABACHandler handles ABAC policy evaluation and management HTTP endpoints.
 type ABACHandler struct {
 	*RBACHandler
-	Auth   *authentik.Client
-	Store  *ABACStore
-	Pub    *events.Publisher
+	Auth  *authentik.Client
+	Store *ABACStore
+	Pub   *events.Publisher
 }
 
 // NewABACHandler creates a new ABAC handler with a tenant-isolated store.

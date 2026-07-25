@@ -512,36 +512,36 @@ func TestExtractAgentID(t *testing.T) {
 
 func TestContainsUUID(t *testing.T) {
 	tests := []struct {
-			name   string
-			ids    []string
-			uuid   string
-			wantOK bool
-		}{
-			{
-				name:   "valid uuid in list",
-				ids:    []string{"550e8400-e29b-41d4-a716-446655440000", "6ba7b810-9dad-11d1-80b4-00c04fd430c8"},
-				uuid:   "550e8400-e29b-41d4-a716-446655440000",
-				wantOK: true,
-			},
-			{
-				name:   "uuid not in list",
-				ids:    []string{"550e8400-e29b-41d4-a716-446655440000", "6ba7b810-9dad-11d1-80b4-00c04fd430c8"},
-				uuid:   "00000000-0000-0000-0000-000000000000",
-				wantOK: false,
-			},
-			{
-				name:   "empty list",
-				ids:    []string{},
-				uuid:   "550e8400-e29b-41d4-a716-446655440000",
-				wantOK: false,
-			},
-			{
-				name:   "nil list",
-				ids:    nil,
-				uuid:   "550e8400-e29b-41d4-a716-446655440000",
-				wantOK: false,
-			},
-		}
+		name   string
+		ids    []string
+		uuid   string
+		wantOK bool
+	}{
+		{
+			name:   "valid uuid in list",
+			ids:    []string{"550e8400-e29b-41d4-a716-446655440000", "6ba7b810-9dad-11d1-80b4-00c04fd430c8"},
+			uuid:   "550e8400-e29b-41d4-a716-446655440000",
+			wantOK: true,
+		},
+		{
+			name:   "uuid not in list",
+			ids:    []string{"550e8400-e29b-41d4-a716-446655440000", "6ba7b810-9dad-11d1-80b4-00c04fd430c8"},
+			uuid:   "00000000-0000-0000-0000-000000000000",
+			wantOK: false,
+		},
+		{
+			name:   "empty list",
+			ids:    []string{},
+			uuid:   "550e8400-e29b-41d4-a716-446655440000",
+			wantOK: false,
+		},
+		{
+			name:   "nil list",
+			ids:    nil,
+			uuid:   "550e8400-e29b-41d4-a716-446655440000",
+			wantOK: false,
+		},
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

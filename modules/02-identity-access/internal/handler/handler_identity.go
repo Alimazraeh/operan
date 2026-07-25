@@ -73,11 +73,11 @@ func (h *ServiceIdentityHandler) Create(w http.ResponseWriter, r *http.Request) 
 	if h.Auth == nil || h.Store == nil {
 		// In-memory fallback for tests
 		identity = &models.ServiceIdentity{
-			ID:       uuid.New().String(),
-			TenantID: tenantID,
-			Name:     req.Name,
-			RoleIDs:  req.RoleIDs,
-			APIKeyID: "sk_" + uuid.New().String(),
+			ID:        uuid.New().String(),
+			TenantID:  tenantID,
+			Name:      req.Name,
+			RoleIDs:   req.RoleIDs,
+			APIKeyID:  "sk_" + uuid.New().String(),
 			CreatedAt: time.Now().UTC(),
 		}
 		if err := h.Store.Create(identity); err != nil {
@@ -94,9 +94,9 @@ func (h *ServiceIdentityHandler) Create(w http.ResponseWriter, r *http.Request) 
 
 	// Step 1: Create application in Authentik
 	app, err := h.Auth.ApplicationsAPI.Create(ctx, authentik.CreateApplicationRequest{
-		Slug:             strings.ReplaceAll(appName, " ", "-"),
-		Name:             appName,
-		ProtocolPrefix:   "https",
+		Slug:               strings.ReplaceAll(appName, " ", "-"),
+		Name:               appName,
+		ProtocolPrefix:     "https",
 		AuthenticationRank: 0,
 	})
 	if err != nil {
@@ -133,13 +133,18 @@ func (h *ServiceIdentityHandler) Create(w http.ResponseWriter, r *http.Request) 
 
 	// Build response model
 	identity = &models.ServiceIdentity{
-		ID:          app.UUID,
-		TenantID:    tenantID,
-		Name:        app.Name,
-		RoleIDs:     req.RoleIDs,
-		APIKeyID:    token.UUID,
-		Metadata:    func() string { if req.Metadata != nil { return *req.Metadata }; return ""}(),
-		CreatedAt:   time.Now().UTC(),
+		ID:       app.UUID,
+		TenantID: tenantID,
+		Name:     app.Name,
+		RoleIDs:  req.RoleIDs,
+		APIKeyID: token.UUID,
+		Metadata: func() string {
+			if req.Metadata != nil {
+				return *req.Metadata
+			}
+			return ""
+		}(),
+		CreatedAt: time.Now().UTC(),
 	}
 
 	// Publish event
@@ -291,10 +296,10 @@ func (h *ServiceIdentityHandler) GetByID(w http.ResponseWriter, r *http.Request)
 
 	// Build response model
 	identity := &models.ServiceIdentity{
-		ID:        app.UUID,
-		Name:      app.Name,
-		RoleIDs:   nil,
-		Metadata:  "",
+		ID:       app.UUID,
+		Name:     app.Name,
+		RoleIDs:  nil,
+		Metadata: "",
 	}
 
 	w.Header().Set("Content-Type", "application/json")

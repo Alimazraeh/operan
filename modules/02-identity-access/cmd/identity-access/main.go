@@ -70,7 +70,7 @@ func main() {
 
 	// Initialize handlers
 	userHandler := handler.NewUserHandler(authClient, users, audit, publisher)
-	roleHandler := handler.NewRoleHandler(authClient, publisher)
+	roleHandler := handler.NewRoleHandler(authClient, store.NewRoleStore(), publisher)
 	serviceIDHandler := handler.NewServiceIdentityHandler(authClient, publisher)
 	agentIDHandler := handler.NewAgentIdentityHandler(authClient, publisher)
 	ssoHandler := handler.NewSSOHandler(authClient, publisher)
