@@ -89,3 +89,73 @@ func TestCompileIgnoresUnknownRequiredBy(t *testing.T) {
 		t.Errorf("unknown required_by produced an approver: %v", p)
 	}
 }
+
+// The manual-handling gate raised for a service with no SOP names no approver,
+// so it targeted the role department_head and sat in a queue nobody owns. When
+// a real person holds the department's root seat, the gate must reach them by
+// name — that is the same target, resolved, and it is the difference between an
+// approval sitting in a role queue and one arriving in somebody's inbox.
+func manualGateSOP() *store.WorkflowDefinition {
+	return &store.WorkflowDefinition{
+		ID: "manual-1", Name: "Manual handling",
+		Steps: []store.WorkflowStep{{ID: "gate-manual", Type: "approval", Name: "Handle and sign off"}},
+	}
+}
+
+func TestUnroutedGateGoesToTheDepartmentHeadWhoHoldsTheSeat(t *testing.T) {
+	dept := &store.Department{
+		ID: "d1", TenantID: "t1",
+		OrgChart: []store.Position{
+			{ID: "pos-mgr", Title: "IT Manager", AgentDefID: "it-manager-01",
+				HolderType: "human", HumanRef: "user-dana"},
+			{ID: "pos-sys", Title: "Systems Administrator", AgentDefID: "sys-admin-01",
+				HolderType: "ai_agent", ReportsTo: "pos-mgr"},
+		},
+	}
+	p := gateParams(t, manualGateSOP(), dept)
+	if p["required_approver_user_id"] != "user-dana" {
+		t.Fatalf("gate approver = %v, want user-dana (%+v)", p["required_approver_user_id"], p)
+	}
+	if p["required_approver_source"] != "department_head_seat" {
+		t.Fatalf("approver source = %v, want department_head_seat", p["required_approver_source"])
+	}
+}
+
+// With nobody holding the root seat the gate stays on its role target. A
+// fabricated approver is worse than an unowned queue: it records a named person
+// as responsible for something they have never seen.
+func TestUnroutedGateWithNoHumanHeadNamesNobody(t *testing.T) {
+	p := gateParams(t, manualGateSOP(), deptWith("ai_agent", ""))
+	if _, present := p["required_approver_user_id"]; present {
+		t.Fatalf("named an approver for an unbound department: %+v", p)
+	}
+}
+
+// An approver the SOP actually names still wins; the seat fallback must not
+// redirect a gate that was routed deliberately.
+func TestDeclaredApproverBeatsTheDepartmentHeadFallback(t *testing.T) {
+	dept := &store.Department{
+		ID: "d1", TenantID: "t1",
+		OrgChart: []store.Position{
+			{ID: "pos-mgr", Title: "IT Manager", AgentDefID: "it-manager-01",
+				HolderType: "human", HumanRef: "user-dana"},
+			{ID: "pos-sec", Title: "Security Lead", AgentDefID: "sec-lead-01",
+				HolderType: "human", HumanRef: "user-sam", ReportsTo: "pos-mgr"},
+		},
+	}
+	p := gateParams(t, gateSOP("sec-lead-01"), dept)
+	if p["required_approver_user_id"] != "user-sam" {
+		t.Fatalf("approver = %v, want the declared user-sam", p["required_approver_user_id"])
+	}
+}
+
+// A step that names an approver who cannot be resolved must stay unrouted. The
+// department-head fallback exists for gates that name nobody; applying it here
+// would record the IT manager as the signatory for a decision the SOP said
+// belongs to someone else.
+func TestUnresolvableDeclaredApproverIsNotReplacedByTheHead(t *testing.T) {
+	p := gateParams(t, gateSOP("finance-manager-99"), deptWith("human", "user-dana"))
+	if got, present := p["required_approver_user_id"]; present {
+		t.Fatalf("substituted %v for an approver the SOP named but could not resolve", got)
+	}
+}

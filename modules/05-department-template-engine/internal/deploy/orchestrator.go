@@ -499,6 +499,24 @@ func approverByDef(dept *store.Department) map[string]string {
 	return out
 }
 
+// departmentHeadHolder returns the user who holds the department's root seat,
+// or "" when nobody does. The root is the position that reports to nobody —
+// the same seat /me/assignments marks is_department_root.
+//
+// Returning "" is the honest answer for an unbound department, and the caller
+// must leave the gate on its role target rather than inventing an approver.
+func departmentHeadHolder(dept *store.Department) string {
+	if dept == nil {
+		return ""
+	}
+	for _, p := range dept.OrgChart {
+		if p.ReportsTo == "" && p.HolderType == "human" && p.HumanRef != "" {
+			return p.HumanRef
+		}
+	}
+	return ""
+}
+
 // requiredByOf reads the approver a step names, tolerating both the singular
 // and list spellings the catalogue uses.
 func requiredByOf(cfg map[string]interface{}) []string {
@@ -557,7 +575,8 @@ func CompileWorkflowFor(wf *store.WorkflowDefinition, departmentID string, agent
 		// nobody is bound the orchestrator falls back to a role target — never
 		// to a fabricated user.
 		if n.Type == "human_gate" {
-			for _, def := range requiredByOf(s.Config) {
+			declared := requiredByOf(s.Config)
+			for _, def := range declared {
 				if user, ok := humanByDef[def]; ok {
 					if n.Parameters == nil {
 						n.Parameters = map[string]interface{}{}
@@ -565,6 +584,27 @@ func CompileWorkflowFor(wf *store.WorkflowDefinition, departmentID string, agent
 					n.Parameters["required_approver_user_id"] = user
 					n.Parameters["required_approver_agent_def_id"] = def
 					break
+				}
+			}
+			// A gate that names nobody targets the role department_head. When a
+			// real person holds the department's root seat, name them: same
+			// target, resolved — the difference between an approval sitting in
+			// a role queue nobody owns and one arriving in somebody's inbox.
+			// This is the common case, because the manual-handling gate raised
+			// for a service with no SOP declares no approver at all, and that
+			// is exactly when a named human matters most.
+			//
+			// Only when the step names nobody. A step that names an approver
+			// who cannot be resolved stays unrouted: substituting the
+			// department head for a specifically requested signatory would
+			// record the wrong person as having authority over the decision.
+			if len(declared) == 0 {
+				if user := departmentHeadHolder(dept); user != "" {
+					if n.Parameters == nil {
+						n.Parameters = map[string]interface{}{}
+					}
+					n.Parameters["required_approver_user_id"] = user
+					n.Parameters["required_approver_source"] = "department_head_seat"
 				}
 			}
 		}
