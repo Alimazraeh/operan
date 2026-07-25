@@ -8,6 +8,7 @@ import viewTeams from "./views/teams.js";
 import viewTasks from "./views/tasks.js";
 import viewReports from "./views/reports.js";
 import viewSettings from "./views/settings.js";
+import viewPeople from "./views/people.js";
 
 // ── Import existing views (named exports) ──────────────────
 import { viewDepartments, viewDepartment } from "./views/departments.js";
@@ -20,26 +21,34 @@ import { viewTenants } from "./views/tenants.js";
 import { viewPolicies } from "./views/policies.js";
 import { viewCost } from "./views/cost.js";
 import { viewObservability } from "./views/observability.js";
+import { viewIAM } from "./views/iam.js";
+import { loadAuthz, can, authorityLabel, isUnbound, authz } from "./perm.js";
 
 // ── View registry ──────────────────────────────────────────
+// Each view declares its hash route and the permission it needs. `requires` is
+// a UI affordance, not a security boundary — every service enforces its own
+// authorization. It exists so nobody acts under authority they do not have by
+// stumbling into a screen.
 const VIEWS = {
-  dashboard:    { title: "Dashboard",     render: viewDashboard },
-  departments:  { title: "Departments",   render: viewDepartments },
-  department:   { title: "Department",    render: viewDepartment, parent: "departments" },
-  teams:        { title: "Teams",         render: viewTeams },
-  tasks:        { title: "Tasks & Projects", render: viewTasks },
-  workflows:    { title: "Workflows",     render: viewWorkflows },
-  supervision:  { title: "Supervision",   render: viewSupervision },
-  policies:     { title: "Policies",      render: viewPolicies },
-  reports:      { title: "Reports",       render: viewReports },
-  cost:         { title: "Costs",         render: viewCost },
-  agents:       { title: "Agents",        render: viewAgents },
-  agent:        { title: "Agent",         render: viewAgent, parent: "agents" },
-  ingestion:    { title: "Knowledge",     render: viewIngestion },
-  connectors:   { title: "Connectors",    render: viewConnectors },
-  settings:     { title: "Settings",      render: viewSettings },
-  tenants:      { title: "Tenants",       render: viewTenants },
-  observability:{ title: "Observability", render: viewObservability },
+  dashboard:    { title: "Dashboard", route: "/", render: viewDashboard },
+  departments:  { title: "Departments", route: "/departments", render: viewDepartments, requires: "department.read" },
+  department:   { title: "Department", route: "/departments/:id", render: viewDepartment, parent: "departments", requires: "department.read" },
+  teams:        { title: "Teams", route: "/teams", render: viewTeams, requires: "department.read" },
+  tasks:        { title: "Tasks & Projects", route: "/tasks", render: viewTasks },
+  workflows:    { title: "Workflows", route: "/workflows", render: viewWorkflows, requires: "department.read" },
+  supervision:  { title: "Supervision", route: "/supervision", render: viewSupervision, requires: "approval.read" },
+  policies:     { title: "Policies", route: "/policies", render: viewPolicies, requires: "department.read" },
+  reports:      { title: "Reports", route: "/reports", render: viewReports, requires: "kpi.read" },
+  cost:         { title: "Costs", route: "/costs", render: viewCost, requires: "kpi.read" },
+  people:       { title: "People", route: "/people", render: viewPeople, requires: "people.read" },
+  agents:       { title: "Agents", route: "/agents", render: viewAgents, requires: "department.read" },
+  agent:        { title: "Agent", route: "/agents/:id", render: viewAgent, parent: "agents", requires: "department.read" },
+  ingestion:    { title: "Knowledge", route: "/knowledge", render: viewIngestion, requires: "department.read" },
+  connectors:   { title: "Connectors", route: "/connectors", render: viewConnectors, requires: "platform.admin" },
+  tenants:      { title: "Tenants", route: "/tenants", render: viewTenants, requires: "platform.admin" },
+  iam:          { title: "Identity & Access", route: "/iam", render: viewIAM, requires: "platform.admin" },
+  settings:     { title: "Settings", route: "/settings", render: viewSettings },
+  observability:{ title: "Observability", route: "/observability", render: viewObservability, requires: "platform.admin" },
 };
 
 // Register views (some export both function and register)
@@ -112,29 +121,96 @@ function renderDashboard() {
 }
 
 // ── Router ─────────────────────────────────────────────────
+// Views are addressable. With an approval inbox and several personas, the
+// primary interaction is "here is the thing that needs you" — in an email or a
+// message — so a request or a department must have a link. Hash routing needs
+// no server change: the portal is a Go binary serving an embedded filesystem.
 let currentView = "dashboard";
+let suppressHashWrite = false;
+
+// hashFor renders a view + args back into a hash, filling :params in order.
+function hashFor(name, args) {
+  const route = VIEWS[name] && VIEWS[name].route;
+  if (!route) return "";
+  let i = 0;
+  const path = route.replace(/:[^/]+/g, () => encodeURIComponent(args[i++] ?? ""));
+  const trimmed = path.replace(/\/+$/, "");
+  return trimmed === "" ? "#/" : "#" + trimmed;
+}
+
+// matchHash resolves a hash back to a view and its positional args.
+function matchHash(hash) {
+  const path = (hash || "").replace(/^#/, "") || "/";
+  const parts = path.split("/").filter(Boolean);
+  for (const [name, v] of Object.entries(VIEWS)) {
+    if (!v.route) continue;
+    const rparts = v.route.split("/").filter(Boolean);
+    if (rparts.length !== parts.length) continue;
+    const args = [];
+    let ok = true;
+    for (let i = 0; i < rparts.length; i++) {
+      if (rparts[i].startsWith(":")) args.push(decodeURIComponent(parts[i]));
+      else if (rparts[i] !== parts[i]) { ok = false; break; }
+    }
+    if (ok) return { name, args };
+  }
+  return null;
+}
+
+// renderDenied is shown instead of a view the signed-in person may not open.
+// Being told plainly is better than an empty screen or a wall of failed calls.
+function renderDenied(v) {
+  return `<div class="error-box">
+    <h3>Not available to you</h3>
+    <p>${esc(v.title)} needs the <code>${esc(v.requires || "")}</code> permission, which your
+    current authority does not include${isUnbound() ? " — you do not hold a seat in any department yet" : ""}.</p>
+    <button class="ghost" onclick="window.go('dashboard')">Go to your dashboard</button>
+  </div>`;
+}
 
 window.go = async function (name, ...args) {
   if (!VIEWS[name]) return;
-  currentView = name;
   const v = VIEWS[name];
+  currentView = name;
   document.querySelectorAll(".navlink").forEach(el =>
     el.classList.toggle("active", el.dataset.view === (v.parent || name)));
 
   const crumb = $("crumb");
   if (crumb) crumb.textContent = v.title;
 
+  // Keep the address bar in step so the current screen can be shared.
+  const h = hashFor(name, args);
+  if (h && location.hash !== h) {
+    suppressHashWrite = true;
+    location.hash = h;
+    setTimeout(() => { suppressHashWrite = false; }, 0);
+  }
+
   const viewEl = $("view");
-  if (viewEl) {
-    viewEl.innerHTML = `<div class="card"><div class="skel-line w60"></div><div class="skel-line w80"></div><div class="skel-line"></div></div>`;
-    try {
-      viewEl.innerHTML = await v.render(...args);
-    } catch (e) {
-      console.error(e);
-      viewEl.innerHTML = `<div class="error-box"><h3>Error</h3><p>${esc(String(e))}</p><button class="ghost" onclick="window.go('${name}')">Retry</button></div>`;
-    }
+  if (!viewEl) return;
+
+  if (v.requires && !can(v.requires)) {
+    viewEl.innerHTML = renderDenied(v);
+    return;
+  }
+
+  viewEl.innerHTML = `<div class="card"><div class="skel-line w60"></div><div class="skel-line w80"></div><div class="skel-line"></div></div>`;
+  try {
+    viewEl.innerHTML = await v.render(...args);
+  } catch (e) {
+    console.error(e);
+    viewEl.innerHTML = `<div class="error-box"><h3>Error</h3><p>${esc(String(e))}</p><button class="ghost" onclick="window.go('${name}')">Retry</button></div>`;
   }
 };
+
+// goFromHash routes the current address, falling back to the dashboard.
+async function goFromHash() {
+  if (suppressHashWrite) return;
+  const m = matchHash(location.hash);
+  if (m) await window.go(m.name, ...m.args);
+  else await window.go("dashboard");
+}
+window.addEventListener("hashchange", () => { if (!suppressHashWrite) goFromHash(); });
 
 // ── Login handler ──────────────────────────────────────────
 async function handleLogin() {
@@ -165,13 +241,42 @@ async function handleLogin() {
     localStorage.setItem("operan.displayName", session.displayName || "");
     msg.textContent = "";
     ensureTenantRecord(); // async bookkeeping — M01 record for this workspace
+    // Authority must be known before the first screen renders, or the nav
+    // flashes options this person cannot use.
+    await loadAuthz();
     renderDashboard();
     setupShell();
-    await window.go("dashboard");
+    await goFromHash();
   } catch (e) {
     msg.textContent = e.message || "Authentication failed";
     msg.className = "err";
   }
+}
+
+// applyNavPermissions hides links the signed-in person cannot open, and any
+// section heading left with nothing under it.
+function applyNavPermissions() {
+  document.querySelectorAll(".navlink").forEach(el => {
+    const v = VIEWS[el.dataset.view];
+    const allowed = !v || !v.requires || can(v.requires);
+    el.style.display = allowed ? "" : "none";
+  });
+  // A section heading with no visible links beneath it is noise.
+  const sidebar = document.getElementById("sidebar");
+  if (!sidebar) return;
+  const kids = [...sidebar.children];
+  kids.forEach((el, i) => {
+    if (!el.classList.contains("nav-section")) return;
+    let anyVisible = false;
+    for (let j = i + 1; j < kids.length; j++) {
+      if (kids[j].classList.contains("nav-section")) break;
+      if (kids[j].classList.contains("navlink") && kids[j].style.display !== "none") {
+        anyVisible = true;
+        break;
+      }
+    }
+    el.style.display = anyVisible ? "" : "none";
+  });
 }
 
 // ── Shell setup (after login) ──────────────────────────────
@@ -199,6 +304,10 @@ function setupShell() {
       session.roles = [];
       session.role = "";
       session.displayName = "";
+      authz.permissions = new Set();
+      authz.assignments = [];
+      authz.loaded = false;
+      location.hash = "";
       session.jwt = "";
       session.tenant = "";
       session.userId = "";
@@ -216,14 +325,15 @@ function setupShell() {
     if (overlay) overlay.addEventListener("click", () => sidebar.classList.remove("open"));
   }
 
-  // Who is signed in. With five personas coming, acting under the wrong
-  // authority must not be possible to do unknowingly.
+  // Show only what this person may open, and say under whose authority they
+  // are acting. Acting under the wrong authority must not be possible to do
+  // unknowingly.
+  applyNavPermissions();
   const chip = $("tenantChip");
   if (chip) {
     const who = session.displayName || session.email || "signed in";
-    const role = (session.role || "").replace(/_/g, " ");
     chip.innerHTML = `<b>${esc(who)}</b>` +
-      (role ? `<br><span class="hint" style="margin:0">${esc(role)}</span>` : "") +
+      `<br><span class="hint" style="margin:0">${esc(authorityLabel())}</span>` +
       `<br><span class="hint" style="margin:0">${esc(session.tenant || "")}</span>`;
   }
 
@@ -301,9 +411,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Check for existing session
   if (isAuthenticated()) {
-    renderDashboard();
-    setupShell();
-    window.go("dashboard");
+    // Resolve authority first so a deep link is judged against real
+    // permissions rather than an empty set.
+    loadAuthz().then(() => {
+      renderDashboard();
+      setupShell();
+      goFromHash();
+    });
   } else {
     renderLandingPage();
   }

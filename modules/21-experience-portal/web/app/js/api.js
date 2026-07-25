@@ -154,6 +154,7 @@ export function unwrapList(resp, key) {
 export function get(url) { return api("GET", url); }
 export function post(url, body) { return api("POST", url, body); }
 export function patch(url, body) { return api("PATCH", url, body); }
+export function put(url, body) { return api("PUT", url, body); }
 export function del(url) { return api("DELETE", url); }
 
 // ── Tenant CRUD ────────────────────────────────────────────
@@ -219,6 +220,20 @@ export function getDeptRisks(id) { return get(`/svc/templates/departments/${id}/
 export function getDeptQuality(id) { return get(`/svc/templates/departments/${id}/quality`); }
 export function getDeptCompliance(id) { return get(`/svc/templates/departments/${id}/compliance`); }
 export function getDeptMeasurements(id) { return get(`/svc/templates/departments/${id}/kpi-measurements`); }
+
+// Who sits in a seat. A human binding is verified against M02 server-side —
+// a seat pointing at an id nobody can produce looks staffed and grants nothing.
+export function setPositionHolder(departmentId, positionId, body) {
+  return put(`/svc/templates/departments/${departmentId}/org-chart/${positionId}/holder`, body);
+}
+
+export function listIamUsers() { return get("/svc/iam/users?page_size=100"); }
+export function setUserPassword(userId, password) {
+  return post(`/svc/iam/users/${userId}/password`, { password });
+}
+export function createIamUser(email, displayName, roleIds) {
+  return post("/svc/iam/users", { email, display_name: displayName, role_ids: roleIds });
+}
 
 // ── Agent Registry (Module 04) ─────────────────────────────
 export function listAgents(page, pageSize) {

@@ -946,3 +946,9 @@ html[dir="rtl"] .team-seat { border-left: none; border-right: 2px solid rgba(76,
 .sla-chip.ok   { background: var(--ok-bg); border-color: rgba(52,210,123,0.35); color: var(--ok); }
 .sla-chip.warn { background: var(--warn-bg); border-color: rgba(232,181,62,0.5); color: var(--warn); }
 .sla-chip.bad  { background: var(--bad-bg); border-color: rgba(240,86,79,0.5); color: var(--bad); }
+
+/* ── IAM console tabs (the view was orphaned; its CSS never landed).
+   Panel visibility is carried by inline styles the view sets, so only the tab
+   buttons need styling here — a display rule would fight them. ── */
+.iam-tab { opacity: 0.7; }
+.iam-tab.active { opacity: 1; background: var(--surface-hover); border-color: var(--border-hover); }
