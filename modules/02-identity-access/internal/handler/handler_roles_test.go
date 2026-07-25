@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -788,5 +789,54 @@ func TestRoleHandlerListTenantIsolation(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &resp)
 	if resp["total"].(float64) != 3 {
 		t.Errorf("List() tenant-2 total = %v, want 3", resp["total"])
+	}
+}
+
+// The deployment builds its Authentik client from a placeholder URL, so every
+// call to it fails. Roles had no local path at all, which made GET /roles a
+// flat 500 and left the RBAC console with nothing to render.
+type failingRBAC struct{ *mockRBAC }
+
+func (*failingRBAC) List(ctx context.Context) ([]*authentik.Role, error) {
+	return nil, errors.New("dial tcp: no such host")
+}
+func (*failingRBAC) Create(ctx context.Context, req authentik.CreateRoleRequest) (*authentik.Role, error) {
+	return nil, errors.New("dial tcp: no such host")
+}
+
+func TestRolesFallBackToTheLocalStoreWhenAuthentikIsUnreachable(t *testing.T) {
+	h := NewTestRoleHandler(&failingRBAC{newMockRBAC()}, events.NewPublisher(""))
+
+	create := httptest.NewRequest(http.MethodPost, "/api/v1/iam/roles",
+		strings.NewReader(`{"name":"department_head","description":"Runs a department","permissions":["approval.respond"]}`))
+	create.Header.Set("X-Tenant-ID", "tenant-1")
+	create = setPrincipalInContext(create, &middleware.JWTToken{
+		Subject: "user-1", UserType: "user", TenantID: "tenant-1", Roles: []string{"admin"},
+	})
+	cw := httptest.NewRecorder()
+	h.Create(cw, create)
+	if cw.Code != http.StatusCreated {
+		t.Fatalf("Create() = %d, want 201 (%s)", cw.Code, cw.Body.String())
+	}
+
+	list := httptest.NewRequest(http.MethodGet, "/api/v1/iam/roles", nil)
+	list.Header.Set("X-Tenant-ID", "tenant-1")
+	list = setPrincipalInContext(list, &middleware.JWTToken{
+		Subject: "user-1", UserType: "user", TenantID: "tenant-1", Roles: []string{"admin"},
+	})
+	lw := httptest.NewRecorder()
+	h.List(lw, list)
+	if lw.Code != http.StatusOK {
+		t.Fatalf("List() = %d, want 200 (%s)", lw.Code, lw.Body.String())
+	}
+	var resp struct {
+		Roles []models.Role `json:"roles"`
+		Total int           `json:"total"`
+	}
+	if err := json.Unmarshal(lw.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Total != 1 || len(resp.Roles) != 1 || resp.Roles[0].Name != "department_head" {
+		t.Fatalf("the locally created role did not come back: %+v", resp)
 	}
 }

@@ -45,18 +45,18 @@ func (h *LDAPHandler) Configure(w http.ResponseWriter, r *http.Request) {
 	host, port := extractHostPort(req.URL)
 
 	authMap := map[string]interface{}{
-		"hostname":         host,
-		"port":             port,
+		"hostname":            host,
+		"port":                port,
 		"connection_security": connectionSecurity(req.Provider),
-		"bind_dn":          req.BindDN,
-		"bind_password":    req.BindPassword,
+		"bind_dn":             req.BindDN,
+		"bind_password":       req.BindPassword,
 	}
 
 	ingestionMap := map[string]interface{}{
-		"user_search_base":     req.BaseDN,
-		"user_dn_template":     "uid={username},ou=people," + req.BaseDN,
-		"group_search_base":    req.BaseDN,
-		"group_dn_template":    "cn={name},ou=groups," + req.BaseDN,
+		"user_search_base":  req.BaseDN,
+		"user_dn_template":  "uid={username},ou=people," + req.BaseDN,
+		"group_search_base": req.BaseDN,
+		"group_dn_template": "cn={name},ou=groups," + req.BaseDN,
 	}
 	if req.UserFilter != "" {
 		ingestionMap["user_filters"] = []string{req.UserFilter}
@@ -71,9 +71,9 @@ func (h *LDAPHandler) Configure(w http.ResponseWriter, r *http.Request) {
 	}
 
 	source, err := h.Auth.LDAPSources().Create(r.Context(), authentik.CreateLDAPSourceRequest{
-		Name:         "operan-" + tenantID + "-ldap",
+		Name:           "operan-" + tenantID + "-ldap",
 		Authentication: authMap,
-		Ingestion:    ingestionMap,
+		Ingestion:      ingestionMap,
 	})
 	if err != nil {
 		http.Error(w, `{"error":"failed to create LDAP source: `+err.Error()+`"}`, http.StatusConflict)
@@ -110,11 +110,11 @@ func (h *LDAPHandler) Test(w http.ResponseWriter, r *http.Request) {
 	host, port := extractHostPort(req.URL)
 
 	authMap := map[string]interface{}{
-		"hostname":         host,
-		"port":             port,
+		"hostname":            host,
+		"port":                port,
 		"connection_security": "ssl",
-		"bind_dn":          req.BindDN,
-		"bind_password":    req.BindPassword,
+		"bind_dn":             req.BindDN,
+		"bind_password":       req.BindPassword,
 	}
 
 	ingestionMap := map[string]interface{}{
@@ -127,9 +127,9 @@ func (h *LDAPHandler) Test(w http.ResponseWriter, r *http.Request) {
 	}
 
 	source, err := h.Auth.LDAPSources().Create(r.Context(), authentik.CreateLDAPSourceRequest{
-		Name:         "operan-" + tenantID + "-ldap-test",
+		Name:           "operan-" + tenantID + "-ldap-test",
 		Authentication: authMap,
-		Ingestion:    ingestionMap,
+		Ingestion:      ingestionMap,
 	})
 	if err != nil {
 		http.Error(w, `{"error":"failed to create test LDAP source: `+err.Error()+`"}`, http.StatusBadRequest)
@@ -200,19 +200,19 @@ func (h *LDAPHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := struct {
-		UUID            string                 `json:"uuid"`
-		Name            string                 `json:"name"`
-		Connected       bool                   `json:"connected"`
-		Authentication  map[string]interface{} `json:"authentication"`
-		Ingestion       map[string]interface{} `json:"ingestion"`
-		Properties      map[string]interface{} `json:"properties,omitempty"`
+		UUID           string                 `json:"uuid"`
+		Name           string                 `json:"name"`
+		Connected      bool                   `json:"connected"`
+		Authentication map[string]interface{} `json:"authentication"`
+		Ingestion      map[string]interface{} `json:"ingestion"`
+		Properties     map[string]interface{} `json:"properties,omitempty"`
 	}{
-		UUID:         found.UUID,
-		Name:         found.Name,
-		Connected:    found.Connected,
+		UUID:           found.UUID,
+		Name:           found.Name,
+		Connected:      found.Connected,
 		Authentication: found.Authentication,
-		Ingestion:    found.Ingestion,
-		Properties:   found.Properties,
+		Ingestion:      found.Ingestion,
+		Properties:     found.Properties,
 	}
 
 	// Mask bind password in response
@@ -294,7 +294,7 @@ func (h *LDAPHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 
 	updateMap := map[string]interface{}{
 		"authentication": authMap,
-		"ingestion":    ingestionMap,
+		"ingestion":      ingestionMap,
 	}
 	if req.DisplayName != nil {
 		updateMap["name"] = *req.DisplayName

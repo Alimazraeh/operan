@@ -268,7 +268,7 @@ func TestConfigString_valid(t *testing.T) {
 
 func TestSanitizeSlug(t *testing.T) {
 	tests := []struct {
-		name string
+		name  string
 		input string
 		want  string
 	}{
@@ -684,10 +684,10 @@ func TestConfigString(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		cfg    map[string]interface{}
-		key    string
-		want   string
+		name string
+		cfg  map[string]interface{}
+		key  string
+		want string
 	}{
 		{"string value", cfg, "string_val", "hello"},
 		{"int value", cfg, "int_val", ""},

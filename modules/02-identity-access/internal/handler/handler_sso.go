@@ -146,17 +146,17 @@ func (h *SSOHandler) configureOAuth2(ctx context.Context, tenantID string, req *
 	issuer := fmt.Sprintf("%s/application/o/%s/", h.Auth.BaseURL, sanitizeSlug(name))
 
 	return map[string]interface{}{
-		"provider_uuid":   provider.UUID,
-		"provider_name":   provider.Name,
-		"client_id":       provider.ClientID,
-		"client_secret":   provider.ClientSecret,
-		"grant_type":      grantType,
-		"setup_urls":      urls,
-		"issuer":          issuer,
+		"provider_uuid":     provider.UUID,
+		"provider_name":     provider.Name,
+		"client_id":         provider.ClientID,
+		"client_secret":     provider.ClientSecret,
+		"grant_type":        grantType,
+		"setup_urls":        urls,
+		"issuer":            issuer,
 		"authorization_url": urls["authorization_url"],
-		"token_url":       urls["token_url"],
-		"userinfo_url":    urls["userinfo_url"],
-		"jwks_url":        urls["jwks_url"],
+		"token_url":         urls["token_url"],
+		"userinfo_url":      urls["userinfo_url"],
+		"jwks_url":          urls["jwks_url"],
 	}, nil
 }
 
@@ -258,13 +258,13 @@ func (h *SSOHandler) fetchSSOConfig(tenantID string) map[string]interface{} {
 		for _, p := range samlProviders {
 			if strings.HasPrefix(p.Name, prefix) {
 				return map[string]interface{}{
-					"provider":    p.Name,
-					"type":        "saml",
-					"status":      "active",
-					"uuid":        p.UUID,
-					"issuer":      p.Issuer,
-					"acs_url":     p.ACSURL,
-					"sso_url":     p.SSOURL,
+					"provider":     p.Name,
+					"type":         "saml",
+					"status":       "active",
+					"uuid":         p.UUID,
+					"issuer":       p.Issuer,
+					"acs_url":      p.ACSURL,
+					"sso_url":      p.SSOURL,
 					"metadata_url": p.MetadataURL,
 					"configuration": map[string]interface{}{
 						"provider_uuid":  p.UUID,
@@ -288,9 +288,9 @@ func (h *SSOHandler) Test(w http.ResponseWriter, r *http.Request) {
 	tenantID := middleware.GetTenantID(r.Context())
 
 	var req struct {
-		Provider  string                 `json:"provider,omitempty"`
-		Redirect  string                 `json:"redirect,omitempty"`
-		Metadata  map[string]interface{} `json:"metadata,omitempty"`
+		Provider string                 `json:"provider,omitempty"`
+		Redirect string                 `json:"redirect,omitempty"`
+		Metadata map[string]interface{} `json:"metadata,omitempty"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
@@ -420,24 +420,24 @@ func NewSCIMHandler(auth *authentik.Client, publisher *events.Publisher) *SCIMHa
 
 // SCIMListResponse is a SCIM 2.0 paginated list response.
 type SCIMListResponse struct {
-	Schema       []string     `json:"schemas"`
-	TotalResults int          `json:"totalResults"`
-	ItemsPerPage int          `json:"itemsPerPage,omitempty"`
-	StartIndex   int          `json:"startIndex"`
-	Resources    []SCIMUser   `json:"Resources"`
+	Schema       []string   `json:"schemas"`
+	TotalResults int        `json:"totalResults"`
+	ItemsPerPage int        `json:"itemsPerPage,omitempty"`
+	StartIndex   int        `json:"startIndex"`
+	Resources    []SCIMUser `json:"Resources"`
 }
 
 // SCIMUser is a SCIM 2.0 User resource.
 type SCIMUser struct {
-	Schema     []string      `json:"schemas"`
-	ID         string        `json:"id"`
-	UserName   string        `json:"userName"`
-	Name       SCIMName      `json:"name"`
-	Emails     []SCIMEmail   `json:"emails"`
-	Groups     []SCIMGroup   `json:"groups,omitempty"`
-	Active     bool          `json:"active"`
-	ExternalID *string       `json:"externalId,omitempty"`
-	Meta       SCIMMeta      `json:"meta"`
+	Schema     []string    `json:"schemas"`
+	ID         string      `json:"id"`
+	UserName   string      `json:"userName"`
+	Name       SCIMName    `json:"name"`
+	Emails     []SCIMEmail `json:"emails"`
+	Groups     []SCIMGroup `json:"groups,omitempty"`
+	Active     bool        `json:"active"`
+	ExternalID *string     `json:"externalId,omitempty"`
+	Meta       SCIMMeta    `json:"meta"`
 }
 
 // SCIMName is a SCIM 2.0 Name object.
@@ -470,22 +470,22 @@ type SCIMMeta struct {
 
 // SCIMPatchRequest is a SCIM 2.0 Patch operation request.
 type SCIMPatchRequest struct {
-	Schema []string             `json:"schemas"`
-	Op     string               `json:"op"`
-	Path   string               `json:"path,omitempty"`
+	Schema []string               `json:"schemas"`
+	Op     string                 `json:"op"`
+	Path   string                 `json:"path,omitempty"`
 	Value  map[string]interface{} `json:"value,omitempty"`
 }
 
 // SCIMProvisionRequest is a SCIM 2.0 User creation request.
 type SCIMProvisionRequest struct {
-	Schema     []string          `json:"schemas"`
-	UserName   string            `json:"userName"`
-	Name       SCIMName          `json:"name"`
-	Emails     []SCIMEmail       `json:"emails"`
-	Groups     []SCIMGroup       `json:"groups,omitempty"`
-	Active     bool              `json:"active"`
-	ExternalID *string           `json:"externalId,omitempty"`
-	Password   *string           `json:"password,omitempty"`
+	Schema     []string    `json:"schemas"`
+	UserName   string      `json:"userName"`
+	Name       SCIMName    `json:"name"`
+	Emails     []SCIMEmail `json:"emails"`
+	Groups     []SCIMGroup `json:"groups,omitempty"`
+	Active     bool        `json:"active"`
+	ExternalID *string     `json:"externalId,omitempty"`
+	Password   *string     `json:"password,omitempty"`
 }
 
 // SCIMCreateResponse is a SCIM 2.0 created resource response.
@@ -633,10 +633,10 @@ func (h *SCIMHandler) Provision(w http.ResponseWriter, r *http.Request) {
 	}
 
 	createReq := authentik.CreateUserRequest{
-		Username: req.UserName,
-		Email:    email,
-		Name:     displayName,
-		IsActive: req.Active,
+		Username:   req.UserName,
+		Email:      email,
+		Name:       displayName,
+		IsActive:   req.Active,
 		Attributes: attributes,
 	}
 
@@ -947,8 +947,8 @@ func scimUserFromAuthentik(u *authentik.User, baseURL string) SCIMUser {
 			FamilyName: "",
 			GivenName:  "",
 		},
-		Emails:   scimEmailsFromAuthentik(u),
-		Active:   u.IsActive,
+		Emails: scimEmailsFromAuthentik(u),
+		Active: u.IsActive,
 		Meta: SCIMMeta{
 			ResourceType: "User",
 			Created:      created,
@@ -1101,10 +1101,10 @@ func (h *SCIMHandler) applyRemove(ctx context.Context, user *authentik.User, pat
 
 // SCIMBulkOperation represents a single operation within a bulk request.
 type SCIMBulkOperation struct {
-	Method   string                 `json:"method"`
-	Path     string                 `json:"path"`
-	BulkID   string                 `json:"bulkId,omitempty"`
-	Data     map[string]interface{} `json:"data,omitempty"`
+	Method string                 `json:"method"`
+	Path   string                 `json:"path"`
+	BulkID string                 `json:"bulkId,omitempty"`
+	Data   map[string]interface{} `json:"data,omitempty"`
 }
 
 // SCIMBulkResponse is the result of a single bulk operation.

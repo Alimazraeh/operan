@@ -22,12 +22,12 @@ import (
 // ====================
 
 type testMockGroupsAPI struct {
-	groups         []*authentik.Group
-	createFn       func(ctx context.Context, req authentik.CreateGroupRequest) (*authentik.Group, error)
-	addUserFn      func(ctx context.Context, groupUUID, userUUID string) error
-	removeUserFn   func(ctx context.Context, groupUUID, userUUID string) error
-	listErr        error
-	createErr      error
+	groups       []*authentik.Group
+	createFn     func(ctx context.Context, req authentik.CreateGroupRequest) (*authentik.Group, error)
+	addUserFn    func(ctx context.Context, groupUUID, userUUID string) error
+	removeUserFn func(ctx context.Context, groupUUID, userUUID string) error
+	listErr      error
+	createErr    error
 }
 
 func (m *testMockGroupsAPI) Create(ctx context.Context, req authentik.CreateGroupRequest) (*authentik.Group, error) {
@@ -110,8 +110,8 @@ func testRequestWithPrincipal(method, urlStr string, body *bytes.Reader) *http.R
 
 func TestExtractUserRolesPath_EdgeCases(t *testing.T) {
 	tests := []struct {
-		name  string
-		path  string
+		name   string
+		path   string
 		wantID string
 		wantOK bool
 	}{
@@ -434,7 +434,7 @@ func TestSetRoles_AuthentikPath_GroupNotFound_Skipped(t *testing.T) {
 func TestSetRoles_AuthentikPath_GroupCreateFails_NonBlocking(t *testing.T) {
 	// Group creation error is non-fatal — handler should still return 200
 	mockGroups := &testMockGroupsAPI{
-		groups: []*authentik.Group{},
+		groups:    []*authentik.Group{},
 		createErr: &authentik.APIError{StatusCode: 500, Message: "create failed", Path: "/api/v3/core/groups/"},
 	}
 	mockUsers := &mockAuthentikUsers{}
@@ -585,49 +585,49 @@ func TestAddToGroup_ListFails(t *testing.T) {
 
 func TestIsConflictError_Cases(t *testing.T) {
 	tests := []struct {
-		name  string
-		err   error
-		want  bool
+		name string
+		err  error
+		want bool
 	}{
 		{
-			name:  "409 conflict",
-			err:   &authentik.APIError{StatusCode: 409, Message: "duplicate", Path: "/api/v3/core/users/"},
-			want:  true,
+			name: "409 conflict",
+			err:  &authentik.APIError{StatusCode: 409, Message: "duplicate", Path: "/api/v3/core/users/"},
+			want: true,
 		},
 		{
-			name:  "400 bad request",
-			err:   &authentik.APIError{StatusCode: 400, Message: "exists", Path: "/api/v3/core/users/"},
-			want:  true,
+			name: "400 bad request",
+			err:  &authentik.APIError{StatusCode: 400, Message: "exists", Path: "/api/v3/core/users/"},
+			want: true,
 		},
 		{
-			name:  "500 server error",
-			err:   &authentik.APIError{StatusCode: 500, Message: "error", Path: "/api/v3/core/users/"},
-			want:  false,
+			name: "500 server error",
+			err:  &authentik.APIError{StatusCode: 500, Message: "error", Path: "/api/v3/core/users/"},
+			want: false,
 		},
 		{
-			name:  "404 not found",
-			err:   &authentik.APIError{StatusCode: 404, Message: "not found", Path: "/api/v3/core/users/"},
-			want:  false,
+			name: "404 not found",
+			err:  &authentik.APIError{StatusCode: 404, Message: "not found", Path: "/api/v3/core/users/"},
+			want: false,
 		},
 		{
-			name:  "201 created",
-			err:   &authentik.APIError{StatusCode: 201, Message: "created", Path: "/api/v3/core/users/"},
-			want:  false,
+			name: "201 created",
+			err:  &authentik.APIError{StatusCode: 201, Message: "created", Path: "/api/v3/core/users/"},
+			want: false,
 		},
 		{
-			name:  "wrapped error",
-			err:   &models.ValidationError{Message: "invalid format"},
-			want:  false,
+			name: "wrapped error",
+			err:  &models.ValidationError{Message: "invalid format"},
+			want: false,
 		},
 		{
-			name:  "standard error",
-			err:   &models.ValidationError{Message: "bad input"},
-			want:  false,
+			name: "standard error",
+			err:  &models.ValidationError{Message: "bad input"},
+			want: false,
 		},
 		{
-			name:  "nil error",
-			err:   nil,
-			want:  false,
+			name: "nil error",
+			err:  nil,
+			want: false,
 		},
 	}
 

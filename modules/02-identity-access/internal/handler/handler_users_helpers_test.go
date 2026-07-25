@@ -67,39 +67,39 @@ func TestExtractUserID(t *testing.T) {
 
 func TestIsConflictErrorExtended(t *testing.T) {
 	tests := []struct {
-		name  string
-		err   error
-		want  bool
+		name string
+		err  error
+		want bool
 	}{
 		{
-			name:  "409 conflict status",
-			err:   &authentik.APIError{StatusCode: 409, Message: "duplicate email", Path: "/api/v3/core/users/"},
-			want:  true,
+			name: "409 conflict status",
+			err:  &authentik.APIError{StatusCode: 409, Message: "duplicate email", Path: "/api/v3/core/users/"},
+			want: true,
 		},
 		{
-			name:  "400 bad request status",
-			err:   &authentik.APIError{StatusCode: 400, Message: "username exists", Path: "/api/v3/core/users/"},
-			want:  true,
+			name: "400 bad request status",
+			err:  &authentik.APIError{StatusCode: 400, Message: "username exists", Path: "/api/v3/core/users/"},
+			want: true,
 		},
 		{
-			name:  "500 internal error — not conflict",
-			err:   &authentik.APIError{StatusCode: 500, Message: "server error", Path: "/api/v3/core/users/"},
-			want:  false,
+			name: "500 internal error — not conflict",
+			err:  &authentik.APIError{StatusCode: 500, Message: "server error", Path: "/api/v3/core/users/"},
+			want: false,
 		},
 		{
-			name:  "200 success — not conflict",
-			err:   &authentik.APIError{StatusCode: 200, Message: "ok", Path: "/api/v3/core/users/"},
-			want:  false,
+			name: "200 success — not conflict",
+			err:  &authentik.APIError{StatusCode: 200, Message: "ok", Path: "/api/v3/core/users/"},
+			want: false,
 		},
 		{
-			name:  "non-APIError wrapped",
-			err:   &models.ValidationError{Message: "invalid format"},
-			want:  false,
+			name: "non-APIError wrapped",
+			err:  &models.ValidationError{Message: "invalid format"},
+			want: false,
 		},
 		{
-			name:  "nil error",
-			err:   nil,
-			want:  false,
+			name: "nil error",
+			err:  nil,
+			want: false,
 		},
 	}
 

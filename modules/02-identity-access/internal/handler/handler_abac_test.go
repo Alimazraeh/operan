@@ -186,7 +186,7 @@ func TestEvaluateIPPolicy(t *testing.T) {
 			wantPass:   false,
 		},
 		{
-			name: "IP in denied CIDR — fail (deny wins)",
+			name:  "IP in denied CIDR — fail (deny wins)",
 			attrs: map[string]interface{}{"client_ip": "10.0.1.5"},
 			conditions: map[string]interface{}{
 				"allowed_cidrs": []interface{}{"10.0.0.0/8"},
@@ -195,7 +195,7 @@ func TestEvaluateIPPolicy(t *testing.T) {
 			wantPass: false,
 		},
 		{
-			name: "IP allowed but not denied",
+			name:  "IP allowed but not denied",
 			attrs: map[string]interface{}{"client_ip": "10.0.2.5"},
 			conditions: map[string]interface{}{
 				"allowed_cidrs": []interface{}{"10.0.0.0/8"},
@@ -216,14 +216,14 @@ func TestEvaluateIPPolicy(t *testing.T) {
 			wantPass:   false,
 		},
 		{
-			name: "multiple allowed CIDRs — matches second",
-			attrs: map[string]interface{}{"client_ip": "172.16.0.1"},
+			name:       "multiple allowed CIDRs — matches second",
+			attrs:      map[string]interface{}{"client_ip": "172.16.0.1"},
 			conditions: map[string]interface{}{"allowed_cidrs": []interface{}{"10.0.0.0/8", "172.16.0.0/12"}},
 			wantPass:   true,
 		},
 		{
-			name: "IPv6 in allowed CIDR",
-			attrs: map[string]interface{}{"client_ip": "2001:db8::1"},
+			name:       "IPv6 in allowed CIDR",
+			attrs:      map[string]interface{}{"client_ip": "2001:db8::1"},
 			conditions: map[string]interface{}{"allowed_cidrs": []interface{}{"2001:db8::/32"}},
 			wantPass:   true,
 		},
@@ -667,15 +667,15 @@ func TestABACHandlerGetPolicySuccess(t *testing.T) {
 
 	// Insert a policy first
 	policy := ABACPolicy{
-		ID:          "pol-123",
-		TenantID:    "tenant-1",
-		Name:        "Test Policy",
-		Resource:    "api:v1:data",
-		Action:      "read",
-		Rule:        "time",
-		Conditions:  map[string]interface{}{},
-		Effect:      "allow",
-		CreatedAt:   "2025-01-01T00:00:00Z",
+		ID:         "pol-123",
+		TenantID:   "tenant-1",
+		Name:       "Test Policy",
+		Resource:   "api:v1:data",
+		Action:     "read",
+		Rule:       "time",
+		Conditions: map[string]interface{}{},
+		Effect:     "allow",
+		CreatedAt:  "2025-01-01T00:00:00Z",
 	}
 	if err := store.Create("tenant-1", policy); err != nil {
 		t.Fatalf("failed to create test policy: %v", err)
@@ -781,15 +781,15 @@ func TestABACHandlerDeletePolicySuccess(t *testing.T) {
 	store := NewABACStore()
 
 	policy := ABACPolicy{
-		ID:          "pol-del-1",
-		TenantID:    "tenant-1",
-		Name:        "Delete Me",
-		Resource:    "api:v1:data",
-		Action:      "write",
-		Rule:        "custom",
-		Conditions:  map[string]interface{}{},
-		Effect:      "deny",
-		CreatedAt:   "2025-01-01T00:00:00Z",
+		ID:         "pol-del-1",
+		TenantID:   "tenant-1",
+		Name:       "Delete Me",
+		Resource:   "api:v1:data",
+		Action:     "write",
+		Rule:       "custom",
+		Conditions: map[string]interface{}{},
+		Effect:     "deny",
+		CreatedAt:  "2025-01-01T00:00:00Z",
 	}
 	if err := store.Create("tenant-1", policy); err != nil {
 		t.Fatalf("failed to create test policy: %v", err)
@@ -956,58 +956,58 @@ func TestEvaluateCustomPolicy(t *testing.T) {
 			wantErr: "empty expression",
 		},
 		{
-			name:    "eq operator — match",
-			attrs:   map[string]interface{}{"region": "us-east-1"},
-			cond:    map[string]interface{}{"expression": "region eq us-east-1"},
-			want:    true,
+			name:  "eq operator — match",
+			attrs: map[string]interface{}{"region": "us-east-1"},
+			cond:  map[string]interface{}{"expression": "region eq us-east-1"},
+			want:  true,
 		},
 		{
-			name:    "eq operator — mismatch",
-			attrs:   map[string]interface{}{"region": "us-west-2"},
-			cond:    map[string]interface{}{"expression": "region eq us-east-1"},
-			want:    false,
+			name:  "eq operator — mismatch",
+			attrs: map[string]interface{}{"region": "us-west-2"},
+			cond:  map[string]interface{}{"expression": "region eq us-east-1"},
+			want:  false,
 		},
 		{
-			name:    "neq operator — match",
-			attrs:   map[string]interface{}{"role": "viewer"},
-			cond:    map[string]interface{}{"expression": "role neq admin"},
-			want:    true,
+			name:  "neq operator — match",
+			attrs: map[string]interface{}{"role": "viewer"},
+			cond:  map[string]interface{}{"expression": "role neq admin"},
+			want:  true,
 		},
 		{
-			name:    "in operator — match",
-			attrs:   map[string]interface{}{"env": "staging"},
-			cond:    map[string]interface{}{"expression": "env in production,staging,dev"},
-			want:    true,
+			name:  "in operator — match",
+			attrs: map[string]interface{}{"env": "staging"},
+			cond:  map[string]interface{}{"expression": "env in production,staging,dev"},
+			want:  true,
 		},
 		{
-			name:    "in operator — no match",
-			attrs:   map[string]interface{}{"env": "production"},
-			cond:    map[string]interface{}{"expression": "env in staging,dev"},
-			want:    false,
+			name:  "in operator — no match",
+			attrs: map[string]interface{}{"env": "production"},
+			cond:  map[string]interface{}{"expression": "env in staging,dev"},
+			want:  false,
 		},
 		{
-			name:    "not_in operator — match",
-			attrs:   map[string]interface{}{"env": "staging"},
-			cond:    map[string]interface{}{"expression": "env not_in production"},
-			want:    true,
+			name:  "not_in operator — match",
+			attrs: map[string]interface{}{"env": "staging"},
+			cond:  map[string]interface{}{"expression": "env not_in production"},
+			want:  true,
 		},
 		{
-			name:    "not_in operator — no match",
-			attrs:   map[string]interface{}{"env": "production"},
-			cond:    map[string]interface{}{"expression": "env not_in production"},
-			want:    false,
+			name:  "not_in operator — no match",
+			attrs: map[string]interface{}{"env": "production"},
+			cond:  map[string]interface{}{"expression": "env not_in production"},
+			want:  false,
 		},
 		{
-			name:    "unknown operator — deny",
-			attrs:   map[string]interface{}{"region": "us-east-1"},
-			cond:    map[string]interface{}{"expression": "region unknown us-east-1"},
-			want:    false,
+			name:  "unknown operator — deny",
+			attrs: map[string]interface{}{"region": "us-east-1"},
+			cond:  map[string]interface{}{"expression": "region unknown us-east-1"},
+			want:  false,
 		},
 		{
-			name:    "missing attribute — deny",
-			attrs:   map[string]interface{}{},
-			cond:    map[string]interface{}{"expression": "region eq us-east-1"},
-			want:    false,
+			name:  "missing attribute — deny",
+			attrs: map[string]interface{}{},
+			cond:  map[string]interface{}{"expression": "region eq us-east-1"},
+			want:  false,
 		},
 	}
 
@@ -1051,15 +1051,15 @@ func TestEvaluateABACWithPolicies(t *testing.T) {
 
 	// Create a time policy
 	policy := ABACPolicy{
-		ID:          "pol-time-1",
-		TenantID:    "tenant-1",
-		Name:        "Business Hours Only",
-		Resource:    "api:v1:data",
-		Action:      "write",
-		Rule:        "time",
-		Conditions:  map[string]interface{}{"allowed_hours": []interface{}{9, 10, 11, 12, 13, 14, 15, 16, 17}},
-		Effect:      "allow",
-		CreatedAt:   "2025-01-01T00:00:00Z",
+		ID:         "pol-time-1",
+		TenantID:   "tenant-1",
+		Name:       "Business Hours Only",
+		Resource:   "api:v1:data",
+		Action:     "write",
+		Rule:       "time",
+		Conditions: map[string]interface{}{"allowed_hours": []interface{}{9, 10, 11, 12, 13, 14, 15, 16, 17}},
+		Effect:     "allow",
+		CreatedAt:  "2025-01-01T00:00:00Z",
 	}
 	if err := store.Create("tenant-1", policy); err != nil {
 		t.Fatalf("failed to create test policy: %v", err)
@@ -1096,15 +1096,15 @@ func TestEvaluateABACDenyPolicy(t *testing.T) {
 
 	// Create a deny policy that always passes
 	policy := ABACPolicy{
-		ID:          "pol-deny-1",
-		TenantID:    "tenant-1",
-		Name:        "Deny All",
-		Resource:    "api:v1:admin",
-		Action:      "write",
-		Rule:        "custom",
-		Conditions:  map[string]interface{}{},
-		Effect:      "deny",
-		CreatedAt:   "2025-01-01T00:00:00Z",
+		ID:         "pol-deny-1",
+		TenantID:   "tenant-1",
+		Name:       "Deny All",
+		Resource:   "api:v1:admin",
+		Action:     "write",
+		Rule:       "custom",
+		Conditions: map[string]interface{}{},
+		Effect:     "deny",
+		CreatedAt:  "2025-01-01T00:00:00Z",
 	}
 	if err := store.Create("tenant-1", policy); err != nil {
 		t.Fatalf("failed to create test policy: %v", err)

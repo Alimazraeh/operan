@@ -256,7 +256,7 @@ func TestDelegationHandlerCreateSuccess(t *testing.T) {
 	payload := `{"name":"admin-role","description":"Admin role","scope":"tenant","permissions":["read","write","delete"]}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/admin/delegations", strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
-	req = setPrincipalInContext(req, &middleware.JWTToken{Subject:"user-1", UserType:"user", TenantID:"tenant-1", Roles:[]string{"admin"}})
+	req = setPrincipalInContext(req, &middleware.JWTToken{Subject: "user-1", UserType: "user", TenantID: "tenant-1", Roles: []string{"admin"}})
 
 	w := httptest.NewRecorder()
 	h.Create(w, req)
@@ -763,7 +763,7 @@ func TestDelegationHandlerRevokeMissingRoleID(t *testing.T) {
 	h := newMockDelegationHandler()
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/iam/admin/delegations/revoke", nil)
-	req = setPrincipalInContext(req, &middleware.JWTToken{Subject:"user-1", UserType:"user", TenantID:"tenant-1", Roles:[]string{"admin"}})
+	req = setPrincipalInContext(req, &middleware.JWTToken{Subject: "user-1", UserType: "user", TenantID: "tenant-1", Roles: []string{"admin"}})
 
 	w := httptest.NewRecorder()
 	h.Revoke(w, req)
@@ -793,7 +793,7 @@ func TestDelegationHandlerListDelegationsSuccess(t *testing.T) {
 
 	// List delegations
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/admin/delegations/list-deleg-role/delegations", nil)
-	req = setPrincipalInContext(req, &middleware.JWTToken{Subject:"user-1", UserType:"user", TenantID:"tenant-1", Roles:[]string{"admin"}})
+	req = setPrincipalInContext(req, &middleware.JWTToken{Subject: "user-1", UserType: "user", TenantID: "tenant-1", Roles: []string{"admin"}})
 
 	w := httptest.NewRecorder()
 	h.ListDelegations(w, req)

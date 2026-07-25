@@ -461,10 +461,10 @@ func TestLDAPHandlerDeleteConfigAuthNil(t *testing.T) {
 
 func TestExtractHostPort(t *testing.T) {
 	tests := []struct {
-		name      string
-		urlStr    string
-		wantHost  string
-		wantPort  int
+		name     string
+		urlStr   string
+		wantHost string
+		wantPort int
 	}{
 		{
 			name:     "empty string defaults to port 389",
