@@ -7,7 +7,7 @@
 // in flight against its clocks, and what settled (met, late, or failed).
 import { esc, rel, toast, statCard } from "../ui.js";
 import {
-  SVC, post, session, uuid4, unwrapList, listDepartments, listDeptRequests,
+  SVC, post, session, unwrapList, listDepartments, listDeptRequests,
   getDeptServices, createServiceRequest, listSupervisionQueue,
 } from "../api.js";
 
@@ -198,9 +198,14 @@ window.filterTasksLedger = function (query) {
 
 // Same authority as Supervision's inbox, staying on the ledger afterwards.
 window.tasksDecide = async function (id, action) {
+  // The server attributes the decision to the authenticated caller; nothing
+  // here can nominate an approver. A session without a user id cannot decide —
+  // recording a random one is how the audit trail used to log a decision by
+  // nobody.
+  if (!session.userId) { toast("Sign in again — a decision must be attributable to you", "bad"); return; }
   const body = action === "approve"
-    ? { approver_id: session.userId || uuid4(), comment: "Approved from the work ledger" }
-    : { rejector_id: session.userId || uuid4(), reason: "Rejected from the work ledger" };
+    ? { comment: "Approved from the work ledger" }
+    : { reason: "Rejected from the work ledger" };
   const r = await post(`${SVC.supervision}/approvals/${id}/${action}`, body);
   if (r.ok) toast(`Decision sent — the run will ${action === "approve" ? "resume" : "stop"}`, "ok");
   else toast("Decision failed: " + esc(r.data?.error?.message || r.status), "bad");

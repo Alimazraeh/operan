@@ -10,14 +10,14 @@ import (
 )
 
 type createApprovalRequest struct {
-	RequestID         string                  `json:"request_id"`
-	RequesterID       string                  `json:"requester_id"`
-	Type              string                  `json:"type"`
-	Title             string                  `json:"title"`
-	Description       string                  `json:"description"`
-	Metadata          map[string]interface{}  `json:"metadata"`
-	RequiredApprovers []store.ApprovalTarget  `json:"required_approvers"`
-	ExpiresAt         *time.Time              `json:"expires_at"`
+	RequestID         string                   `json:"request_id"`
+	RequesterID       string                   `json:"requester_id"`
+	Type              string                   `json:"type"`
+	Title             string                   `json:"title"`
+	Description       string                   `json:"description"`
+	Metadata          map[string]interface{}   `json:"metadata"`
+	RequiredApprovers []store.ApprovalTarget   `json:"required_approvers"`
+	ExpiresAt         *time.Time               `json:"expires_at"`
 	ConditionalConfig *store.ConditionalConfig `json:"conditional_config"`
 	ThresholdConfig   *store.ThresholdConfig   `json:"threshold_config"`
 }
@@ -140,7 +140,17 @@ func (h *SupervisionHandlers) DeleteApproval(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// actorFromToken returns the authenticated caller's user id. Governance
+// decisions are attributed to whoever the token says they are — never to a
+// value supplied in the request body, which any caller can set to anyone.
+func actorFromToken(r *http.Request) string {
+	return middleware.UserIDFromContext(r.Context())
+}
+
 type approveRequest struct {
+	// ApproverID is accepted for backward compatibility and ignored: the
+	// actor is taken from the JWT. Kept in the struct so an old client's
+	// payload still decodes rather than erroring.
 	ApproverID string                 `json:"approver_id"`
 	Comment    string                 `json:"comment"`
 	Conditions []string               `json:"conditions"`
@@ -155,13 +165,15 @@ func (h *SupervisionHandlers) ApproveApproval(w http.ResponseWriter, r *http.Req
 	if !decode(w, r, &req) {
 		return
 	}
-	if req.ApproverID == "" {
-		writeError(w, r, http.StatusBadRequest, "Invalid request body", "approver_id is required")
+	actor := actorFromToken(r)
+	if actor == "" {
+		writeError(w, r, http.StatusUnauthorized, "Unauthorized",
+			"an approval must be attributable to an authenticated user")
 		return
 	}
 
 	a, err := h.Approvals.Approve(r.PathValue("id"), tenantID, store.ApprovalAction{
-		ActorID:    req.ApproverID,
+		ActorID:    actor,
 		Comment:    req.Comment,
 		Conditions: req.Conditions,
 	})
@@ -169,11 +181,12 @@ func (h *SupervisionHandlers) ApproveApproval(w http.ResponseWriter, r *http.Req
 		storeError(w, r, err)
 		return
 	}
-	h.publishResponse(a, "approve", req.ApproverID, req.Comment, r)
+	h.publishResponse(a, "approve", actor, req.Comment, r)
 	writeJSON(w, http.StatusOK, a)
 }
 
 type rejectRequest struct {
+	// Ignored — see approveRequest.ApproverID.
 	RejectorID string `json:"rejector_id"`
 	Reason     string `json:"reason"`
 	Comment    string `json:"comment"`
@@ -187,8 +200,14 @@ func (h *SupervisionHandlers) RejectApproval(w http.ResponseWriter, r *http.Requ
 	if !decode(w, r, &req) {
 		return
 	}
-	if req.RejectorID == "" || req.Reason == "" {
-		writeError(w, r, http.StatusBadRequest, "Invalid request body", "rejector_id and reason are required")
+	actor := actorFromToken(r)
+	if actor == "" {
+		writeError(w, r, http.StatusUnauthorized, "Unauthorized",
+			"a rejection must be attributable to an authenticated user")
+		return
+	}
+	if req.Reason == "" {
+		writeError(w, r, http.StatusBadRequest, "Invalid request body", "reason is required")
 		return
 	}
 
@@ -197,14 +216,14 @@ func (h *SupervisionHandlers) RejectApproval(w http.ResponseWriter, r *http.Requ
 		comment += ": " + req.Comment
 	}
 	a, err := h.Approvals.Reject(r.PathValue("id"), tenantID, store.ApprovalAction{
-		ActorID: req.RejectorID,
+		ActorID: actor,
 		Comment: comment,
 	})
 	if err != nil {
 		storeError(w, r, err)
 		return
 	}
-	h.publishResponse(a, "reject", req.RejectorID, comment, r)
+	h.publishResponse(a, "reject", actor, comment, r)
 	writeJSON(w, http.StatusOK, a)
 }
 

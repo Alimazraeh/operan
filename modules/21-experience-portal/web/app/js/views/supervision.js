@@ -3,7 +3,7 @@
 // is wrong (security, hallucination, compliance…); interventions are the
 // emergency brake on a specific agent. Both bind to the REAL workforce —
 // agents come from the registry, never free-typed ids.
-import { SVC, get, post, patch, uuid4, session, listAgents, unwrapList } from "../api.js";
+import { SVC, get, post, patch, session, listAgents, unwrapList } from "../api.js";
 import { esc, badge, rel, toast, rowItem } from "../ui.js";
 
 export async function viewSupervision() {
@@ -83,8 +83,9 @@ export async function viewSupervision() {
 }
 
 window.supDecide = async function (id, action) {
-  const who = session.userId || uuid4();
-  const body = action === "approve" ? { approver_id: who, comment: "Approved from the Operan portal" } : { rejector_id: who, reason: "Rejected from the Operan portal" };
+  // Attribution comes from the token server-side — see M09 actorFromToken.
+  if (!session.userId) { toast("Sign in again — a decision must be attributable to you", "bad"); return; }
+  const body = action === "approve" ? { comment: "Approved from the Operan portal" } : { reason: "Rejected from the Operan portal" };
   const r = await post(`${SVC.supervision}/approvals/${id}/${action}`, body);
   if (r.ok) toast(`Decision sent — the orchestrator will ${action==="approve"?"resume":"stop"} the workflow`, "ok");
   else toast("Decision failed: " + esc(r.data?.error?.message || r.status), "bad");
@@ -134,8 +135,8 @@ window.supAckEscalation = async function (id) {
 };
 
 window.supResolveEscalation = async function (id) {
+  if (!session.userId) { toast("Sign in again — a resolution must be attributable to you", "bad"); return; }
   const r = await post(`${SVC.supervision}/escalations/${id}/resolve`, {
-    resolver_id: session.userId || uuid4(),
     resolution_notes: "Resolved from the Operan portal",
   });
   if (r.ok) toast("Escalation resolved", "ok");

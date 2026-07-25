@@ -116,7 +116,7 @@ window.runStory = async function () {
     // 7 — approve
     mark(6, "on");
     await pause(700);
-    await post(`${SVC.supervision}/approvals/${gate.data.id}/approve`, { approver_id: uuid4(), comment: "Terms verified — send it" });
+    await post(`${SVC.supervision}/approvals/${gate.data.id}/approve`, { comment: "Terms verified — send it" });
     out(6, `Approved. The decision left this page as a <b>Kafka event</b>.`);
     mark(6, "ok");
 

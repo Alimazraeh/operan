@@ -150,6 +150,7 @@ func (h *SupervisionHandlers) UpdateEscalation(w http.ResponseWriter, r *http.Re
 }
 
 type resolveEscalationRequest struct {
+	// Ignored — the resolver is taken from the JWT, not the request body.
 	ResolverID      string                 `json:"resolver_id"`
 	ResolutionNotes string                 `json:"resolution_notes"`
 	ResolutionType  string                 `json:"resolution_type"`
@@ -164,8 +165,10 @@ func (h *SupervisionHandlers) ResolveEscalation(w http.ResponseWriter, r *http.R
 	if !decode(w, r, &req) {
 		return
 	}
-	if req.ResolverID == "" {
-		writeError(w, r, http.StatusBadRequest, "Invalid request body", "resolver_id is required")
+	actor := actorFromToken(r)
+	if actor == "" {
+		writeError(w, r, http.StatusUnauthorized, "Unauthorized",
+			"a resolution must be attributable to an authenticated user")
 		return
 	}
 	if req.ResolutionType != "" && !store.ValidResolutionType(req.ResolutionType) {
@@ -173,7 +176,7 @@ func (h *SupervisionHandlers) ResolveEscalation(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	e, err := h.Escalations.Resolve(r.PathValue("id"), tenantID, req.ResolverID, req.ResolutionNotes, req.ResolutionType)
+	e, err := h.Escalations.Resolve(r.PathValue("id"), tenantID, actor, req.ResolutionNotes, req.ResolutionType)
 	if err != nil {
 		storeError(w, r, err)
 		return

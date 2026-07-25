@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -446,5 +447,64 @@ func TestQueueUserFilterAndPagination(t *testing.T) {
 	json.Unmarshal(pw.Body.Bytes(), &q)
 	if q.Total != 2 || len(q.Items) != 1 {
 		t.Errorf("pagination: total=%d len=%d", q.Total, len(q.Items))
+	}
+}
+
+// doAs issues a request as a specific authenticated user (empty = no identity).
+func doAs(mux *http.ServeMux, userID, method, path string, body interface{}) *httptest.ResponseRecorder {
+	var buf bytes.Buffer
+	if body != nil {
+		json.NewEncoder(&buf).Encode(body)
+	}
+	req := httptest.NewRequest(method, path, &buf)
+	ctx := ctxkeys.WithTenantID(context.Background(), testTenant)
+	if userID != "" {
+		ctx = ctxkeys.WithUserID(ctx, userID)
+	}
+	ctx = ctxkeys.WithRequestID(ctx, "req-1")
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+	return w
+}
+
+// A governance decision must be attributed to the authenticated caller, never
+// to a value in the request body — anyone could otherwise claim to be anyone.
+func TestApprovalActorComesFromTokenNotBody(t *testing.T) {
+	_, mux, _ := testHandlers()
+	a := createApproval(t, mux, "77777777-7777-7777-7777-777777777777")
+
+	w := doAs(mux, "dana-real-user", "POST", "/approvals/"+a.ID+"/approve", map[string]interface{}{
+		"approver_id": "ceo-impersonated", // spoof attempt
+		"comment":     "looks good",
+	})
+	if w.Code != http.StatusOK {
+		t.Fatalf("approve: status %d: %s", w.Code, w.Body.String())
+	}
+	var approved store.Approval
+	json.Unmarshal(w.Body.Bytes(), &approved)
+
+	body := w.Body.String()
+	if strings.Contains(body, "ceo-impersonated") {
+		t.Errorf("the body's approver_id was recorded — spoofing is possible: %s", body)
+	}
+	if !strings.Contains(body, "dana-real-user") {
+		t.Errorf("the authenticated caller was not recorded as the actor: %s", body)
+	}
+}
+
+// Without an authenticated identity there is nobody to attribute the decision
+// to, so it must be refused rather than recorded against a placeholder.
+func TestApprovalRequiresAnAuthenticatedActor(t *testing.T) {
+	_, mux, _ := testHandlers()
+	a := createApproval(t, mux, "88888888-8888-8888-8888-888888888888")
+
+	if w := doAs(mux, "", "POST", "/approvals/"+a.ID+"/approve",
+		map[string]interface{}{"approver_id": "someone"}); w.Code != http.StatusUnauthorized {
+		t.Errorf("unauthenticated approve: status %d, want 401", w.Code)
+	}
+	if w := doAs(mux, "", "POST", "/approvals/"+a.ID+"/reject",
+		map[string]interface{}{"rejector_id": "someone", "reason": "no"}); w.Code != http.StatusUnauthorized {
+		t.Errorf("unauthenticated reject: status %d, want 401", w.Code)
 	}
 }
