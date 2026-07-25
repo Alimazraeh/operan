@@ -28,7 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_connectors_status ON connector_definitions(tenant
 CREATE TABLE IF NOT EXISTS connector_sync_history (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id               VARCHAR(255) NOT NULL,
-    connector_id            UUID NOT NULL REFERENCES connector_definitions(id),
+    connector_id            UUID NOT NULL REFERENCES connector_definitions(id) ON DELETE CASCADE,
     sync_type               VARCHAR(30) NOT NULL DEFAULT 'full' CHECK (sync_type IN ('full', 'incremental', 'initial')),
     status                  VARCHAR(30) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'completed', 'error', 'cancelled')),
     objects_fetched         INT NOT NULL DEFAULT 0,
@@ -42,3 +42,21 @@ CREATE TABLE IF NOT EXISTS connector_sync_history (
 
 CREATE INDEX IF NOT EXISTS idx_sync_history_connector ON connector_sync_history(connector_id);
 CREATE INDEX IF NOT EXISTS idx_sync_history_tenant ON connector_sync_history(tenant_id, started_at DESC);
+-- Existing databases were created before the cascade above: their sync-history
+-- rows hold the connector hostage, so a connector that has ever synced can
+-- never be deleted. Re-point the constraint. Idempotent — this file re-runs at
+-- every boot.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'connector_sync_history_connector_id_fkey'
+          AND confdeltype <> 'c'   -- 'c' = ON DELETE CASCADE
+    ) THEN
+        ALTER TABLE connector_sync_history
+            DROP CONSTRAINT connector_sync_history_connector_id_fkey;
+        ALTER TABLE connector_sync_history
+            ADD CONSTRAINT connector_sync_history_connector_id_fkey
+            FOREIGN KEY (connector_id) REFERENCES connector_definitions(id) ON DELETE CASCADE;
+    END IF;
+END $$;
