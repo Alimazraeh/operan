@@ -1,7 +1,7 @@
 // Departments: real Module 05 catalog → server-orchestrated deploy pipeline →
 // department detail with the full operating model (org chart, chain of
 // command, service portfolio, value chain, risk/quality, compliance).
-import { SVC, get, post, del, uuid4, listTemplates, listDepartments, getDepartment,
+import { SVC, get, post, del, uuid4, listTemplates, listDepartments, getDepartment, getDeptMeasurements,
          getDeptOrgChart, deployTemplateReal, getDeployment } from "../api.js";
 import { $, esc, badge, rel, toast, rowItem } from "../ui.js";
 
@@ -171,13 +171,14 @@ function resolveHuman(ref) {
 }
 
 export async function viewDepartment(departmentId) {
-  let dRes, orgRes, agentsRes;
+  let dRes, orgRes, agentsRes, measRes;
   try {
     loadIamUsers(); // warm the M02 user cache for human-position binding
-    [dRes, orgRes, agentsRes] = await Promise.all([
+    [dRes, orgRes, agentsRes, measRes] = await Promise.all([
       getDepartment(departmentId),
       getDeptOrgChart(departmentId),
       get(SVC.registry + "/registry/agents?page_size=100"),
+      getDeptMeasurements(departmentId),
     ]);
   } catch (e) { return viewError("Failed to load department", String(e)); }
   if (!dRes.ok || !dRes.data) return viewError("Department not found", departmentId);
@@ -218,7 +219,7 @@ export async function viewDepartment(departmentId) {
     <div class="tab-panel" data-panel="services">${tabServices(d)}</div>
     <div class="tab-panel" data-panel="governance">${tabGovernance(d)}</div>
     <div class="tab-panel" data-panel="risk">${tabRisk(d)}</div>
-    <div class="tab-panel" data-panel="kpis">${tabKPIs(d)}</div>
+    <div class="tab-panel" data-panel="kpis">${tabKPIs(d, measRes && measRes.ok ? measRes.data : null)}</div>
     <div class="tab-panel" data-panel="staff">${tabStaff(d, staff, lead)}</div>`;
 }
 
@@ -415,7 +416,34 @@ function tabRisk(d) {
 }
 
 // ── Tab: KPIs ───────────────────────────────────────────────
-function tabKPIs(d) {
+function fmtSecs(s) {
+  if (s == null) return "—";
+  if (s < 60) return s + "s";
+  if (s < 3600) return Math.floor(s / 60) + "m " + (s % 60) + "s";
+  return Math.floor(s / 3600) + "h " + Math.floor((s % 3600) / 60) + "m";
+}
+
+function opsCard(meas) {
+  if (!meas || !meas.windows) return "";
+  const row = (label, w) => w ? `
+    <tr><td>${esc(label)}</td><td>${w.requests}</td><td>${w.completed}</td><td>${w.failed}</td>
+    <td>${w.sla_response_compliance_pct != null ? w.sla_response_compliance_pct + "%" : "—"}</td>
+    <td>${w.sla_resolution_compliance_pct != null ? w.sla_resolution_compliance_pct + "%" : "—"}</td>
+    <td>${fmtSecs(w.median_cycle_seconds)}</td><td>${fmtSecs(w.median_gate_turnaround_seconds)}</td>
+    <td>${w.tokens_used.toLocaleString()}${w.estimated_cost_usd != null ? " ($" + w.estimated_cost_usd.toFixed(2) + ")" : ""}</td></tr>` : "";
+  return `<div class="card" style="margin-bottom:12px">
+    <h3>Operations — measured <span class="tag">from the request ledger</span></h3>
+    <div class="hint">Server-computed. USD estimated at $${esc(String(meas.token_rate_usd_per_million))}/1M tokens.</div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>window</th><th>requests</th><th>done</th><th>failed</th><th>resp SLA</th><th>res SLA</th><th>median cycle</th><th>gate median</th><th>tokens</th></tr></thead>
+      <tbody>${row("7d", meas.windows["7d"])}${row("30d", meas.windows["30d"])}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function tabKPIs(d, meas) {
+  const measured = {};
+  for (const m of (meas && meas.kpi_measurements) || []) measured[m.kpi_id] = m;
   const kpis = (d.kpis || []).map(k => {
     const th = k.thresholds || {};
     const parts = [];
@@ -423,14 +451,19 @@ function tabKPIs(d) {
     if (th.target_label) parts.push(String(th.target_label));
     if (th.warning !== undefined) parts.push("warn " + th.warning);
     if (th.critical !== undefined) parts.push("crit " + th.critical);
+    const m = measured[k.id];
+    const badge = m && m.measured
+      ? `<span class="sla-chip ok" title="${esc(m.source || "")}">${esc(String(m.value))} ${esc(m.unit || "")}</span>`
+      : `<span class="badge draft">not yet measured</span>`;
     return rowItem({
       title: "📈 " + esc(k.name),
-      meta: `${esc(k.metric_type)}${k.unit ? " · " + k.unit : ""}${parts.length ? " · " + parts.join(" / ") : ""}${k.aggregation_period ? " · per " + k.aggregation_period : ""}`,
+      meta: `${esc(k.metric_type)}${k.unit ? " · " + esc(k.unit) : ""}${parts.length ? " · " + esc(parts.join(" / ")) : ""}${k.aggregation_period ? " · per " + esc(k.aggregation_period) : ""}`,
+      actions: badge,
     });
   }).join("");
-  return `<div class="card">
+  return `${opsCard(meas)}<div class="card">
     <h3>KPI definitions <span class="tag">${(d.kpis || []).length}</span></h3>
-    <div class="hint">Measured through Module 11 observability; thresholds drive dashboards and alerts.</div>
+    <div class="hint">Measured means a ledger metric genuinely backs it — nothing here is invented.</div>
     ${kpis || '<div class="empty">No KPIs defined.</div>'}
   </div>`;
 }

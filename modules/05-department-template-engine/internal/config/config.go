@@ -22,6 +22,7 @@ type Config struct {
 	OrchestrationURL string
 	CadenceHour      int    // local hour daily/weekly briefings fire
 	CadenceTick      string // e.g. "30s": test mode — fire every interval regardless of clock
+	TokenRate        float64 // USD per 1M tokens for measured spend estimates
 }
 
 func ParseConfig() Config {
@@ -41,7 +42,17 @@ func ParseConfig() Config {
 		OrchestrationURL: env("MODULE05_ORCHESTRATION_URL", "http://agent-orchestration.operan.svc.cluster.local:8080/api/v1/orchestration"),
 		CadenceHour:      envInt("MODULE05_CADENCE_HOUR", 7),
 		CadenceTick:      env("MODULE05_CADENCE_TICK", ""),
+		TokenRate:        envFloat("MODULE05_TOKEN_RATE", 3.0),
 	}
+}
+
+func envFloat(key string, fallback float64) float64 {
+	if v := os.Getenv(key); v != "" {
+		if f, err := strconv.ParseFloat(v, 64); err == nil {
+			return f
+		}
+	}
+	return fallback
 }
 
 func env(key, fallback string) string {

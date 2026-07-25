@@ -96,6 +96,7 @@ func main() {
 	loop := workloop.New(requestStore, departmentStore, templateStore, orchClient, publisher)
 	h.Dispatcher = loop
 	h.Briefings = briefingStore
+	h.TokenRate = cfg.TokenRate
 	go loop.Run(ctx)
 
 	// ─── Operating cadence: scheduled department briefings ────────────────

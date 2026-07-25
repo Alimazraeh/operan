@@ -29,6 +29,7 @@ type TemplateHandlers struct {
 	Orchestrator        DeployOrchestrator // server-side deploy pipeline; nil in legacy tests
 	Dispatcher          RequestDispatcher  // work-loop dispatch; nil until the runtime ships
 	Briefings           *cadence.BriefingStore // operating-cadence digests; nil in legacy tests
+	TokenRate           float64                // USD per 1M tokens, for measured spend estimates
 }
 
 // DeployOrchestrator runs the server-side provisioning pipeline for a deploy.
