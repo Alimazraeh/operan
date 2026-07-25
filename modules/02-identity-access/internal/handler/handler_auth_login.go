@@ -59,7 +59,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		writeAuthError(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
-	if user.Status == "deactivated" || user.Status == "suspended" {
+	if !maySignIn(user.Status) {
 		log.Printf("[IAM] login rejected for %s: account %s", user.ID, user.Status)
 		writeAuthError(w, http.StatusUnauthorized, "invalid credentials")
 		return
@@ -87,6 +87,25 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		"roles":        orEmpty(user.RoleIDs),
 		"expires_at":   expiresAt.Format(time.RFC3339),
 	})
+}
+
+// maySignIn is an allow-list, not a deny-list, and that is the point. The
+// deactivate path writes status "inactive" while an earlier deny-list here
+// named only "deactivated" and "suspended" — so deactivating a user did not
+// stop them signing in. An allow-list refuses any status nobody has explicitly
+// decided is safe, including ones added after this was written.
+//
+// "pending" is admitted deliberately: a user created through the API starts
+// pending and is only reachable once an admin sets a password, so refusing
+// pending would mean no API-created user could ever sign in. Holding a valid
+// credential is the activation act for a local account.
+func maySignIn(status string) bool {
+	switch status {
+	case "active", "pending", "":
+		return true
+	default:
+		return false
+	}
 }
 
 // mintToken produces the platform JWT. The claim set matches the shared-admin

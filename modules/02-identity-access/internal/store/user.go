@@ -270,5 +270,13 @@ func (s *UserStore) SetPasswordHash(id, hash string) error {
 	u.PasswordHash = hash
 	u.PasswordSetAt = &now
 	u.UpdatedAt = now
+	// Holding a credential is what activates a local account. Without this a
+	// user created through the API stays "pending" forever while signing in
+	// perfectly well, and the status column stops describing anything real.
+	// Only pending is promoted — a deactivated account is not revived by
+	// handing it a new password.
+	if u.Status == "pending" || u.Status == "" {
+		u.Status = "active"
+	}
 	return nil
 }

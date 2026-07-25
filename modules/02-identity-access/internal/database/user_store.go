@@ -204,10 +204,14 @@ func (s *UserStore) CountTotal(ctx context.Context) (int, error) {
 	}
 	return count, nil
 }
+
 // SetPassword stores a bcrypt hash for a user and stamps when it changed.
 func (s *UserStore) SetPassword(ctx context.Context, userID, hash string) error {
+	// The status promotion mirrors UserStore.SetPasswordHash: a credential
+	// activates a pending account, and never revives a deactivated one.
 	tag, err := s.pool.Exec(ctx, `
-		UPDATE users SET password_hash = $2, password_set_at = NOW(), updated_at = NOW()
+		UPDATE users SET password_hash = $2, password_set_at = NOW(), updated_at = NOW(),
+		       status = CASE WHEN status IN ('pending', '') OR status IS NULL THEN 'active' ELSE status END
 		WHERE id = $1
 	`, userID, hash)
 	if err != nil {
