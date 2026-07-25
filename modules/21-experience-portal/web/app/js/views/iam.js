@@ -11,33 +11,54 @@ const DELEGATION_SCOPES = ["tenant", "department", "team"];
 const ABAC_RULE_TYPES = ["time", "ip", "ownership", "department", "custom"];
 
 export async function viewIAM() {
-  let usersR, rolesR, servicesR, agentsR, delegationsR, abacR, auditR;
-  try {
-    [usersR, rolesR, servicesR, agentsR, delegationsR, abacR, auditR] = await Promise.all([
-      get(SVC_IAM + "/users?page_size=100"),
-      get(SVC_IAM + "/roles?page_size=100"),
-      get(SVC_IAM + "/service-identities?page_size=50"),
-      get(SVC_IAM + "/agent-identities?page_size=50"),
-      get(SVC_IAM + "/admin/delegations?page_size=20"),
-      get(SVC_IAM + "/abac/policies?page_size=20"),
-      get(SVC_IAM + "/audit/trails?page_size=20"),
-    ]);
-  } catch (e) { return viewError("Failed to load IAM data", e.message); }
-
-  const users = (usersR.data && usersR.data.items) || [];
-  const roles = (rolesR.data && rolesR.data.items) || [];
-  const services = (servicesR.data && servicesR.data.items) || [];
-  const agents = (agentsR.data && agentsR.data.items) || [];
-  const delegations = (delegationsR.data && delegationsR.data.items) || [];
-  const abac = (abacR.data && abacR.data.items) || [];
-  const audit = (auditR.data && auditR.data.items) || [];
+  // Seven endpoints, settled independently. Promise.all meant one dead endpoint
+  // blanked the entire console — and two of them panicked M02 on every request,
+  // so this screen was never reachable at all. A partial outage is shown as a
+  // partial outage: the sections that loaded render, the ones that did not say
+  // so by name.
+  const paths = {
+    users: "/users?page_size=100",
+    roles: "/roles?page_size=100",
+    services: "/service-identities?page_size=50",
+    agents: "/agent-identities?page_size=50",
+    delegations: "/admin/delegations?page_size=20",
+    abac: "/abac/policies?page_size=20",
+    audit: "/audit/trails?page_size=20",
+  };
+  const keys = Object.keys(paths);
+  const settled = await Promise.allSettled(keys.map(k => get(SVC_IAM + paths[k])));
+  const data = {};
+  const unavailable = [];
+  keys.forEach((k, i) => {
+    const s = settled[i];
+    const ok = s.status === "fulfilled" && s.value && s.value.ok;
+    data[k] = ok ? ((s.value.data && s.value.data.items) || []) : [];
+    if (!ok) {
+      const why = s.status === "rejected"
+        ? (s.reason && s.reason.message) || "unreachable"
+        : "HTTP " + ((s.value && s.value.status) || "?");
+      unavailable.push({ key: k, why });
+    }
+  });
+  const users = data.users, roles = data.roles, services = data.services,
+        agents = data.agents, delegations = data.delegations,
+        abac = data.abac, audit = data.audit;
+  const missing = (k) => unavailable.find(u => u.key === k);
+  const countOf = (k, arr) => missing(k) ? "—" : arr.length;
+  const unavailableBanner = unavailable.length === 0 ? "" : `
+    <div class="card" style="margin-bottom:18px;border-left:3px solid var(--warn,#c90)">
+      <b>Some identity data could not be loaded.</b>
+      <div class="hint">${unavailable.map(u => `${esc(u.key)} (${esc(u.why)})`).join(" · ")}.
+      Counts shown as — are unknown, not zero.</div>
+    </div>`;
 
   return `
+    ${unavailableBanner}
     <div class="grid g4" style="margin-bottom:18px">
-      <div class="card metric"><b>${users.length}</b><span>human users</span></div>
-      <div class="card metric"><b>${services.length}</b><span>service identities</span></div>
-      <div class="card metric"><b>${agents.length}</b><span>agent identities</span></div>
-      <div class="card metric"><b>${roles.length}</b><span>RBAC roles</span></div>
+      <div class="card metric"><b>${countOf("users", users)}</b><span>human users</span></div>
+      <div class="card metric"><b>${countOf("services", services)}</b><span>service identities</span></div>
+      <div class="card metric"><b>${countOf("agents", agents)}</b><span>agent identities</span></div>
+      <div class="card metric"><b>${countOf("roles", roles)}</b><span>RBAC roles</span></div>
     </div>
 
     <!-- Tab navigation -->

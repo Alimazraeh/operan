@@ -552,3 +552,47 @@ func TestContainsUUID(t *testing.T) {
 		})
 	}
 }
+
+// GET /agent-identities and /service-identities panicked on every request in
+// every deployment: the constructors never set a Store, and the guard reads
+// `if h.Auth == nil || h.Store == nil` and then immediately calls a method on
+// h.Store. A nil-pointer dereference took the request down and, with it, the
+// whole IAM console — which loads seven endpoints at once.
+func TestIdentityListsDoNotPanicWithoutAuthentik(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		call func(http.ResponseWriter, *http.Request)
+	}{
+		{"agent-identities", NewAgentIdentityHandler(nil, events.NewPublisher("")).List},
+		{"service-identities", NewServiceIdentityHandler(nil, events.NewPublisher("")).List},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/"+tc.name+"?page_size=50", nil)
+			req.Header.Set("X-Tenant-ID", "tenant-1")
+			req = setPrincipalInContext(req, &middleware.JWTToken{
+				Subject: "user-1", UserType: "user", TenantID: "tenant-1", Roles: []string{"admin"},
+			})
+			w := httptest.NewRecorder()
+			tc.call(w, req) // must not panic
+			if w.Code >= 500 {
+				t.Fatalf("%s returned %d: %s", tc.name, w.Code, w.Body.String())
+			}
+		})
+	}
+}
+
+// The same handlers built with an explicitly nil Store must also survive — the
+// accessor exists so no construction path can take the service down.
+func TestIdentityListsSurviveANilStore(t *testing.T) {
+	h := &AgentIdentityHandler{Publisher: events.NewPublisher("")}
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/iam/agent-identities", nil)
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+	req = setPrincipalInContext(req, &middleware.JWTToken{
+		Subject: "user-1", UserType: "user", TenantID: "tenant-1", Roles: []string{"admin"},
+	})
+	w := httptest.NewRecorder()
+	h.List(w, req)
+	if w.Code >= 500 {
+		t.Fatalf("nil-store handler returned %d: %s", w.Code, w.Body.String())
+	}
+}
