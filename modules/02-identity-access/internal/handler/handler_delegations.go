@@ -318,8 +318,11 @@ func (h *DelegationHandler) List(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
+		// Same envelope key as the Authentik path below — an endpoint that
+		// renames its own list depending on which backend answered is how a
+		// client ends up showing zero.
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"delegations": local, "total": localTotal,
+			"delegation_roles": local, "total": localTotal,
 			"page": page, "page_size": pageSize,
 		})
 		return
