@@ -173,8 +173,87 @@ channels:
       message:
         $ref: '#/components/messages/DepartmentArchived'
 
+  # ─── request lifecycle (operan.templates.request.*) ───
+  operan.templates.request.created:
+    description: A service request was raised against a department service.
+    address: operan.templates.request.created
+    publish:
+      summary: Request created; SLA clocks stamped.
+      operationId: onRequestCreated
+      message:
+        $ref: '#/components/messages/RequestLifecycle'
+  operan.templates.request.dispatched:
+    description: The work loop compiled the service SOP and started the per-request Module 03 workflow.
+    address: operan.templates.request.dispatched
+    publish:
+      summary: Request dispatched to the orchestrator.
+      operationId: onRequestDispatched
+      message:
+        $ref: '#/components/messages/RequestLifecycle'
+  operan.templates.request.awaiting_approval:
+    description: The run reached a human gate; the request waits on a Supervision decision.
+    address: operan.templates.request.awaiting_approval
+    publish:
+      summary: Request awaiting human approval.
+      operationId: onRequestAwaitingApproval
+      message:
+        $ref: '#/components/messages/RequestLifecycle'
+  operan.templates.request.completed:
+    description: The run finished; the request carries the final work product and token count.
+    address: operan.templates.request.completed
+    publish:
+      summary: Request completed.
+      operationId: onRequestCompleted
+      message:
+        $ref: '#/components/messages/RequestLifecycle'
+  operan.templates.request.rejected:
+    description: A human rejected the gated work; the request terminates as rejected.
+    address: operan.templates.request.rejected
+    publish:
+      summary: Request rejected at a gate.
+      operationId: onRequestRejected
+      message:
+        $ref: '#/components/messages/RequestLifecycle'
+  operan.templates.request.failed:
+    description: The run failed or was lost (orchestrator restart / auth expiry) — failed honestly.
+    address: operan.templates.request.failed
+    publish:
+      summary: Request failed.
+      operationId: onRequestFailed
+      message:
+        $ref: '#/components/messages/RequestLifecycle'
+  operan.templates.request.sla_breached:
+    description: An open request crossed its resolution due time (emitted once).
+    address: operan.templates.request.sla_breached
+    publish:
+      summary: Request breached its resolution SLA.
+      operationId: onRequestSLABreached
+      message:
+        $ref: '#/components/messages/RequestLifecycle'
+
+
 components:
   messages:
+    RequestLifecycle:
+      name: RequestLifecycle
+      title: Service-request lifecycle event
+      contentType: application/json
+      payload:
+        type: object
+        additionalProperties: false
+        required: [request_id, tenant_id, department_id, status, timestamp]
+        properties:
+          request_id: { type: string, format: uuid }
+          tenant_id: { type: string }
+          department_id: { type: string, format: uuid }
+          service_id: { type: string }
+          title: { type: string }
+          status:
+            type: string
+            enum: [submitted, dispatched, awaiting_approval, completed, rejected, failed, sla_breached, in_progress]
+          detail: { type: string }
+          tokens_used: { type: integer, minimum: 0 }
+          timestamp: { type: string, format: date-time }
     # ─── Department lifecycle ───
     DepartmentCreated:
       name: DepartmentCreated

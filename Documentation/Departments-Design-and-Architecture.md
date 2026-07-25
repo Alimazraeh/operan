@@ -198,23 +198,53 @@ real ones.
 
 ## 5. Runtime: how a department does work
 
-The portal's "Let the agent work" flow (Departments → detail → Overview) is the
-end-to-end demonstration of the chain of command
-(`modules/21-experience-portal/web/app/js/views/departments.js: agentDoWork`):
+The department work loop (M05 `internal/workloop`) is the production path — a
+service request is the unit of demand, and the run is fully governed:
 
 ```
-instruction → M03 POST /agent/draft        (pulls the agent's M07 memory, prompts
-                                            Qwen3.6-35B via LiteLLM, returns draft)
-            → M03 POST /pipeline           (agent-work → human-signoff definition)
-            → M03 POST /executions         (a real execution of that pipeline)
-            → M03 POST /human-tasks        (sign-off task on that execution)
-            → M09 POST /approvals          (approval gate referencing the task)
-            → the gate appears in the Supervision queue for a human decision
+POST /departments/{id}/requests            (service_id, title, body, priority)
+  → SLA clocks stamped from the service's declared levels (sla.Parse by priority)
+  → resolveWorkflowDef: service.delivery_workflow_id → template.workflows[]
+  → deploy.CompileWorkflow → PER-REQUEST M03 workflow (request context in
+    variables; error_strategy abort; fallback single-gate "manual handling"
+    when no SOP resolves)
+  → M03 DAG engine executes: agent nodes → shared internal/draft engine (M07
+    memory → Qwen via LiteLLM); human_gate nodes → M03 human task + M09
+    approval (request_id = task id; US-402 gates consumer flips the task)
+  → M05 poller (15s) mirrors run state onto the request: timeline events
+    (created/dispatched/agent_output/gate_raised(+node)/gate_responded/
+    completed/failed), first_response_at, tokens_used, awaiting_approval via
+    recorded GateNodeIDs, final output, sla_breached (once), "run lost" fail
+    after 8 unauthorized/unreachable reads
 ```
 
-Every step is checked; failures surface in the UI. This mirrors the governance intent:
-agents draft/analyze/coordinate, humans hold `decide` authority above the limits in
-`decision_rights`, with M09 as the enforcement surface.
+Two rhythms sit on top of the loop:
+
+- **Operating cadence** (`internal/cadence`): a scheduler fires each live
+  department's `business_logic.operating_cadence` entries — daily at
+  `MODULE05_CADENCE_HOUR` (07:00 default), weekly on Monday
+  (`MODULE05_CADENCE_TICK` = test override). Stats are gathered from the
+  request ledger and the digest is drafted by the department head's agent via
+  M03 `/agent/draft` under a self-minted HS256 service JWT (issuer
+  `operan-tenant-control-plane`, role admin); a stats-only fallback files when
+  drafting is unavailable. Briefings are snapshot-persisted (`briefings.json`,
+  bounded 30/department) and served at `GET /briefings`.
+- **Measurement** (`internal/handlers/measurements.go`):
+  `GET /departments/{id}/kpi-measurements` computes 7d/30d windows from the
+  ledger (counts, completion %, SLA response/resolution compliance %, median
+  cycle, median gate turnaround from paired gate timeline events, tokens + USD
+  at `MODULE05_TOKEN_RATE`) and maps template KPI definitions conservatively —
+  `measured:false` + "no data source yet" where nothing backs them.
+
+v1 limits (accepted, documented): M03 runs don't survive its restarts (M05
+fails the request honestly); gate waits hold one goroutine each; per-request
+caller tokens expire (~1h), so a gate held longer than the token's life ends
+in an honest "run lost" failure; monthly/quarterly cadences are declared on
+templates but not yet scheduled.
+
+The legacy pipeline path (`/pipeline` → `/executions` → `/human-tasks`) remains
+for the portal's guided Story runner; the Workflows/Tasks views run entirely on
+the work loop above.
 
 ---
 
@@ -233,6 +263,10 @@ Portal-facing base: `/svc/templates/*` (proxy strips the prefix; no extra path p
 | `PATCH /departments/{id}`, `DELETE /departments/{id}` | Update / archive (agents remain in M04, noted in the response) |
 | `GET /departments/{id}/org-chart` | Nodes + reporting edges (root + edges resolved) |
 | `GET /departments/{id}/services · /value-chain · /risks · /quality · /compliance` | Operating-model sub-resources |
+| `GET/POST /departments/{id}/requests` | The work ledger + the department's front door (POST needs an operational department + owned service_id) |
+| `GET /requests/{id}`, `POST /requests/{id}/cancel` | One request with full timeline; cancel while non-terminal |
+| `GET /departments/{id}/kpi-measurements` | Ledger-derived 7d/30d metrics + honest KPI mapping |
+| `GET /briefings?department_id&limit` | Operating-cadence digests, newest first |
 
 **Auth & tenancy:** every call requires a JWT signed with the shared `operan-jwt`
 secret, issuer `operan-tenant-control-plane` (M02 issues this since `97d1944`), plus

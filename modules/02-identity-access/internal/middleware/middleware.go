@@ -150,7 +150,9 @@ func AuthValidator(jwksCache *JWKSCache, authentikIssuerURL, tokenSecret string,
 		if authentikIssuerURL != "" {
 			expectedIssuer = authentikIssuerURL
 		}
-		if issuer != expectedIssuer && issuer != "operan-iam" {
+		// operan-tenant-control-plane is the platform-wide issuer every module
+		// pins — including the tokens M02's own admin login mints.
+		if issuer != expectedIssuer && issuer != "operan-iam" && issuer != "operan-tenant-control-plane" {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			fmt.Fprint(w, `{"error":"untrusted issuer"}`)

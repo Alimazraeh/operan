@@ -704,6 +704,127 @@ components:
           $ref: '#/components/schemas/agentStatus'
       additionalProperties: false
 
+    ServiceRequest:
+      type: object
+      description: >
+        A unit of demand raised against a department service. The work loop
+        compiles the service's SOP into a per-request Module 03 workflow,
+        stamps the SLA clocks from the service's declared levels, and mirrors
+        run state onto this record until it reaches a terminal status.
+      additionalProperties: false
+      required: [id, tenant_id, department_id, service_id, title, status, created_at]
+      properties:
+        id: { $ref: '#/components/schemas/uuid' }
+        tenant_id: { type: string }
+        department_id: { $ref: '#/components/schemas/uuid' }
+        service_id: { type: string }
+        service_name: { type: string }
+        title: { type: string, maxLength: 300 }
+        body: { type: string }
+        priority: { type: string, description: "P1–P4; drives SLA clock parsing" }
+        status:
+          type: string
+          enum: [submitted, dispatched, in_progress, awaiting_approval, completed, rejected, failed, cancelled]
+        requester:
+          type: object
+          additionalProperties: false
+          properties:
+            user_id: { type: string }
+        sla_response_due: { type: string, format: date-time }
+        sla_resolution_due: { type: string, format: date-time }
+        first_response_at: { type: string, format: date-time }
+        completed_at: { type: string, format: date-time }
+        workflow_run_ref:
+          type: string
+          description: The Module 03 workflow id executing this request.
+        gate_node_ids:
+          type: array
+          items: { type: string }
+        tokens_used: { type: integer, minimum: 0 }
+        output: { type: string, description: "Final work product, when completed." }
+        timeline:
+          type: array
+          items: { $ref: '#/components/schemas/RequestEvent' }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    RequestEvent:
+      type: object
+      description: One entry of a request's audit timeline.
+      additionalProperties: false
+      required: [at, kind]
+      properties:
+        at: { type: string, format: date-time }
+        kind:
+          type: string
+          enum: [created, dispatched, agent_output, gate_raised, gate_responded, completed, rejected, failed, cancelled, sla_breached, note]
+        detail: { type: string }
+        node: { type: string, description: "The workflow node the event belongs to (gate pairing key)." }
+    Briefing:
+      type: object
+      description: >
+        An operating-cadence digest: scheduled per the department's declared
+        rituals, its stats gathered from the request ledger and its prose
+        drafted by the department head's agent (stats-only fallback when
+        drafting is unavailable).
+      additionalProperties: false
+      required: [id, tenant_id, department_id, cadence_name, frequency, stats, content, created_at]
+      properties:
+        id: { $ref: '#/components/schemas/uuid' }
+        tenant_id: { type: string }
+        department_id: { $ref: '#/components/schemas/uuid' }
+        department_name: { type: string }
+        cadence_name: { type: string }
+        frequency: { type: string, enum: [daily, weekly] }
+        stats: { $ref: '#/components/schemas/BriefingStats' }
+        content: { type: string }
+        model: { type: string, description: "LLM that drafted the content; absent on stats-only fallback." }
+        tokens: { type: integer, minimum: 0 }
+        created_at: { type: string, format: date-time }
+    BriefingStats:
+      type: object
+      additionalProperties: false
+      properties:
+        open_requests: { type: integer, minimum: 0 }
+        awaiting_approval: { type: integer, minimum: 0 }
+        completed_last_24h: { type: integer, minimum: 0 }
+        failed_last_24h: { type: integer, minimum: 0 }
+        sla_breached: { type: integer, minimum: 0 }
+        tokens_last_24h: { type: integer, minimum: 0 }
+    KPIWindowMetrics:
+      type: object
+      description: Ledger-derived operational metrics for one time window.
+      additionalProperties: false
+      required: [requests, completed, failed, tokens_used]
+      properties:
+        requests: { type: integer, minimum: 0 }
+        completed: { type: integer, minimum: 0 }
+        failed: { type: integer, minimum: 0 }
+        completion_rate_pct: { type: integer, minimum: 0, maximum: 100 }
+        sla_response_compliance_pct: { type: integer, minimum: 0, maximum: 100 }
+        sla_resolution_compliance_pct: { type: integer, minimum: 0, maximum: 100 }
+        median_cycle_seconds: { type: integer, minimum: 0 }
+        median_gate_turnaround_seconds: { type: integer, minimum: 0 }
+        tokens_used: { type: integer, minimum: 0 }
+        estimated_cost_usd:
+          type: number
+          description: tokens_used priced at token_rate_usd_per_million — an estimate, labeled with its rate.
+    KPIMeasurementItem:
+      type: object
+      description: >
+        A template KPI definition mapped to the ledger metric that genuinely
+        backs it. measured=false with note "no data source yet" is the honest
+        answer for KPIs nothing measures yet — values are never invented.
+      additionalProperties: false
+      required: [kpi_id, name, measured]
+      properties:
+        kpi_id: { type: string }
+        name: { type: string }
+        unit: { type: string }
+        measured: { type: boolean }
+        value: {}
+        source: { type: string, description: "e.g. request_ledger:median_cycle_30d" }
+        note: { type: string }
+
   parameters:
     TemplateId:
       name: id
@@ -1563,7 +1684,155 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /departments/{id}/requests:
+    get:
+      summary: List the department's service requests (the work ledger)
+      operationId: listDepartmentRequests
+      tags: [Requests]
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: data + meta envelope of ServiceRequest
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      summary: Raise a service request — the department's front door
+      description: >
+        Requires an operational (or degraded) department and a service_id it
+        owns. Stamps SLA clocks from the service's declared levels and
+        dispatches the work loop, which compiles the service's SOP into a
+        per-request Module 03 workflow.
+      operationId: createDepartmentRequest
+      tags: [Requests]
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [service_id, title]
+              properties:
+                service_id: { type: string }
+                title: { type: string }
+                body: { type: string }
+                priority: { type: string }
+      responses:
+        '201':
+          description: The created ServiceRequest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Department is not operational
+  /requests/{id}:
+    get:
+      summary: Get one service request with its full timeline
+      operationId: getRequest
+      tags: [Requests]
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: The ServiceRequest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /requests/{id}/cancel:
+    post:
+      summary: Cancel an open request
+      operationId: cancelRequest
+      tags: [Requests]
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: The cancelled ServiceRequest
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Request already terminal
+  /departments/{id}/kpi-measurements:
+    get:
+      summary: Ledger-derived KPI measurements for the department
+      description: >
+        7d/30d windows computed server-side from the request ledger, plus the
+        template's KPI definitions conservatively mapped to the metric that
+        genuinely backs each (measured=false, "no data source yet" otherwise).
+      operationId: getDepartmentKpiMeasurements
+      tags: [Requests]
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Windows + per-KPI measurements
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  department_id: { $ref: '#/components/schemas/uuid' }
+                  generated_at: { type: string, format: date-time }
+                  token_rate_usd_per_million: { type: number }
+                  windows:
+                    type: object
+                    additionalProperties:
+                      $ref: '#/components/schemas/KPIWindowMetrics'
+                  kpi_measurements:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/KPIMeasurementItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /briefings:
+    get:
+      summary: List the tenant's operating-cadence briefings, newest first
+      operationId: listBriefings
+      tags: [Briefings]
+      parameters:
+        - name: department_id
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+      responses:
+        '200':
+          description: data + meta envelope of Briefing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Briefing'
+                  meta:
+                    type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+
 tags:
+  - name: Requests
+    description: Service requests — the department's front door and work ledger — plus ledger-derived KPI measurements
+  - name: Briefings
+    description: Operating-cadence digests filed by the scheduler
   - name: Templates
     description: Standard department template CRUD operations
   - name: Departments

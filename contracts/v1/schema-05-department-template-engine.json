@@ -26,101 +26,245 @@
     },
     "templateCategory": {
       "type": "string",
-      "enum": ["hr", "finance", "procurement", "engineering", "translation", "legal", "compliance", "research", "marketing", "software-development", "it", "it-operations", "ops", "sales", "support", "custom"]
+      "enum": [
+        "hr",
+        "finance",
+        "procurement",
+        "engineering",
+        "translation",
+        "legal",
+        "compliance",
+        "research",
+        "marketing",
+        "software-development",
+        "it",
+        "it-operations",
+        "ops",
+        "sales",
+        "support",
+        "custom"
+      ]
     },
     "roleType": {
       "type": "string",
-      "enum": ["director", "manager", "specialist", "coordinator", "analyst", "support"],
+      "enum": [
+        "director",
+        "manager",
+        "specialist",
+        "coordinator",
+        "analyst",
+        "support"
+      ],
       "description": "Agent Role Taxonomy from the GARDEN framework."
     },
     "holderType": {
       "type": "string",
-      "enum": ["ai_agent", "human", "vacant"]
+      "enum": [
+        "ai_agent",
+        "human",
+        "vacant"
+      ]
     },
     "autonomyTier": {
       "type": "string",
-      "enum": ["recommend", "analyze", "coordinate", "draft", "execute"],
+      "enum": [
+        "recommend",
+        "analyze",
+        "coordinate",
+        "draft",
+        "execute"
+      ],
       "description": "Autonomy ladder aligned with Module 04 CapabilityTier."
     },
     "decisionAuthority": {
       "type": "string",
-      "enum": ["decide", "recommend", "veto", "must_be_informed"]
+      "enum": [
+        "decide",
+        "recommend",
+        "veto",
+        "must_be_informed"
+      ]
     },
     "riskSeverity": {
       "type": "string",
-      "enum": ["low", "medium", "high", "critical"]
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
     },
     "riskLikelihood": {
       "type": "string",
-      "enum": ["rare", "unlikely", "possible", "likely", "almost_certain"]
+      "enum": [
+        "rare",
+        "unlikely",
+        "possible",
+        "likely",
+        "almost_certain"
+      ]
     },
     "riskStatus": {
       "type": "string",
-      "enum": ["open", "mitigating", "accepted", "closed"]
+      "enum": [
+        "open",
+        "mitigating",
+        "accepted",
+        "closed"
+      ]
     },
     "departmentStatus": {
       "type": "string",
-      "enum": ["provisioning", "operational", "degraded", "suspended", "archived"]
+      "enum": [
+        "provisioning",
+        "operational",
+        "degraded",
+        "suspended",
+        "archived"
+      ]
     },
     "opScope": {
       "type": "string",
-      "enum": ["department", "agent", "service"]
+      "enum": [
+        "department",
+        "agent",
+        "service"
+      ]
     },
     "agentStatus": {
       "type": "string",
-      "enum": ["draft", "deprecated", "published", "archived"]
+      "enum": [
+        "draft",
+        "deprecated",
+        "published",
+        "archived"
+      ]
     },
     "workflowStepType": {
       "type": "string",
-      "enum": ["agent_call", "api_call", "data_fetch", "transformation", "approval", "notification", "tool_call", "conditional"]
+      "enum": [
+        "agent_call",
+        "api_call",
+        "data_fetch",
+        "transformation",
+        "approval",
+        "notification",
+        "tool_call",
+        "conditional"
+      ]
     },
     "governanceRuleType": {
       "type": "string",
-      "enum": ["access_control", "data_usage", "rate_limit", "audit", "compliance", "custom"]
+      "enum": [
+        "access_control",
+        "data_usage",
+        "rate_limit",
+        "audit",
+        "compliance",
+        "custom"
+      ]
     },
     "governanceEnforcement": {
       "type": "string",
-      "enum": ["enforce", "warn", "log"]
+      "enum": [
+        "enforce",
+        "warn",
+        "log"
+      ]
     },
     "kpiMetricType": {
       "type": "string",
-      "enum": ["counter", "gauge", "histogram", "timer", "boolean"]
+      "enum": [
+        "counter",
+        "gauge",
+        "histogram",
+        "timer",
+        "boolean"
+      ]
     },
     "kpiAggregationPeriod": {
       "type": "string",
-      "enum": ["minute", "hour", "day", "week", "month"]
+      "enum": [
+        "minute",
+        "hour",
+        "day",
+        "week",
+        "month"
+      ]
     },
     "integrationType": {
       "type": "string",
-      "enum": ["erp", "crm", "email", "calendar", "document", "messaging", "custom"]
+      "enum": [
+        "erp",
+        "crm",
+        "email",
+        "calendar",
+        "document",
+        "messaging",
+        "custom"
+      ]
     },
     "integrationAuthMethod": {
       "type": "string",
-      "enum": ["oauth2", "api_key", "basic", "jwt", "custom"]
+      "enum": [
+        "oauth2",
+        "api_key",
+        "basic",
+        "jwt",
+        "custom"
+      ]
     },
     "integrationStatus": {
       "type": "string",
-      "enum": ["active", "inactive", "error", "pending"]
+      "enum": [
+        "active",
+        "inactive",
+        "error",
+        "pending"
+      ]
     },
     "policyScope": {
       "type": "string",
-      "enum": ["agent", "workflow", "department", "system"]
+      "enum": [
+        "agent",
+        "workflow",
+        "department",
+        "system"
+      ]
     },
     "deploymentEnvironment": {
       "type": "string",
-      "enum": ["dev", "staging", "production"]
+      "enum": [
+        "dev",
+        "staging",
+        "production"
+      ]
     },
     "deploymentStatus": {
       "type": "string",
-      "enum": ["select", "configure", "connect_data", "provision_memory", "deploy_swarm", "operational", "failed", "rolled_back"]
+      "enum": [
+        "select",
+        "configure",
+        "connect_data",
+        "provision_memory",
+        "deploy_swarm",
+        "operational",
+        "failed",
+        "rolled_back"
+      ]
     },
-
     "AgentDefinition": {
       "type": "object",
-      "required": ["id", "role", "capabilities"],
+      "required": [
+        "id",
+        "role",
+        "capabilities"
+      ],
       "description": "Canonical template agent definition. Superset of the historical formal and divergent shapes.",
       "properties": {
-        "id": { "$ref": "#/definitions/slug" },
+        "id": {
+          "$ref": "#/definitions/slug"
+        },
         "role": {
           "type": "string",
           "description": "Agent role within the department (e.g., 'analyst', 'coordinator')."
@@ -129,27 +273,50 @@
           "type": "string",
           "maxLength": 200
         },
-        "description": { "type": "string" },
+        "description": {
+          "type": "string"
+        },
         "level": {
           "type": "string",
-          "enum": ["junior", "mid", "senior", "lead", "director"]
+          "enum": [
+            "junior",
+            "mid",
+            "senior",
+            "lead",
+            "director"
+          ]
         },
-        "position_title": { "type": "string", "maxLength": 200 },
+        "position_title": {
+          "type": "string",
+          "maxLength": 200
+        },
         "reports_to": {
           "$ref": "#/definitions/slug",
           "description": "AgentDefinition.id of the direct superior (chain of command)."
         },
-        "autonomy_tier": { "$ref": "#/definitions/autonomyTier" },
+        "autonomy_tier": {
+          "$ref": "#/definitions/autonomyTier"
+        },
         "capabilities": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         },
-        "model": { "type": "string" },
-        "system_prompt": { "type": "string" },
-        "memory_profile": { "type": "string" },
+        "model": {
+          "type": "string"
+        },
+        "system_prompt": {
+          "type": "string"
+        },
+        "memory_profile": {
+          "type": "string"
+        },
         "tool_requirements": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         },
         "constraints": {
           "type": "object",
@@ -160,16 +327,22 @@
         },
         "services": {
           "type": "array",
-          "items": { "$ref": "#/definitions/slug" },
+          "items": {
+            "$ref": "#/definitions/slug"
+          },
           "description": "ServiceOffering.ids this agent owns/delivers."
         },
         "decision_rights": {
           "type": "array",
-          "items": { "$ref": "#/definitions/DecisionRight" }
+          "items": {
+            "$ref": "#/definitions/DecisionRight"
+          }
         },
         "escalation_path": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Ordered AgentDefinition.ids ending with 'human' for M09 gates."
         },
         "schedule": {
@@ -179,28 +352,44 @@
         },
         "risk_refs": {
           "type": "array",
-          "items": { "$ref": "#/definitions/slug" }
+          "items": {
+            "$ref": "#/definitions/slug"
+          }
         },
         "quality_refs": {
           "type": "array",
-          "items": { "$ref": "#/definitions/slug" }
+          "items": {
+            "$ref": "#/definitions/slug"
+          }
         },
         "compliance_refs": {
           "type": "array",
-          "items": { "$ref": "#/definitions/slug" }
+          "items": {
+            "$ref": "#/definitions/slug"
+          }
         },
-        "created_at": { "$ref": "#/definitions/date-time" },
-        "updated_at": { "$ref": "#/definitions/date-time" }
+        "created_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/date-time"
+        }
       },
       "additionalProperties": false
     },
-
     "DecisionRight": {
       "type": "object",
-      "required": ["decision", "authority"],
+      "required": [
+        "decision",
+        "authority"
+      ],
       "properties": {
-        "decision": { "type": "string" },
-        "authority": { "$ref": "#/definitions/decisionAuthority" },
+        "decision": {
+          "type": "string"
+        },
+        "authority": {
+          "$ref": "#/definitions/decisionAuthority"
+        },
         "limit": {
           "type": "string",
           "description": "Bound on the authority (e.g., '$500', 'low-risk changes only')."
@@ -208,56 +397,97 @@
       },
       "additionalProperties": false
     },
-
     "CadenceEntry": {
       "type": "object",
-      "required": ["name", "frequency"],
+      "required": [
+        "name",
+        "frequency"
+      ],
       "properties": {
-        "name": { "type": "string" },
+        "name": {
+          "type": "string"
+        },
         "frequency": {
           "type": "string",
-          "enum": ["daily", "weekly", "monthly", "quarterly", "annually", "on_demand"]
+          "enum": [
+            "daily",
+            "weekly",
+            "monthly",
+            "quarterly",
+            "annually",
+            "on_demand"
+          ]
         },
-        "description": { "type": "string" },
+        "description": {
+          "type": "string"
+        },
         "participants": {
           "type": "array",
-          "items": { "$ref": "#/definitions/slug" },
+          "items": {
+            "$ref": "#/definitions/slug"
+          },
           "description": "Position.ids attending this ritual."
         }
       },
       "additionalProperties": false
     },
-
     "BusinessLogic": {
       "type": "object",
-      "required": ["purpose"],
+      "required": [
+        "purpose"
+      ],
       "properties": {
-        "purpose": { "type": "string", "description": "Why the department exists." },
-        "value_proposition": { "type": "string", "description": "The business 'so what'." },
+        "purpose": {
+          "type": "string",
+          "description": "Why the department exists."
+        },
+        "value_proposition": {
+          "type": "string",
+          "description": "The business 'so what'."
+        },
         "activities": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         },
         "stakeholders": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         },
         "operating_cadence": {
           "type": "array",
-          "items": { "$ref": "#/definitions/CadenceEntry" }
+          "items": {
+            "$ref": "#/definitions/CadenceEntry"
+          }
         }
       },
       "additionalProperties": false
     },
-
     "Position": {
       "type": "object",
-      "required": ["id", "title", "role_type", "holder_type"],
+      "required": [
+        "id",
+        "title",
+        "role_type",
+        "holder_type"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/slug" },
-        "title": { "type": "string", "maxLength": 200 },
-        "role_type": { "$ref": "#/definitions/roleType" },
-        "holder_type": { "$ref": "#/definitions/holderType" },
+        "id": {
+          "$ref": "#/definitions/slug"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "role_type": {
+          "$ref": "#/definitions/roleType"
+        },
+        "holder_type": {
+          "$ref": "#/definitions/holderType"
+        },
         "agent_def_id": {
           "$ref": "#/definitions/slug",
           "description": "Template agents[].id filling this position (blueprint link)."
@@ -278,10 +508,14 @@
           "type": "string",
           "description": "Sub-team grouping (e.g., 'Service Desk', 'Infrastructure')."
         },
-        "autonomy_tier": { "$ref": "#/definitions/autonomyTier" },
+        "autonomy_tier": {
+          "$ref": "#/definitions/autonomyTier"
+        },
         "decision_rights": {
           "type": "array",
-          "items": { "$ref": "#/definitions/DecisionRight" }
+          "items": {
+            "$ref": "#/definitions/DecisionRight"
+          }
         },
         "escalates_to": {
           "$ref": "#/definitions/slug",
@@ -289,134 +523,278 @@
         },
         "approval_gate_refs": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Module 09 threshold-rule/gate identifiers."
         }
       },
       "additionalProperties": false
     },
-
     "SLA": {
       "type": "object",
       "properties": {
-        "availability": { "type": "string", "description": "e.g., '99.9%'" },
-        "response_time": { "type": "string", "description": "e.g., '15m (P1) / 4h (P3)'" },
-        "resolution_time": { "type": "string", "description": "e.g., '4h (P1) / 2d (P3)'" },
-        "coverage": { "type": "string", "description": "e.g., '24x7', 'business-hours'" }
+        "availability": {
+          "type": "string",
+          "description": "e.g., '99.9%'"
+        },
+        "response_time": {
+          "type": "string",
+          "description": "e.g., '15m (P1) / 4h (P3)'"
+        },
+        "resolution_time": {
+          "type": "string",
+          "description": "e.g., '4h (P1) / 2d (P3)'"
+        },
+        "coverage": {
+          "type": "string",
+          "description": "e.g., '24x7', 'business-hours'"
+        }
       },
       "additionalProperties": false
     },
-
     "ServiceOffering": {
       "type": "object",
-      "required": ["id", "name"],
+      "required": [
+        "id",
+        "name"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/slug" },
-        "name": { "type": "string", "maxLength": 200 },
-        "description": { "type": "string" },
-        "owner_position_id": { "$ref": "#/definitions/slug" },
-        "owner_agent_def_id": { "$ref": "#/definitions/slug" },
+        "id": {
+          "$ref": "#/definitions/slug"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string"
+        },
+        "owner_position_id": {
+          "$ref": "#/definitions/slug"
+        },
+        "owner_agent_def_id": {
+          "$ref": "#/definitions/slug"
+        },
         "consumers": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Departments/roles served (e.g., 'all-employees', 'hr')."
         },
-        "sla": { "$ref": "#/definitions/SLA" },
+        "sla": {
+          "$ref": "#/definitions/SLA"
+        },
         "delivery_workflow_id": {
           "$ref": "#/definitions/slug",
           "description": "WorkflowDefinition.id that delivers this service."
         },
         "kpi_refs": {
           "type": "array",
-          "items": { "$ref": "#/definitions/slug" },
+          "items": {
+            "$ref": "#/definitions/slug"
+          },
           "description": "KPIDefinition.ids measuring this service."
         },
-        "request_channel": { "type": "string" },
+        "request_channel": {
+          "type": "string"
+        },
         "status": {
           "type": "string",
-          "enum": ["active", "planned", "retired"]
+          "enum": [
+            "active",
+            "planned",
+            "retired"
+          ]
         }
       },
       "additionalProperties": false
     },
-
     "ValueStage": {
       "type": "object",
-      "required": ["id", "name"],
+      "required": [
+        "id",
+        "name"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/slug" },
-        "name": { "type": "string" },
-        "inputs": { "type": "array", "items": { "type": "string" } },
-        "activities": { "type": "array", "items": { "type": "string" } },
-        "outputs": { "type": "array", "items": { "type": "string" } },
-        "owner_position_id": { "$ref": "#/definitions/slug" },
-        "workflow_ref": { "$ref": "#/definitions/slug" }
+        "id": {
+          "$ref": "#/definitions/slug"
+        },
+        "name": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "activities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "owner_position_id": {
+          "$ref": "#/definitions/slug"
+        },
+        "workflow_ref": {
+          "$ref": "#/definitions/slug"
+        }
       },
       "additionalProperties": false
     },
-
     "ValueStream": {
       "type": "object",
-      "required": ["id", "name", "stages"],
+      "required": [
+        "id",
+        "name",
+        "stages"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/slug" },
-        "name": { "type": "string", "maxLength": 200 },
-        "description": { "type": "string" },
+        "id": {
+          "$ref": "#/definitions/slug"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string"
+        },
         "stages": {
           "type": "array",
-          "items": { "$ref": "#/definitions/ValueStage" }
+          "items": {
+            "$ref": "#/definitions/ValueStage"
+          }
         },
-        "outcome": { "type": "string", "description": "Measurable end state." },
-        "business_outcome": { "type": "string", "description": "The business 'so what'." },
+        "outcome": {
+          "type": "string",
+          "description": "Measurable end state."
+        },
+        "business_outcome": {
+          "type": "string",
+          "description": "The business 'so what'."
+        },
         "value_metric_kpi_refs": {
           "type": "array",
-          "items": { "$ref": "#/definitions/slug" },
+          "items": {
+            "$ref": "#/definitions/slug"
+          },
           "description": "KPI ids that prove value realization."
         }
       },
       "additionalProperties": false
     },
-
     "RiskItem": {
       "type": "object",
-      "required": ["id", "name", "severity", "likelihood"],
+      "required": [
+        "id",
+        "name",
+        "severity",
+        "likelihood"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/slug" },
-        "name": { "type": "string", "maxLength": 200 },
-        "description": { "type": "string" },
+        "id": {
+          "$ref": "#/definitions/slug"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string"
+        },
         "category": {
           "type": "string",
-          "enum": ["operational", "security", "compliance", "financial", "model"]
+          "enum": [
+            "operational",
+            "security",
+            "compliance",
+            "financial",
+            "model"
+          ]
         },
-        "severity": { "$ref": "#/definitions/riskSeverity" },
-        "likelihood": { "$ref": "#/definitions/riskLikelihood" },
-        "mitigation": { "type": "string" },
-        "owner_position_id": { "$ref": "#/definitions/slug" },
-        "scope": { "$ref": "#/definitions/opScope" },
-        "agent_def_id": { "$ref": "#/definitions/slug" },
-        "service_ref": { "$ref": "#/definitions/slug" },
-        "status": { "$ref": "#/definitions/riskStatus" },
-        "review_cadence": { "type": "string" }
+        "severity": {
+          "$ref": "#/definitions/riskSeverity"
+        },
+        "likelihood": {
+          "$ref": "#/definitions/riskLikelihood"
+        },
+        "mitigation": {
+          "type": "string"
+        },
+        "owner_position_id": {
+          "$ref": "#/definitions/slug"
+        },
+        "scope": {
+          "$ref": "#/definitions/opScope"
+        },
+        "agent_def_id": {
+          "$ref": "#/definitions/slug"
+        },
+        "service_ref": {
+          "$ref": "#/definitions/slug"
+        },
+        "status": {
+          "$ref": "#/definitions/riskStatus"
+        },
+        "review_cadence": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
-
     "QualityStandard": {
       "type": "object",
-      "required": ["id", "name", "target"],
+      "required": [
+        "id",
+        "name",
+        "target"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/slug" },
-        "name": { "type": "string", "maxLength": 200 },
-        "description": { "type": "string" },
+        "id": {
+          "$ref": "#/definitions/slug"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string"
+        },
         "type": {
           "type": "string",
-          "enum": ["slo", "sla_internal", "review_gate", "accuracy_target"]
+          "enum": [
+            "slo",
+            "sla_internal",
+            "review_gate",
+            "accuracy_target"
+          ]
         },
-        "target": { "type": "string", "description": "e.g., '99.9% uptime', '>=90% CSAT'" },
-        "measure_kpi_ref": { "$ref": "#/definitions/slug" },
-        "scope": { "$ref": "#/definitions/opScope" },
-        "service_ref": { "$ref": "#/definitions/slug" },
-        "agent_def_id": { "$ref": "#/definitions/slug" },
+        "target": {
+          "type": "string",
+          "description": "e.g., '99.9% uptime', '>=90% CSAT'"
+        },
+        "measure_kpi_ref": {
+          "$ref": "#/definitions/slug"
+        },
+        "scope": {
+          "$ref": "#/definitions/opScope"
+        },
+        "service_ref": {
+          "$ref": "#/definitions/slug"
+        },
+        "agent_def_id": {
+          "$ref": "#/definitions/slug"
+        },
         "enforced_by": {
           "type": "string",
           "description": "GovernanceRule.id or Module 09 gate reference."
@@ -424,12 +802,17 @@
       },
       "additionalProperties": false
     },
-
     "ComplianceControl": {
       "type": "object",
-      "required": ["id", "framework", "name"],
+      "required": [
+        "id",
+        "framework",
+        "name"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/slug" },
+        "id": {
+          "$ref": "#/definitions/slug"
+        },
         "framework": {
           "type": "string",
           "description": "e.g., 'ITIL-v4', 'ISO-27001', 'SOC2', 'NIST-CSF', 'GDPR', 'custom'."
@@ -438,16 +821,27 @@
           "type": "string",
           "description": "Framework-native control identifier (e.g., 'A.9.2', 'PR.AC-1')."
         },
-        "name": { "type": "string", "maxLength": 200 },
-        "description": { "type": "string" },
-        "applies_to": { "$ref": "#/definitions/opScope" },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string"
+        },
+        "applies_to": {
+          "$ref": "#/definitions/opScope"
+        },
         "agent_def_ids": {
           "type": "array",
-          "items": { "$ref": "#/definitions/slug" }
+          "items": {
+            "$ref": "#/definitions/slug"
+          }
         },
         "governance_rule_refs": {
           "type": "array",
-          "items": { "$ref": "#/definitions/slug" },
+          "items": {
+            "$ref": "#/definitions/slug"
+          },
           "description": "Existing GovernanceRule.ids implementing this control."
         },
         "policy_ref": {
@@ -456,123 +850,215 @@
         },
         "evidence_kpi_refs": {
           "type": "array",
-          "items": { "$ref": "#/definitions/slug" }
+          "items": {
+            "$ref": "#/definitions/slug"
+          }
         },
         "status": {
           "type": "string",
-          "enum": ["implemented", "planned", "not_applicable"]
+          "enum": [
+            "implemented",
+            "planned",
+            "not_applicable"
+          ]
         }
       },
       "additionalProperties": false
     },
-
     "StageRecord": {
       "type": "object",
-      "required": ["stage", "status"],
+      "required": [
+        "stage",
+        "status"
+      ],
       "properties": {
-        "stage": { "$ref": "#/definitions/deploymentStatus" },
+        "stage": {
+          "$ref": "#/definitions/deploymentStatus"
+        },
         "status": {
           "type": "string",
-          "enum": ["running", "completed", "failed"]
+          "enum": [
+            "running",
+            "completed",
+            "failed"
+          ]
         },
-        "detail": { "type": "string" },
-        "started_at": { "$ref": "#/definitions/date-time" },
-        "completed_at": { "$ref": "#/definitions/date-time" }
+        "detail": {
+          "type": "string"
+        },
+        "started_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "completed_at": {
+          "$ref": "#/definitions/date-time"
+        }
       },
       "additionalProperties": false
     },
-
     "Department": {
       "type": "object",
-      "required": ["id", "tenant_id", "name", "category", "status"],
+      "required": [
+        "id",
+        "tenant_id",
+        "name",
+        "category",
+        "status"
+      ],
       "description": "A deployed, living department instance materialized from a Template blueprint.",
       "properties": {
-        "id": { "$ref": "#/definitions/uuid" },
-        "tenant_id": { "type": "string" },
-        "name": { "type": "string", "maxLength": 200 },
-        "slug": { "$ref": "#/definitions/slug" },
-        "category": { "$ref": "#/definitions/templateCategory" },
-        "description": { "type": "string" },
-        "template_id": { "$ref": "#/definitions/uuid" },
-        "template_version": { "$ref": "#/definitions/semver" },
-        "deployment_id": { "$ref": "#/definitions/uuid" },
-        "status": { "$ref": "#/definitions/departmentStatus" },
-        "mission": { "type": "string" },
-        "business_logic": { "$ref": "#/definitions/BusinessLogic" },
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "tenant_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "slug": {
+          "$ref": "#/definitions/slug"
+        },
+        "category": {
+          "$ref": "#/definitions/templateCategory"
+        },
+        "description": {
+          "type": "string"
+        },
+        "template_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "template_version": {
+          "$ref": "#/definitions/semver"
+        },
+        "deployment_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "status": {
+          "$ref": "#/definitions/departmentStatus"
+        },
+        "mission": {
+          "type": "string"
+        },
+        "business_logic": {
+          "$ref": "#/definitions/BusinessLogic"
+        },
         "org_chart": {
           "type": "array",
-          "items": { "$ref": "#/definitions/Position" }
+          "items": {
+            "$ref": "#/definitions/Position"
+          }
         },
         "services": {
           "type": "array",
-          "items": { "$ref": "#/definitions/ServiceOffering" }
+          "items": {
+            "$ref": "#/definitions/ServiceOffering"
+          }
         },
         "value_streams": {
           "type": "array",
-          "items": { "$ref": "#/definitions/ValueStream" }
+          "items": {
+            "$ref": "#/definitions/ValueStream"
+          }
         },
         "risks": {
           "type": "array",
-          "items": { "$ref": "#/definitions/RiskItem" }
+          "items": {
+            "$ref": "#/definitions/RiskItem"
+          }
         },
         "quality_standards": {
           "type": "array",
-          "items": { "$ref": "#/definitions/QualityStandard" }
+          "items": {
+            "$ref": "#/definitions/QualityStandard"
+          }
         },
         "compliance_controls": {
           "type": "array",
-          "items": { "$ref": "#/definitions/ComplianceControl" }
+          "items": {
+            "$ref": "#/definitions/ComplianceControl"
+          }
         },
         "governance_rules": {
           "type": "array",
-          "items": { "$ref": "#/definitions/GovernanceRule" }
+          "items": {
+            "$ref": "#/definitions/GovernanceRule"
+          }
         },
         "kpis": {
           "type": "array",
-          "items": { "$ref": "#/definitions/KPIDefinition" }
+          "items": {
+            "$ref": "#/definitions/KPIDefinition"
+          }
         },
         "operational_policies": {
           "type": "array",
-          "items": { "$ref": "#/definitions/OperationalPolicy" }
+          "items": {
+            "$ref": "#/definitions/OperationalPolicy"
+          }
         },
         "agent_ids": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Provisioned Module 04 agent ids."
         },
         "workflow_ids": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         },
         "memory_refs": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Module 07 document ids."
         },
-        "environment": { "$ref": "#/definitions/deploymentEnvironment" },
+        "environment": {
+          "$ref": "#/definitions/deploymentEnvironment"
+        },
         "metadata": {
           "type": "object",
           "additionalProperties": true
         },
-        "created_at": { "$ref": "#/definitions/date-time" },
-        "updated_at": { "$ref": "#/definitions/date-time" },
-        "created_by": { "type": "string" }
+        "created_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "created_by": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
-
     "WorkflowStep": {
       "type": "object",
-      "required": ["id", "type"],
+      "required": [
+        "id",
+        "type"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/slug" },
-        "type": { "$ref": "#/definitions/workflowStepType" },
-        "name": { "type": "string" },
+        "id": {
+          "$ref": "#/definitions/slug"
+        },
+        "type": {
+          "$ref": "#/definitions/workflowStepType"
+        },
+        "name": {
+          "type": "string"
+        },
         "config": {
           "type": "object",
           "additionalProperties": true
         },
-        "timeout_seconds": { "type": "integer" },
+        "timeout_seconds": {
+          "type": "integer"
+        },
         "retry_policy": {
           "type": "object",
           "additionalProperties": true
@@ -580,35 +1066,49 @@
       },
       "additionalProperties": false
     },
-
     "WorkflowDefinition": {
       "type": "object",
-      "required": ["id", "name", "steps"],
+      "required": [
+        "id",
+        "name",
+        "steps"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/slug" },
+        "id": {
+          "$ref": "#/definitions/slug"
+        },
         "name": {
           "type": "string",
           "maxLength": 200
         },
-        "description": { "type": "string" },
+        "description": {
+          "type": "string"
+        },
         "steps": {
           "type": "array",
-          "items": { "$ref": "#/definitions/WorkflowStep" }
+          "items": {
+            "$ref": "#/definitions/WorkflowStep"
+          }
         },
         "triggers": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         },
         "error_handling": {
           "type": "object",
           "additionalProperties": true
         },
-        "created_at": { "$ref": "#/definitions/date-time" },
-        "updated_at": { "$ref": "#/definitions/date-time" }
+        "created_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/date-time"
+        }
       },
       "additionalProperties": false
     },
-
     "MemoryTopology": {
       "type": "object",
       "properties": {
@@ -630,7 +1130,9 @@
         },
         "memory_profiles": {
           "type": "object",
-          "additionalProperties": { "type": "string" }
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "retention_policy": {
           "type": "object",
@@ -643,98 +1145,163 @@
       },
       "additionalProperties": false
     },
-
     "GovernanceRule": {
       "type": "object",
-      "required": ["id", "name", "type", "enforcement"],
+      "required": [
+        "id",
+        "name",
+        "type",
+        "enforcement"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/slug" },
+        "id": {
+          "$ref": "#/definitions/slug"
+        },
         "name": {
           "type": "string",
           "maxLength": 200
         },
-        "type": { "$ref": "#/definitions/governanceRuleType" },
-        "description": { "type": "string" },
-        "enforcement": { "$ref": "#/definitions/governanceEnforcement" },
+        "type": {
+          "$ref": "#/definitions/governanceRuleType"
+        },
+        "description": {
+          "type": "string"
+        },
+        "enforcement": {
+          "$ref": "#/definitions/governanceEnforcement"
+        },
         "conditions": {
           "type": "object",
           "additionalProperties": true
         },
         "actions": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         },
-        "created_at": { "$ref": "#/definitions/date-time" },
-        "updated_at": { "$ref": "#/definitions/date-time" }
+        "created_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/date-time"
+        }
       },
       "additionalProperties": false
     },
-
     "KPIDefinition": {
       "type": "object",
-      "required": ["id", "name", "metric_type"],
+      "required": [
+        "id",
+        "name",
+        "metric_type"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/slug" },
+        "id": {
+          "$ref": "#/definitions/slug"
+        },
         "name": {
           "type": "string",
           "maxLength": 200
         },
-        "description": { "type": "string" },
-        "metric_type": { "$ref": "#/definitions/kpiMetricType" },
-        "unit": { "type": "string" },
+        "description": {
+          "type": "string"
+        },
+        "metric_type": {
+          "$ref": "#/definitions/kpiMetricType"
+        },
+        "unit": {
+          "type": "string"
+        },
         "thresholds": {
           "type": "object",
           "properties": {
-            "warning": { "type": "number" },
-            "critical": { "type": "number" }
+            "warning": {
+              "type": "number"
+            },
+            "critical": {
+              "type": "number"
+            }
           }
         },
-        "aggregation_period": { "$ref": "#/definitions/kpiAggregationPeriod" },
+        "aggregation_period": {
+          "$ref": "#/definitions/kpiAggregationPeriod"
+        },
         "dashboard_link": {
           "type": "string",
           "format": "uri"
         },
-        "created_at": { "$ref": "#/definitions/date-time" },
-        "updated_at": { "$ref": "#/definitions/date-time" }
+        "created_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/date-time"
+        }
       },
       "additionalProperties": false
     },
-
     "IntegrationDefinition": {
       "type": "object",
-      "required": ["id", "type", "config"],
+      "required": [
+        "id",
+        "type",
+        "config"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/slug" },
-        "type": { "$ref": "#/definitions/integrationType" },
+        "id": {
+          "$ref": "#/definitions/slug"
+        },
+        "type": {
+          "$ref": "#/definitions/integrationType"
+        },
         "name": {
           "type": "string",
           "maxLength": 200
         },
-        "provider": { "type": "string" },
+        "provider": {
+          "type": "string"
+        },
         "config": {
           "type": "object",
           "additionalProperties": true,
           "description": "Provider-specific connection configuration."
         },
-        "auth_method": { "$ref": "#/definitions/integrationAuthMethod" },
-        "status": { "$ref": "#/definitions/integrationStatus" },
-        "created_at": { "$ref": "#/definitions/date-time" },
-        "updated_at": { "$ref": "#/definitions/date-time" }
+        "auth_method": {
+          "$ref": "#/definitions/integrationAuthMethod"
+        },
+        "status": {
+          "$ref": "#/definitions/integrationStatus"
+        },
+        "created_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/date-time"
+        }
       },
       "additionalProperties": false
     },
-
     "OperationalPolicy": {
       "type": "object",
-      "required": ["id", "name", "scope"],
+      "required": [
+        "id",
+        "name",
+        "scope"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/slug" },
+        "id": {
+          "$ref": "#/definitions/slug"
+        },
         "name": {
           "type": "string",
           "maxLength": 200
         },
-        "description": { "type": "string" },
-        "scope": { "$ref": "#/definitions/policyScope" },
+        "description": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/definitions/policyScope"
+        },
         "rules": {
           "type": "array",
           "items": {
@@ -742,152 +1309,246 @@
             "additionalProperties": true
           }
         },
-        "effective_from": { "$ref": "#/definitions/date-time" },
-        "effective_to": { "$ref": "#/definitions/date-time" },
-        "version": { "type": "string" },
-        "created_at": { "$ref": "#/definitions/date-time" },
-        "updated_at": { "$ref": "#/definitions/date-time" }
+        "effective_from": {
+          "$ref": "#/definitions/date-time"
+        },
+        "effective_to": {
+          "$ref": "#/definitions/date-time"
+        },
+        "version": {
+          "type": "string"
+        },
+        "created_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/date-time"
+        }
       },
       "additionalProperties": false
     },
-
     "Template": {
       "type": "object",
-      "required": ["id", "name", "category", "version"],
+      "required": [
+        "id",
+        "name",
+        "category",
+        "version"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/uuid" },
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
         "name": {
           "type": "string",
           "maxLength": 200
         },
-        "description": { "type": "string" },
-        "category": { "$ref": "#/definitions/templateCategory" },
-        "version": { "$ref": "#/definitions/semver" },
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "$ref": "#/definitions/templateCategory"
+        },
+        "version": {
+          "$ref": "#/definitions/semver"
+        },
         "agents": {
           "type": "array",
-          "items": { "$ref": "#/definitions/AgentDefinition" }
+          "items": {
+            "$ref": "#/definitions/AgentDefinition"
+          }
         },
         "workflows": {
           "type": "array",
-          "items": { "$ref": "#/definitions/WorkflowDefinition" }
+          "items": {
+            "$ref": "#/definitions/WorkflowDefinition"
+          }
         },
-        "memory_topology": { "$ref": "#/definitions/MemoryTopology" },
+        "memory_topology": {
+          "$ref": "#/definitions/MemoryTopology"
+        },
         "governance_rules": {
           "type": "array",
-          "items": { "$ref": "#/definitions/GovernanceRule" }
+          "items": {
+            "$ref": "#/definitions/GovernanceRule"
+          }
         },
         "kpis": {
           "type": "array",
-          "items": { "$ref": "#/definitions/KPIDefinition" }
+          "items": {
+            "$ref": "#/definitions/KPIDefinition"
+          }
         },
         "integrations": {
           "type": "array",
-          "items": { "$ref": "#/definitions/IntegrationDefinition" }
+          "items": {
+            "$ref": "#/definitions/IntegrationDefinition"
+          }
         },
         "operational_policies": {
           "type": "array",
-          "items": { "$ref": "#/definitions/OperationalPolicy" }
+          "items": {
+            "$ref": "#/definitions/OperationalPolicy"
+          }
         },
-        "business_logic": { "$ref": "#/definitions/BusinessLogic" },
+        "business_logic": {
+          "$ref": "#/definitions/BusinessLogic"
+        },
         "org_chart": {
           "type": "array",
-          "items": { "$ref": "#/definitions/Position" }
+          "items": {
+            "$ref": "#/definitions/Position"
+          }
         },
         "services": {
           "type": "array",
-          "items": { "$ref": "#/definitions/ServiceOffering" }
+          "items": {
+            "$ref": "#/definitions/ServiceOffering"
+          }
         },
         "value_streams": {
           "type": "array",
-          "items": { "$ref": "#/definitions/ValueStream" }
+          "items": {
+            "$ref": "#/definitions/ValueStream"
+          }
         },
         "risks": {
           "type": "array",
-          "items": { "$ref": "#/definitions/RiskItem" }
+          "items": {
+            "$ref": "#/definitions/RiskItem"
+          }
         },
         "quality_standards": {
           "type": "array",
-          "items": { "$ref": "#/definitions/QualityStandard" }
+          "items": {
+            "$ref": "#/definitions/QualityStandard"
+          }
         },
         "compliance_controls": {
           "type": "array",
-          "items": { "$ref": "#/definitions/ComplianceControl" }
+          "items": {
+            "$ref": "#/definitions/ComplianceControl"
+          }
         },
         "metadata": {
           "type": "object",
           "additionalProperties": true
         },
-        "created_at": { "$ref": "#/definitions/date-time" },
-        "updated_at": { "$ref": "#/definitions/date-time" },
-        "created_by": { "$ref": "#/definitions/uuid" },
-        "status": { "$ref": "#/definitions/agentStatus" },
+        "created_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "created_by": {
+          "$ref": "#/definitions/uuid"
+        },
+        "status": {
+          "$ref": "#/definitions/agentStatus"
+        },
         "tags": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false
     },
-
     "TemplateCreate": {
       "type": "object",
-      "required": ["name", "category"],
+      "required": [
+        "name",
+        "category"
+      ],
       "properties": {
         "name": {
           "type": "string",
           "maxLength": 200
         },
-        "description": { "type": "string" },
-        "category": { "$ref": "#/definitions/templateCategory" },
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "$ref": "#/definitions/templateCategory"
+        },
         "agents": {
           "type": "array",
-          "items": { "$ref": "#/definitions/AgentDefinition" }
+          "items": {
+            "$ref": "#/definitions/AgentDefinition"
+          }
         },
         "workflows": {
           "type": "array",
-          "items": { "$ref": "#/definitions/WorkflowDefinition" }
+          "items": {
+            "$ref": "#/definitions/WorkflowDefinition"
+          }
         },
-        "memory_topology": { "$ref": "#/definitions/MemoryTopology" },
+        "memory_topology": {
+          "$ref": "#/definitions/MemoryTopology"
+        },
         "governance_rules": {
           "type": "array",
-          "items": { "$ref": "#/definitions/GovernanceRule" }
+          "items": {
+            "$ref": "#/definitions/GovernanceRule"
+          }
         },
         "kpis": {
           "type": "array",
-          "items": { "$ref": "#/definitions/KPIDefinition" }
+          "items": {
+            "$ref": "#/definitions/KPIDefinition"
+          }
         },
         "integrations": {
           "type": "array",
-          "items": { "$ref": "#/definitions/IntegrationDefinition" }
+          "items": {
+            "$ref": "#/definitions/IntegrationDefinition"
+          }
         },
         "operational_policies": {
           "type": "array",
-          "items": { "$ref": "#/definitions/OperationalPolicy" }
+          "items": {
+            "$ref": "#/definitions/OperationalPolicy"
+          }
         },
-        "business_logic": { "$ref": "#/definitions/BusinessLogic" },
+        "business_logic": {
+          "$ref": "#/definitions/BusinessLogic"
+        },
         "org_chart": {
           "type": "array",
-          "items": { "$ref": "#/definitions/Position" }
+          "items": {
+            "$ref": "#/definitions/Position"
+          }
         },
         "services": {
           "type": "array",
-          "items": { "$ref": "#/definitions/ServiceOffering" }
+          "items": {
+            "$ref": "#/definitions/ServiceOffering"
+          }
         },
         "value_streams": {
           "type": "array",
-          "items": { "$ref": "#/definitions/ValueStream" }
+          "items": {
+            "$ref": "#/definitions/ValueStream"
+          }
         },
         "risks": {
           "type": "array",
-          "items": { "$ref": "#/definitions/RiskItem" }
+          "items": {
+            "$ref": "#/definitions/RiskItem"
+          }
         },
         "quality_standards": {
           "type": "array",
-          "items": { "$ref": "#/definitions/QualityStandard" }
+          "items": {
+            "$ref": "#/definitions/QualityStandard"
+          }
         },
         "compliance_controls": {
           "type": "array",
-          "items": { "$ref": "#/definitions/ComplianceControl" }
+          "items": {
+            "$ref": "#/definitions/ComplianceControl"
+          }
         },
         "metadata": {
           "type": "object",
@@ -895,12 +1556,13 @@
         },
         "tags": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false
     },
-
     "TemplatePatch": {
       "type": "object",
       "properties": {
@@ -908,57 +1570,89 @@
           "type": "string",
           "maxLength": 200
         },
-        "description": { "type": "string" },
-        "category": { "$ref": "#/definitions/templateCategory" },
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "$ref": "#/definitions/templateCategory"
+        },
         "agents": {
           "type": "array",
-          "items": { "$ref": "#/definitions/AgentDefinition" }
+          "items": {
+            "$ref": "#/definitions/AgentDefinition"
+          }
         },
         "workflows": {
           "type": "array",
-          "items": { "$ref": "#/definitions/WorkflowDefinition" }
+          "items": {
+            "$ref": "#/definitions/WorkflowDefinition"
+          }
         },
-        "memory_topology": { "$ref": "#/definitions/MemoryTopology" },
+        "memory_topology": {
+          "$ref": "#/definitions/MemoryTopology"
+        },
         "governance_rules": {
           "type": "array",
-          "items": { "$ref": "#/definitions/GovernanceRule" }
+          "items": {
+            "$ref": "#/definitions/GovernanceRule"
+          }
         },
         "kpis": {
           "type": "array",
-          "items": { "$ref": "#/definitions/KPIDefinition" }
+          "items": {
+            "$ref": "#/definitions/KPIDefinition"
+          }
         },
         "integrations": {
           "type": "array",
-          "items": { "$ref": "#/definitions/IntegrationDefinition" }
+          "items": {
+            "$ref": "#/definitions/IntegrationDefinition"
+          }
         },
         "operational_policies": {
           "type": "array",
-          "items": { "$ref": "#/definitions/OperationalPolicy" }
+          "items": {
+            "$ref": "#/definitions/OperationalPolicy"
+          }
         },
-        "business_logic": { "$ref": "#/definitions/BusinessLogic" },
+        "business_logic": {
+          "$ref": "#/definitions/BusinessLogic"
+        },
         "org_chart": {
           "type": "array",
-          "items": { "$ref": "#/definitions/Position" }
+          "items": {
+            "$ref": "#/definitions/Position"
+          }
         },
         "services": {
           "type": "array",
-          "items": { "$ref": "#/definitions/ServiceOffering" }
+          "items": {
+            "$ref": "#/definitions/ServiceOffering"
+          }
         },
         "value_streams": {
           "type": "array",
-          "items": { "$ref": "#/definitions/ValueStream" }
+          "items": {
+            "$ref": "#/definitions/ValueStream"
+          }
         },
         "risks": {
           "type": "array",
-          "items": { "$ref": "#/definitions/RiskItem" }
+          "items": {
+            "$ref": "#/definitions/RiskItem"
+          }
         },
         "quality_standards": {
           "type": "array",
-          "items": { "$ref": "#/definitions/QualityStandard" }
+          "items": {
+            "$ref": "#/definitions/QualityStandard"
+          }
         },
         "compliance_controls": {
           "type": "array",
-          "items": { "$ref": "#/definitions/ComplianceControl" }
+          "items": {
+            "$ref": "#/definitions/ComplianceControl"
+          }
         },
         "metadata": {
           "type": "object",
@@ -966,22 +1660,40 @@
         },
         "tags": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         },
-        "status": { "$ref": "#/definitions/agentStatus" }
+        "status": {
+          "$ref": "#/definitions/agentStatus"
+        }
       },
       "additionalProperties": false
     },
-
     "TemplateDeployment": {
       "type": "object",
-      "required": ["id", "template_id", "version", "status"],
+      "required": [
+        "id",
+        "template_id",
+        "version",
+        "status"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/uuid" },
-        "template_id": { "$ref": "#/definitions/uuid" },
-        "version": { "$ref": "#/definitions/semver" },
-        "status": { "$ref": "#/definitions/deploymentStatus" },
-        "environment": { "$ref": "#/definitions/deploymentEnvironment" },
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "template_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "version": {
+          "$ref": "#/definitions/semver"
+        },
+        "status": {
+          "$ref": "#/definitions/deploymentStatus"
+        },
+        "environment": {
+          "$ref": "#/definitions/deploymentEnvironment"
+        },
         "configuration": {
           "type": "object",
           "additionalProperties": true
@@ -990,27 +1702,49 @@
           "type": "object",
           "additionalProperties": true
         },
-        "department_id": { "$ref": "#/definitions/uuid" },
+        "department_id": {
+          "$ref": "#/definitions/uuid"
+        },
         "stages": {
           "type": "array",
-          "items": { "$ref": "#/definitions/StageRecord" }
+          "items": {
+            "$ref": "#/definitions/StageRecord"
+          }
         },
-        "started_at": { "$ref": "#/definitions/date-time" },
-        "completed_at": { "$ref": "#/definitions/date-time" },
-        "error_message": { "type": "string" },
-        "deployed_by": { "$ref": "#/definitions/uuid" },
-        "created_at": { "$ref": "#/definitions/date-time" },
-        "updated_at": { "$ref": "#/definitions/date-time" }
+        "started_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "completed_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "error_message": {
+          "type": "string"
+        },
+        "deployed_by": {
+          "$ref": "#/definitions/uuid"
+        },
+        "created_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/date-time"
+        }
       },
       "additionalProperties": false
     },
-
     "TemplateDeployRequest": {
       "type": "object",
-      "required": ["version", "environment"],
+      "required": [
+        "version",
+        "environment"
+      ],
       "properties": {
-        "version": { "$ref": "#/definitions/semver" },
-        "environment": { "$ref": "#/definitions/deploymentEnvironment" },
+        "version": {
+          "$ref": "#/definitions/semver"
+        },
+        "environment": {
+          "$ref": "#/definitions/deploymentEnvironment"
+        },
         "configuration": {
           "type": "object",
           "additionalProperties": true
@@ -1018,59 +1752,88 @@
       },
       "additionalProperties": false
     },
-
     "CustomTemplate": {
       "type": "object",
-      "required": ["id", "name", "category"],
+      "required": [
+        "id",
+        "name",
+        "category"
+      ],
       "properties": {
-        "id": { "$ref": "#/definitions/uuid" },
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
         "name": {
           "type": "string",
           "maxLength": 200
         },
-        "description": { "type": "string" },
-        "category": { "$ref": "#/definitions/templateCategory" },
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "$ref": "#/definitions/templateCategory"
+        },
         "content": {
           "type": "object",
           "additionalProperties": true,
           "description": "Free-form template content for custom templates."
         },
-        "owner_id": { "$ref": "#/definitions/uuid" },
+        "owner_id": {
+          "$ref": "#/definitions/uuid"
+        },
         "shared_with": {
           "type": "array",
-          "items": { "$ref": "#/definitions/uuid" }
+          "items": {
+            "$ref": "#/definitions/uuid"
+          }
         },
-        "version": { "$ref": "#/definitions/semver" },
-        "status": { "$ref": "#/definitions/agentStatus" },
-        "created_at": { "$ref": "#/definitions/date-time" },
-        "updated_at": { "$ref": "#/definitions/date-time" },
-        "created_by": { "$ref": "#/definitions/uuid" }
+        "version": {
+          "$ref": "#/definitions/semver"
+        },
+        "status": {
+          "$ref": "#/definitions/agentStatus"
+        },
+        "created_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/date-time"
+        },
+        "created_by": {
+          "$ref": "#/definitions/uuid"
+        }
       },
       "additionalProperties": false
     },
-
     "CustomTemplateCreate": {
       "type": "object",
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
         "name": {
           "type": "string",
           "maxLength": 200
         },
-        "description": { "type": "string" },
-        "category": { "$ref": "#/definitions/templateCategory" },
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "$ref": "#/definitions/templateCategory"
+        },
         "content": {
           "type": "object",
           "additionalProperties": true
         },
         "shared_with": {
           "type": "array",
-          "items": { "$ref": "#/definitions/uuid" }
+          "items": {
+            "$ref": "#/definitions/uuid"
+          }
         }
       },
       "additionalProperties": false
     },
-
     "CustomTemplatePatch": {
       "type": "object",
       "properties": {
@@ -1078,32 +1841,51 @@
           "type": "string",
           "maxLength": 200
         },
-        "description": { "type": "string" },
-        "category": { "$ref": "#/definitions/templateCategory" },
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "$ref": "#/definitions/templateCategory"
+        },
         "content": {
           "type": "object",
           "additionalProperties": true
         },
         "shared_with": {
           "type": "array",
-          "items": { "$ref": "#/definitions/uuid" }
+          "items": {
+            "$ref": "#/definitions/uuid"
+          }
         },
-        "status": { "$ref": "#/definitions/agentStatus" }
+        "status": {
+          "$ref": "#/definitions/agentStatus"
+        }
       },
       "additionalProperties": false
     },
-
     "PaginationMeta": {
       "type": "object",
       "properties": {
-        "total": { "type": "integer" },
-        "page": { "type": "integer" },
-        "page_size": { "type": "integer" },
-        "has_more": { "type": "boolean" }
+        "total": {
+          "type": "integer"
+        },
+        "page": {
+          "type": "integer"
+        },
+        "page_size": {
+          "type": "integer"
+        },
+        "has_more": {
+          "type": "boolean"
+        }
       },
-      "required": ["total", "page", "page_size", "has_more"]
+      "required": [
+        "total",
+        "page",
+        "page_size",
+        "has_more"
+      ]
     },
-
     "PaginatedResponse": {
       "type": "object",
       "properties": {
@@ -1111,14 +1893,23 @@
           "type": "array",
           "items": {}
         },
-        "meta": { "$ref": "#/definitions/PaginationMeta" }
+        "meta": {
+          "$ref": "#/definitions/PaginationMeta"
+        }
       },
-      "required": ["data", "meta"]
+      "required": [
+        "data",
+        "meta"
+      ]
     },
-
     "Error": {
       "type": "object",
-      "required": ["type", "title", "status", "detail"],
+      "required": [
+        "type",
+        "title",
+        "status",
+        "detail"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -1149,6 +1940,45 @@
         }
       },
       "additionalProperties": false
+    },
+    "requestStatus": {
+      "type": "string",
+      "description": "Service-request lifecycle status (the work ledger).",
+      "enum": [
+        "submitted",
+        "dispatched",
+        "in_progress",
+        "awaiting_approval",
+        "completed",
+        "rejected",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "requestEventKind": {
+      "type": "string",
+      "description": "Timeline event kinds mirrored onto a request by the work loop.",
+      "enum": [
+        "created",
+        "dispatched",
+        "agent_output",
+        "gate_raised",
+        "gate_responded",
+        "completed",
+        "rejected",
+        "failed",
+        "cancelled",
+        "sla_breached",
+        "note"
+      ]
+    },
+    "briefingFrequency": {
+      "type": "string",
+      "description": "Operating-cadence frequencies the scheduler fires (monthly/quarterly declared on templates are not yet scheduled).",
+      "enum": [
+        "daily",
+        "weekly"
+      ]
     }
   }
 }
