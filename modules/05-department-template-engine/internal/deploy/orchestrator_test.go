@@ -266,3 +266,4 @@ func TestAgentIDIsDerivedAndStable(t *testing.T) {
 		t.Fatal("derived id is the nil UUID")
 	}
 }
+
