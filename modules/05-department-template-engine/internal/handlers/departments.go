@@ -175,6 +175,9 @@ func (h *TemplateHandlers) HandleDepartmentByID(w http.ResponseWriter, r *http.R
 	case sub == "requests" && r.Method == http.MethodPost:
 		h.createRequest(w, r, reqID, dept)
 
+	case sub == "services/sync-workflows" && r.Method == http.MethodPost:
+		h.syncServiceWorkflows(w, r, reqID, dept)
+
 	default:
 		writeError(w, http.StatusMethodNotAllowed, "about:blank", "Method Not Allowed",
 			"Invalid operation", r.URL.Path, reqID)
@@ -345,4 +348,73 @@ func orEmptyRules(s []store.GovernanceRule) []store.GovernanceRule {
 		return []store.GovernanceRule{}
 	}
 	return s
+}
+
+// syncServiceWorkflows re-points the department's services at the SOPs its
+// template names today.
+//
+// A department copies the template's services at deploy time, so when a
+// template's authoring improves — the IT template shipped with four services
+// all running the Change Management SOP and two running nothing — every live
+// department keeps the old mapping forever. The only other way to pick up the
+// fix is a redeploy, which mints a new department id and severs seat bindings,
+// request history and KPI continuity. This is the repair path that keeps the
+// department's identity.
+//
+// It changes delivery_workflow_id only, and only to workflows the template
+// actually defines: instance state (SLAs, status, owners) is untouched, and a
+// service is never pointed at an SOP that does not exist.
+func (h *TemplateHandlers) syncServiceWorkflows(w http.ResponseWriter, r *http.Request, reqID string, dept *store.Department) {
+	tmpl, err := h.TemplateStore.GetByIDAndTenant(dept.TemplateID, dept.TenantID)
+	if err != nil {
+		writeError(w, http.StatusConflict, "about:blank", "Conflict",
+			"The department's template is no longer available to sync from", r.URL.Path, reqID)
+		return
+	}
+
+	known := map[string]bool{}
+	for _, wf := range tmpl.Workflows {
+		known[wf.ID] = true
+	}
+	byID := map[string]store.ServiceOffering{}
+	for _, s := range tmpl.Services {
+		byID[s.ID] = s
+	}
+
+	type change struct {
+		ServiceID string `json:"service_id"`
+		From      string `json:"from"`
+		To        string `json:"to"`
+	}
+	var changes []change
+	var skipped []string
+	for i := range dept.Services {
+		svc := &dept.Services[i]
+		ts, ok := byID[svc.ID]
+		if !ok || ts.DeliveryWorkflowID == svc.DeliveryWorkflowID {
+			continue
+		}
+		if ts.DeliveryWorkflowID != "" && !known[ts.DeliveryWorkflowID] {
+			// The template names an SOP it does not define — refusing beats
+			// pointing a live service at nothing.
+			skipped = append(skipped, svc.ID)
+			continue
+		}
+		changes = append(changes, change{ServiceID: svc.ID, From: svc.DeliveryWorkflowID, To: ts.DeliveryWorkflowID})
+		svc.DeliveryWorkflowID = ts.DeliveryWorkflowID
+	}
+
+	if len(changes) > 0 {
+		if _, err := h.DepartmentStore.Replace(dept); err != nil {
+			writeError(w, http.StatusInternalServerError, "about:blank", "Internal Server Error",
+				"Failed to persist the synced services", r.URL.Path, reqID)
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"template_version": tmpl.Version,
+		"changed":          len(changes),
+		"changes":          changes,
+		"skipped":          skipped,
+	})
 }

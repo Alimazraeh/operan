@@ -159,3 +159,47 @@ func TestUnresolvableDeclaredApproverIsNotReplacedByTheHead(t *testing.T) {
 		t.Fatalf("substituted %v for an approver the SOP named but could not resolve", got)
 	}
 }
+
+// A capability-bearing action node must carry whose authority the verb runs
+// under: the named agent's seat, or the department root when the step names
+// nobody. The funnel treats unknown authority as no authority, so a compile
+// that drops the tier turns every write verb into a denial.
+func TestCompileCarriesActorAuthorityOntoCapabilityNodes(t *testing.T) {
+	dept := &store.Department{
+		ID: "d1", TenantID: "t1",
+		OrgChart: []store.Position{
+			{ID: "pos-mgr", Title: "IT Manager", AgentDefID: "it-manager-01",
+				HolderType: "human", HumanRef: "user-dana", AutonomyTier: "coordinate"},
+			{ID: "pos-sys", Title: "Systems Administrator", AgentDefID: "sys-admin-01",
+				HolderType: "ai_agent", AgentID: "agent-sys-live", ReportsTo: "pos-mgr", AutonomyTier: "execute"},
+		},
+	}
+	wf := &store.WorkflowDefinition{
+		ID: "wf-x", Name: "X",
+		Steps: []store.WorkflowStep{
+			{ID: "s1", Type: "tool_call", Name: "Execute Restore", Config: map[string]interface{}{
+				"capability": "itops.backup.restore", "agent": "sys-admin-01",
+				"inputs": map[string]interface{}{"request_ref": "{{request_id}}"},
+			}},
+			{ID: "s2", Type: "notification", Name: "Notify", Config: map[string]interface{}{
+				"capability": "comms.message.send",
+				"inputs":     map[string]interface{}{"channel": "email", "message": "done"},
+			}},
+		},
+	}
+	out := CompileWorkflowFor(wf, dept.ID, map[string]string{"sys-admin-01": "agent-sys-live"}, dept)
+	nodes, _ := out.Graph["nodes"].([]clients.WorkflowNode)
+	if len(nodes) != 2 {
+		t.Fatalf("nodes = %d", len(nodes))
+	}
+	// s1 names sys-admin-01 → its seat, execute tier, live agent id.
+	p1 := nodes[0].Parameters
+	if p1["actor_position_id"] != "pos-sys" || p1["actor_autonomy_tier"] != "execute" || p1["actor_agent_id"] != "agent-sys-live" {
+		t.Fatalf("s1 actor wrong: %v", p1)
+	}
+	// s2 names nobody → the department root coordinates it.
+	p2 := nodes[1].Parameters
+	if p2["actor_position_id"] != "pos-mgr" || p2["actor_autonomy_tier"] != "coordinate" {
+		t.Fatalf("s2 actor wrong: %v", p2)
+	}
+}

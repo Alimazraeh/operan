@@ -283,3 +283,94 @@ func TestValidateEndpoint(t *testing.T) {
 		t.Fatalf("cycle not reported: %+v", resp)
 	}
 }
+
+// A department copies its template's services at deploy, so template authoring
+// fixes never reach live departments — and the only alternative, a redeploy,
+// mints a new department id and severs seat bindings and history. Sync must
+// re-point services at the template's SOPs, refuse SOPs the template does not
+// define, and leave instance state alone.
+func TestSyncServiceWorkflowsRepointsFromTheTemplate(t *testing.T) {
+	h := newTestHandlers(t)
+
+	tmpl, err := h.TemplateStore.Create(&store.Template{
+		TenantID: "tenant-1", Name: "IT", Category: "it", Version: "1.1.0", Status: "published",
+		Workflows: []store.WorkflowDefinition{
+			{ID: "wf-change-001", Name: "Change"},
+			{ID: "wf-access-001", Name: "Access"},
+		},
+		Services: []store.ServiceOffering{
+			{ID: "svc-access", Name: "Access", DeliveryWorkflowID: "wf-access-001"},
+			{ID: "svc-change", Name: "Change", DeliveryWorkflowID: "wf-change-001"},
+			{ID: "svc-ghost", Name: "Ghost", DeliveryWorkflowID: "wf-does-not-exist"},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	dept, err := h.DepartmentStore.Create(&store.Department{
+		TenantID: "tenant-1", Name: "IT Live", Category: "it",
+		TemplateID: tmpl.ID, Status: "operational",
+		Services: []store.ServiceOffering{
+			// Deployed before the authoring fix: access still runs change.
+			{ID: "svc-access", Name: "Access", DeliveryWorkflowID: "wf-change-001", SLA: &store.SLA{Coverage: "24x7"}},
+			{ID: "svc-change", Name: "Change", DeliveryWorkflowID: "wf-change-001"},
+			{ID: "svc-ghost", Name: "Ghost", DeliveryWorkflowID: ""},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, _ := testRequest(http.MethodPost, "/departments/"+dept.ID+"/services/sync-workflows", nil)
+	w := httptest.NewRecorder()
+	h.HandleDepartmentByID(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("sync = %d (%s)", w.Code, w.Body.String())
+	}
+	var resp struct {
+		Changed int `json:"changed"`
+		Changes []struct {
+			ServiceID string `json:"service_id"`
+			From, To  string
+		} `json:"changes"`
+		Skipped []string `json:"skipped"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Changed != 1 || len(resp.Changes) != 1 || resp.Changes[0].ServiceID != "svc-access" {
+		t.Fatalf("expected exactly the access remap, got %+v", resp)
+	}
+	if len(resp.Skipped) != 1 || resp.Skipped[0] != "svc-ghost" {
+		t.Fatalf("the undefined SOP must be refused by name: %+v", resp.Skipped)
+	}
+
+	after, _ := h.DepartmentStore.GetByIDAndTenant(dept.ID, "tenant-1")
+	for _, s := range after.Services {
+		switch s.ID {
+		case "svc-access":
+			if s.DeliveryWorkflowID != "wf-access-001" {
+				t.Fatalf("access not repointed: %q", s.DeliveryWorkflowID)
+			}
+			if s.SLA == nil || s.SLA.Coverage != "24x7" {
+				t.Fatal("instance SLA was not preserved")
+			}
+		case "svc-ghost":
+			if s.DeliveryWorkflowID != "" {
+				t.Fatalf("ghost was pointed at a nonexistent SOP: %q", s.DeliveryWorkflowID)
+			}
+		}
+	}
+
+	// Idempotent: a second sync changes nothing.
+	req2, _ := testRequest(http.MethodPost, "/departments/"+dept.ID+"/services/sync-workflows", nil)
+	w2 := httptest.NewRecorder()
+	h.HandleDepartmentByID(w2, req2)
+	var resp2 struct {
+		Changed int `json:"changed"`
+	}
+	_ = json.Unmarshal(w2.Body.Bytes(), &resp2)
+	if resp2.Changed != 0 {
+		t.Fatalf("second sync changed %d services", resp2.Changed)
+	}
+}

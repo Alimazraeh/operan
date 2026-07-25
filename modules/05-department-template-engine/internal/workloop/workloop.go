@@ -246,6 +246,20 @@ func (l *Loop) pollOne(ctx context.Context, req store.ServiceRequest) {
 		if text != "" {
 			lastOutput = text
 		}
+		// Capability executions become timeline facts. The summary already
+		// says SIMULATED when it is; the request must show the action the way
+		// the audit record states it, refusal or success alike.
+		if execID, _ := out["execution_id"].(string); execID != "" && n.Status == "completed" && !seen[n.NodeID+":action_executed"] {
+			summary, _ := out["summary"].(string)
+			if summary == "" {
+				summary, _ = out["capability"].(string)
+			}
+			l.Requests.Mutate(req.ID, func(sr *store.ServiceRequest) {
+				sr.Timeline = append(sr.Timeline, store.RequestEvent{
+					At: time.Now().UTC(), Kind: "action_executed", Node: n.NodeID,
+					Detail: boundStr(summary+" — execution "+execID, 400)})
+			})
+		}
 		if tk, ok := out["tokens"].(float64); ok {
 			tokens += int(tk)
 		}
