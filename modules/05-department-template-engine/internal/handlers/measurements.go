@@ -126,16 +126,29 @@ func computeWindow(reqs []store.ServiceRequest, from, now time.Time, tokenRate f
 				respMet++
 			}
 		}
-		// Gate turnaround: raised → responded, paired per node.
+		// Gate turnaround: raised → responded, paired per node when both
+		// carry one; historical raises lack the node id, so a response also
+		// consumes the oldest unmatched raise (FIFO) as a fallback.
 		raised := map[string]time.Time{}
+		var raisedFIFO []time.Time
 		for _, ev := range r.Timeline {
 			switch ev.Kind {
 			case "gate_raised":
-				raised[ev.Node] = ev.At
+				if ev.Node != "" {
+					raised[ev.Node] = ev.At
+				}
+				raisedFIFO = append(raisedFIFO, ev.At)
 			case "gate_responded":
-				if t0, ok := raised[ev.Node]; ok {
+				t0, ok := raised[ev.Node]
+				if !ok && len(raisedFIFO) > 0 {
+					t0, ok = raisedFIFO[0], true
+				}
+				if ok && ev.At.After(t0) {
 					gates = append(gates, int(ev.At.Sub(t0).Seconds()))
 					delete(raised, ev.Node)
+					if len(raisedFIFO) > 0 {
+						raisedFIFO = raisedFIFO[1:]
+					}
 				}
 			}
 		}

@@ -215,6 +215,7 @@ func (l *Loop) pollOne(ctx context.Context, req store.ServiceRequest) {
 	var lastOutput string
 	tokens := 0
 	gateActive := false
+	gateNode := ""
 	for _, n := range st.Nodes {
 		out := n.Output
 		text, _ := out["output"].(string)
@@ -254,6 +255,9 @@ func (l *Loop) pollOne(ctx context.Context, req store.ServiceRequest) {
 		}
 		if n.Status == "running" && isGate {
 			gateActive = true
+			if gateNode == "" {
+				gateNode = n.NodeID
+			}
 		}
 	}
 	if tokens > 0 {
@@ -277,7 +281,7 @@ func (l *Loop) pollOne(ctx context.Context, req store.ServiceRequest) {
 			l.Requests.Mutate(req.ID, func(sr *store.ServiceRequest) {
 				sr.Status = "awaiting_approval"
 				sr.Timeline = append(sr.Timeline, store.RequestEvent{
-					At: time.Now().UTC(), Kind: "gate_raised",
+					At: time.Now().UTC(), Kind: "gate_raised", Node: gateNode,
 					Detail: "awaiting human sign-off in Supervision"})
 			})
 			l.Publisher.PublishRequestAwaitingApproval(events.RequestLifecyclePayload{
