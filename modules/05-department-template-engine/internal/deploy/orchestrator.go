@@ -458,7 +458,52 @@ func memoryItems(dept *store.Department, tmpl *store.Template) []clients.VectorI
 // compileWorkflow translates a template SOP (WorkflowDefinition) into a
 // Module 03 workflow-create request. Steps become nodes; sequential edges
 // mirror authoring order; agent references resolve to live M04 agent ids.
+// approverByDef maps an agent-definition id to the platform user who holds the
+// seat carrying it. Template approval steps name their approver as
+// config.required_by = <agent_def_id>; the org chart says which Position
+// carries that definition, and Position.human_ref says who sits in it. Doing
+// this at compile time keeps the resolution where the org chart lives — the
+// orchestrator never needs to reach back into this module at run time.
+func approverByDef(dept *store.Department) map[string]string {
+	out := map[string]string{}
+	if dept == nil {
+		return out
+	}
+	for _, p := range dept.OrgChart {
+		if p.AgentDefID != "" && p.HolderType == "human" && p.HumanRef != "" {
+			out[p.AgentDefID] = p.HumanRef
+		}
+	}
+	return out
+}
+
+// requiredByOf reads the approver a step names, tolerating both the singular
+// and list spellings the catalogue uses.
+func requiredByOf(cfg map[string]interface{}) []string {
+	var out []string
+	switch v := cfg["required_by"].(type) {
+	case string:
+		if v != "" {
+			out = append(out, v)
+		}
+	case []interface{}:
+		for _, it := range v {
+			if s, ok := it.(string); ok && s != "" {
+				out = append(out, s)
+			}
+		}
+	}
+	return out
+}
+
 func CompileWorkflow(wf *store.WorkflowDefinition, departmentID string, agentByDef map[string]string) clients.WorkflowCreateRequest {
+	return CompileWorkflowFor(wf, departmentID, agentByDef, nil)
+}
+
+// CompileWorkflowFor is CompileWorkflow with the department in hand, so gate
+// steps can carry the real human who must sign them off.
+func CompileWorkflowFor(wf *store.WorkflowDefinition, departmentID string, agentByDef map[string]string, dept *store.Department) clients.WorkflowCreateRequest {
+	humanByDef := approverByDef(dept)
 	nodes := make([]clients.WorkflowNode, 0, len(wf.Steps))
 	edges := make([]clients.WorkflowEdge, 0, len(wf.Steps))
 	for i, s := range wf.Steps {
@@ -485,6 +530,21 @@ func CompileWorkflow(wf *store.WorkflowDefinition, departmentID string, agentByD
 		}
 		if len(s.Config) > 0 {
 			n.Parameters = s.Config
+		}
+		// Route the gate to the person who holds the seat that owns it. When
+		// nobody is bound the orchestrator falls back to a role target — never
+		// to a fabricated user.
+		if n.Type == "human_gate" {
+			for _, def := range requiredByOf(s.Config) {
+				if user, ok := humanByDef[def]; ok {
+					if n.Parameters == nil {
+						n.Parameters = map[string]interface{}{}
+					}
+					n.Parameters["required_approver_user_id"] = user
+					n.Parameters["required_approver_agent_def_id"] = def
+					break
+				}
+			}
 		}
 		if i+1 < len(wf.Steps) {
 			n.OnSuccess = wf.Steps[i+1].ID

@@ -79,7 +79,7 @@ func (l *Loop) Dispatch(auth, tenantID string, req *store.ServiceRequest, dept *
 		}
 	}
 
-	wcr := deploy.CompileWorkflow(wfDef, dept.ID, agentByDef)
+	wcr := deploy.CompileWorkflowFor(wfDef, dept.ID, agentByDef, dept)
 	wcr.Name = fmt.Sprintf("run: %s [%s]", strings.TrimSpace(req.Title), req.ID[:8])
 	wcr.Description = "Service request run — " + req.ServiceName
 	wcr.Variables = map[string]interface{}{
