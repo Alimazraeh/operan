@@ -62,6 +62,9 @@ type Config struct {
 	LLMMaxTokens   int
 	MemoryURL      string
 	SupervisionURL string
+	// CapabilityURL is Module 08's base URL. Empty leaves capability-bearing
+	// action nodes on the recorded pass-through.
+	CapabilityURL string
 }
 
 // ParseConfig reads configuration from environment variables with defaults.
@@ -85,6 +88,7 @@ func ParseConfig() Config {
 		LLMMaxTokens:   getEnvInt("LLM_MAX_TOKENS", 0),
 		MemoryURL:      getEnvOrDefault("MEMORY_URL", "http://memory-fabric.operan.svc.cluster.local:8007"),
 		SupervisionURL: getEnvOrDefault("SUPERVISION_URL", "http://human-supervision.operan.svc.cluster.local:8009"),
+		CapabilityURL:  getEnvOrDefault("CAPABILITY_URL", "http://tool-execution.operan.svc.cluster.local:8008"),
 		LogLevel: func() string {
 			switch getEnvOrDefault("LOG_ENV", DefaultLogEnv) {
 			case "debug":
