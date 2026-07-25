@@ -2000,3 +2000,18 @@ func TestCloneCustomTemplate_WrongPath(t *testing.T) {
 		t.Errorf("expected 404 for wrong path, got %d", cloneRec.Code)
 	}
 }
+
+// Every method the department subtree serves must actually be registered on
+// the mux — a handler with no route returns 405 and looks like a bug in the
+// handler rather than a missing line in the router.
+func TestDepartmentSubtreeMethodsAreRouted(t *testing.T) {
+	mux := http.NewServeMux()
+	RegisterRoutes(mux, &TemplateHandlers{})
+	for _, m := range []string{"GET", "POST", "PATCH", "PUT", "DELETE"} {
+		req := httptest.NewRequest(m, "/departments/some-id/org-chart", nil)
+		_, pattern := mux.Handler(req)
+		if pattern == "" {
+			t.Errorf("%s /departments/ is not routed", m)
+		}
+	}
+}

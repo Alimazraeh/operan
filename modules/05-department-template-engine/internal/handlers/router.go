@@ -34,6 +34,7 @@ func RegisterRoutes(mux *http.ServeMux, h *TemplateHandlers) {
 	mux.HandleFunc("GET /departments/", h.HandleDepartmentByID)
 	mux.HandleFunc("POST /departments/", h.HandleDepartmentByID) // nested: requests
 	mux.HandleFunc("PATCH /departments/", h.HandleDepartmentByID)
+	mux.HandleFunc("PUT /departments/", h.HandleDepartmentByID) // nested: org-chart holder
 	mux.HandleFunc("DELETE /departments/", h.HandleDepartmentByID)
 
 	// ─── Service requests (the department's front door) ───────────────────
