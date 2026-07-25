@@ -271,9 +271,15 @@ func (e *Engine) execute(ctx context.Context, workflowID string) {
 					ns.Status = store.NodeStatusCompleted
 					batchMu.Lock()
 					completed[nid] = true
-					// Chain agent work products into later steps' context.
+					// Chain agent work products into later steps' context. A
+					// truncated draft carries its warning with it: the next
+					// step is usually the human gate, and an approver reading
+					// an unfinished assessment must be told it is unfinished.
 					if result != nil {
 						if text, ok := result["text"].(string); ok && text != "" {
+							if truncated, _ := result["truncated"].(bool); truncated {
+								text = "⚠ INCOMPLETE — the model reached its token budget before finishing this draft.\n\n" + text
+							}
 							if wf.Variables == nil {
 								wf.Variables = map[string]interface{}{}
 							}
