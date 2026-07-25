@@ -10,6 +10,7 @@ import viewReports from "./views/reports.js";
 import viewSettings from "./views/settings.js";
 import viewPeople from "./views/people.js";
 import viewCapabilities from "./views/capabilities.js";
+import viewGuide from "./views/guide.js";
 
 // ── Import existing views (named exports) ──────────────────
 import { viewDepartments, viewDepartment } from "./views/departments.js";
@@ -49,6 +50,7 @@ const VIEWS = {
   connectors:   { title: "Connectors", route: "/connectors", render: viewConnectors, requires: "platform.admin" },
   tenants:      { title: "Tenants", route: "/tenants", render: viewTenants, requires: "platform.admin" },
   iam:          { title: "Identity & Access", route: "/iam", render: viewIAM, requires: "platform.admin" },
+  guide:        { title: "Guide", route: "/guide", render: viewGuide },
   settings:     { title: "Settings", route: "/settings", render: viewSettings },
   observability:{ title: "Observability", route: "/observability", render: viewObservability, requires: "platform.admin" },
 };
