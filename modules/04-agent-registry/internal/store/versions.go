@@ -14,6 +14,7 @@ import (
 // with tenant isolation and agent-scoped access.
 type VersionStore struct {
 	mu       sync.RWMutex
+	sink     *sink
 	versions map[string]*AgentVersion
 	byTenant map[string]map[string]*AgentVersion // tenant_id -> version_id -> AgentVersion
 	byAgent  map[string]map[string]*AgentVersion // agent_id -> version_id -> AgentVersion
@@ -53,6 +54,7 @@ func (s *VersionStore) Create(ctx context.Context, version *AgentVersion) error 
 		s.byAgent[version.AgentID] = make(map[string]*AgentVersion)
 	}
 	s.byAgent[version.AgentID][version.ID] = version
+	s.save(ctx, version)
 
 	return nil
 }

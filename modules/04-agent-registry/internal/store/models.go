@@ -17,34 +17,34 @@ var timeNow = func() time.Time {
 type AgentStatus string
 
 const (
-	AgentStatusActive    AgentStatus = "active"
-	AgentStatusInactive  AgentStatus = "inactive"
+	AgentStatusActive     AgentStatus = "active"
+	AgentStatusInactive   AgentStatus = "inactive"
 	AgentStatusDeprecated AgentStatus = "deprecated"
-	AgentStatusArchived  AgentStatus = "archived"
+	AgentStatusArchived   AgentStatus = "archived"
 )
 
 type VersionStatus string
 
 const (
-	VersionStatusActive    VersionStatus = "active"
-	VersionStatusBeta      VersionStatus = "beta"
+	VersionStatusActive     VersionStatus = "active"
+	VersionStatusBeta       VersionStatus = "beta"
 	VersionStatusDeprecated VersionStatus = "deprecated"
-	VersionStatusArchived  VersionStatus = "archived"
+	VersionStatusArchived   VersionStatus = "archived"
 )
 
 type DependencyType string
 
 const (
-	DependencyTypeHard    DependencyType = "hard"
-	DependencyTypeSoft    DependencyType = "soft"
+	DependencyTypeHard     DependencyType = "hard"
+	DependencyTypeSoft     DependencyType = "soft"
 	DependencyTypeOptional DependencyType = "optional"
 )
 
 type Environment string
 
 const (
-	EnvironmentDev     Environment = "dev"
-	EnvironmentStaging Environment = "staging"
+	EnvironmentDev        Environment = "dev"
+	EnvironmentStaging    Environment = "staging"
 	EnvironmentProduction Environment = "production"
 )
 
@@ -78,9 +78,9 @@ type MemoryAccess struct {
 
 // RuntimeConstraints represents agent runtime limits.
 type RuntimeConstraints struct {
-	MaxConcurrent     int            `json:"max_concurrent"`
-	MaxDurationSeconds int           `json:"max_duration_seconds"`
-	RateLimitPerMinute int           `json:"rate_limit_per_minute"`
+	MaxConcurrent      int            `json:"max_concurrent"`
+	MaxDurationSeconds int            `json:"max_duration_seconds"`
+	RateLimitPerMinute int            `json:"rate_limit_per_minute"`
 	ResourceQuota      *ResourceQuota `json:"resource_quota,omitempty"`
 }
 
@@ -93,12 +93,12 @@ type ResourceQuota struct {
 
 // CostProfile defines cost parameters for an agent.
 type CostProfile struct {
-	CostPerExecution      float64 `json:"cost_per_execution"`
-	CostPerToken          float64 `json:"cost_per_token"`
-	EstimatedMonthlyCost  float64 `json:"estimated_monthly_cost"`
-	BudgetLimit           int     `json:"budget_limit"`
-	ThrottleThreshold     float64 `json:"throttle_threshold"`
-	BillingTag            string  `json:"billing_tag"`
+	CostPerExecution     float64 `json:"cost_per_execution"`
+	CostPerToken         float64 `json:"cost_per_token"`
+	EstimatedMonthlyCost float64 `json:"estimated_monthly_cost"`
+	BudgetLimit          int     `json:"budget_limit"`
+	ThrottleThreshold    float64 `json:"throttle_threshold"`
+	BillingTag           string  `json:"billing_tag"`
 }
 
 // ExecutionBudget defines execution budget constraints for an agent.
@@ -111,7 +111,7 @@ type ExecutionBudget struct {
 
 // AccessControl defines per-agent access control configuration.
 type AccessControl struct {
-	Scope        string   `json:"scope"`        // "tenant" | "department" | "global"
+	Scope        string   `json:"scope"` // "tenant" | "department" | "global"
 	AllowedRoles []string `json:"allowed_roles"`
 	RestrictedTo []string `json:"restricted_to"`
 }
@@ -182,30 +182,30 @@ type UpdateAgentRequest struct {
 
 // AgentVersion represents a version of an agent.
 type AgentVersion struct {
-	ID                string             `json:"id"`
-	AgentID           string             `json:"agent_id"`
-	TenantID          string             `json:"tenant_id"`
-	Version           string             `json:"version"`
-	Status            VersionStatus      `json:"status"`
-	ModelConfig       map[string]any     `json:"model_config,omitempty"`
-	PromptTemplateRef *string            `json:"prompt_template_ref,omitempty"`
-	Description       string             `json:"description"`
-	ChangeSummary     string             `json:"change_summary,omitempty"`
-	DiffFromPrevious  *string            `json:"diff_from_previous,omitempty"`
-	CreatedBy         string             `json:"created_by"`
-	PromotedTo        map[string]string  `json:"promoted_to,omitempty"`
-	CreatedAt         time.Time          `json:"created_at"`
-	UpdatedAt         time.Time          `json:"updated_at"`
+	ID                string            `json:"id"`
+	AgentID           string            `json:"agent_id"`
+	TenantID          string            `json:"tenant_id"`
+	Version           string            `json:"version"`
+	Status            VersionStatus     `json:"status"`
+	ModelConfig       map[string]any    `json:"model_config,omitempty"`
+	PromptTemplateRef *string           `json:"prompt_template_ref,omitempty"`
+	Description       string            `json:"description"`
+	ChangeSummary     string            `json:"change_summary,omitempty"`
+	DiffFromPrevious  *string           `json:"diff_from_previous,omitempty"`
+	CreatedBy         string            `json:"created_by"`
+	PromotedTo        map[string]string `json:"promoted_to,omitempty"`
+	CreatedAt         time.Time         `json:"created_at"`
+	UpdatedAt         time.Time         `json:"updated_at"`
 }
 
 // CreateVersionRequest represents the request to create an agent version.
 type CreateVersionRequest struct {
-	AgentID           string             `json:"agent_id"`
-	Version           string             `json:"version"`
-	ModelConfig       map[string]any     `json:"model_config,omitempty"`
-	PromptTemplateRef *string            `json:"prompt_template_ref,omitempty"`
-	Description       string             `json:"description,omitempty"`
-	ChangeSummary     string             `json:"change_summary,omitempty"`
+	AgentID           string         `json:"agent_id"`
+	Version           string         `json:"version"`
+	ModelConfig       map[string]any `json:"model_config,omitempty"`
+	PromptTemplateRef *string        `json:"prompt_template_ref,omitempty"`
+	Description       string         `json:"description,omitempty"`
+	ChangeSummary     string         `json:"change_summary,omitempty"`
 }
 
 // UpdateVersionRequest represents the request to update an agent version.
@@ -238,22 +238,22 @@ type CapabilityUpdateRequest struct {
 
 // CapabilityUpdate represents a single capability update.
 type CapabilityUpdate struct {
-	Capability string    `json:"capability"`
-	Score      float64   `json:"score"`
-	Tier       string    `json:"tier"`
+	Capability string  `json:"capability"`
+	Score      float64 `json:"score"`
+	Tier       string  `json:"tier"`
 }
 
 // AgentDependency represents a dependency between agents.
 type AgentDependency struct {
-	ID                string        `json:"id"`
-	AgentID           string        `json:"agent_id"`
-	TenantID          string        `json:"tenant_id"`
-	DependencyAgentID string        `json:"dependency_id"`
+	ID                string         `json:"id"`
+	AgentID           string         `json:"agent_id"`
+	TenantID          string         `json:"tenant_id"`
+	DependencyAgentID string         `json:"dependency_id"`
 	DependencyType    DependencyType `json:"dependency_type"`
-	VersionConstraint *string       `json:"version_constraint,omitempty"`
-	Description       string        `json:"description,omitempty"`
-	Active            bool          `json:"active"`
-	CreatedAt         time.Time     `json:"created_at"`
+	VersionConstraint *string        `json:"version_constraint,omitempty"`
+	Description       string         `json:"description,omitempty"`
+	Active            bool           `json:"active"`
+	CreatedAt         time.Time      `json:"created_at"`
 }
 
 // AddDependencyRequest represents the request to add a dependency.
@@ -291,7 +291,7 @@ type AgentSearchResponse struct {
 
 // CapabilityList represents the response to a capabilities list request.
 type CapabilityList struct {
-	AgentID      string            `json:"agent_id"`
+	AgentID      string             `json:"agent_id"`
 	Capabilities []*CapabilityEntry `json:"capabilities"`
 }
 

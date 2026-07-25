@@ -4,11 +4,17 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/operan/modules/04-agent-registry/internal/ctxkeys"
 )
+
+// unmarshalJSON is shared with persist.go; it exists so this package does not
+// import encoding/json in three places for one call each.
+func unmarshalJSON(b []byte, v any) error { return json.Unmarshal(b, v) }
 
 // AgentStore provides thread-safe CRUD operations for Agent entities
 // with tenant isolation.
@@ -16,6 +22,8 @@ type AgentStore struct {
 	mu       sync.RWMutex
 	agents   map[string]*Agent
 	byTenant map[string]map[string]*Agent // tenant_id -> agent_id -> Agent
+	// sink, when set by Persist, makes writes durable. Nil means memory only.
+	sink *sink
 }
 
 // NewAgentStore creates a new tenant-isolated agent store.
@@ -53,6 +61,7 @@ func (s *AgentStore) Create(ctx context.Context, agent *Agent) error {
 		s.byTenant[tenantID] = make(map[string]*Agent)
 	}
 	s.byTenant[tenantID][agent.ID] = agent
+	s.save(ctx, agent)
 
 	return nil
 }
@@ -91,6 +100,8 @@ func (s *AgentStore) Patch(ctx context.Context, id string, fn func(*Agent)) erro
 	}
 
 	fn(agent)
+	agent.UpdatedAt = timeNow()
+	s.save(ctx, agent)
 	return nil
 }
 
@@ -136,6 +147,16 @@ func (s *AgentStore) List(ctx context.Context, role, status, capability string, 
 		filtered = append(filtered, a)
 	}
 
+	// Map iteration order is random, so slicing it for pagination returned
+	// overlapping and missing agents between calls to page 1 and page 2.
+	// Oldest first, id breaking ties, so paging is stable.
+	sort.Slice(filtered, func(i, j int) bool {
+		if !filtered[i].CreatedAt.Equal(filtered[j].CreatedAt) {
+			return filtered[i].CreatedAt.Before(filtered[j].CreatedAt)
+		}
+		return filtered[i].ID < filtered[j].ID
+	})
+
 	total := len(filtered)
 	start := (page - 1) * pageSize
 	if start > total {
@@ -167,6 +188,13 @@ func (s *AgentStore) Delete(ctx context.Context, id string) error {
 	delete(s.agents, id)
 	delete(tenantAgents, id)
 
+	if s.sink != nil {
+		if err := s.sink.db.DeleteAgent(ctx, tenantID, id); err != nil {
+			// The agent is gone from memory, so the request succeeded; the row
+			// surviving would resurrect it at the next restart.
+			return fmt.Errorf("agent deleted but its record remains: %w", err)
+		}
+	}
 	return nil
 }
 

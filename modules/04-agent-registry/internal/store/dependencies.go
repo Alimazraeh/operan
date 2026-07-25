@@ -14,7 +14,7 @@ import (
 // with tenant isolation.
 type DependencyStore struct {
 	mu       sync.RWMutex
-	deps     map[string]*AgentDependency // id -> dependency
+	deps     map[string]*AgentDependency            // id -> dependency
 	byTenant map[string]map[string]*AgentDependency // tenant_id -> dep_id -> AgentDependency
 	byAgent  map[string]map[string]*AgentDependency // agent_id -> dep_id -> AgentDependency
 }
