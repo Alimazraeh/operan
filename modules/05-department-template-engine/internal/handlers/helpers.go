@@ -81,18 +81,18 @@ func toTemplateListResponse(templates []store.Template) []interface{} {
 	result := make([]interface{}, 0, len(templates))
 	for _, t := range templates {
 		resp := map[string]interface{}{
-			"id":              t.ID,
-			"tenant_id":       t.TenantID,
-			"name":            t.Name,
-			"description":     t.Description,
-			"category":        t.Category,
-			"version":         t.Version,
-			"status":          t.Status,
-			"created_at":      t.CreatedAt,
-			"updated_at":      t.UpdatedAt,
-			"created_by":      t.CreatedBy,
+			"id":                 t.ID,
+			"tenant_id":          t.TenantID,
+			"name":               t.Name,
+			"description":        t.Description,
+			"category":           t.Category,
+			"version":            t.Version,
+			"status":             t.Status,
+			"created_at":         t.CreatedAt,
+			"updated_at":         t.UpdatedAt,
+			"created_by":         t.CreatedBy,
 			"agents_count":       len(t.Agents),
-			"workflows_count":  len(t.Workflows),
+			"workflows_count":    len(t.Workflows),
 			"integrations_count": len(t.Integrations),
 		}
 		if t.Tags != nil {

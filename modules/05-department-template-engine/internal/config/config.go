@@ -20,8 +20,9 @@ type Config struct {
 	RegistryURL      string // Module 04 agent registry base URL (deploy orchestration)
 	MemoryURL        string // Module 07 memory fabric base URL (deploy orchestration)
 	OrchestrationURL string
-	CadenceHour      int    // local hour daily/weekly briefings fire
-	CadenceTick      string // e.g. "30s": test mode — fire every interval regardless of clock
+	IdentityURL      string  // Module 02 — user lookup for seat binding
+	CadenceHour      int     // local hour daily/weekly briefings fire
+	CadenceTick      string  // e.g. "30s": test mode — fire every interval regardless of clock
 	TokenRate        float64 // USD per 1M tokens for measured spend estimates
 }
 
@@ -40,6 +41,7 @@ func ParseConfig() Config {
 		RegistryURL:      env("MODULE05_REGISTRY_URL", "http://agent-registry.operan.svc.cluster.local:8083"),
 		MemoryURL:        env("MODULE05_MEMORY_URL", "http://memory-fabric.operan.svc.cluster.local:8007"),
 		OrchestrationURL: env("MODULE05_ORCHESTRATION_URL", "http://agent-orchestration.operan.svc.cluster.local:8080/api/v1/orchestration"),
+		IdentityURL:      env("MODULE05_IDENTITY_URL", "http://identity-access.operan.svc.cluster.local:8002/api/v1/iam"),
 		CadenceHour:      envInt("MODULE05_CADENCE_HOUR", 7),
 		CadenceTick:      env("MODULE05_CADENCE_TICK", ""),
 		TokenRate:        envFloat("MODULE05_TOKEN_RATE", 3.0),

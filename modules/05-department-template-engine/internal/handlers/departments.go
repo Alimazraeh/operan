@@ -137,6 +137,11 @@ func (h *TemplateHandlers) HandleDepartmentByID(w http.ResponseWriter, r *http.R
 	case sub == "org-chart" && r.Method == http.MethodGet:
 		writeJSON(w, http.StatusOK, orgChartResponse(dept))
 
+	// org-chart/{positionId}/holder — who sits in this seat
+	case strings.HasPrefix(sub, "org-chart/") && strings.HasSuffix(sub, "/holder") && r.Method == http.MethodPut:
+		positionID := strings.TrimSuffix(strings.TrimPrefix(sub, "org-chart/"), "/holder")
+		h.setPositionHolder(w, r, dept, positionID)
+
 	case sub == "services" && r.Method == http.MethodGet:
 		writeJSON(w, http.StatusOK, map[string]interface{}{
 			"data": orEmptyServices(dept.Services),
@@ -228,22 +233,22 @@ func (h *TemplateHandlers) archiveDepartment(w http.ResponseWriter, r *http.Requ
 
 func toDepartmentSummary(d *store.Department) map[string]interface{} {
 	return map[string]interface{}{
-		"id":            d.ID,
-		"name":          d.Name,
-		"slug":          d.Slug,
-		"category":      d.Category,
-		"description":   d.Description,
-		"status":        d.Status,
-		"mission":       d.Mission,
-		"template_id":   d.TemplateID,
-		"deployment_id": d.DeploymentID,
-		"environment":   d.Environment,
-		"agents_count":  len(d.AgentIDs),
-		"services_count": len(d.Services),
+		"id":              d.ID,
+		"name":            d.Name,
+		"slug":            d.Slug,
+		"category":        d.Category,
+		"description":     d.Description,
+		"status":          d.Status,
+		"mission":         d.Mission,
+		"template_id":     d.TemplateID,
+		"deployment_id":   d.DeploymentID,
+		"environment":     d.Environment,
+		"agents_count":    len(d.AgentIDs),
+		"services_count":  len(d.Services),
 		"positions_count": len(d.OrgChart),
-		"risks_count":   len(d.Risks),
-		"created_at":    d.CreatedAt,
-		"updated_at":    d.UpdatedAt,
+		"risks_count":     len(d.Risks),
+		"created_at":      d.CreatedAt,
+		"updated_at":      d.UpdatedAt,
 	}
 }
 
@@ -307,9 +312,9 @@ func complianceResponse(d *store.Department) map[string]interface{} {
 		names = append(names, f)
 	}
 	return map[string]interface{}{
-		"frameworks": names,
-		"by_framework": frameworks,
-		"controls":   controls,
+		"frameworks":       names,
+		"by_framework":     frameworks,
+		"controls":         controls,
 		"governance_rules": orEmptyRules(d.GovernanceRules),
 	}
 }

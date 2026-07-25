@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -303,4 +304,48 @@ func (c *OrchestrationClient) DraftAgent(ctx context.Context, caller Caller, req
 		return nil, err
 	}
 	return &out, nil
+}
+
+// ── Identity (Module 02) ────────────────────────────────────
+
+// IdentityClient resolves platform users, so a seat can only be bound to
+// somebody who actually exists.
+type IdentityClient struct {
+	BaseURL string
+}
+
+// User is the subset of M02's user record this module needs.
+type User struct {
+	ID          string   `json:"id"`
+	Email       string   `json:"email"`
+	DisplayName string   `json:"display_name"`
+	Status      string   `json:"status"`
+	RoleIDs     []string `json:"role_ids"`
+}
+
+// GetUser returns the user, or an error when they do not exist. A binding
+// must never point at an id nobody can produce.
+func (c *IdentityClient) GetUser(ctx context.Context, caller Caller, userID string) (*User, error) {
+	var u User
+	url := strings.TrimRight(c.BaseURL, "/") + "/users/" + userID
+	if err := doGet(ctx, url, caller, &u); err != nil {
+		return nil, err
+	}
+	if u.ID == "" {
+		return nil, fmt.Errorf("user %s not found", userID)
+	}
+	return &u, nil
+}
+
+// ListUsers returns the tenant's users, used to resolve seat holders for
+// display without an N+1 fetch.
+func (c *IdentityClient) ListUsers(ctx context.Context, caller Caller) ([]User, error) {
+	var out struct {
+		Users []User `json:"users"`
+	}
+	url := strings.TrimRight(c.BaseURL, "/") + "/users?page_size=100"
+	if err := doGet(ctx, url, caller, &out); err != nil {
+		return nil, err
+	}
+	return out.Users, nil
 }

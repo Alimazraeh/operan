@@ -201,10 +201,10 @@ func (h *TemplateHandlers) handleClone(w http.ResponseWriter, r *http.Request, r
 	defer r.Body.Close()
 
 	var req struct {
-		Name        string                 `json:"name"`
-		Category    string                 `json:"category"`
-		Metadata    map[string]interface{} `json:"metadata"`
-		Tags        []string               `json:"tags"`
+		Name     string                 `json:"name"`
+		Category string                 `json:"category"`
+		Metadata map[string]interface{} `json:"metadata"`
+		Tags     []string               `json:"tags"`
 	}
 	if err := json.Unmarshal(body, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "about:blank", "Bad Request",
@@ -363,15 +363,15 @@ func (h *TemplateHandlers) handleUpdateDeployment(w http.ResponseWriter, r *http
 				updated.ErrorMessage = msg
 				h.DeploymentStore.UpdateStatus(deploymentID, statusStr, middleware.UserIDFromContext(r.Context()))
 				h.EventPublisher.PublishTemplateDeploymentFailed(events.TemplateDeploymentFailedPayload{
-					Event:          "template.deployment_failed",
-					DeploymentID:   deploymentID,
-					TemplateID:     templateID,
-					Version:        updated.Version,
-					Environment:    updated.Environment,
-					ErrorMessage:   msg,
-					FailedAt:       time.Now(),
-					FailedBy:       middleware.UserIDFromContext(r.Context()),
-					TenantID:       middleware.TenantIDFromContext(r.Context()),
+					Event:        "template.deployment_failed",
+					DeploymentID: deploymentID,
+					TemplateID:   templateID,
+					Version:      updated.Version,
+					Environment:  updated.Environment,
+					ErrorMessage: msg,
+					FailedAt:     time.Now(),
+					FailedBy:     middleware.UserIDFromContext(r.Context()),
+					TenantID:     middleware.TenantIDFromContext(r.Context()),
 				})
 			} else if statusStr == "operational" {
 				h.EventPublisher.PublishTemplateDeployed(events.TemplateDeployedPayload{
@@ -434,10 +434,10 @@ func (h *TemplateHandlers) handleGetVersion(w http.ResponseWriter, r *http.Reque
 	}
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"id":            v.ID,
-		"template_id":   v.TemplateID,
-		"version":       v.Version,
-		"snapshot":      v.Snapshot,
-		"created_at":    v.CreatedAt,
+		"id":          v.ID,
+		"template_id": v.TemplateID,
+		"version":     v.Version,
+		"snapshot":    v.Snapshot,
+		"created_at":  v.CreatedAt,
 	})
 }

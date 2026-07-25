@@ -42,4 +42,7 @@ func RegisterRoutes(mux *http.ServeMux, h *TemplateHandlers) {
 
 	// ─── Operating-cadence briefings ──────────────────────────────────────
 	mux.HandleFunc("GET /briefings", h.ListBriefings)
+
+	// ─── Who am I in this organisation ────────────────────────────────────
+	mux.HandleFunc("GET /me/assignments", h.MeAssignments)
 }
