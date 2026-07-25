@@ -90,7 +90,7 @@ Goal: Refactor all v1 OpenAPI contracts to adhere to strict Operan platform stan
 | 02-identity-access | ✅ | ✅ | ✅ | ✅ | RECONCILED | IAM patterns; style reference; 33 ops, 9 AsyncAPI events |
 | 03-agent-orchestration | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | 54 ops, 37 AsyncAPI channels, multi-stack; consumes supervision gate events (US-402) since 2026-06-11 |
 | 04-agent-registry | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation: JWT auth, Kafka broker, RBAC, cache, ArchiveAgent, 148 tests, 72.6% coverage |
-| 05-department-template-engine | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation: 15 ops, 8 AsyncAPI channels, 70 tests, 4557 lines Go, Dockerfile, Helm chart, HANDOVER.md |
+| 05-department-template-engine | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation incl. the department WORK LOOP (2026-07-25): 21 ops (+ requests front door, /requests/{id}[/cancel], /departments/{id}/kpi-measurements, /briefings), 15 AsyncAPI channels (+7 operan.templates.request.* lifecycle events), operating-cadence scheduler w/ LLM briefings, ledger-derived KPI measurement; schema adds requestStatus/requestEventKind/briefingFrequency |
 | 06-knowledge-ingestion | ✅ | ✅ | ✅ | ✅ | RECONCILED | OpenAPI now created; 10 endpoints |
 | 07-memory-fabric | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation 2026-06-10: 10 ops, 5 Kafka events, 90.5% store / 85.5% handler coverage, Dockerfile, Helm chart |
 | 08-tool-execution | ✅ | ✅ | ✅ | ✅ | IMPLEMENTED | Full implementation: 10 ops, 6 Kafka events, Dockerfile |
