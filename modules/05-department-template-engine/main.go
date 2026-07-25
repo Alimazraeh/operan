@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/operan/modules/05-department-template-engine/internal/cadence"
 	"github.com/operan/modules/05-department-template-engine/internal/clients"
 	"github.com/operan/modules/05-department-template-engine/internal/config"
 	"github.com/operan/modules/05-department-template-engine/internal/deploy"
@@ -25,7 +26,6 @@ import (
 	"github.com/operan/modules/05-department-template-engine/internal/persist"
 	"github.com/operan/modules/05-department-template-engine/internal/seed"
 	"github.com/operan/modules/05-department-template-engine/internal/store"
-	"github.com/operan/modules/05-department-template-engine/internal/cadence"
 	"github.com/operan/modules/05-department-template-engine/internal/workloop"
 )
 
@@ -97,6 +97,7 @@ func main() {
 	h.Dispatcher = loop
 	h.Briefings = briefingStore
 	h.TokenRate = cfg.TokenRate
+	h.Identity = &clients.IdentityClient{BaseURL: cfg.IdentityURL}
 	go loop.Run(ctx)
 
 	// ─── Operating cadence: scheduled department briefings ────────────────

@@ -2,8 +2,9 @@
 package handlers
 
 import (
-	"github.com/operan/modules/05-department-template-engine/internal/cadence"
 	"encoding/json"
+	"github.com/operan/modules/05-department-template-engine/internal/cadence"
+	"github.com/operan/modules/05-department-template-engine/internal/clients"
 	"io"
 	"log"
 	"net/http"
@@ -26,10 +27,11 @@ type TemplateHandlers struct {
 	RequestStore        *store.RequestStore
 	EventPublisher      *events.Publisher
 	MaxPageSize         int
-	Orchestrator        DeployOrchestrator // server-side deploy pipeline; nil in legacy tests
-	Dispatcher          RequestDispatcher  // work-loop dispatch; nil until the runtime ships
-	Briefings           *cadence.BriefingStore // operating-cadence digests; nil in legacy tests
-	TokenRate           float64                // USD per 1M tokens, for measured spend estimates
+	Orchestrator        DeployOrchestrator      // server-side deploy pipeline; nil in legacy tests
+	Dispatcher          RequestDispatcher       // work-loop dispatch; nil until the runtime ships
+	Briefings           *cadence.BriefingStore  // operating-cadence digests; nil in legacy tests
+	Identity            *clients.IdentityClient // M02 — verifies a user before a seat is bound to them
+	TokenRate           float64                 // USD per 1M tokens, for measured spend estimates
 }
 
 // DeployOrchestrator runs the server-side provisioning pipeline for a deploy.

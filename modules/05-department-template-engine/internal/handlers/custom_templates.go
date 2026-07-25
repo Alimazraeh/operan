@@ -240,10 +240,10 @@ func (h *TemplateHandlers) CloneCustomTemplate(w http.ResponseWriter, r *http.Re
 	defer r.Body.Close()
 
 	var req struct {
-		Name        string                 `json:"name"`
-		Category    string                 `json:"category"`
-		Metadata    map[string]interface{} `json:"metadata"`
-		SharedWith  []string               `json:"shared_with"`
+		Name       string                 `json:"name"`
+		Category   string                 `json:"category"`
+		Metadata   map[string]interface{} `json:"metadata"`
+		SharedWith []string               `json:"shared_with"`
 	}
 	if err := json.Unmarshal(body, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "about:blank", "Bad Request",

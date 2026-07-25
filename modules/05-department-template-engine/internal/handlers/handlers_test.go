@@ -9,8 +9,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/operan/modules/05-department-template-engine/internal/events"
 	"github.com/operan/modules/05-department-template-engine/internal/ctxkeys"
+	"github.com/operan/modules/05-department-template-engine/internal/events"
 	"github.com/operan/modules/05-department-template-engine/internal/store"
 )
 
@@ -630,11 +630,11 @@ func TestListTemplateVersions(t *testing.T) {
 func TestFilterChangedFields(t *testing.T) {
 	// Test with allowed fields
 	patch := map[string]interface{}{
-		"name":             "test",
-		"agents":           []string{"agent-1"},
-		"workflows":        []string{"wf-1"},
-		"invalid_field":    "should be filtered",
-		"metadata":         map[string]interface{}{"key": "value"},
+		"name":          "test",
+		"agents":        []string{"agent-1"},
+		"workflows":     []string{"wf-1"},
+		"invalid_field": "should be filtered",
+		"metadata":      map[string]interface{}{"key": "value"},
 	}
 	allowed := filterChangedFields(patch)
 
@@ -695,7 +695,6 @@ func TestHealthCheck(t *testing.T) {
 		t.Errorf("expected status 'healthy', got %v", resp["status"])
 	}
 }
-
 
 // ─── Nested Deployment Handler Tests ─────────────────────────────────────────
 
@@ -905,7 +904,6 @@ func TestHandleUpdateDeployment_NotFound(t *testing.T) {
 	}
 }
 
-
 // ─── Nested Version Handler Tests ────────────────────────────────────────────
 
 func TestHandleGetVersion(t *testing.T) {
@@ -1008,7 +1006,6 @@ func TestHandleTemplateNested_InvalidMethod(t *testing.T) {
 	}
 }
 
-
 func TestHandleTemplateNested_EmptyTemplateID(t *testing.T) {
 	h := newTestHandlers(t)
 
@@ -1020,7 +1017,6 @@ func TestHandleTemplateNested_EmptyTemplateID(t *testing.T) {
 		t.Errorf("expected 400, got %d", rec.Code)
 	}
 }
-
 
 // ─── Helper function tests ───────────────────────────────────────────────────
 
@@ -1696,7 +1692,7 @@ func TestHandleUpdateDeployment_FailureWithErrorMessage(t *testing.T) {
 
 	// Update to "failed" with error_message
 	patchBody := map[string]interface{}{
-		"status":       "failed",
+		"status":        "failed",
 		"error_message": "Container startup failed: out of memory",
 	}
 	req, _ = testRequest("PATCH", "/templates/"+tmplID+"/deployments/"+depID, patchBody)
