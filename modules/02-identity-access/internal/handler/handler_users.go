@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -166,14 +167,16 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	var users []models.User
 	var total int
+	// Authentik is an optional upstream: when it is not deployed (or is
+	// unreachable) the local user store is the source of truth, not an error.
+	authUsers, authErr := []*authentik.User(nil), error(nil)
 	if h.Auth != nil {
-		// Fetch all users from Authentik
-		authUsers, err := h.Auth.UsersAPI.List(r.Context())
-		if err != nil {
-			http.Error(w, `{"error":"failed to list users"}`, http.StatusInternalServerError)
-			return
+		authUsers, authErr = h.Auth.UsersAPI.List(r.Context())
+		if authErr != nil {
+			log.Printf("[IAM] Authentik unavailable (%v) — listing users from the local store", authErr)
 		}
-
+	}
+	if h.Auth != nil && authErr == nil {
 		total = len(authUsers)
 		start := (page - 1) * pageSize
 		if start > total {
@@ -190,7 +193,8 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 			users = append(users, *user)
 		}
 	} else {
-		// Fallback to in-memory store for tests
+		// Local store: the fallback for tests and for deployments
+		// running without Authentik.
 		pageUsers, total2, err := h.Users.List(tenantID, page, pageSize)
 		if err != nil {
 			http.Error(w, `{"error":"failed to list users"}`, http.StatusInternalServerError)
@@ -466,7 +470,7 @@ func (h *UserHandler) SetRoles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"user_id": userID,
+		"user_id":  userID,
 		"role_ids": req.RoleIDs,
 	})
 }
