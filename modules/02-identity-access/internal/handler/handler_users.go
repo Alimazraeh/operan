@@ -363,20 +363,32 @@ func (h *UserHandler) Deactivate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Authentik is an optional upstream, and where it is not deployed the local
+	// store is the system of record — the same shape as Create and GetByID.
+	// This used to return 404 the moment Authentik refused, leaving a locally
+	// held account fully able to sign in: the caller was told the request
+	// failed, and the account stayed live.
+	//
+	// Both stores are attempted, and the local one always is, because the login
+	// path reads it — an account not marked here is not actually deactivated.
+	// It succeeds if either store took the change, and 404s only when neither
+	// knows the user.
+	deactivated := false
 	if h.Auth != nil {
 		// Soft delete via Authentik (set is_active=false)
 		if err := h.Auth.UsersAPI.Delete(r.Context(), userID); err != nil {
+			log.Printf("[IAM] Authentik could not deactivate %s (%v) — falling back to the local store", userID, err)
+		} else {
+			deactivated = true
+		}
+	}
+	req := models.UpdateUserRequest{Status: strPtr(models.StatusInactive)}
+	if _, err := h.Users.Update(userID, &req); err != nil {
+		if !deactivated {
 			http.Error(w, `{"error":"user not found"}`, http.StatusNotFound)
 			return
 		}
-	} else {
-		// Fallback to in-memory store for tests
-		req := models.UpdateUserRequest{Status: strPtr("inactive")}
-		_, err := h.Users.Update(userID, &req)
-		if err != nil {
-			http.Error(w, `{"error":"failed to deactivate user"}`, http.StatusInternalServerError)
-			return
-		}
+		log.Printf("[IAM] user %s deactivated upstream but absent from the local store: %v", userID, err)
 	}
 
 	// Log audit event

@@ -275,8 +275,8 @@ func (s *UserStore) SetPasswordHash(id, hash string) error {
 	// perfectly well, and the status column stops describing anything real.
 	// Only pending is promoted — a deactivated account is not revived by
 	// handing it a new password.
-	if u.Status == "pending" || u.Status == "" {
-		u.Status = "active"
+	if u.Status == models.StatusPending || u.Status == "" {
+		u.Status = models.StatusActive
 	}
 	return nil
 }
