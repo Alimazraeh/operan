@@ -4,14 +4,18 @@ import "time"
 
 // User represents a human user within the Operan platform.
 type User struct {
-	ID                   string     `json:"id" db:"id"`
-	TenantID             string     `json:"tenant_id" db:"tenant_id"`
-	Email                string     `json:"email" db:"email"`
-	DisplayName          string     `json:"display_name" db:"display_name"`
-	Status               string     `json:"status" db:"status"`
-	RoleIDs              []string   `json:"role_ids" db:"-"`
-	RolesJSON            string     `json:"-" db:"roles_json"`
-	MFAEnabled           bool       `json:"mfa_enabled" db:"mfa_enabled"`
+	ID          string   `json:"id" db:"id"`
+	TenantID    string   `json:"tenant_id" db:"tenant_id"`
+	Email       string   `json:"email" db:"email"`
+	DisplayName string   `json:"display_name" db:"display_name"`
+	Status      string   `json:"status" db:"status"`
+	RoleIDs     []string `json:"role_ids" db:"-"`
+	RolesJSON   string   `json:"-" db:"roles_json"`
+	MFAEnabled  bool     `json:"mfa_enabled" db:"mfa_enabled"`
+	// PasswordHash is a bcrypt hash and never leaves the process: no handler
+	// returns it and json:"-" keeps it out of every response body.
+	PasswordHash         string     `json:"-" db:"password_hash"`
+	PasswordSetAt        *time.Time `json:"password_set_at,omitempty" db:"password_set_at"`
 	LDAPDN               *string    `json:"ldap_dn,omitempty" db:"ldap_dn"`
 	AuthenticationMethod string     `json:"authentication_method" db:"-"` // derived, not stored
 	CreatedAt            time.Time  `json:"created_at" db:"created_at"`
@@ -21,19 +25,19 @@ type User struct {
 
 // CreateUserRequest represents the request body for creating a user.
 type CreateUserRequest struct {
-	Email        string   `json:"email"`
-	DisplayName  string   `json:"display_name"`
-	RoleIDs      []string `json:"role_ids,omitempty"`
-	MFAEnabled   *bool    `json:"mfa_enabled,omitempty"`
-	LDAPDN       *string  `json:"ldap_dn,omitempty"`
+	Email       string   `json:"email"`
+	DisplayName string   `json:"display_name"`
+	RoleIDs     []string `json:"role_ids,omitempty"`
+	MFAEnabled  *bool    `json:"mfa_enabled,omitempty"`
+	LDAPDN      *string  `json:"ldap_dn,omitempty"`
 }
 
 // UpdateUserRequest represents the request body for updating a user.
 type UpdateUserRequest struct {
-	DisplayName *string `json:"display_name,omitempty"`
+	DisplayName *string  `json:"display_name,omitempty"`
 	RoleIDs     []string `json:"role_ids,omitempty"`
-	MFAEnabled  *bool   `json:"mfa_enabled,omitempty"`
-	Status      *string `json:"status,omitempty"`
+	MFAEnabled  *bool    `json:"mfa_enabled,omitempty"`
+	Status      *string  `json:"status,omitempty"`
 }
 
 // Validate checks that the update request has at least one field.
@@ -83,16 +87,16 @@ func (r *CreateRoleRequest) Validate() error {
 
 // ServiceIdentity represents a non-human identity for services.
 type ServiceIdentity struct {
-	ID          string     `json:"id" db:"id"`
-	TenantID    string     `json:"tenant_id" db:"tenant_id"`
-	Name        string     `json:"name" db:"name"`
-	RoleIDs     []string   `json:"role_ids" db:"-"`
-	RolesJSON   string     `json:"-" db:"roles_json"`
-	APIKeyID    string     `json:"api_key_id" db:"api_key_id"`
-	Metadata    string     `json:"-" db:"metadata_json"`
-	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
-	ExpiresAt   *time.Time `json:"expires_at,omitempty" db:"expires_at"`
-	LastUsedAt  *time.Time `json:"last_used_at,omitempty" db:"last_used_at"`
+	ID         string     `json:"id" db:"id"`
+	TenantID   string     `json:"tenant_id" db:"tenant_id"`
+	Name       string     `json:"name" db:"name"`
+	RoleIDs    []string   `json:"role_ids" db:"-"`
+	RolesJSON  string     `json:"-" db:"roles_json"`
+	APIKeyID   string     `json:"api_key_id" db:"api_key_id"`
+	Metadata   string     `json:"-" db:"metadata_json"`
+	CreatedAt  time.Time  `json:"created_at" db:"created_at"`
+	ExpiresAt  *time.Time `json:"expires_at,omitempty" db:"expires_at"`
+	LastUsedAt *time.Time `json:"last_used_at,omitempty" db:"last_used_at"`
 }
 
 // CreateServiceIdentityRequest represents the request body for creating a service identity.
@@ -119,18 +123,18 @@ func (r *CreateServiceIdentityRequest) Validate() error {
 
 // AgentIdentity represents an autonomous agent identity.
 type AgentIdentity struct {
-	ID                string    `json:"id" db:"id"`
-	TenantID          string    `json:"tenant_id" db:"tenant_id"`
-	AgentID           string    `json:"agent_id" db:"agent_id"`
-	Capabilities      []string  `json:"capabilities" db:"-"`
-	CapabilitiesJSON  string    `json:"-" db:"capabilities_json"`
-	MemoryScope       []string  `json:"memory_scope" db:"-"`
-	MemoryScopeJSON   string    `json:"-" db:"memory_scope_json"`
-	AllowedTools      []string  `json:"allowed_tools" db:"-"`
-	AllowedToolsJSON  string    `json:"-" db:"allowed_tools_json"`
-	EscalationTargets []string  `json:"escalation_targets" db:"-"`
-	EscalationTargetsJSON string `json:"-" db:"escalation_targets_json"`
-	CreatedAt         time.Time `json:"created_at" db:"created_at"`
+	ID                    string    `json:"id" db:"id"`
+	TenantID              string    `json:"tenant_id" db:"tenant_id"`
+	AgentID               string    `json:"agent_id" db:"agent_id"`
+	Capabilities          []string  `json:"capabilities" db:"-"`
+	CapabilitiesJSON      string    `json:"-" db:"capabilities_json"`
+	MemoryScope           []string  `json:"memory_scope" db:"-"`
+	MemoryScopeJSON       string    `json:"-" db:"memory_scope_json"`
+	AllowedTools          []string  `json:"allowed_tools" db:"-"`
+	AllowedToolsJSON      string    `json:"-" db:"allowed_tools_json"`
+	EscalationTargets     []string  `json:"escalation_targets" db:"-"`
+	EscalationTargetsJSON string    `json:"-" db:"escalation_targets_json"`
+	CreatedAt             time.Time `json:"created_at" db:"created_at"`
 }
 
 // RegisterAgentIdentityRequest represents the request body for registering an agent identity.
@@ -237,9 +241,9 @@ func (r *SetRoleIDsRequest) Validate() error {
 
 // PermissionCheckRequest represents the request body for RBAC/ABAC evaluation.
 type PermissionCheckRequest struct {
-	ActorID   string                 `json:"actor_id"`
-	Action    string                 `json:"action"`
-	Resource  string                 `json:"resource"`
+	ActorID    string                 `json:"actor_id"`
+	Action     string                 `json:"action"`
+	Resource   string                 `json:"resource"`
 	Attributes map[string]interface{} `json:"attributes,omitempty"`
 }
 
@@ -259,10 +263,10 @@ func (r *PermissionCheckRequest) Validate() error {
 
 // PermissionCheckResult represents the result of a permission evaluation.
 type PermissionCheckResult struct {
-	Allowed      bool   `json:"allowed"`
-	Reason       string `json:"reason"`
-	PolicyMatch  *string `json:"policy_match,omitempty"`
-	EvaluatedAt  string  `json:"evaluated_at"`
+	Allowed     bool    `json:"allowed"`
+	Reason      string  `json:"reason"`
+	PolicyMatch *string `json:"policy_match,omitempty"`
+	EvaluatedAt string  `json:"evaluated_at"`
 }
 
 // ValidationError represents a validation error.
@@ -278,22 +282,22 @@ func (e *ValidationError) Error() string {
 
 // LDAPConfig represents an LDAP directory configuration for a tenant.
 type LDAPConfig struct {
-	ID            string                 `json:"id" db:"id"`
-	TenantID      string                 `json:"tenant_id" db:"tenant_id"`
-	DisplayName   string                 `json:"display_name" db:"display_name"`
-	Provider      string                 `json:"provider" db:"provider"` // openldap, freeipa, etc.
-	URL           string                 `json:"url" db:"url"`
-	BaseDN        string                 `json:"base_dn" db:"base_dn"`
-	BindDN        string                 `json:"bind_dn" db:"bind_dn"`
-	BindPassword  string                 `json:"-" db:"bind_password"` // never return in responses
-	SearchScope   string                 `json:"search_scope" db:"search_scope"`
-	UserFilter    string                 `json:"user_filter" db:"user_filter"`
-	GroupFilter   string                 `json:"group_filter" db:"group_filter"`
-	Enabled       bool                   `json:"enabled" db:"enabled"`
-	Status        string                 `json:"status" db:"status"`
-	ConfigJSON    string                 `json:"-" db:"config_json"`
-	CreatedAt     time.Time              `json:"created_at" db:"created_at"`
-	UpdatedAt     time.Time              `json:"updated_at" db:"updated_at"`
+	ID           string    `json:"id" db:"id"`
+	TenantID     string    `json:"tenant_id" db:"tenant_id"`
+	DisplayName  string    `json:"display_name" db:"display_name"`
+	Provider     string    `json:"provider" db:"provider"` // openldap, freeipa, etc.
+	URL          string    `json:"url" db:"url"`
+	BaseDN       string    `json:"base_dn" db:"base_dn"`
+	BindDN       string    `json:"bind_dn" db:"bind_dn"`
+	BindPassword string    `json:"-" db:"bind_password"` // never return in responses
+	SearchScope  string    `json:"search_scope" db:"search_scope"`
+	UserFilter   string    `json:"user_filter" db:"user_filter"`
+	GroupFilter  string    `json:"group_filter" db:"group_filter"`
+	Enabled      bool      `json:"enabled" db:"enabled"`
+	Status       string    `json:"status" db:"status"`
+	ConfigJSON   string    `json:"-" db:"config_json"`
+	CreatedAt    time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // ConfigureLDAPRequest represents the request body for configuring LDAP.
@@ -356,11 +360,11 @@ func (r *UpdateLDAPRequest) Validate() error {
 
 // LDAPSyncResult represents the result of an LDAP directory sync test.
 type LDAPSyncResult struct {
-	Status    string   `json:"status"`
-	UsersSynced int    `json:"users_synced"`
-	GroupsSynced  int    `json:"groups_synced"`
-	Errors    []string `json:"errors,omitempty"`
-	TestSteps []LDAPTestStep `json:"test_steps"`
+	Status       string         `json:"status"`
+	UsersSynced  int            `json:"users_synced"`
+	GroupsSynced int            `json:"groups_synced"`
+	Errors       []string       `json:"errors,omitempty"`
+	TestSteps    []LDAPTestStep `json:"test_steps"`
 }
 
 // LDAPTestStep represents a single step in an LDAP connectivity test.
@@ -374,19 +378,19 @@ type LDAPTestStep struct {
 
 // ADConfig represents an Active Directory configuration for a tenant.
 type ADConfig struct {
-	ID               string                 `json:"id" db:"id"`
-	TenantID         string                 `json:"tenant_id" db:"tenant_id"`
-	DisplayName      string                 `json:"display_name" db:"display_name"`
-	DomainName       string                 `json:"domain_name" db:"domain_name"`
-	DomainController string                 `json:"domain_controller" db:"domain_controller"`
-	BindDN           string                 `json:"bind_dn" db:"bind_dn"`
-	BindPassword     string                 `json:"-" db:"bind_password"`
-	OrganizationUnit string                 `json:"organization_unit" db:"organization_unit"`
-	Enabled          bool                   `json:"enabled" db:"enabled"`
-	Status           string                 `json:"status" db:"status"`
-	ConfigJSON       string                 `json:"-" db:"config_json"`
-	CreatedAt        time.Time              `json:"created_at" db:"created_at"`
-	UpdatedAt        time.Time              `json:"updated_at" db:"updated_at"`
+	ID               string    `json:"id" db:"id"`
+	TenantID         string    `json:"tenant_id" db:"tenant_id"`
+	DisplayName      string    `json:"display_name" db:"display_name"`
+	DomainName       string    `json:"domain_name" db:"domain_name"`
+	DomainController string    `json:"domain_controller" db:"domain_controller"`
+	BindDN           string    `json:"bind_dn" db:"bind_dn"`
+	BindPassword     string    `json:"-" db:"bind_password"`
+	OrganizationUnit string    `json:"organization_unit" db:"organization_unit"`
+	Enabled          bool      `json:"enabled" db:"enabled"`
+	Status           string    `json:"status" db:"status"`
+	ConfigJSON       string    `json:"-" db:"config_json"`
+	CreatedAt        time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // ConfigureADRequest represents the request body for configuring Active Directory.
@@ -441,11 +445,11 @@ func (r *UpdateADRequest) Validate() error {
 
 // ADSyncResult represents the result of an AD directory sync test.
 type ADSyncResult struct {
-	Status       string        `json:"status"`
-	UsersSynced  int           `json:"users_synced"`
-	GroupsSynced int           `json:"groups_synced"`
-	Errors       []string      `json:"errors,omitempty"`
-	TestSteps    []ADTestStep  `json:"test_steps"`
+	Status       string       `json:"status"`
+	UsersSynced  int          `json:"users_synced"`
+	GroupsSynced int          `json:"groups_synced"`
+	Errors       []string     `json:"errors,omitempty"`
+	TestSteps    []ADTestStep `json:"test_steps"`
 }
 
 // ADTestStep represents a single step in an AD connectivity test.
@@ -459,29 +463,29 @@ type ADTestStep struct {
 
 // DelegationRole represents a tenant-specific admin role that can be delegated.
 type DelegationRole struct {
-	ID             string    `json:"id" db:"id"`
-	TenantID       string    `json:"tenant_id" db:"tenant_id"`
-	Name           string    `json:"name" db:"name"`
-	Description    string    `json:"description" db:"description"`
-	ParentRoleID   string    `json:"parent_role_id" db:"parent_role_id"`
-	Scope          string    `json:"scope" db:"scope"` // "tenant", "department", "team"
-	Permissions    []string  `json:"permissions" db:"-"`
-	PermissionsJSON string   `json:"-" db:"permissions_json"`
+	ID                 string    `json:"id" db:"id"`
+	TenantID           string    `json:"tenant_id" db:"tenant_id"`
+	Name               string    `json:"name" db:"name"`
+	Description        string    `json:"description" db:"description"`
+	ParentRoleID       string    `json:"parent_role_id" db:"parent_role_id"`
+	Scope              string    `json:"scope" db:"scope"` // "tenant", "department", "team"
+	Permissions        []string  `json:"permissions" db:"-"`
+	PermissionsJSON    string    `json:"-" db:"permissions_json"`
 	MaxDelegationDepth int       `json:"max_delegation_depth" db:"max_delegation_depth"`
-	DelegatedToIDs []string  `json:"delegated_to_ids" db:"-"` // IDs of users this role is delegated to
-	DelegatedToJSON string    `json:"-" db:"delegated_to_json"`
-	IsSystem       bool      `json:"is_system" db:"is_system"`
-	CreatedAt      time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
+	DelegatedToIDs     []string  `json:"delegated_to_ids" db:"-"` // IDs of users this role is delegated to
+	DelegatedToJSON    string    `json:"-" db:"delegated_to_json"`
+	IsSystem           bool      `json:"is_system" db:"is_system"`
+	CreatedAt          time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // CreateDelegationRoleRequest represents the request body for creating a delegation role.
 type CreateDelegationRoleRequest struct {
-	Name                string   `json:"name"`
-	Description         string   `json:"description,omitempty"`
-	Scope               string   `json:"scope"`
-	Permissions         []string `json:"permissions"`
-	MaxDelegationDepth  *int     `json:"max_delegation_depth,omitempty"`
+	Name               string   `json:"name"`
+	Description        string   `json:"description,omitempty"`
+	Scope              string   `json:"scope"`
+	Permissions        []string `json:"permissions"`
+	MaxDelegationDepth *int     `json:"max_delegation_depth,omitempty"`
 }
 
 // Validate checks that the delegation role request is valid.
@@ -535,15 +539,15 @@ func (r *DelegateRoleRequest) Validate() error {
 
 // DelegationGrant represents a granted delegation of an admin role to a user.
 type DelegationGrant struct {
-	ID            string    `json:"id" db:"id"`
-	TenantID      string    `json:"tenant_id" db:"tenant_id"`
-	DelegationRoleID string `json:"delegation_role_id" db:"delegation_role_id"`
-	UserID        string    `json:"user_id" db:"user_id"`
-	Scope         string    `json:"scope" db:"scope"` // "tenant", "department", "team"
-	GrantedBy     string    `json:"granted_by" db:"granted_by"`
-	GrantedAt     time.Time `json:"granted_at" db:"granted_at"`
-	ExpiresAt     *time.Time `json:"expires_at,omitempty" db:"expires_at"`
-	IsActive    bool      `json:"is_active" db:"is_active"`
+	ID               string     `json:"id" db:"id"`
+	TenantID         string     `json:"tenant_id" db:"tenant_id"`
+	DelegationRoleID string     `json:"delegation_role_id" db:"delegation_role_id"`
+	UserID           string     `json:"user_id" db:"user_id"`
+	Scope            string     `json:"scope" db:"scope"` // "tenant", "department", "team"
+	GrantedBy        string     `json:"granted_by" db:"granted_by"`
+	GrantedAt        time.Time  `json:"granted_at" db:"granted_at"`
+	ExpiresAt        *time.Time `json:"expires_at,omitempty" db:"expires_at"`
+	IsActive         bool       `json:"is_active" db:"is_active"`
 }
 
 // RevokeDelegationRequest represents the request body for revoking a delegation.
@@ -553,21 +557,21 @@ type RevokeDelegationRequest struct {
 
 // ListDelegationsResponse represents the response for listing delegation grants.
 type ListDelegationsResponse struct {
-	Delegations  []DelegationGrant `json:"delegations"`
-	Total        int               `json:"total"`
-	Limit        int               `json:"limit"`
-	Offset       int               `json:"offset"`
+	Delegations []DelegationGrant `json:"delegations"`
+	Total       int               `json:"total"`
+	Limit       int               `json:"limit"`
+	Offset      int               `json:"offset"`
 }
 
 // SessionInfo tracks active session metadata for replay and audit.
 type SessionInfo struct {
-	ID             string    `json:"id"`
-	UserID         string    `json:"user_id"`
-	TenantID       string    `json:"tenant_id"`
-	IP             string    `json:"ip"`
-	UserAgent      string    `json:"user_agent"`
-	StartedAt      time.Time `json:"started_at"`
-	LastActivity   time.Time `json:"last_activity"`
-	IsActive       bool      `json:"is_active"`
-	RequestCount   int       `json:"request_count"`
+	ID           string    `json:"id"`
+	UserID       string    `json:"user_id"`
+	TenantID     string    `json:"tenant_id"`
+	IP           string    `json:"ip"`
+	UserAgent    string    `json:"user_agent"`
+	StartedAt    time.Time `json:"started_at"`
+	LastActivity time.Time `json:"last_activity"`
+	IsActive     bool      `json:"is_active"`
+	RequestCount int       `json:"request_count"`
 }

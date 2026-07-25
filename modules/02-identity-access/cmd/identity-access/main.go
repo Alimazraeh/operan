@@ -9,8 +9,8 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-	"syscall"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/operan/modules/02-identity-access/internal/authentik"
@@ -48,7 +48,13 @@ func main() {
 		log.Printf("Database initialized and migrated successfully")
 
 		// Wrap stores with persistence layer
-		users = store.NewPersistentUserStore(memUsers, pool)
+		persistentUsers := store.NewPersistentUserStore(memUsers, pool)
+		if n, err := persistentUsers.Hydrate(ctx); err != nil {
+			log.Fatalf("Failed to load persisted users: %v", err)
+		} else {
+			log.Printf("Rehydrated %d user(s) from the database", n)
+		}
+		users = persistentUsers
 		audit = store.NewPersistentAuditStore(memAudit, pool)
 	} else {
 		log.Printf("No database configured — running in-memory mode")
@@ -83,6 +89,12 @@ func main() {
 
 	// Health check is registered later alongside the readiness probe.
 
+	authHandler := &handler.AuthHandler{
+		Users:       users,
+		TokenSecret: cfg.TokenSecret,
+		ExpiryMins:  cfg.TokenExpiry,
+	}
+
 	// ─── Admin bootstrap login ───
 	mux.HandleFunc("/api/v1/iam/admin/login", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -91,6 +103,15 @@ func main() {
 		default:
 			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
 		}
+	})
+
+	// ─── Real per-user login ───
+	mux.HandleFunc("/api/v1/iam/auth/login", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+			return
+		}
+		authHandler.Login(w, r)
 	})
 
 	// POST /api/v1/iam/users
@@ -110,6 +131,16 @@ func main() {
 		// Extract the remaining path after /api/v1/iam/users/
 		remaining := strings.TrimPrefix(r.URL.Path, "/api/v1/iam/users/")
 		remaining = strings.TrimSuffix(remaining, "/")
+
+		// Handle /api/v1/iam/users/{id}/password
+		if strings.HasSuffix(remaining, "/password") {
+			if r.Method == http.MethodPost {
+				authHandler.SetPassword(w, r)
+				return
+			}
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+			return
+		}
 
 		// Handle /api/v1/iam/users/{id}/roles
 		if remaining != "" && strings.HasPrefix(remaining, "roles") {
@@ -671,6 +702,7 @@ func main() {
 	protected := chain
 	chain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/health" || r.URL.Path == "/ready" ||
+			r.URL.Path == "/api/v1/iam/auth/login" ||
 			r.URL.Path == "/api/v1/iam/admin/login" || r.URL.Path == "/api/v1/iam/admin/generate-password" {
 			mux.ServeHTTP(w, r)
 			return

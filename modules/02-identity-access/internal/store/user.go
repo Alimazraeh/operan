@@ -244,3 +244,31 @@ func unmarshalRoleIDs(jsonStr string) []string {
 	}
 	return roles
 }
+
+// Put inserts a user verbatim, bypassing the generation and validation Create
+// applies. It exists for rehydrating persisted rows at boot, where the record
+// already has its identity and must not be altered.
+func (s *UserStore) Put(u *models.User) {
+	if u == nil || u.ID == "" {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	cp := *u
+	s.users[cp.ID] = &cp
+}
+
+// SetPasswordHash records a credential against a user held in memory.
+func (s *UserStore) SetPasswordHash(id, hash string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	u, ok := s.users[id]
+	if !ok {
+		return ErrUserNotFound
+	}
+	now := time.Now().UTC()
+	u.PasswordHash = hash
+	u.PasswordSetAt = &now
+	u.UpdatedAt = now
+	return nil
+}
