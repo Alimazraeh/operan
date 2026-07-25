@@ -138,3 +138,58 @@ func TestLoginResponseCarriesNoHash(t *testing.T) {
 		}
 	}
 }
+
+// The deactivate path (DELETE /users/{id}) writes status "inactive". An earlier
+// deny-list here named only "deactivated" and "suspended", so deactivating a
+// user did not stop them signing in. Every non-signin status is checked, and
+// the check is an allow-list so a status invented later fails closed.
+func TestLoginRefusesAccountsThatMayNotSignIn(t *testing.T) {
+	for _, status := range []string{"inactive", "deactivated", "suspended", "locked", "disabled", "archived"} {
+		t.Run(status, func(t *testing.T) {
+			h, u := authFixture(t)
+			if _, err := h.Users.Update(u.ID, &models.UpdateUserRequest{Status: &status}); err != nil {
+				t.Fatal(err)
+			}
+			w := postLogin(h, map[string]string{
+				"tenant": "smoke-tenant", "email": "dana@example.com", "password": "correct-horse-9-battery",
+			})
+			if w.Code != http.StatusUnauthorized {
+				t.Fatalf("status %q signed in: got %d, want 401 (%s)", status, w.Code, w.Body.String())
+			}
+		})
+	}
+}
+
+// A user created through the API starts "pending" and is only reachable once an
+// admin sets a password. Refusing pending would mean no API-created user could
+// ever sign in — and setting the credential is what promotes them to active, so
+// the status column keeps describing something real.
+func TestSettingACredentialActivatesAPendingAccount(t *testing.T) {
+	users := store.NewUserStore()
+	u := &models.User{TenantID: "smoke-tenant", Email: "new@example.com", DisplayName: "New", Status: "pending"}
+	if err := users.Create(u); err != nil {
+		t.Fatal(err)
+	}
+	hash, err := auth.HashPassword("correct-horse-9-battery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := users.SetPasswordHash(u.ID, hash); err != nil {
+		t.Fatal(err)
+	}
+	after, err := users.GetByID(u.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if after.Status != "active" {
+		t.Fatalf("status after setting a credential = %q, want active", after.Status)
+	}
+
+	h := &AuthHandler{Users: users, TokenSecret: testSecret, ExpiryMins: 60}
+	w := postLogin(h, map[string]string{
+		"tenant": "smoke-tenant", "email": "new@example.com", "password": "correct-horse-9-battery",
+	})
+	if w.Code != http.StatusOK {
+		t.Fatalf("activated user could not sign in: %d %s", w.Code, w.Body.String())
+	}
+}
