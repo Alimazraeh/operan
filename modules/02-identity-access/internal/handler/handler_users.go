@@ -75,22 +75,28 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	// Create user via Authentik or in-memory store
 	var user *models.User
+	// Authentik is an optional upstream. When it is not deployed the local
+	// store is the system of record, so an unreachable Authentik falls through
+	// rather than failing the request — but a genuine conflict still conflicts.
+	authCreated, authErr := (*authentik.User)(nil), error(nil)
 	if h.Auth != nil {
-		created, err := h.Auth.UsersAPI.Create(r.Context(), authentik.CreateUserRequest{
+		authCreated, authErr = h.Auth.UsersAPI.Create(r.Context(), authentik.CreateUserRequest{
 			Username: req.Email,
 			Email:    req.Email,
 			Name:     req.DisplayName,
 			IsActive: true,
 			Tenant:   tenantID,
 		})
-		if err != nil {
-			if isConflictError(err) {
+		if authErr != nil {
+			if isConflictError(authErr) {
 				http.Error(w, `{"error":"failed to create user"}`, http.StatusConflict)
 				return
 			}
-			http.Error(w, `{"error":"failed to create user"}`, http.StatusInternalServerError)
-			return
+			log.Printf("[IAM] Authentik unavailable (%v) — creating user in the local store", authErr)
 		}
+	}
+	if h.Auth != nil && authErr == nil {
+		created := authCreated
 
 		// Set roles via group membership
 		for _, role := range req.RoleIDs {
@@ -101,7 +107,8 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 		user = h.mapAuthentikUser(created, tenantID)
 	} else {
-		// Fallback to in-memory store for tests
+		// Local store: the system of record for tests and for deployments
+		// running without Authentik.
 		user = &models.User{
 			ID:                   uuid.New().String(),
 			TenantID:             tenantID,
@@ -229,16 +236,18 @@ func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var result models.User
+	// Try Authentik when configured, but a user held only in the local store
+	// must still resolve — otherwise setting a password or reading a profile
+	// 404s for every locally-created user.
+	var authUser *authentik.User
+	var authErr error
 	if h.Auth != nil {
-		user, err := h.Auth.UsersAPI.GetByID(r.Context(), userID)
-		if err != nil {
-			http.Error(w, `{"error":"user not found"}`, http.StatusNotFound)
-			return
-		}
-		u := h.mapAuthentikUser(user, middleware.GetTenantID(r.Context()))
+		authUser, authErr = h.Auth.UsersAPI.GetByID(r.Context(), userID)
+	}
+	if h.Auth != nil && authErr == nil && authUser != nil {
+		u := h.mapAuthentikUser(authUser, middleware.GetTenantID(r.Context()))
 		result = *u
 	} else {
-		// Fallback to in-memory store for tests
 		user, err := h.Users.GetByID(userID)
 		if err != nil {
 			http.Error(w, `{"error":"user not found"}`, http.StatusNotFound)
