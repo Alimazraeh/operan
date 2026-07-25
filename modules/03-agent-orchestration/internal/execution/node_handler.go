@@ -11,6 +11,7 @@ import (
 
 	"github.com/operan/modules/03-agent-orchestration/internal/draft"
 	"github.com/operan/modules/03-agent-orchestration/internal/execution/condition"
+	"github.com/operan/modules/03-agent-orchestration/internal/llm"
 	"github.com/operan/modules/03-agent-orchestration/internal/store"
 )
 
@@ -51,6 +52,10 @@ type NodeHandlerDeps struct {
 	M09BaseURL    string           // human-supervision base URL; empty → gates fail honestly
 	GatePollEvery time.Duration    // default 5s
 	GateTimeout   time.Duration    // default 24h
+	// AgentMaxTokens is the budget for one agent step. Zero uses
+	// llm.DefaultMaxTokens, which is sized from what a real SOP step costs
+	// against a reasoning model — see the constant.
+	AgentMaxTokens int
 }
 
 // NewNodeHandler builds the production NodeHandler executing each node type
@@ -65,6 +70,9 @@ func NewNodeHandler(deps NodeHandlerDeps) NodeHandler {
 	}
 	if deps.GateTimeout <= 0 {
 		deps.GateTimeout = 24 * time.Hour
+	}
+	if deps.AgentMaxTokens <= 0 {
+		deps.AgentMaxTokens = llm.DefaultMaxTokens
 	}
 	httpc := &http.Client{Timeout: 15 * time.Second}
 
@@ -87,17 +95,26 @@ func NewNodeHandler(deps NodeHandlerDeps) NodeHandler {
 				DepartmentID:  str(variables["department_id"]),
 				Authorization: auth.Authorization,
 				TenantID:      auth.TenantID,
-				MaxTokens:     2000,
+				MaxTokens:     deps.AgentMaxTokens,
 			})
 			if err != nil {
 				return nil, fmt.Errorf("agent node %s: %w", node.ID, err)
 			}
-			return map[string]interface{}{
+			result := map[string]interface{}{
 				"text":   bound(out.Text, 8000),
 				"model":  out.Model,
 				"tokens": out.Tokens,
 				"action": node.Action,
-			}, nil
+			}
+			// A draft the model was cut off mid-way through is real work, but
+			// it is not finished work. Recording that on the node is what lets
+			// the approver see it rather than reading an unfinished assessment
+			// as a complete one.
+			if out.Truncated {
+				result["truncated"] = true
+				result["truncation_note"] = "the model reached its token budget before finishing — this draft is incomplete"
+			}
+			return result, nil
 
 		case store.WorkflowNodeHumanGate:
 			if deps.Tasks == nil || deps.M09BaseURL == "" {
