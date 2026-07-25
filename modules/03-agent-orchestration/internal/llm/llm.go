@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -55,26 +56,80 @@ type chatResponse struct {
 		FinishReason string `json:"finish_reason"`
 		Message      struct {
 			Content string `json:"content"`
+			// The gateway returns the model's thinking separately. It is not
+			// the work product and is never presented as one, but its length
+			// is the evidence for why a budget was not enough.
+			ReasoningContent string `json:"reasoning_content"`
 		} `json:"message"`
 	} `json:"choices"`
 	Usage struct {
-		TotalTokens int `json:"total_tokens"`
+		TotalTokens      int `json:"total_tokens"`
+		CompletionTokens int `json:"completion_tokens"`
 	} `json:"usage"`
 }
+
+// DefaultMaxTokens is the budget for one agent step.
+//
+// Measured against the deployed gateway (Qwen3.6-35B) on the IT change
+// management SOP's first step: 2000 returns finish_reason "length" with empty
+// content, because reasoning tokens are spent before any content is emitted;
+// the same call completes at 4000, using 2234. The old hardcoded 2000 sat just
+// under what a real step costs, so the flagship SOP failed on its first node
+// and took the whole request down with it.
+const DefaultMaxTokens = 6000
 
 // Result is the outcome of a completion.
 type Result struct {
 	Content string
 	Tokens  int
+	// Truncated reports that the model was cut off mid-answer. The content is
+	// real but incomplete, and callers must say so rather than presenting a
+	// half-written draft as finished work.
+	Truncated bool
 }
 
-// Complete runs a chat completion. maxTokens must be generous: the gateway's
-// models are reasoning models that spend tokens thinking before emitting
-// content, so a small budget yields empty content (finish_reason "length").
+// Complete runs a chat completion.
+//
+// maxTokens must be generous: the gateway's models are reasoning models that
+// spend tokens thinking before emitting any content, so a small budget yields
+// empty content with finish_reason "length". That is a budget failure, not a
+// model refusal, so it is retried once at double the budget before giving up.
 func (c *Client) Complete(ctx context.Context, system, user string, maxTokens int) (*Result, error) {
 	if maxTokens <= 0 {
-		maxTokens = 2000
+		maxTokens = DefaultMaxTokens
 	}
+	res, err := c.complete(ctx, system, user, maxTokens)
+	if err == nil || !isBudgetExhausted(err) {
+		return res, err
+	}
+	// One retry, at double. If the model cannot get started in twice the
+	// budget the problem is the prompt, not the ceiling, and doubling again
+	// only burns time and tokens.
+	retried, retryErr := c.complete(ctx, system, user, maxTokens*2)
+	if retryErr != nil {
+		return nil, fmt.Errorf("%w (retried at %d tokens: %v)", err, maxTokens*2, retryErr)
+	}
+	return retried, nil
+}
+
+// budgetExhaustedError marks the one failure worth retrying: the model spent
+// its whole budget reasoning and emitted nothing.
+type budgetExhaustedError struct {
+	maxTokens      int
+	reasoningChars int
+}
+
+func (e *budgetExhaustedError) Error() string {
+	return fmt.Sprintf("model spent its whole %d-token budget reasoning (%d characters) and emitted no content",
+		e.maxTokens, e.reasoningChars)
+}
+
+func isBudgetExhausted(err error) bool {
+	var e *budgetExhaustedError
+	return errors.As(err, &e)
+}
+
+func (c *Client) complete(ctx context.Context, system, user string, maxTokens int) (*Result, error) {
 	msgs := []Message{}
 	if system != "" {
 		msgs = append(msgs, Message{Role: "system", Content: system})
@@ -111,9 +166,17 @@ func (c *Client) Complete(ctx context.Context, system, user string, maxTokens in
 	if len(out.Choices) == 0 {
 		return nil, fmt.Errorf("chat endpoint returned no choices")
 	}
-	content := strings.TrimSpace(out.Choices[0].Message.Content)
+	choice := out.Choices[0]
+	content := strings.TrimSpace(choice.Message.Content)
+	truncated := choice.FinishReason == "length"
 	if content == "" {
-		return nil, fmt.Errorf("model returned empty content (finish_reason %q) — raise max_tokens", out.Choices[0].FinishReason)
+		if truncated {
+			return nil, &budgetExhaustedError{
+				maxTokens:      maxTokens,
+				reasoningChars: len(choice.Message.ReasoningContent),
+			}
+		}
+		return nil, fmt.Errorf("model returned empty content (finish_reason %q)", choice.FinishReason)
 	}
-	return &Result{Content: content, Tokens: out.Usage.TotalTokens}, nil
+	return &Result{Content: content, Tokens: out.Usage.TotalTokens, Truncated: truncated}, nil
 }

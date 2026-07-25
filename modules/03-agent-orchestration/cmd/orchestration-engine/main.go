@@ -89,9 +89,10 @@ func main() {
 	// agent → grounded LLM draft; human_gate → human task + M09 approval
 	// (US-402 resumes it); action/condition → recorded pass-through.
 	nodeHandler := execution.NewNodeHandler(execution.NodeHandlerDeps{
-		Draft:      agentHandler.Engine(),
-		Tasks:      store.HumanTaskStore(),
-		M09BaseURL: cfg.SupervisionURL,
+		Draft:          agentHandler.Engine(),
+		Tasks:          store.HumanTaskStore(),
+		M09BaseURL:     cfg.SupervisionURL,
+		AgentMaxTokens: cfg.LLMMaxTokens,
 	})
 	dagEngine := execution.NewEngine(store.WorkflowStore(), pub, nodeHandler, events.StackLangGraph)
 

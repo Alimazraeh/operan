@@ -4,6 +4,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 
 const (
@@ -51,9 +52,14 @@ type Config struct {
 
 	// LLM gateway (OpenAI-compatible chat, e.g. LiteLLM) — gives agent_task
 	// real reasoning. Empty LLMBaseURL leaves /agent/draft disabled.
-	LLMBaseURL     string
-	LLMAPIKey      string
-	LLMModel       string
+	LLMBaseURL string
+	LLMAPIKey  string
+	LLMModel   string
+	// LLMMaxTokens is the per-agent-step token budget. Zero means the client's
+	// default, which is sized from what a real SOP step costs against a
+	// reasoning model. It is configurable because the right number depends on
+	// the model behind the gateway, and getting it wrong fails whole requests.
+	LLMMaxTokens   int
 	MemoryURL      string
 	SupervisionURL string
 }
@@ -76,6 +82,7 @@ func ParseConfig() Config {
 		LLMBaseURL:     getEnvOrDefault("LLM_BASE_URL", ""),
 		LLMAPIKey:      getEnvOrDefault("LLM_API_KEY", ""),
 		LLMModel:       getEnvOrDefault("LLM_MODEL", "Qwen/Qwen3.6-35B-A3B"),
+		LLMMaxTokens:   getEnvInt("LLM_MAX_TOKENS", 0),
 		MemoryURL:      getEnvOrDefault("MEMORY_URL", "http://memory-fabric.operan.svc.cluster.local:8007"),
 		SupervisionURL: getEnvOrDefault("SUPERVISION_URL", "http://human-supervision.operan.svc.cluster.local:8009"),
 		LogLevel: func() string {
@@ -132,6 +139,21 @@ func getEnvOrDefault(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// getEnvInt reads an integer setting. An unparseable value falls back rather
+// than failing the process — a typo in a tuning knob should not stop the
+// service from starting.
+func getEnvInt(key string, fallback int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return fallback
+	}
+	return n
 }
 
 func getEnvBool(key string, fallback bool) bool {

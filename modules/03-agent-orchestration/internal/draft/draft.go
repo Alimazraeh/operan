@@ -49,6 +49,11 @@ type Output struct {
 	Model      string
 	MemoryUsed []string
 	Tokens     int
+	// Truncated reports that the model ran out of budget mid-answer. The text
+	// is real but incomplete, and it must be labelled as such wherever it is
+	// shown — an unfinished draft presented as finished work is the kind of
+	// quiet lie this platform exists to avoid.
+	Truncated bool
 }
 
 // Draft recalls memory, assembles the prompt, and completes.
@@ -100,6 +105,7 @@ func (e *Engine) Draft(ctx context.Context, in Input) (*Output, error) {
 		Model:      e.LLM.Model(),
 		MemoryUsed: append(deptContext, memories...),
 		Tokens:     res.Tokens,
+		Truncated:  res.Truncated,
 	}, nil
 }
 
