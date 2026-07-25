@@ -9,6 +9,7 @@ import viewTasks from "./views/tasks.js";
 import viewReports from "./views/reports.js";
 import viewSettings from "./views/settings.js";
 import viewPeople from "./views/people.js";
+import viewCapabilities from "./views/capabilities.js";
 
 // ── Import existing views (named exports) ──────────────────
 import { viewDepartments, viewDepartment } from "./views/departments.js";
@@ -44,6 +45,7 @@ const VIEWS = {
   agents:       { title: "Agents", route: "/agents", render: viewAgents, requires: "department.read" },
   agent:        { title: "Agent", route: "/agents/:id", render: viewAgent, parent: "agents", requires: "department.read" },
   ingestion:    { title: "Knowledge", route: "/knowledge", render: viewIngestion, requires: "department.read" },
+  capabilities: { title: "Capabilities", route: "/capabilities", render: viewCapabilities, requires: "platform.admin" },
   connectors:   { title: "Connectors", route: "/connectors", render: viewConnectors, requires: "platform.admin" },
   tenants:      { title: "Tenants", route: "/tenants", render: viewTenants, requires: "platform.admin" },
   iam:          { title: "Identity & Access", route: "/iam", render: viewIAM, requires: "platform.admin" },

@@ -13,7 +13,7 @@ import {
 
 const OPEN_STATUSES = ["submitted", "dispatched", "in_progress", "awaiting_approval"];
 const KIND_ICON = {
-  created: "📥", dispatched: "🚀", agent_output: "🤖", gate_raised: "🚧",
+  created: "📥", dispatched: "🚀", agent_output: "🤖", gate_raised: "🚧", action_executed: "⚙️",
   gate_responded: "✍️", completed: "✅", failed: "❌", sla_breached: "⏰", cancelled: "🚫",
 };
 
