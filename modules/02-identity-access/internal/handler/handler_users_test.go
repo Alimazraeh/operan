@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/operan/modules/02-identity-access/internal/authentik"
 	"github.com/operan/modules/02-identity-access/internal/events"
 	"github.com/operan/modules/02-identity-access/internal/middleware"
+	"github.com/operan/modules/02-identity-access/internal/models"
 	"github.com/operan/modules/02-identity-access/internal/store"
 )
 
@@ -231,8 +233,10 @@ func TestUserHandlerDeactivateNonExistent(t *testing.T) {
 	w := httptest.NewRecorder()
 	h.Deactivate(w, req)
 
-	if w.Code != http.StatusInternalServerError {
-		t.Errorf("Deactivate() non-existent user status = %v, want %v", w.Code, http.StatusInternalServerError)
+	// A user nobody has heard of is not found, not a server fault. This asserted
+	// 500 while the handler mapped every local-store failure to one.
+	if w.Code != http.StatusNotFound {
+		t.Errorf("Deactivate() non-existent user status = %v, want %v", w.Code, http.StatusNotFound)
 	}
 }
 
@@ -497,3 +501,70 @@ func (m *mockAuthentikUsers) List(ctx context.Context) ([]*authentik.User, error
 }
 
 var nowTime = time.Now().UTC()
+
+// failingAuthentikUsers stands in for the deployed reality: the Authentik client
+// is constructed from a placeholder URL, so every call to it fails.
+type failingAuthentikUsers struct{ mockAuthentikUsers }
+
+func (m *failingAuthentikUsers) Delete(ctx context.Context, uuid string) error {
+	return errors.New("dial tcp: no such host")
+}
+
+// The case that was actually broken in the cluster: Authentik refuses, the user
+// is held locally, and deactivation must still take effect. It used to 404 and
+// leave the account able to sign in.
+func TestDeactivateFallsBackToTheLocalStoreAndBlocksSignIn(t *testing.T) {
+	users := store.NewUserStore()
+	u := &models.User{
+		TenantID: "tenant-1", Email: "leaver@example.com",
+		DisplayName: "Leaver", Status: models.StatusActive,
+	}
+	if err := users.Create(u); err != nil {
+		t.Fatal(err)
+	}
+	h := NewUserHandler(
+		&authentik.Client{UsersAPI: &failingAuthentikUsers{}},
+		users, store.NewAuditStore(), events.NewPublisher(""),
+	)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/iam/users/"+u.ID, nil)
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+	req = setPrincipalInContext(req, &middleware.JWTToken{
+		Subject: "admin-1", UserType: "user", TenantID: "tenant-1", Roles: []string{"admin"},
+	})
+	w := httptest.NewRecorder()
+	h.Deactivate(w, req)
+
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("Deactivate() = %d, want 204 (%s)", w.Code, w.Body.String())
+	}
+	after, err := users.GetByID(u.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if after.Status != models.StatusInactive {
+		t.Fatalf("status after deactivation = %q, want %q", after.Status, models.StatusInactive)
+	}
+	// The point of the whole exercise: the login path must now refuse them.
+	if maySignIn(after.Status) {
+		t.Fatal("a deactivated account may still sign in")
+	}
+}
+
+// Neither store knows the user: that is a real 404, not a silent success.
+func TestDeactivateUnknownUserIs404(t *testing.T) {
+	h := NewUserHandler(
+		&authentik.Client{UsersAPI: &failingAuthentikUsers{}},
+		store.NewUserStore(), store.NewAuditStore(), events.NewPublisher(""),
+	)
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/iam/users/no-such-user", nil)
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+	req = setPrincipalInContext(req, &middleware.JWTToken{
+		Subject: "admin-1", UserType: "user", TenantID: "tenant-1", Roles: []string{"admin"},
+	})
+	w := httptest.NewRecorder()
+	h.Deactivate(w, req)
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("Deactivate() on unknown user = %d, want 404", w.Code)
+	}
+}

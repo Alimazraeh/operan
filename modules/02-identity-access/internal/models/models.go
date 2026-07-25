@@ -2,6 +2,17 @@ package models
 
 import "time"
 
+// Account statuses. These are named because the login path and the deactivate
+// path have to agree on them: deactivate wrote "inactive" while login refused
+// only "deactivated", so deactivating a user did nothing to authentication.
+// Login treats the set of statuses that may sign in as an allow-list, so a
+// status added here is refused until someone decides otherwise.
+const (
+	StatusActive   = "active"
+	StatusPending  = "pending" // created, no credential set yet
+	StatusInactive = "inactive"
+)
+
 // User represents a human user within the Operan platform.
 type User struct {
 	ID          string   `json:"id" db:"id"`

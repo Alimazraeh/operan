@@ -101,7 +101,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 // credential is the activation act for a local account.
 func maySignIn(status string) bool {
 	switch status {
-	case "active", "pending", "":
+	case models.StatusActive, models.StatusPending, "":
 		return true
 	default:
 		return false
