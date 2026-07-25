@@ -218,3 +218,25 @@ func TestMaterializeDepartment(t *testing.T) {
 		t.Fatalf("override: %s/%s", named.Name, named.Slug)
 	}
 }
+
+// Step-type mapping is what decides whether a catalogue step does real work
+// or silently passes through, so it is asserted directly.
+func TestNodeTypeForMapping(t *testing.T) {
+	for step, want := range map[string]string{
+		"agent_call": "agent",
+		// transformation carries {agent, task} like agent_call — it is agent
+		// work, not a pass-through.
+		"transformation": "agent",
+		"approval":       "human_gate",
+		"human_gate":     "human_gate",
+		"conditional":    "condition",
+		// Still honest pass-throughs until the capability layer binds them.
+		"tool_call":    "action",
+		"notification": "action",
+		"unknown_type": "action",
+	} {
+		if got := nodeTypeFor(step); got != want {
+			t.Errorf("nodeTypeFor(%q) = %q, want %q", step, got, want)
+		}
+	}
+}

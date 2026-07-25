@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/operan/modules/03-agent-orchestration/internal/draft"
+	"github.com/operan/modules/03-agent-orchestration/internal/execution/condition"
 	"github.com/operan/modules/03-agent-orchestration/internal/store"
 )
 
@@ -54,8 +55,10 @@ type NodeHandlerDeps struct {
 
 // NewNodeHandler builds the production NodeHandler executing each node type
 // for real: agent → grounded LLM draft; human_gate → human task + M09
-// approval, waiting for the (US-402) gate response; action/condition →
-// recorded pass-through (no executor bound yet — stated, not faked).
+// approval, waiting for the (US-402) gate response; condition → the SOP's
+// expression evaluated against the run's variables, recorded with its reason
+// when undecidable; action → recorded pass-through until the capability layer
+// binds it (stated, not faked).
 func NewNodeHandler(deps NodeHandlerDeps) NodeHandler {
 	if deps.GatePollEvery <= 0 {
 		deps.GatePollEvery = 5 * time.Second
@@ -190,7 +193,39 @@ func NewNodeHandler(deps NodeHandlerDeps) NodeHandler {
 				}
 			}
 
-		default: // action, condition, and anything future
+		case store.WorkflowNodeCondition:
+			// The SOP's expression is evaluated against the run's variables and
+			// the decision is recorded. It is never guessed: an expression the
+			// grammar cannot parse, or one referencing data this run does not
+			// carry, is reported as undecided with its reason so the timeline
+			// shows why the branch was not taken.
+			expr, _ := node.Parameters["condition"].(string)
+			if expr == "" {
+				return map[string]interface{}{
+					"node_type": "condition",
+					"decided":   false,
+					"reason":    "step declares no condition expression",
+				}, nil
+			}
+			res := condition.Evaluate(expr, variables)
+			out := map[string]interface{}{
+				"node_type": "condition",
+				"condition": expr,
+				"decided":   res.OK,
+			}
+			if res.OK {
+				out["result"] = res.Value
+				if p, ok := node.Parameters[map[bool]string{true: "true_path", false: "false_path"}[res.Value]].(string); ok && p != "" {
+					// Recorded for visibility. Routing on it needs the template
+					// to name a real step id — today these are prose labels.
+					out["declared_path"] = p
+				}
+			} else {
+				out["reason"] = res.Reason
+			}
+			return out, nil
+
+		default: // action and anything future
 			return map[string]interface{}{
 				"note":   "no executor bound for node type " + string(node.Type) + " — recorded as pass-through",
 				"action": node.Action,

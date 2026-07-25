@@ -504,15 +504,24 @@ func CompileWorkflow(wf *store.WorkflowDefinition, departmentID string, agentByD
 }
 
 // nodeTypeFor maps template step types onto Module 03's node-type enum.
+//
+// "transformation" is agent work under another name: 78 of the 80 such steps
+// in the catalogue carry {agent, task} in their config, exactly like
+// agent_call, and the agent-node executor resolves config.agent already.
+// Compiling them to "action" sent them to the pass-through instead — 80 steps
+// that reported success while doing nothing.
+//
+// tool_call and notification remain "action" until the capability layer binds
+// them to a real provider; they pass through and say so, rather than pretending.
 func nodeTypeFor(stepType string) string {
 	switch stepType {
-	case "agent_call":
+	case "agent_call", "transformation":
 		return "agent"
 	case "approval", "human_gate":
 		return "human_gate"
 	case "conditional":
 		return "condition"
-	default: // api_call, data_fetch, transformation, notification, tool_call
+	default: // api_call, data_fetch, notification, tool_call
 		return "action"
 	}
 }
