@@ -267,6 +267,21 @@ spec:
           value: kafka
         - name: DB_PASSWORD
           value: demo-in-memory-stores-no-db
+        # Without this the registry runs in memory and loses every registered
+        # agent on restart — which it had done 24 times, leaving the portal
+        # reading "0 Agents" and org-chart positions pointing at agent_ids that
+        # no longer resolved. With it set but unreachable the service refuses to
+        # start rather than looking healthy while forgetting everything.
+        #
+        # The DSN carries the database password, so it comes from a secret and
+        # is not written here. Create it once per cluster:
+        #   kubectl -n operan create secret generic operan-postgres \
+        #     --from-literal=dsn='postgres://USER:PASS@postgresql.operan.svc.cluster.local:5432/operan?sslmode=disable'
+        - name: AGENT_REGISTRY_DATABASE_DSN
+          valueFrom:
+            secretKeyRef:
+              name: operan-postgres
+              key: dsn
         readinessProbe:
           httpGet:
             path: /health

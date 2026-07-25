@@ -8,7 +8,7 @@ import (
 	"github.com/operan/modules/04-agent-registry/internal/ctxkeys"
 )
 
-func uid() string      { return uuid.New().String() }
+func uid() string          { return uuid.New().String() }
 func ctx() context.Context { return context.Background() }
 func ctxWithTenant(ctx context.Context, tenantID string) context.Context {
 	return ctxkeys.SetTenantID(ctx, tenantID)
@@ -20,10 +20,10 @@ func TestAgentStore_CreateAndGetByID(t *testing.T) {
 	ctxT := ctxWithTenant(ctx(), tenantID)
 
 	agent := &Agent{
-		ID:         uid(),
-		Name:       "Test Agent",
-		Role:       "coder",
-		TenantID:   tenantID,
+		ID:           uid(),
+		Name:         "Test Agent",
+		Role:         "coder",
+		TenantID:     tenantID,
 		Capabilities: []string{"code_generation", "testing"},
 	}
 
@@ -346,10 +346,10 @@ func TestAgentStore_Delete(t *testing.T) {
 	ctxT := ctxWithTenant(ctx(), tenantID)
 
 	agent := &Agent{
-		ID:         uid(),
-		Name:       "Test Agent",
-		Role:       "coder",
-		TenantID:   tenantID,
+		ID:           uid(),
+		Name:         "Test Agent",
+		Role:         "coder",
+		TenantID:     tenantID,
 		Capabilities: []string{"code_generation"},
 	}
 

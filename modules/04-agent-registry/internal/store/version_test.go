@@ -10,10 +10,10 @@ func TestVersionStore_CreateAndGetByID(t *testing.T) {
 	ctxT := ctxWithTenant(ctx(), tenantID)
 
 	version := &AgentVersion{
-		ID:        uid(),
-		TenantID:  tenantID,
-		AgentID:   "agent-1",
-		Version:   "1.0.0",
+		ID:       uid(),
+		TenantID: tenantID,
+		AgentID:  "agent-1",
+		Version:  "1.0.0",
 	}
 
 	if err := store.Create(ctxT, version); err != nil {

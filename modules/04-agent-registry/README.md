@@ -32,6 +32,22 @@ All configuration is read from environment variables:
 | `DB_NAME` | `agent_registry` | PostgreSQL database name |
 | `DB_USER` | _(not set)_ | PostgreSQL user (optional) |
 | `DB_PASSWORD` | _(not set)_ | PostgreSQL password (optional) |
+| `AGENT_REGISTRY_DATABASE_DSN` | _(not set)_ | PostgreSQL DSN. **Set this.** Without it the registry runs in memory and loses every agent on restart; with it set but unreachable, startup fails rather than pretending to be durable |
+
+## Persistence
+
+Agents and agent versions are durable: memory is the read path, every write goes
+through to PostgreSQL (`registry_agents`, `registry_agent_versions`), and the
+process rehydrates at boot. Before this existed the service was entirely
+in-memory — it had restarted 24 times and lost all 15 registered agents, so the
+portal read "0 Agents", departments reported `agents_count: 0`, and the
+`agent_id` on every deployed org-chart position resolved to nothing.
+
+**Known limit:** capability records and dependency edges are still memory-only.
+Nothing in the current deployment writes them, so persisting them would be
+scaffolding for a path no caller takes. They are lost on restart, and that is a
+deliberate omission rather than an oversight — anything that starts writing
+them needs this finished first.
 
 ## API Endpoints
 
