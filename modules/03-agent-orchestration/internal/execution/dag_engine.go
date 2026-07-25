@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/operan/modules/03-agent-orchestration/internal/events"
+	"github.com/operan/modules/03-agent-orchestration/internal/execution/condition"
 	"github.com/operan/modules/03-agent-orchestration/internal/repository"
 	"github.com/operan/modules/03-agent-orchestration/internal/store"
 )
@@ -254,7 +255,7 @@ func (e *Engine) execute(ctx context.Context, workflowID string) {
 			}
 
 			// Check condition edge
-			if !e.conditionsMet(nodeID, graph.Edges, completed, skipped, failed) {
+			if !e.conditionsMet(nodeID, graph.Edges, wf.Variables) {
 				skipped[nodeID] = true
 				state.Status = store.NodeStatusSkipped
 				continue
@@ -483,14 +484,22 @@ func (e *Engine) hasFailedPredecessor(nodeID string, edges []store.WorkflowEdge,
 	return false
 }
 
-// conditionsMet checks if conditional edges allow execution.
-func (e *Engine) conditionsMet(nodeID string, edges []store.WorkflowEdge, completed, skipped, failed map[string]bool) bool {
+// conditionsMet reports whether the conditional edges into nodeID allow it to
+// run. An edge without a condition always allows.
+//
+// A guarded edge is honoured: its expression is evaluated against the run's
+// variables and the node runs only if it holds. An expression that cannot be
+// decided does NOT open the gate — a node that may have a side effect does not
+// execute on an unverified condition. This previously returned true
+// unconditionally, so every branch of every guarded edge was taken.
+func (e *Engine) conditionsMet(nodeID string, edges []store.WorkflowEdge, variables map[string]interface{}) bool {
 	for _, edge := range edges {
-		if edge.To == nodeID && edge.Condition != "" {
-			// For now, always allow conditional edges (condition evaluation is a future enhancement)
-			_ = completed[edge.From]
-			_ = skipped[edge.From]
-			_ = failed[edge.From]
+		if edge.To != nodeID || edge.Condition == "" {
+			continue
+		}
+		res := condition.Evaluate(edge.Condition, variables)
+		if !res.OK || !res.Value {
+			return false
 		}
 	}
 	return true

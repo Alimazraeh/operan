@@ -668,3 +668,40 @@ func TestStartWorkflow_PriorityOrdering(t *testing.T) {
 		t.Errorf("Expected z-node third, got %s", order[2])
 	}
 }
+
+// Guarded edges must be honoured. conditionsMet previously returned true
+// unconditionally, so every branch of every guarded edge was taken.
+func TestConditionsMetHonoursGuardedEdges(t *testing.T) {
+	e := &Engine{}
+	edges := []store.WorkflowEdge{
+		{From: "a", To: "target", Condition: "severity == critical"},
+	}
+	cases := []struct {
+		name string
+		vars map[string]interface{}
+		want bool
+	}{
+		{"condition holds", map[string]interface{}{"severity": "critical"}, true},
+		{"condition fails", map[string]interface{}{"severity": "low"}, false},
+		// Undecidable must not open the gate: a node that may have a side
+		// effect does not run on an unverified condition.
+		{"variable missing", map[string]interface{}{}, false},
+		{"unparseable", nil, false},
+	}
+	for _, c := range cases {
+		if got := e.conditionsMet("target", edges, c.vars); got != c.want {
+			t.Errorf("%s: conditionsMet = %v, want %v", c.name, got, c.want)
+		}
+	}
+
+	// An unguarded edge always allows.
+	plain := []store.WorkflowEdge{{From: "a", To: "target"}}
+	if !e.conditionsMet("target", plain, nil) {
+		t.Error("an edge without a condition must always allow")
+	}
+	// Edges into other nodes are irrelevant.
+	other := []store.WorkflowEdge{{From: "a", To: "elsewhere", Condition: "nope == yes"}}
+	if !e.conditionsMet("target", other, nil) {
+		t.Error("a guarded edge into another node must not block this one")
+	}
+}
