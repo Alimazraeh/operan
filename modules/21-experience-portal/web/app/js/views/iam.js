@@ -42,13 +42,13 @@ export async function viewIAM() {
 
     <!-- Tab navigation -->
     <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
-      <button class="sm iam-tab active" data-tab="users">Users</button>
-      <button class="sm iam-tab" data-tab="services">Services</button>
-      <button class="sm iam-tab" data-tab="agents">Agents</button>
-      <button class="sm iam-tab" data-tab="roles">Roles</button>
-      <button class="sm iam-tab" data-tab="delegation">Delegation</button>
-      <button class="sm iam-tab" data-tab="abac">ABAC Policies</button>
-      <button class="sm iam-tab" data-tab="audit">Audit Log</button>
+      <button class="sm iam-tab active" onclick="window.iamTab('users', this)">Users</button>
+      <button class="sm iam-tab" onclick="window.iamTab('services', this)">Services</button>
+      <button class="sm iam-tab" onclick="window.iamTab('agents', this)">Agents</button>
+      <button class="sm iam-tab" onclick="window.iamTab('roles', this)">Roles</button>
+      <button class="sm iam-tab" onclick="window.iamTab('delegation', this)">Delegation</button>
+      <button class="sm iam-tab" onclick="window.iamTab('abac', this)">ABAC Policies</button>
+      <button class="sm iam-tab" onclick="window.iamTab('audit', this)">Audit Log</button>
     </div>
 
     <!-- Users tab -->
@@ -243,15 +243,15 @@ export async function viewIAM() {
 }
 
 // ── Tab switching ──────────────────────────────────────────
-document.querySelectorAll(".iam-tab").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".iam-tab").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    document.querySelectorAll(".iam-panel").forEach(p => p.style.display = "none");
-    const panel = document.getElementById("panel-" + btn.dataset.tab);
-    if (panel) panel.style.display = "block";
-  });
-});
+// Inline, because this view is re-rendered on every visit: a listener attached
+// at module load runs once, before any of these buttons exist.
+window.iamTab = function (name, btn) {
+  document.querySelectorAll(".iam-tab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  document.querySelectorAll(".iam-panel").forEach(p => p.style.display = "none");
+  const panel = document.getElementById("panel-" + name);
+  if (panel) panel.style.display = "block";
+};
 
 // ── User CRUD ──────────────────────────────────────────────
 window.iamCreateUser = async function () {
