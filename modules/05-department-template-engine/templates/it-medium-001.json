@@ -3,7 +3,7 @@
   "name": "Medium IT Department",
   "description": "4–15 person IT department for mid-market companies (50–500 employees). Dedicated roles for network, systems, security, and helpdesk with ITIL-aligned processes.",
   "category": "it",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "metadata": {
     "enterprise_size": "medium",
     "department_size": "4-15 FTE",
@@ -262,7 +262,13 @@
               "security",
               "helpdesk",
               "network"
-            ]
+            ],
+            "capability": "itsm.ticket.assign",
+            "inputs": {
+              "team": "helpdesk",
+              "ticket_ref": "{{request_id}}",
+              "reason": "{{request_title}}"
+            }
           }
         },
         {
@@ -293,7 +299,12 @@
             "metrics": [
               "resolution-time",
               "satisfaction"
-            ]
+            ],
+            "capability": "itsm.ticket.close",
+            "inputs": {
+              "ticket_ref": "{{request_id}}",
+              "resolution": "{{last_agent_output}}"
+            }
           }
         }
       ]
@@ -344,7 +355,12 @@
               "health-check",
               "monitoring",
               "user-testing"
-            ]
+            ],
+            "capability": "itops.monitor.check",
+            "inputs": {
+              "target": "{{request_title}}",
+              "scope": "post-change verification"
+            }
           }
         }
       ]
@@ -366,7 +382,12 @@
             "tools": [
               "monitoring-system"
             ],
-            "action": "classify-severity"
+            "action": "classify-severity",
+            "capability": "itops.monitor.check",
+            "inputs": {
+              "target": "{{request_title}}",
+              "scope": "severity classification"
+            }
           }
         },
         {
@@ -395,6 +416,201 @@
           "config": {
             "agent": "it-gpo-01",
             "task": "Document root cause, resolution, and preventive measures"
+          }
+        }
+      ]
+    },
+    {
+      "id": "wf-access-001",
+      "name": "User & Access Management",
+      "description": "Validate, approve and provision access changes. Every grant passes a human gate — user permission changes are a recommend-tier decision for the IT manager.",
+      "steps": [
+        {
+          "id": "access-01",
+          "type": "agent_call",
+          "name": "Validate Request",
+          "config": {
+            "agent": "it-gpo-01",
+            "task": "Validate the access request: identify the subject, the resource, the access level sought and any policy implications; draft the precise grant specification."
+          }
+        },
+        {
+          "id": "access-02",
+          "type": "approval",
+          "name": "Access Sign-off",
+          "config": {
+            "required_by": "it-manager-01",
+            "task": "Approve the access grant as drafted"
+          }
+        },
+        {
+          "id": "access-03",
+          "type": "tool_call",
+          "name": "Provision Access",
+          "config": {
+            "tool": "active-directory",
+            "capability": "identity.access.grant",
+            "inputs": {
+              "request_ref": "{{request_id}}",
+              "grant": "{{request_title}}",
+              "justification": "Approved at the access sign-off gate"
+            }
+          }
+        },
+        {
+          "id": "access-04",
+          "type": "notification",
+          "name": "Notify Requester",
+          "config": {
+            "channel": "email",
+            "capability": "comms.message.send",
+            "inputs": {
+              "channel": "email",
+              "message": "Access request '{{request_title}}' has been provisioned and is now active."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "wf-alert-001",
+      "name": "Monitoring & Alert Response",
+      "description": "Check, interpret, remediate within standard-change limits, and notify.",
+      "steps": [
+        {
+          "id": "alert-01",
+          "type": "tool_call",
+          "name": "Run Health Check",
+          "config": {
+            "tools": [
+              "monitoring-system"
+            ],
+            "capability": "itops.monitor.check",
+            "inputs": {
+              "target": "{{request_title}}",
+              "scope": "triage"
+            }
+          }
+        },
+        {
+          "id": "alert-02",
+          "type": "agent_call",
+          "name": "Interpret & Plan",
+          "config": {
+            "agent": "sys-admin-01",
+            "task": "Interpret the monitoring output, identify the failing component and draft remediation steps within standard-change limits."
+          }
+        },
+        {
+          "id": "alert-03",
+          "type": "transformation",
+          "name": "Apply Remediation",
+          "config": {
+            "agent": "sys-admin-01",
+            "task": "Apply the planned remediation and record exactly what was done."
+          }
+        },
+        {
+          "id": "alert-04",
+          "type": "notification",
+          "name": "Notify Ops",
+          "config": {
+            "channel": "ops",
+            "capability": "comms.message.send",
+            "inputs": {
+              "channel": "ops",
+              "message": "Alert '{{request_title}}' handled; the full record is on request {{request_id}}."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "wf-restore-001",
+      "name": "Backup & Restore",
+      "description": "Restores overwrite data, so the SOP validates, gates on a named human, executes, then verifies.",
+      "steps": [
+        {
+          "id": "restore-01",
+          "type": "agent_call",
+          "name": "Validate Restore Request",
+          "config": {
+            "agent": "sys-admin-01",
+            "task": "Validate the restore request: identify the dataset, the snapshot to restore from, the blast radius, and confirm the restore target."
+          }
+        },
+        {
+          "id": "restore-02",
+          "type": "approval",
+          "name": "Restore Sign-off",
+          "config": {
+            "required_by": "it-manager-01",
+            "task": "Approve the restore as specified — it overwrites the target"
+          }
+        },
+        {
+          "id": "restore-03",
+          "type": "tool_call",
+          "name": "Execute Restore",
+          "config": {
+            "tool": "backup-system",
+            "capability": "itops.backup.restore",
+            "inputs": {
+              "request_ref": "{{request_id}}",
+              "restore": "{{request_title}}"
+            }
+          }
+        },
+        {
+          "id": "restore-04",
+          "type": "agent_call",
+          "name": "Verify Integrity",
+          "config": {
+            "agent": "sys-admin-01",
+            "task": "Verify the integrity of the restored data and confirm completion to the requester."
+          }
+        }
+      ]
+    },
+    {
+      "id": "wf-asset-001",
+      "name": "Vendor & Asset Records",
+      "description": "Low-risk record keeping: validate, update the record, confirm. No gate — draft-tier work under the authority check.",
+      "steps": [
+        {
+          "id": "asset-01",
+          "type": "agent_call",
+          "name": "Validate & Draft",
+          "config": {
+            "agent": "helpdesk-lead-01",
+            "task": "Validate the vendor or asset request and draft the exact record change."
+          }
+        },
+        {
+          "id": "asset-02",
+          "type": "tool_call",
+          "name": "Update Asset Record",
+          "config": {
+            "tool": "asset-management",
+            "capability": "itsm.asset.update",
+            "inputs": {
+              "request_ref": "{{request_id}}",
+              "action": "update",
+              "details": "{{request_title}}"
+            }
+          }
+        },
+        {
+          "id": "asset-03",
+          "type": "notification",
+          "name": "Confirm",
+          "config": {
+            "channel": "email",
+            "capability": "comms.message.send",
+            "inputs": {
+              "channel": "email",
+              "message": "Asset record updated for '{{request_title}}'."
+            }
           }
         }
       ]
@@ -743,7 +959,7 @@
         "resolution_time": "1 business day",
         "coverage": "business-hours"
       },
-      "delivery_workflow_id": "wf-change-001",
+      "delivery_workflow_id": "wf-access-001",
       "request_channel": "portal",
       "status": "active"
     },
@@ -766,7 +982,8 @@
         "it-kpi-m-003"
       ],
       "request_channel": "portal",
-      "status": "active"
+      "status": "active",
+      "delivery_workflow_id": "wf-alert-001"
     },
     {
       "id": "svc-patch-management",
@@ -805,7 +1022,8 @@
         "it-kpi-m-003"
       ],
       "request_channel": "portal",
-      "status": "active"
+      "status": "active",
+      "delivery_workflow_id": "wf-restore-001"
     },
     {
       "id": "svc-change-deployment",
@@ -862,7 +1080,7 @@
         "response_time": "2 business days",
         "coverage": "business-hours"
       },
-      "delivery_workflow_id": "wf-change-001",
+      "delivery_workflow_id": "wf-asset-001",
       "request_channel": "portal",
       "status": "active"
     }
