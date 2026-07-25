@@ -332,11 +332,11 @@ func TestSearchAgents(t *testing.T) {
 	ctxT := withTenant(context.Background(), tenantID)
 
 	h.AgentStore.Create(ctxT, &store.Agent{
-		ID:             uid(),
-		Name:           "Agent1",
-		Role:           "analyst",
-		TenantID:       tenantID,
-		Capabilities:   []string{"research"},
+		ID:           uid(),
+		Name:         "Agent1",
+		Role:         "analyst",
+		TenantID:     tenantID,
+		Capabilities: []string{"research"},
 	})
 
 	body, _ := json.Marshal(map[string]interface{}{
@@ -532,12 +532,12 @@ func TestListAgentCapabilities(t *testing.T) {
 	h.AgentStore.Create(ctxT, agent)
 
 	entry := &store.CapabilityEntry{
-		ID:           uid(),
-		AgentID:      agent.ID,
-		TenantID:     tenantID,
-		Capability:   "data-analysis",
-		Score:        0.9,
-		Tier:         "tier-1",
+		ID:            uid(),
+		AgentID:       agent.ID,
+		TenantID:      tenantID,
+		Capability:    "data-analysis",
+		Score:         0.9,
+		Tier:          "tier-1",
 		LastEvaluated: time.Now(),
 	}
 	h.CapabilityStore.Upsert(ctxT, entry)
@@ -604,12 +604,12 @@ func TestIndexCapabilities(t *testing.T) {
 	h.AgentStore.Create(ctxT, agent)
 
 	entry := &store.CapabilityEntry{
-		ID:           uid(),
-		AgentID:      agent.ID,
-		TenantID:     tenantID,
-		Capability:   "data-analysis",
-		Score:        0.9,
-		Tier:         "tier-1",
+		ID:            uid(),
+		AgentID:       agent.ID,
+		TenantID:      tenantID,
+		Capability:    "data-analysis",
+		Score:         0.9,
+		Tier:          "tier-1",
 		LastEvaluated: time.Now(),
 	}
 	h.CapabilityStore.Upsert(ctxT, entry)
@@ -694,10 +694,10 @@ func TestGetAgent_CacheHit(t *testing.T) {
 
 	// Pre-populate cache
 	agent := &store.Agent{
-		ID:         uid(),
-		Name:       "cached-agent",
-		TenantID:   "tenant-1",
-		Status:     store.AgentStatusActive,
+		ID:           uid(),
+		Name:         "cached-agent",
+		TenantID:     "tenant-1",
+		Status:       store.AgentStatusActive,
 		Capabilities: []string{"chat"},
 	}
 	h.AgentStore.Create(context.Background(), agent)
@@ -727,10 +727,10 @@ func TestGetAgent_CacheMiss(t *testing.T) {
 	ctxT := withTenant(context.Background(), "tenant-1")
 
 	agent := &store.Agent{
-		ID:         uid(),
-		Name:       "miss-agent",
-		TenantID:   "tenant-1",
-		Status:     store.AgentStatusActive,
+		ID:           uid(),
+		Name:         "miss-agent",
+		TenantID:     "tenant-1",
+		Status:       store.AgentStatusActive,
 		Capabilities: []string{"analyze"},
 	}
 	h.AgentStore.Create(ctxT, agent)
@@ -757,10 +757,10 @@ func TestArchiveAgent(t *testing.T) {
 	ctxT := withTenant(context.Background(), "tenant-1")
 
 	agent := &store.Agent{
-		ID:         uid(),
-		Name:       "archive-agent",
-		TenantID:   "tenant-1",
-		Status:     store.AgentStatusActive,
+		ID:       uid(),
+		Name:     "archive-agent",
+		TenantID: "tenant-1",
+		Status:   store.AgentStatusActive,
 	}
 	h.AgentStore.Create(ctxT, agent)
 
@@ -809,10 +809,10 @@ func TestListAgents_CachesResults(t *testing.T) {
 	ctxT := withTenant(context.Background(), "tenant-1")
 
 	agent := &store.Agent{
-		ID:         uid(),
-		Name:       "list-agent",
-		TenantID:   "tenant-1",
-		Status:     store.AgentStatusActive,
+		ID:           uid(),
+		Name:         "list-agent",
+		TenantID:     "tenant-1",
+		Status:       store.AgentStatusActive,
 		Capabilities: []string{"chat"},
 	}
 	h.AgentStore.Create(ctxT, agent)
@@ -1004,11 +1004,11 @@ func TestSearchAgents_BySupportedLanguages(t *testing.T) {
 	ctxT := withTenant(context.Background(), tenantID)
 
 	h.AgentStore.Create(ctxT, &store.Agent{
-		ID:               uid(),
-		Name:             "ArabicAgent",
-		Role:             "translator",
-		TenantID:         tenantID,
-		Capabilities:     []string{"translate"},
+		ID:                 uid(),
+		Name:               "ArabicAgent",
+		Role:               "translator",
+		TenantID:           tenantID,
+		Capabilities:       []string{"translate"},
 		SupportedLanguages: []string{"ar", "en"},
 	})
 
@@ -1038,12 +1038,12 @@ func TestSearchAgents_ByStatus(t *testing.T) {
 
 	status := store.AgentStatusDeprecated
 	h.AgentStore.Create(ctxT, &store.Agent{
-		ID:             uid(),
-		Name:           "OldAgent",
-		Role:           "analyst",
-		TenantID:       tenantID,
-		Capabilities:   []string{"read"},
-		Status:         status,
+		ID:           uid(),
+		Name:         "OldAgent",
+		Role:         "analyst",
+		TenantID:     tenantID,
+		Capabilities: []string{"read"},
+		Status:       status,
 	})
 
 	body, _ := json.Marshal(map[string]interface{}{
@@ -1072,12 +1072,12 @@ func TestSearchAgents_ByDepartmentID(t *testing.T) {
 
 	deptID := "dept-finance"
 	h.AgentStore.Create(ctxT, &store.Agent{
-		ID:             uid(),
-		Name:           "FinanceAgent",
-		Role:           "analyst",
-		TenantID:       tenantID,
-		Capabilities:   []string{"read"},
-		DepartmentID:   &deptID,
+		ID:           uid(),
+		Name:         "FinanceAgent",
+		Role:         "analyst",
+		TenantID:     tenantID,
+		Capabilities: []string{"read"},
+		DepartmentID: &deptID,
 	})
 
 	body, _ := json.Marshal(map[string]interface{}{
@@ -1105,11 +1105,11 @@ func TestSearchAgents_EmptyResults(t *testing.T) {
 	ctxT := withTenant(context.Background(), tenantID)
 
 	h.AgentStore.Create(ctxT, &store.Agent{
-		ID:             uid(),
-		Name:           "Agent1",
-		Role:           "analyst",
-		TenantID:       tenantID,
-		Capabilities:   []string{"read"},
+		ID:           uid(),
+		Name:         "Agent1",
+		Role:         "analyst",
+		TenantID:     tenantID,
+		Capabilities: []string{"read"},
 	})
 
 	body, _ := json.Marshal(map[string]interface{}{
@@ -1138,33 +1138,33 @@ func TestSearchAgents_MultipleFilters(t *testing.T) {
 
 	// Create agents that should NOT match
 	h.AgentStore.Create(ctxT, &store.Agent{
-		ID:             uid(),
-		Name:           "WrongLang",
-		Role:           "analyst",
-		TenantID:       tenantID,
-		Capabilities:   []string{"read"},
+		ID:                 uid(),
+		Name:               "WrongLang",
+		Role:               "analyst",
+		TenantID:           tenantID,
+		Capabilities:       []string{"read"},
 		SupportedLanguages: []string{"fr"},
 	})
 	// Create agent that matches all filters
 	deptID := "dept-eng"
 	h.AgentStore.Create(ctxT, &store.Agent{
-		ID:               uid(),
-		Name:             "MatchAgent",
-		Role:             "analyst",
-		TenantID:         tenantID,
-		Capabilities:     []string{"research"},
+		ID:                 uid(),
+		Name:               "MatchAgent",
+		Role:               "analyst",
+		TenantID:           tenantID,
+		Capabilities:       []string{"research"},
 		SupportedLanguages: []string{"en", "ar"},
-		Tools:            []string{"web-search"},
-		DepartmentID:     &deptID,
-		Status:           store.AgentStatusActive,
+		Tools:              []string{"web-search"},
+		DepartmentID:       &deptID,
+		Status:             store.AgentStatusActive,
 	})
 
 	body, _ := json.Marshal(map[string]interface{}{
-		"capabilities":         []string{"research"},
-		"tools":                []string{"web-search"},
-		"status":               string(store.AgentStatusActive),
-		"supported_languages":  []string{"ar"},
-		"department_id":        deptID,
+		"capabilities":        []string{"research"},
+		"tools":               []string{"web-search"},
+		"status":              string(store.AgentStatusActive),
+		"supported_languages": []string{"ar"},
+		"department_id":       deptID,
 	})
 
 	req := httptest.NewRequest("POST", "/registry/agents/search", bytes.NewBuffer(body))
@@ -1282,22 +1282,22 @@ func TestUpdateAgent_UpdateAllFields(t *testing.T) {
 	access := &store.MemoryAccess{Scope: "isolated", AllowedTypes: []string{"vector"}}
 
 	body, _ := json.Marshal(map[string]interface{}{
-		"name":                   "New Name",
-		"role":                   "fullstack",
-		"description":            "Updated description",
-		"department_id":          deptID,
-		"objectives":             objs,
-		"capabilities":           []string{"write", "deploy"},
-		"tools":                  []string{"kubectl", "terraform"},
-		"memory_access":          access,
-		"escalation_rules":       []string{"escalate-to-sre"},
-		"governance_policies":    []string{"pci-compliant"},
-		"supported_languages":    []string{"en", "ar"},
-		"runtime_constraints":    runtimeCtor,
-		"cost_profile":           costProfile,
-		"execution_budget":       execBudget,
-		"access_control":         accessControl,
-		"status":                 string(store.AgentStatusInactive),
+		"name":                "New Name",
+		"role":                "fullstack",
+		"description":         "Updated description",
+		"department_id":       deptID,
+		"objectives":          objs,
+		"capabilities":        []string{"write", "deploy"},
+		"tools":               []string{"kubectl", "terraform"},
+		"memory_access":       access,
+		"escalation_rules":    []string{"escalate-to-sre"},
+		"governance_policies": []string{"pci-compliant"},
+		"supported_languages": []string{"en", "ar"},
+		"runtime_constraints": runtimeCtor,
+		"cost_profile":        costProfile,
+		"execution_budget":    execBudget,
+		"access_control":      accessControl,
+		"status":              string(store.AgentStatusInactive),
 	})
 
 	req := httptest.NewRequest("PATCH", "/registry/agents/"+agent.ID, bytes.NewBuffer(body))
@@ -1494,11 +1494,11 @@ func TestRoutes_GetAgentSubPath_Versions(t *testing.T) {
 
 	// Pre-populate a version so store doesn't return "agent not found"
 	h.VersionStore.Create(ctxT, &store.AgentVersion{
-		ID:          uid(),
-		TenantID:    tenantID,
-		AgentID:     agent.ID,
-		Version:     "1.0.0",
-		CreatedBy:   "user-1",
+		ID:        uid(),
+		TenantID:  tenantID,
+		AgentID:   agent.ID,
+		Version:   "1.0.0",
+		CreatedBy: "user-1",
 	})
 
 	req := httptest.NewRequest("GET", "/registry/agents/"+agent.ID+"/versions", nil)
@@ -1640,9 +1640,9 @@ func TestRoutes_PostAgentVersion_CreateVersion(t *testing.T) {
 	h.AgentStore.Create(ctxT, agent)
 
 	body, _ := json.Marshal(map[string]interface{}{
-		"version":     "3.0.0",
+		"version":      "3.0.0",
 		"model_config": map[string]interface{}{"model": "gpt-4o"},
-		"created_by":  "user-3",
+		"created_by":   "user-3",
 	})
 
 	req := httptest.NewRequest("POST", "/registry/agents/"+agent.ID+"/versions", bytes.NewBuffer(body))
@@ -1824,10 +1824,10 @@ func TestListAgents_Pagination(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		h.AgentStore.Create(ctxT, &store.Agent{
-			ID:         uid(),
-			Name:       fmt.Sprintf("Agent%d", i),
-			Role:       "analyst",
-			TenantID:   tenantID,
+			ID:           uid(),
+			Name:         fmt.Sprintf("Agent%d", i),
+			Role:         "analyst",
+			TenantID:     tenantID,
 			Capabilities: []string{"read"},
 		})
 	}
@@ -1863,10 +1863,10 @@ func TestListAgents_Pagination_Page2(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		h.AgentStore.Create(ctxT, &store.Agent{
-			ID:         uid(),
-			Name:       fmt.Sprintf("Agent%d", i),
-			Role:       "analyst",
-			TenantID:   tenantID,
+			ID:           uid(),
+			Name:         fmt.Sprintf("Agent%d", i),
+			Role:         "analyst",
+			TenantID:     tenantID,
 			Capabilities: []string{"read"},
 		})
 	}
@@ -1902,10 +1902,10 @@ func TestListAgents_PaginationAndFilter(t *testing.T) {
 			role = "researcher"
 		}
 		h.AgentStore.Create(ctxT, &store.Agent{
-			ID:         uid(),
-			Name:       fmt.Sprintf("Agent%d", i),
-			Role:       role,
-			TenantID:   tenantID,
+			ID:           uid(),
+			Name:         fmt.Sprintf("Agent%d", i),
+			Role:         role,
+			TenantID:     tenantID,
 			Capabilities: []string{"read"},
 		})
 	}
@@ -1985,28 +1985,28 @@ func TestListAgentVersions_FilterByStatus(t *testing.T) {
 
 	// Create versions with different statuses
 	h.VersionStore.Create(ctxT, &store.AgentVersion{
-		ID:          uid(),
-		TenantID:    tenantID,
-		AgentID:     agent.ID,
-		Version:     "1.0.0",
-		Status:      store.VersionStatusBeta,
-		CreatedBy:   "user-1",
+		ID:        uid(),
+		TenantID:  tenantID,
+		AgentID:   agent.ID,
+		Version:   "1.0.0",
+		Status:    store.VersionStatusBeta,
+		CreatedBy: "user-1",
 	})
 	h.VersionStore.Create(ctxT, &store.AgentVersion{
-		ID:          uid(),
-		TenantID:    tenantID,
-		AgentID:     agent.ID,
-		Version:     "2.0.0",
-		Status:      store.VersionStatusActive,
-		CreatedBy:   "user-1",
+		ID:        uid(),
+		TenantID:  tenantID,
+		AgentID:   agent.ID,
+		Version:   "2.0.0",
+		Status:    store.VersionStatusActive,
+		CreatedBy: "user-1",
 	})
 	h.VersionStore.Create(ctxT, &store.AgentVersion{
-		ID:          uid(),
-		TenantID:    tenantID,
-		AgentID:     agent.ID,
-		Version:     "3.0.0",
-		Status:      store.VersionStatusBeta,
-		CreatedBy:   "user-1",
+		ID:        uid(),
+		TenantID:  tenantID,
+		AgentID:   agent.ID,
+		Version:   "3.0.0",
+		Status:    store.VersionStatusBeta,
+		CreatedBy: "user-1",
 	})
 
 	// Filter by active status
@@ -2033,9 +2033,9 @@ func TestCreateAgentVersion_AgentNotFound(t *testing.T) {
 	h := newTestHandlers()
 
 	body, _ := json.Marshal(map[string]interface{}{
-		"version":     "1.0.0",
+		"version":      "1.0.0",
 		"model_config": map[string]interface{}{"model": "gpt-4"},
-		"created_by":  "user-1",
+		"created_by":   "user-1",
 	})
 
 	req := httptest.NewRequest("POST", "/registry/agents/nonexistent/versions", bytes.NewBuffer(body))
@@ -2063,20 +2063,20 @@ func TestCreateAgentVersion_Conflict(t *testing.T) {
 	// Create a version first with a specific ID
 	versionID := uid()
 	h.VersionStore.Create(ctxT, &store.AgentVersion{
-		ID:          versionID,
-		TenantID:    tenantID,
-		AgentID:     agent.ID,
-		Version:     "1.0.0",
-		CreatedBy:   "user-1",
+		ID:        versionID,
+		TenantID:  tenantID,
+		AgentID:   agent.ID,
+		Version:   "1.0.0",
+		CreatedBy: "user-1",
 	})
 
 	// Try to create another version with the same ID (conflict)
 	version := &store.AgentVersion{
-		ID:          versionID,
-		TenantID:    tenantID,
-		AgentID:     agent.ID,
-		Version:     "2.0.0",
-		CreatedBy:   "user-1",
+		ID:        versionID,
+		TenantID:  tenantID,
+		AgentID:   agent.ID,
+		Version:   "2.0.0",
+		CreatedBy: "user-1",
 	}
 	err := h.VersionStore.Create(ctxT, version)
 	if err == nil {
@@ -2232,9 +2232,9 @@ func TestCreateAgent_MissingName(t *testing.T) {
 	tenantID := "tenant-1"
 
 	body, _ := json.Marshal(map[string]interface{}{
-		"name":        "",
-		"role":        "analyst",
-		"tenant_id":   tenantID,
+		"name":      "",
+		"role":      "analyst",
+		"tenant_id": tenantID,
 	})
 
 	req := httptest.NewRequest("POST", "/registry/agents", bytes.NewBuffer(body))
@@ -2254,9 +2254,9 @@ func TestCreateAgent_MissingRole(t *testing.T) {
 	tenantID := "tenant-1"
 
 	body, _ := json.Marshal(map[string]interface{}{
-		"name":        "Test Agent",
-		"role":        "",
-		"tenant_id":   tenantID,
+		"name":      "Test Agent",
+		"role":      "",
+		"tenant_id": tenantID,
 	})
 
 	req := httptest.NewRequest("POST", "/registry/agents", bytes.NewBuffer(body))
@@ -2522,3 +2522,52 @@ func TestApplySearchFilters_MultipleFilters(t *testing.T) {
 	}
 }
 
+// The department deployer records whatever id the registry returned, so without
+// a caller-supplied id a lost agent can never be restored — the org chart's
+// agent_id points at a record that cannot be recreated under the same identity.
+func TestCreateAgentHonoursACallerSuppliedID(t *testing.T) {
+	h := newTestHandlers()
+	want := "2fd8e7fd-5ac2-4cae-98b0-6799ebc02395"
+	body := `{"id":"` + want + `","name":"Systems Administrator","role":"specialist","tenant_id":"tenant-1"}`
+	req := httptest.NewRequest(http.MethodPost, "/registry/agents", strings.NewReader(body))
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+	req = req.WithContext(withTenant(req.Context(), "tenant-1"))
+	w := httptest.NewRecorder()
+	h.CreateAgent(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("status = %d, want 201 (%s)", w.Code, w.Body.String())
+	}
+	var got struct{ ID string }
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != want {
+		t.Fatalf("id = %q, want the supplied %q", got.ID, want)
+	}
+
+	// Registering the same identity again must conflict, not duplicate.
+	req2 := httptest.NewRequest(http.MethodPost, "/registry/agents", strings.NewReader(body))
+	req2.Header.Set("X-Tenant-ID", "tenant-1")
+	req2 = req2.WithContext(withTenant(req2.Context(), "tenant-1"))
+	w2 := httptest.NewRecorder()
+	h.CreateAgent(w2, req2)
+	if w2.Code != http.StatusConflict {
+		t.Fatalf("re-registering the same id = %d, want 409", w2.Code)
+	}
+}
+
+// Anything that is not a UUID is refused: an arbitrary string could collide with
+// another tenant's key space or be unusable as a path segment.
+func TestCreateAgentRefusesANonUUIDID(t *testing.T) {
+	h := newTestHandlers()
+	body := `{"id":"../../etc/passwd","name":"X","role":"specialist","tenant_id":"tenant-1"}`
+	req := httptest.NewRequest(http.MethodPost, "/registry/agents", strings.NewReader(body))
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+	req = req.WithContext(withTenant(req.Context(), "tenant-1"))
+	w := httptest.NewRecorder()
+	h.CreateAgent(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", w.Code)
+	}
+}

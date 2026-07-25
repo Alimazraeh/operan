@@ -3,6 +3,7 @@ package deploy
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
@@ -238,5 +239,30 @@ func TestNodeTypeForMapping(t *testing.T) {
 		if got := nodeTypeFor(step); got != want {
 			t.Errorf("nodeTypeFor(%q) = %q, want %q", step, got, want)
 		}
+	}
+}
+
+// The registry lost every agent once and the ids were random, so the org
+// chart's agent_id pointed at a record nobody could recreate. Deriving the id
+// from the department and the agent definition makes a redeploy restore the
+// same agents instead of minting a second set.
+func TestAgentIDIsDerivedAndStable(t *testing.T) {
+	a := agentIDFor("dept-1", "sys-admin-01")
+	if a != agentIDFor("dept-1", "sys-admin-01") {
+		t.Fatal("the same department and definition produced different ids")
+	}
+	if a == agentIDFor("dept-2", "sys-admin-01") {
+		t.Fatal("two departments deploying the same template share an agent id")
+	}
+	if a == agentIDFor("dept-1", "network-admin-01") {
+		t.Fatal("two definitions in one department share an agent id")
+	}
+	if _, err := uuid.Parse(a); err != nil {
+		t.Fatalf("derived id is not a UUID: %q", a)
+	}
+	// A derived id must not be the nil UUID, which several stores treat as
+	// "unset" and would silently drop.
+	if a == uuid.Nil.String() {
+		t.Fatal("derived id is the nil UUID")
 	}
 }

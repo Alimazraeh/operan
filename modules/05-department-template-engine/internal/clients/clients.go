@@ -98,6 +98,9 @@ type RegistryClient struct {
 
 // CreateAgentRequest mirrors Module 04's create shape (subset we use).
 type CreateAgentRequest struct {
+	// ID is optional in the registry's contract; the deployer always sends one
+	// so that redeploying a department restores the same agents.
+	ID   string `json:"id,omitempty"`
 	Name            string   `json:"name"`
 	Role            string   `json:"role"`
 	Description     string   `json:"description,omitempty"`
