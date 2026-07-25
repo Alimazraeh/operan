@@ -99,7 +99,7 @@ func TestHandlers_ErrorBranches(t *testing.T) {
 	}
 
 	// Audit GetSessionReplay -> events list fails -> 500.
-	audit := NewAuditHandler(errAuthClient(t))
+	audit := NewAuditHandler(errAuthClient(t), store.NewAuditStore())
 	rr = httptest.NewRecorder()
 	audit.GetSessionReplay(rr, tenantReq(http.MethodGet, "/api/v1/iam/audit/session-replay/s1", ""))
 	if rr.Code != http.StatusInternalServerError {

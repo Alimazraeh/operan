@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -197,9 +198,22 @@ func (h *ServiceIdentityHandler) List(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Fetch all applications from Authentik
-	if h.Auth == nil || h.Store == nil {
-		// In-memory fallback for tests
+	// Ask Authentik first, and fall through to the local store when it is
+	// absent OR unreachable. The guard used to be `h.Auth == nil ||
+	// h.Store == nil`, which asks the wrong question: this deployment builds
+	// its Authentik client from a placeholder URL, so h.Auth is never nil and
+	// the local branch was never taken — the request went to Authentik, failed,
+	// and 500'd.
+	var apps []*authentik.Application
+	var authErr error
+	if h.Auth != nil {
+		apps, authErr = h.Auth.ApplicationsAPI.List(ctx)
+		if authErr != nil {
+			log.Printf("[IAM] Authentik unavailable (%v) — listing service identities from the local store", authErr)
+		}
+	}
+	if h.Auth == nil || authErr != nil {
+		// Local store: the system of record where Authentik is not deployed.
 		ids, err := h.store().List(tenantID)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
@@ -230,14 +244,6 @@ func (h *ServiceIdentityHandler) List(w http.ResponseWriter, r *http.Request) {
 			"page_size":          pageSize,
 			"total_pages":        (total + pageSize - 1) / pageSize,
 		})
-		return
-	}
-
-	apps, err := h.Auth.ApplicationsAPI.List(ctx)
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "failed to list applications"})
 		return
 	}
 
@@ -495,9 +501,18 @@ func (h *AgentIdentityHandler) List(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Fetch all users from Authentik
-	if h.Auth == nil || h.Store == nil {
-		// In-memory fallback for tests
+	// Same shape as service identities: ask Authentik, fall through when it is
+	// absent or unreachable.
+	var users []*authentik.User
+	var authErr error
+	if h.Auth != nil {
+		users, authErr = h.Auth.UsersAPI.List(ctx)
+		if authErr != nil {
+			log.Printf("[IAM] Authentik unavailable (%v) — listing agent identities from the local store", authErr)
+		}
+	}
+	if h.Auth == nil || authErr != nil {
+		// Local store: the system of record where Authentik is not deployed.
 		ids, err := h.store().ListByTenant(tenantID)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
@@ -525,14 +540,6 @@ func (h *AgentIdentityHandler) List(w http.ResponseWriter, r *http.Request) {
 			"page_size":        pageSize,
 			"total_pages":      (total + pageSize - 1) / pageSize,
 		})
-		return
-	}
-
-	users, err := h.Auth.UsersAPI.List(ctx)
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "failed to list users"})
 		return
 	}
 

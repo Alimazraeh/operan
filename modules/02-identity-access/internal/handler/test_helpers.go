@@ -21,7 +21,7 @@ func setPrincipalInContext(r *http.Request, principal *middleware.JWTToken) *htt
 
 // newTestAuditHandler creates an AuditHandler with nil Auth.
 func newTestAuditHandler() *AuditHandler {
-	return NewAuditHandler(nil)
+	return NewAuditHandler(nil, store.NewAuditStore())
 }
 
 // newTestRBACHandler creates an RBACHandler with nil Auth.
