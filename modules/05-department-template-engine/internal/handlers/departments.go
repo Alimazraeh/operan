@@ -161,6 +161,9 @@ func (h *TemplateHandlers) HandleDepartmentByID(w http.ResponseWriter, r *http.R
 	case sub == "compliance" && r.Method == http.MethodGet:
 		writeJSON(w, http.StatusOK, complianceResponse(dept))
 
+	case sub == "kpi-measurements" && r.Method == http.MethodGet:
+		h.kpiMeasurements(w, r, dept)
+
 	case sub == "requests" && r.Method == http.MethodGet:
 		h.listRequests(w, r, dept)
 

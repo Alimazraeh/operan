@@ -188,6 +188,7 @@ export function getDeptValueChain(id) { return get(`/svc/templates/departments/$
 export function getDeptRisks(id) { return get(`/svc/templates/departments/${id}/risks`); }
 export function getDeptQuality(id) { return get(`/svc/templates/departments/${id}/quality`); }
 export function getDeptCompliance(id) { return get(`/svc/templates/departments/${id}/compliance`); }
+export function getDeptMeasurements(id) { return get(`/svc/templates/departments/${id}/kpi-measurements`); }
 
 // ── Agent Registry (Module 04) ─────────────────────────────
 export function listAgents(page, pageSize) {

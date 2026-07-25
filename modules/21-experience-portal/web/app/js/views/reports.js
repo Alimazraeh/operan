@@ -5,7 +5,7 @@
 // definitions ship on the templates; measured values arrive when the
 // measurement endpoint lands — until then they are honestly marked.
 import { esc, rel, statCard, toast } from "../ui.js";
-import { unwrapList, listDepartments, getDepartment, listDeptRequests, listHumanTasks } from "../api.js";
+import { unwrapList, listDepartments, getDepartment, listDeptRequests, listHumanTasks, getDeptMeasurements } from "../api.js";
 
 const PERIODS = { "7d": 7 * 864e5, "30d": 30 * 864e5, "all": Infinity };
 
@@ -22,6 +22,7 @@ export default async function viewReports(period) {
   const details = (await Promise.allSettled(depts.map(d => getDepartment(d.id))))
     .filter(r => r.status === "fulfilled" && r.value.ok).map(r => r.value.data);
   const reqLists = await Promise.allSettled(depts.map(d => listDeptRequests(d.id)));
+  const measLists = await Promise.allSettled(depts.map(d => getDeptMeasurements(d.id)));
 
   // ── Per-department performance from requests ──
   const perf = depts.map((dept, i) => {
@@ -45,8 +46,9 @@ export default async function viewReports(period) {
       if (r.status === "completed") byService[k].completed++;
       byService[k].tokens += r.tokens_used || 0;
     });
+    const meas = measLists[i].status === "fulfilled" && measLists[i].value.ok ? measLists[i].value.data : null;
     return { dept, detail: details.find(d => d.id === dept.id), reqs, completed, failed,
-      respMet, respMeasured, resMet, cycles, tokens, byService };
+      respMet, respMeasured, resMet, cycles, tokens, byService, meas };
   }).filter(p => p.reqs.length > 0 || (p.detail?.kpis || []).length > 0);
 
   const allReqs = perf.flatMap(p => p.reqs);
@@ -101,14 +103,18 @@ function deptReport(p) {
         <div class="m">${v.total} request(s) · ${v.completed} completed · ${v.tokens.toLocaleString()} tokens</div></div>
       </div>`).join("")}
     ${kpis.length ? `
-      <div class="hint" style="margin:12px 0 4px">KPI definitions (from the template) — measured values land with the
-      measurement endpoint; not invented here.</div>
-      ${kpis.slice(0, 8).map(k => `
+      <div class="hint" style="margin:12px 0 4px">KPI definitions — Measured = a ledger metric genuinely backs it
+      (30d window, server-computed).</div>
+      ${kpis.slice(0, 8).map(k => {
+        const m = ((p.meas && p.meas.kpi_measurements) || []).find(x => x.kpi_id === k.id);
+        return `
         <div class="row-item">
           <div class="grow"><div class="t">📈 ${esc(k.name)}</div>
           <div class="m">${esc(k.metric_type || "")}${k.unit ? " · " + esc(k.unit) : ""}</div></div>
-          <div class="actions"><span class="badge draft">not yet measured</span></div>
-        </div>`).join("")}` : ""}
+          <div class="actions">${m && m.measured
+            ? `<span class="sla-chip ok" title="${esc(m.source || "")}">${esc(String(m.value))} ${esc(m.unit || "")}</span>`
+            : `<span class="badge draft">not yet measured</span>`}</div>
+        </div>`;}).join("")}` : ""}
   </div>`;
 }
 
