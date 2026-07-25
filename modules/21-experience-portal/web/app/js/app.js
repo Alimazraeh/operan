@@ -1,5 +1,5 @@
 // Operan Portal — Main App Router & Auth
-import { SVC, session, uuid4, login, registerTenant, probeService, get } from "./api.js";
+import { SVC, session, uuid4, login, loginUser, registerTenant, probeService, get } from "./api.js";
 import { $, esc, toast } from "./ui.js";
 
 // ── Import new views ───────────────────────────────────────
@@ -72,6 +72,11 @@ async function restoreSession() {
     session.tenant = tenant;
     session.userId = userId || "";
     session.email = email || "";
+    try {
+      session.roles = JSON.parse(localStorage.getItem("operan.roles") || "[]");
+    } catch (_) { session.roles = []; }
+    session.role = session.roles[0] || "";
+    session.displayName = localStorage.getItem("operan.displayName") || session.email;
     return true;
   }
   return false;
@@ -133,22 +138,31 @@ window.go = async function (name, ...args) {
 
 // ── Login handler ──────────────────────────────────────────
 async function handleLogin() {
+  const email = ($("#loginEmail")?.value || "").trim();
   const password = $("#loginSecret").value.trim();
   const tenantId = $("#loginTenant").value.trim();
   const msg = $("#loginMsg");
 
-  if (!password) { msg.textContent = "Enter the admin password."; msg.className = "err"; return; }
+  if (!password) { msg.textContent = "Enter your password."; msg.className = "err"; return; }
   if (!tenantId) { msg.textContent = "Enter a tenant ID or click New."; msg.className = "err"; return; }
 
   msg.textContent = "Authenticating…";
   msg.className = "err loading";
 
   try {
-    await login(password, tenantId);
+    // With an email this is a real person signing in, and everything they do
+    // is attributed to them. Without one it is the shared admin bootstrap.
+    if (email) {
+      await loginUser(email, password, tenantId);
+    } else {
+      await login(password, tenantId);
+    }
     localStorage.setItem("operan.jwt", session.jwt);
     localStorage.setItem("operan.tenant", session.tenant);
     localStorage.setItem("operan.userId", session.userId);
     localStorage.setItem("operan.email", session.email);
+    localStorage.setItem("operan.roles", JSON.stringify(session.roles || []));
+    localStorage.setItem("operan.displayName", session.displayName || "");
     msg.textContent = "";
     ensureTenantRecord(); // async bookkeeping — M01 record for this workspace
     renderDashboard();
@@ -180,6 +194,11 @@ function setupShell() {
       localStorage.removeItem("operan.tenant");
       localStorage.removeItem("operan.userId");
       localStorage.removeItem("operan.email");
+      localStorage.removeItem("operan.roles");
+      localStorage.removeItem("operan.displayName");
+      session.roles = [];
+      session.role = "";
+      session.displayName = "";
       session.jwt = "";
       session.tenant = "";
       session.userId = "";
@@ -195,6 +214,17 @@ function setupShell() {
     menuToggle.addEventListener("click", () => sidebar.classList.toggle("open"));
     const overlay = sidebar.querySelector(".overlay");
     if (overlay) overlay.addEventListener("click", () => sidebar.classList.remove("open"));
+  }
+
+  // Who is signed in. With five personas coming, acting under the wrong
+  // authority must not be possible to do unknowingly.
+  const chip = $("tenantChip");
+  if (chip) {
+    const who = session.displayName || session.email || "signed in";
+    const role = (session.role || "").replace(/_/g, " ");
+    chip.innerHTML = `<b>${esc(who)}</b>` +
+      (role ? `<br><span class="hint" style="margin:0">${esc(role)}</span>` : "") +
+      `<br><span class="hint" style="margin:0">${esc(session.tenant || "")}</span>`;
   }
 
   // Health dots
@@ -240,6 +270,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   const loginTenant = $("#loginTenant");
   if (loginTenant) loginTenant.value = localStorage.getItem("operan.tenant") || "";
+  const loginEmail = $("#loginEmail");
+  if (loginEmail) {
+    loginEmail.value = localStorage.getItem("operan.email") === "admin@operan"
+      ? "" : (localStorage.getItem("operan.email") || "");
+    loginEmail.addEventListener("keydown", e => { if (e.key === "Enter") handleLogin(); });
+  }
 
   // Landing page
   const btnGoLogin = $("#btnGoLogin");

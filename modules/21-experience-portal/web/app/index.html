@@ -114,9 +114,11 @@
   <div class="login-wrap">
     <div class="login-card glass">
       <div class="brand-lg"><span class="logo">O</span><div><h1>Operan</h1><p>Agentic Department Operating System</p></div></div>
-      <label>Admin password</label>
-      <input id="loginSecret" type="password" placeholder="Enter the platform admin password" autocomplete="off">
-      <div class="hint">Demo deployment default: <code>operan-admin-2026</code></div>
+      <label>Email</label>
+      <input id="loginEmail" type="email" placeholder="you@company.com" autocomplete="username">
+      <div class="hint">Leave blank to sign in with the platform admin password instead.</div>
+      <label>Password</label>
+      <input id="loginSecret" type="password" placeholder="Your password" autocomplete="current-password">
       <label>Tenant ID</label>
       <div class="frow">
         <input id="loginTenant" placeholder="e.g. acme-corp">

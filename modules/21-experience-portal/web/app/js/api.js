@@ -24,7 +24,9 @@ export const session = {
   tenant: "",
   userId: "",
   email: "",
+  displayName: "",
   role: "",
+  roles: [],
   get active() { return !!this.jwt; },
 };
 
@@ -34,6 +36,32 @@ export function uuid4() {
   b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
   const h = [...b].map(x => x.toString(16).padStart(2, "0")).join("");
   return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+}
+
+// ── Auth: real per-user login (M02) ────────────────────────
+// POST /svc/iam/auth/login → { token, user_id, email, display_name, roles }
+// The token carries that person's own id, so every request they raise and
+// every gate they decide is attributed to them rather than to a shared
+// synthetic admin.
+export async function loginUser(email, password, tenantId) {
+  const resp = await fetch(SVC.iam + "/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, tenant: tenantId }),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error || `Sign-in failed (${resp.status})`);
+  }
+  const data = await resp.json();
+  session.jwt = data.token;
+  session.tenant = tenantId;
+  session.userId = data.user_id;
+  session.email = data.email;
+  session.displayName = data.display_name || data.email;
+  session.roles = data.roles || [];
+  session.role = session.roles[0] || "user";
+  return data;
 }
 
 // ── Auth: M02 password-file login ──────────────────────────
@@ -53,7 +81,9 @@ export async function login(password, tenantId) {
   session.tenant = tenantId || "default-tenant"; // every /svc call sends this as X-Tenant-ID
   session.userId = data.user_id;
   session.email = data.email;
-  session.role = "admin";
+  session.displayName = "Platform admin";
+  session.roles = ["platform_admin"];
+  session.role = "platform_admin";
   return data;
 }
 
