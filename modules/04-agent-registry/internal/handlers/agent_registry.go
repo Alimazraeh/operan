@@ -131,9 +131,20 @@ func (h *AgentRegistryHandlers) CreateAgent(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// A caller-supplied id must still be an id — accepting arbitrary strings
+	// would let a caller collide with another tenant's key space or store
+	// something unusable as a path segment.
+	id := strings.TrimSpace(req.ID)
+	if id == "" {
+		id = uuid.New().String()
+	} else if _, err := uuid.Parse(id); err != nil {
+		h.writeError(w, http.StatusBadRequest, "invalid_request", "Bad Request", "id must be a UUID when supplied")
+		return
+	}
+
 	t := now()
 	agent := &store.Agent{
-		ID:                 uuid.New().String(),
+		ID:                 id,
 		Name:               req.Name,
 		Role:               req.Role,
 		Description:        req.Description,
@@ -794,8 +805,8 @@ type AgentListResponse struct {
 }
 
 type VersionList struct {
-	AgentID  string                 `json:"agent_id"`
-	Versions []*store.AgentVersion  `json:"versions"`
+	AgentID  string                `json:"agent_id"`
+	Versions []*store.AgentVersion `json:"versions"`
 }
 
 // ─── API response wrappers ─────────────────────────────────────────────────

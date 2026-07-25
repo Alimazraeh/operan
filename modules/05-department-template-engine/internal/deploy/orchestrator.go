@@ -17,6 +17,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/operan/modules/05-department-template-engine/internal/clients"
 	"github.com/operan/modules/05-department-template-engine/internal/events"
 	"github.com/operan/modules/05-department-template-engine/internal/store"
@@ -361,8 +363,28 @@ func (o *Orchestrator) recordStage(depID, stage, status, detail string) {
 // agentRequest builds the Module 04 registration for one template agent:
 // department linkage, chain-of-command-derived escalation rules, and
 // KPI/service-derived objectives.
+// agentIDFor derives a stable UUID for one agent definition within one
+// department. UUIDv5 over the department id and definition id: same inputs,
+// same id, and distinct departments deploying the same template still get
+// distinct agents.
+func agentIDFor(departmentID, agentDefID string) string {
+	return uuid.NewSHA1(agentNamespace, []byte(departmentID+"/"+agentDefID)).String()
+}
+
+// agentNamespace scopes the derived ids so they cannot collide with UUIDv5 ids
+// derived elsewhere for other purposes.
+var agentNamespace = uuid.NewSHA1(uuid.NameSpaceURL, []byte("operan/department-agent"))
+
 func agentRequest(ad *store.AgentDefinition, tmpl *store.Template, dept *store.Department, tenantID string) clients.CreateAgentRequest {
 	req := clients.CreateAgentRequest{
+		// Derive the agent's id from the department and its definition rather
+		// than letting the registry mint one. The registry lost every agent
+		// once, and because the ids were random there was no way to restore
+		// them: the org chart's agent_id pointed at a record that could not be
+		// recreated under the same identity. A derived id makes the same
+		// department deploy to the same agents every time, so registering
+		// again either restores or conflicts — never silently duplicates.
+		ID:           agentIDFor(dept.ID, ad.ID),
 		Name:         nameOf(ad),
 		Role:         ad.Role,
 		Description:  ad.Description,

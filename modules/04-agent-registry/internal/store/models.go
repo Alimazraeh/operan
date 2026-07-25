@@ -143,6 +143,16 @@ type Agent struct {
 
 // CreateAgentRequest represents the request to create an agent.
 type CreateAgentRequest struct {
+	// ID lets the caller choose the agent's identity. Optional — omitted means
+	// the registry mints one.
+	//
+	// It exists because the department deployer records whatever id the
+	// registry returned, so a re-deploy or a repair could not restore the same
+	// agent: the org chart's agent_id would still point at a record that no
+	// longer exists. With a caller-supplied id, registration is deterministic
+	// and re-registering the same agent conflicts rather than silently
+	// creating a duplicate.
+	ID                 string              `json:"id,omitempty"`
 	Name               string              `json:"name"`
 	Role               string              `json:"role"`
 	Description        string              `json:"description,omitempty"`
