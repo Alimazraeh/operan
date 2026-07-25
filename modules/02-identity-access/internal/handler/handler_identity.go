@@ -26,10 +26,30 @@ type ServiceIdentityHandler struct {
 	Publisher *events.Publisher
 }
 
-// NewServiceIdentityHandler creates a new service identity handler backed by Authentik.
+// store returns the local store, creating one if a construction path left it
+// nil. The guards below read `h.Store == nil` and then call a method on it, so
+// a nil store panicked the request rather than falling back — this makes that
+// impossible regardless of how the handler was built.
+func (h *ServiceIdentityHandler) store() *store.ServiceIdentityStore {
+	if h.Store == nil {
+		h.Store = store.NewServiceIdentityStore()
+	}
+	return h.Store
+}
+
+// NewServiceIdentityHandler creates a new service identity handler backed by
+// Authentik, with a local store behind it.
+//
+// The store is not optional. Every handler here guards with
+// `if h.Auth == nil || h.Store == nil` and then immediately calls a method on
+// h.Store — so a nil store did not degrade, it panicked the request. And since
+// the constructor never set one, h.Store was nil on every call in every
+// deployment: GET /service-identities and /agent-identities panicked 100% of
+// the time, which took the whole IAM console down with them.
 func NewServiceIdentityHandler(auth *authentik.Client, publisher *events.Publisher) *ServiceIdentityHandler {
 	return &ServiceIdentityHandler{
 		Auth:      auth,
+		Store:     store.NewServiceIdentityStore(),
 		Publisher: publisher,
 	}
 }
@@ -80,7 +100,7 @@ func (h *ServiceIdentityHandler) Create(w http.ResponseWriter, r *http.Request) 
 			APIKeyID:  "sk_" + uuid.New().String(),
 			CreatedAt: time.Now().UTC(),
 		}
-		if err := h.Store.Create(identity); err != nil {
+		if err := h.store().Create(identity); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": "failed to create service identity: " + err.Error()})
@@ -180,7 +200,7 @@ func (h *ServiceIdentityHandler) List(w http.ResponseWriter, r *http.Request) {
 	// Fetch all applications from Authentik
 	if h.Auth == nil || h.Store == nil {
 		// In-memory fallback for tests
-		ids, err := h.Store.List(tenantID)
+		ids, err := h.store().List(tenantID)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -274,7 +294,7 @@ func (h *ServiceIdentityHandler) GetByID(w http.ResponseWriter, r *http.Request)
 
 	// Check if Auth client is nil (test/in-memory fallback path)
 	if h.Auth == nil || h.Store == nil {
-		identity, err := h.Store.GetByID(appUUID)
+		identity, err := h.store().GetByID(appUUID)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNotFound)
@@ -327,10 +347,22 @@ type AgentIdentityHandler struct {
 	Publisher *events.Publisher
 }
 
-// NewAgentIdentityHandler creates a new agent identity handler backed by Authentik.
+// store returns the local store, creating one if a construction path left it
+// nil. See ServiceIdentityHandler.store.
+func (h *AgentIdentityHandler) store() *store.AgentIdentityStore {
+	if h.Store == nil {
+		h.Store = store.NewAgentIdentityStore()
+	}
+	return h.Store
+}
+
+// NewAgentIdentityHandler creates a new agent identity handler backed by
+// Authentik, with a local store behind it. See NewServiceIdentityHandler for
+// why the store is not optional.
 func NewAgentIdentityHandler(auth *authentik.Client, publisher *events.Publisher) *AgentIdentityHandler {
 	return &AgentIdentityHandler{
 		Auth:      auth,
+		Store:     store.NewAgentIdentityStore(),
 		Publisher: publisher,
 	}
 }
@@ -380,7 +412,7 @@ func (h *AgentIdentityHandler) Register(w http.ResponseWriter, r *http.Request) 
 			EscalationTargets: req.EscalationTargets,
 			CreatedAt:         time.Now().UTC(),
 		}
-		if err := h.Store.Create(identity); err != nil {
+		if err := h.store().Create(identity); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": "failed to create agent identity: " + err.Error()})
@@ -466,7 +498,7 @@ func (h *AgentIdentityHandler) List(w http.ResponseWriter, r *http.Request) {
 	// Fetch all users from Authentik
 	if h.Auth == nil || h.Store == nil {
 		// In-memory fallback for tests
-		ids, err := h.Store.ListByTenant(tenantID)
+		ids, err := h.store().ListByTenant(tenantID)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -559,7 +591,7 @@ func (h *AgentIdentityHandler) GetByAgent(w http.ResponseWriter, r *http.Request
 
 	// Check if Auth client is nil (test/in-memory fallback path)
 	if h.Auth == nil || h.Store == nil {
-		identity, err := h.Store.GetByAgent(agentID)
+		identity, err := h.store().GetByAgent(agentID)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNotFound)
