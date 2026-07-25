@@ -1,104 +1,22 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
-	"time"
 
-	"github.com/operan/modules/08-tool-execution/internal/events"
 	"github.com/operan/modules/08-tool-execution/internal/middleware"
 	"github.com/operan/modules/08-tool-execution/internal/store"
 )
 
-// toolExecuteRequest is the body for POST /tools/execute.
-type toolExecuteRequest struct {
-	TenantID    string                 `json:"tenant_id"`
-	AgentID     string                 `json:"agent_id"`
-	Tool        string                 `json:"tool"`
-	ToolVersion string                 `json:"tool_version"`
-	Input       map[string]interface{} `json:"input"`
-	TimeoutMS   int                    `json:"timeout_ms"`
-	Priority    int                    `json:"priority"`
-}
-
-// ExecuteTool handles POST /tools/execute. It records the execution, runs the
-// tool synchronously (the in-process executor echoes input and applies the
-// tool's configured cost), and returns the completed record.
+// ExecuteTool used to be the in-process "executor": it echoed its input back
+// as output and stamped the record completed, which is how 40% of catalogue
+// steps came to "execute" as a note string. It is gone, and it answers 410
+// rather than 404 so a caller learns it was removed on purpose: capability
+// execution now has exactly one door — POST /invoke — where input is
+// validated, policy and authority are checked, and the outcome is recorded
+// truthfully, refusals included.
 func (h *ToolHandlers) ExecuteTool(w http.ResponseWriter, r *http.Request) {
-	tenantID := middleware.TenantIDFromContext(r.Context())
-
-	var req toolExecuteRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, r, http.StatusBadRequest, "invalid request body")
-		return
-	}
-	if req.TenantID != "" && req.TenantID != tenantID {
-		writeError(w, r, http.StatusConflict, "tenant_id does not match authenticated tenant")
-		return
-	}
-	if req.AgentID == "" || req.Tool == "" {
-		writeError(w, r, http.StatusBadRequest, "agent_id and tool are required")
-		return
-	}
-
-	// Resolve the tool by name within the tenant to validate it exists and is active.
-	tool := h.findToolByName(tenantID, req.Tool)
-	if tool == nil {
-		writeError(w, r, http.StatusNotFound, "tool not found for tenant")
-		return
-	}
-	if tool.Status == "disabled" {
-		writeError(w, r, http.StatusConflict, "tool is disabled")
-		return
-	}
-
-	exec, err := h.Executions.Create(&store.ToolExecution{
-		TenantID:    tenantID,
-		AgentID:     req.AgentID,
-		Tool:        req.Tool,
-		ToolVersion: orDefault(req.ToolVersion, tool.Version),
-		Input:       req.Input,
-		Status:      store.ExecQueued,
-	})
-	if err != nil {
-		writeError(w, r, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	h.publishExec(h.Publisher.PublishExecutionRequested, exec, tool)
-
-	// Run synchronously (in-process executor).
-	completed := h.runExecution(tenantID, exec.ID, tool)
-	writeJSON(w, http.StatusCreated, completed)
-}
-
-// runExecution performs the in-process tool run, updating status and emitting
-// started/completed events. Returns the final record.
-func (h *ToolHandlers) runExecution(tenantID, execID string, tool *store.Tool) *store.ToolExecution {
-	started := time.Now()
-
-	running, _ := h.Executions.Update(execID, tenantID, func(e *store.ToolExecution) {
-		e.Status = store.ExecRunning
-	})
-	if running != nil {
-		h.publishExec(h.Publisher.PublishExecutionStarted, running, tool)
-	}
-
-	// The in-process executor echoes the input as output. A real deployment
-	// would dispatch to an external runtime (Module 16 sandbox).
-	final, _ := h.Executions.Update(execID, tenantID, func(e *store.ToolExecution) {
-		e.Status = store.ExecCompleted
-		e.Output = map[string]interface{}{"echo": e.Input, "tool": e.Tool}
-		e.ExecutionTimeMS = int(time.Since(started).Milliseconds())
-		if tool.CostPerCall != nil {
-			c := *tool.CostPerCall
-			e.Cost = &c
-		}
-	})
-	if final != nil {
-		h.publishExec(h.Publisher.PublishExecutionCompleted, final, tool)
-	}
-	return final
+	writeError(w, r, http.StatusGone,
+		"the echo executor has been removed — capabilities are performed via POST /invoke, the governed path")
 }
 
 // ListExecutions handles GET /tools/executions.
@@ -125,40 +43,12 @@ func (h *ToolHandlers) GetExecution(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, exec)
 }
 
-// RetryExecution handles POST /tools/executions/{id}/retry. Only failed
-// executions may be retried.
+// RetryExecution retried through the echo executor, which no longer exists.
+// Same 410 as ExecuteTool: the governed path does not "retry" a record — a new
+// invocation through POST /invoke is a new, fully checked attempt.
 func (h *ToolHandlers) RetryExecution(w http.ResponseWriter, r *http.Request) {
-	tenantID := middleware.TenantIDFromContext(r.Context())
-	id := r.PathValue("id")
-
-	exec, err := h.Executions.GetByIDAndTenant(id, tenantID)
-	if err != nil {
-		writeError(w, r, http.StatusNotFound, "execution not found")
-		return
-	}
-	if exec.Status != store.ExecFailed {
-		writeError(w, r, http.StatusConflict, "only failed executions can be retried")
-		return
-	}
-
-	tool := h.findToolByName(tenantID, exec.Tool)
-	if tool == nil {
-		writeError(w, r, http.StatusNotFound, "tool not found for tenant")
-		return
-	}
-
-	if _, err := h.Executions.Update(id, tenantID, func(e *store.ToolExecution) {
-		e.RetryCount++
-		e.Status = store.ExecQueued
-		e.ErrorCode = ""
-		e.ErrorMessage = ""
-	}); err != nil {
-		writeError(w, r, http.StatusNotFound, "execution not found")
-		return
-	}
-
-	completed := h.runExecution(tenantID, id, tool)
-	writeJSON(w, http.StatusOK, completed)
+	writeError(w, r, http.StatusGone,
+		"the echo executor has been removed — perform the capability again via POST /invoke")
 }
 
 // GetToolCost handles GET /tools/cost. Optional ?tool= scopes to one tool.
@@ -200,24 +90,4 @@ func (h *ToolHandlers) findToolByName(tenantID, name string) *store.Tool {
 		}
 		page++
 	}
-}
-
-func (h *ToolHandlers) publishExec(fn func(events.ExecutionPayload) error, e *store.ToolExecution, tool *store.Tool) {
-	if h.Publisher == nil || e == nil {
-		return
-	}
-	_ = fn(events.ExecutionPayload{
-		ExecutionID: e.ID, ToolID: tool.ID, Tool: e.Tool, ToolVersion: e.ToolVersion,
-		AgentID: e.AgentID, TenantID: e.TenantID, Status: string(e.Status),
-		Input: e.Input, Output: e.Output, ExecutionTimeMS: e.ExecutionTimeMS,
-		ErrorCode: e.ErrorCode, ErrorMessage: e.ErrorMessage, RetryCount: e.RetryCount,
-		Timestamp: time.Now().UTC(),
-	})
-}
-
-func orDefault(v, def string) string {
-	if v == "" {
-		return def
-	}
-	return v
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/operan/modules/08-tool-execution/internal/events"
@@ -114,95 +115,25 @@ func TestRegisterListGetUpdate(t *testing.T) {
 }
 
 func TestExecuteFlow(t *testing.T) {
+	// The echo executor is gone on purpose: it stamped records completed while
+	// doing nothing. /execute must say so with 410, not 404 — a caller has to
+	// learn it was removed, not wonder if they mistyped the path.
 	srv := testServer()
-
-	// Register a tool to execute.
-	w := do(t, srv, http.MethodPost, "/tools/register", "t1",
-		`{"name":"calc","cost_per_call":{"amount":0.5,"currency":"USD"}}`)
-	if w.Code != http.StatusCreated {
-		t.Fatalf("register: %s", w.Body.String())
+	w := do(t, srv, http.MethodPost, "/execute", "t1", `{"agent_id":"a1","tool":"x"}`)
+	if w.Code != http.StatusGone {
+		t.Fatalf("execute = %d, want 410 (%s)", w.Code, w.Body.String())
 	}
-
-	// Execute
-	w = do(t, srv, http.MethodPost, "/execute", "t1",
-		`{"agent_id":"agent-1","tool":"calc","input":{"x":2}}`)
-	if w.Code != http.StatusCreated {
-		t.Fatalf("execute = %d, body %s", w.Code, w.Body.String())
-	}
-	exec := decode(t, w)
-	execID, _ := exec["id"].(string)
-	if exec["status"] != "completed" {
-		t.Errorf("execute status = %v, want completed", exec["status"])
-	}
-	if exec["output"] == nil {
-		t.Error("execute should produce output")
-	}
-
-	// Execute validation + missing tool
-	if w := do(t, srv, http.MethodPost, "/execute", "t1", `{"tool":"calc"}`); w.Code != http.StatusBadRequest {
-		t.Errorf("execute no agent = %d, want 400", w.Code)
-	}
-	if w := do(t, srv, http.MethodPost, "/execute", "t1", `{"agent_id":"a","tool":"ghost"}`); w.Code != http.StatusNotFound {
-		t.Errorf("execute unknown tool = %d, want 404", w.Code)
-	}
-
-	// List executions
-	w = do(t, srv, http.MethodGet, "/executions", "t1", "")
-	if w.Code != http.StatusOK || int(decode(t, w)["total"].(float64)) != 1 {
-		t.Errorf("list executions = %d, body %s", w.Code, w.Body.String())
-	}
-
-	// Get execution
-	if w := do(t, srv, http.MethodGet, "/executions/"+execID, "t1", ""); w.Code != http.StatusOK {
-		t.Errorf("get execution = %d", w.Code)
-	}
-	if w := do(t, srv, http.MethodGet, "/executions/nope", "t1", ""); w.Code != http.StatusNotFound {
-		t.Errorf("get missing execution = %d, want 404", w.Code)
-	}
-
-	// Retry a completed execution -> 409 (only failed may retry)
-	if w := do(t, srv, http.MethodPost, "/executions/"+execID+"/retry", "t1", ""); w.Code != http.StatusConflict {
-		t.Errorf("retry completed = %d, want 409", w.Code)
-	}
-	if w := do(t, srv, http.MethodPost, "/executions/nope/retry", "t1", ""); w.Code != http.StatusNotFound {
-		t.Errorf("retry missing = %d, want 404", w.Code)
-	}
-
-	// Cost summary
-	w = do(t, srv, http.MethodGet, "/cost?tool=calc", "t1", "")
-	if w.Code != http.StatusOK {
-		t.Fatalf("cost = %d", w.Code)
-	}
-	cost := decode(t, w)
-	tc, _ := cost["total_cost"].(map[string]interface{})
-	if cost["total_calls"].(float64) != 1 || tc["amount"].(float64) != 0.5 {
-		t.Errorf("cost summary wrong: %v", cost)
+	if !strings.Contains(w.Body.String(), "/invoke") {
+		t.Fatalf("the 410 must point at the governed door: %s", w.Body.String())
 	}
 }
 
 func TestRetryFailedExecution(t *testing.T) {
-	// Drive the store directly to create a failed execution, then retry via HTTP.
-	toolStore := store.NewToolStore()
-	versionStore := store.NewVersionStore()
-	execStore := store.NewExecutionStore()
-	h := NewToolHandlers(toolStore, versionStore, execStore, events.NewPublisher(), 100)
-	mux := http.NewServeMux()
-	RegisterRoutes(mux, h)
-	srv := middleware.RequestID(middleware.TenantContext(mux))
-
-	_, _ = toolStore.Create(&store.Tool{TenantID: "t1", Name: "calc"})
-	failed, _ := execStore.Create(&store.ToolExecution{TenantID: "t1", AgentID: "a1", Tool: "calc"})
-	_, _ = execStore.Update(failed.ID, "t1", func(e *store.ToolExecution) {
-		e.Status = store.ExecFailed
-		e.ErrorMessage = "boom"
-	})
-
-	w := do(t, srv, http.MethodPost, "/executions/"+failed.ID+"/retry", "t1", "")
-	if w.Code != http.StatusOK {
-		t.Fatalf("retry failed exec = %d, body %s", w.Code, w.Body.String())
-	}
-	exec := decode(t, w)
-	if exec["status"] != "completed" || exec["retry_count"].(float64) != 1 {
-		t.Errorf("retry result wrong: %v", exec)
+	// Same removal as /execute: the governed path does not "retry" a record —
+	// a new invocation is a new, fully checked attempt.
+	srv := testServer()
+	w := do(t, srv, http.MethodPost, "/executions/whatever/retry", "t1", "")
+	if w.Code != http.StatusGone {
+		t.Fatalf("retry = %d, want 410 (%s)", w.Code, w.Body.String())
 	}
 }
