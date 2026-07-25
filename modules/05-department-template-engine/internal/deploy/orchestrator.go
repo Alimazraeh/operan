@@ -499,6 +499,32 @@ func approverByDef(dept *store.Department) map[string]string {
 	return out
 }
 
+// positionForDef returns the org-chart seat carrying an agent definition.
+func positionForDef(dept *store.Department, agentDefID string) *store.Position {
+	if dept == nil || agentDefID == "" {
+		return nil
+	}
+	for i := range dept.OrgChart {
+		if dept.OrgChart[i].AgentDefID == agentDefID {
+			return &dept.OrgChart[i]
+		}
+	}
+	return nil
+}
+
+// rootPosition returns the seat that reports to nobody.
+func rootPosition(dept *store.Department) *store.Position {
+	if dept == nil {
+		return nil
+	}
+	for i := range dept.OrgChart {
+		if dept.OrgChart[i].ReportsTo == "" {
+			return &dept.OrgChart[i]
+		}
+	}
+	return nil
+}
+
 // departmentHeadHolder returns the user who holds the department's root seat,
 // or "" when nobody does. The root is the position that reports to nobody —
 // the same seat /me/assignments marks is_department_root.
@@ -570,6 +596,35 @@ func CompileWorkflowFor(wf *store.WorkflowDefinition, departmentID string, agent
 		}
 		if len(s.Config) > 0 {
 			n.Parameters = s.Config
+		}
+		// Capability-bearing action steps carry their actor: the funnel's
+		// authority check compares the acting seat's autonomy tier against the
+		// capability's minimum, so the compiled node must say whose authority
+		// the verb runs under. The step's named agent resolves to its seat;
+		// a step that names nobody acts under the department's root seat —
+		// the manager coordinates the SOP. Nothing is invented: a department
+		// with no resolvable seat compiles no tier, and the funnel treats
+		// unknown authority as no authority.
+		if n.Type == "action" {
+			if _, hasCap := s.Config["capability"]; hasCap {
+				def, _ := s.Config["agent"].(string)
+				pos := positionForDef(dept, def)
+				if pos == nil {
+					pos = rootPosition(dept)
+				}
+				if n.Parameters == nil {
+					n.Parameters = map[string]interface{}{}
+				}
+				if pos != nil {
+					n.Parameters["actor_position_id"] = pos.ID
+					n.Parameters["actor_autonomy_tier"] = pos.AutonomyTier
+					if pos.AgentID != "" {
+						n.Parameters["actor_agent_id"] = pos.AgentID
+					} else if live, ok := agentByDef[pos.AgentDefID]; ok {
+						n.Parameters["actor_agent_id"] = live
+					}
+				}
+			}
 		}
 		// Route the gate to the person who holds the seat that owns it. When
 		// nobody is bound the orchestrator falls back to a role target — never
