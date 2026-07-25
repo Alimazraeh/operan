@@ -23,9 +23,9 @@ export async function viewIAM() {
     roles: ["/roles?page_size=100", "roles"],
     services: ["/service-identities?page_size=50", "service_identities"],
     agents: ["/agent-identities?page_size=50", "agent_identities"],
-    delegations: ["/admin/delegations?page_size=20", "delegations"],
-    abac: ["/abac/policies?page_size=20", "policies"],
-    audit: ["/audit/trails?page_size=20", "trails"],
+    delegations: ["/admin/delegations?page_size=20", "delegation_roles"],
+    abac: ["/abac/policies?page_size=20", ""], // returns a bare array
+    audit: ["/audit/trails?page_size=20", "audit_trails"],
   };
   const keys = Object.keys(paths);
   const settled = await Promise.allSettled(keys.map(k => get(SVC_IAM + paths[k][0])));
