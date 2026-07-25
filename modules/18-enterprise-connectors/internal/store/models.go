@@ -19,15 +19,20 @@ type PgxPool interface {
 
 // Connector represents a row in the connector_definitions table.
 type Connector struct {
-	ID              uuid.UUID              `json:"id"`
-	TenantID        string                 `json:"tenant_id"`
-	Name            string                 `json:"name"`
-	Description     *string                `json:"description,omitempty"`
-	ConnectorType   string                 `json:"connector_type"`
-	Status          string                 `json:"status"`
-	AuthMethod      string                 `json:"auth_method"`
-	Config          map[string]interface{} `json:"config"`
-	Credentials     map[string]interface{} `json:"credentials,omitempty"`
+	ID            uuid.UUID              `json:"id"`
+	TenantID      string                 `json:"tenant_id"`
+	Name          string                 `json:"name"`
+	Description   *string                `json:"description,omitempty"`
+	ConnectorType string                 `json:"connector_type"`
+	Status        string                 `json:"status"`
+	AuthMethod    string                 `json:"auth_method"`
+	Config        map[string]interface{} `json:"config"`
+	// Credentials never leave the process in a response body. Persistence
+	// marshals this map directly (see store.Create/scan), and the sync engine
+	// reads the field, so `json:"-"` costs nothing and closes the leak:
+	// GET /v1/connectors previously returned every stored client_secret,
+	// password, access_token and api_key in cleartext.
+	Credentials     map[string]interface{} `json:"-"`
 	SyncFrequency   string                 `json:"sync_frequency"`
 	LastSyncAt      *time.Time             `json:"last_sync_at,omitempty"`
 	LastSyncStatus  *string                `json:"last_sync_status,omitempty"`

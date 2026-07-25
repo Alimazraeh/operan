@@ -91,12 +91,17 @@ func (h *ExecuteHandler) Execute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Policy check via M10
+	// Policy check via M10. Sandboxed execution is a side effect on the
+	// customer's infrastructure: if we cannot establish that it is permitted,
+	// it does not run. Fail closed, never open.
 	policyResult, err := h.policyClient.CanExecute(r.Context(), tenantID, req.AgentID, req.ToolName)
-	if err != nil {
-		// If M10 is unreachable, we still proceed (fail open is safer for availability)
+	if err != nil && policyResult == nil {
+		policyResult = &policies.PolicyCheckResult{
+			Allowed: false,
+			Reason:  "policy engine did not answer: " + err.Error(),
+		}
 	}
-	if policyResult != nil && !policyResult.Allowed {
+	if policyResult == nil || !policyResult.Allowed {
 		h.eventPub.Publish("operan.sandbox.policy_denied", tenantID, map[string]interface{}{
 			"tenant_id": tenantID,
 			"agent_id":  req.AgentID,
