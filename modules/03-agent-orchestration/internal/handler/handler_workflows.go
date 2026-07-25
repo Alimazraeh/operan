@@ -306,7 +306,8 @@ func (h *WorkflowHandler) GetWorkflowState(w http.ResponseWriter, r *http.Reques
 			nodeEventStatus[nodeID] = evt.EventType
 			if evt.EventType == "node_completed" {
 				out := map[string]interface{}{}
-				for _, k := range []string{"output", "tokens", "decision", "action", "node_type"} {
+				for _, k := range []string{"output", "tokens", "decision", "action", "node_type",
+					"execution_id", "capability", "simulated", "summary", "external_ref", "truncated"} {
 					if v, ok := evt.Details[k]; ok {
 						out[k] = v
 					}

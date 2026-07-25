@@ -430,6 +430,15 @@ func (e *Engine) executeNode(ctx context.Context, nodeID string, node store.Work
 		if decision, ok := output["decision"]; ok {
 			details["decision"] = decision
 		}
+		// The capability audit identity must survive into events: /state is
+		// reconstructed from them after a restart, and the work-loop poller
+		// reads /state — a field dropped here is a fact the request timeline
+		// can never show.
+		for _, k := range []string{"execution_id", "capability", "simulated", "summary", "external_ref", "truncated"} {
+			if v, ok := output[k]; ok {
+				details[k] = v
+			}
+		}
 	}
 	e.store.AddEvent(workflowID, store.ExecutionEvent{
 		EventID:   uuid.New().String(),

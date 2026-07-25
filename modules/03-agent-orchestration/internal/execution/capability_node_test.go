@@ -7,8 +7,10 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/operan/modules/03-agent-orchestration/internal/capability"
+	"github.com/operan/modules/03-agent-orchestration/internal/events"
 	"github.com/operan/modules/03-agent-orchestration/internal/store"
 )
 
@@ -141,4 +143,52 @@ func TestNoCapabilityServiceKeepsThePassThrough(t *testing.T) {
 	if !strings.Contains(note, "pass-through") {
 		t.Fatalf("expected the honest pass-through, got %v", out)
 	}
+}
+
+// The audit identity must survive the event → /state reconstruction, because
+// that is what the work-loop poller reads. A field dropped by the sanitizers
+// is a fact the request timeline can never show — which is exactly how the
+// first deployed run executed two capabilities that never appeared on the
+// request.
+func TestCapabilityFieldsSurviveIntoNodeEvents(t *testing.T) {
+	srv := capabilityStub(t, "completed")
+	defer srv.Close()
+	st := store.NewWorkflowStore()
+	wf := &store.Workflow{
+		ID: "wf-ev", TenantID: "t1", Status: store.WorkflowStatusPending,
+		Graph: store.WorkflowGraph{Nodes: []store.WorkflowNode{func() store.WorkflowNode {
+			n := capabilityNode()
+			return n
+		}()}},
+	}
+	if _, err := st.Create(wf); err != nil {
+		t.Fatal(err)
+	}
+	eng := NewEngine(st, events.NewPublisher(), NewNodeHandler(NodeHandlerDeps{Capabilities: capability.New(srv.URL)}), events.StackLangGraph)
+	if err := eng.StartWorkflow(wf.ID); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		got, _ := st.GetByID(wf.ID)
+		if got.Status == store.WorkflowStatusCompleted || got.Status == store.WorkflowStatusFailed {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	evs := st.GetExecutionHistory(wf.ID)
+	for _, ev := range evs {
+		if ev.EventType != "node_completed" {
+			continue
+		}
+		if ev.Details["execution_id"] != "inv-1" || ev.Details["simulated"] != true {
+			t.Fatalf("audit identity missing from node_completed: %v", ev.Details)
+		}
+		sum, _ := ev.Details["summary"].(string)
+		if !strings.Contains(sum, "SIMULATED") {
+			t.Fatalf("summary lost its SIMULATED label: %q", sum)
+		}
+		return
+	}
+	t.Fatal("no node_completed event found")
 }
