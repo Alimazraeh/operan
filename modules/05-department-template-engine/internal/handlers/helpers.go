@@ -94,6 +94,7 @@ func toTemplateListResponse(templates []store.Template) []interface{} {
 			"agents_count":       len(t.Agents),
 			"workflows_count":    len(t.Workflows),
 			"integrations_count": len(t.Integrations),
+			"operational":        isOperational(t),
 		}
 		if t.Tags != nil {
 			resp["tags"] = t.Tags
@@ -101,6 +102,23 @@ func toTemplateListResponse(templates []store.Template) []interface{} {
 		result = append(result, resp)
 	}
 	return result
+}
+
+// isOperational reports whether at least one step in at least one of the
+// template's workflows carries a capability binding (config.capability) —
+// the same presence check the deploy compiler already uses to decide which
+// action steps need a resolved actor (internal/deploy/orchestrator.go).
+// A template with workflows but no capability-bearing step is an outline:
+// its steps are LLM prose and recorded pass-throughs, not an authored SOP.
+func isOperational(t store.Template) bool {
+	for _, wf := range t.Workflows {
+		for _, s := range wf.Steps {
+			if _, hasCap := s.Config["capability"]; hasCap {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func toCustomTemplateResponse(ct *store.CustomTemplate) map[string]interface{} {
