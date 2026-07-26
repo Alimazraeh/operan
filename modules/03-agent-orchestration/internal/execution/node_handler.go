@@ -396,8 +396,9 @@ func str(v interface{}) string {
 }
 
 func bound(s string, n int) string {
-	if len(s) > n {
-		return s[:n] + "…"
+	r := []rune(s)
+	if len(r) <= n {
+		return s
 	}
-	return s
+	return string(r[:n]) + "…"
 }

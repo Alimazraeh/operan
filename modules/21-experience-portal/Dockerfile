@@ -1,5 +1,5 @@
 # Module 21 Experience Portal - Multi-stage Dockerfile
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS builder
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY go.mod ./
