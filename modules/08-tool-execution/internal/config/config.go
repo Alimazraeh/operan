@@ -19,6 +19,10 @@ type Config struct {
 	// PolicyURL is Module 10's base URL. The funnel consults it on every
 	// invocation and denies closed when it cannot answer.
 	PolicyURL string
+	// DepartmentURL is Module 05's base URL. The funnel's authority stage
+	// resolves the acting seat's real tier from its org chart on every
+	// invocation and denies closed when it cannot answer.
+	DepartmentURL string
 	// SeedSimulatedTenants lists tenants (comma-separated) that get the
 	// simulated provider bound to every capability at boot — demo bootstrap,
 	// explicit and idempotent.
@@ -37,6 +41,7 @@ func ParseConfig() Config {
 		MaxPageSize:          envInt("MODULE08_MAX_PAGE_SIZE", 100),
 		DefaultTimeout:       envInt("MODULE08_DEFAULT_TIMEOUT_MS", 30000),
 		PolicyURL:            env("MODULE08_POLICY_URL", "http://policy-governance.operan.svc.cluster.local:8010"),
+		DepartmentURL:        env("MODULE08_DEPARTMENT_URL", "http://department-templates.operan.svc.cluster.local:8005"),
 		SeedSimulatedTenants: env("MODULE08_SEED_SIMULATED_TENANTS", ""),
 	}
 }

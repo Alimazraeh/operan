@@ -269,7 +269,11 @@ func (e *Engine) InvalidateCache(req EvaluateRequest) {
 	e.cache.Invalidate(key)
 }
 
-// buildCacheKey creates a unique cache key for a request.
+// buildCacheKey creates a unique cache key for a request. AgentID is part of
+// the key because policy decisions can be conditioned on the acting agent
+// (a ConditionExpression testing "agent_id", or an agent-scoped policy) —
+// without it, one agent's decision would answer for every agent in the
+// tenant asking about the same resource and action for the cache's TTL.
 func buildCacheKey(req EvaluateRequest) string {
-	return req.TenantID + ":" + req.Resource + ":" + req.ActionType + ":" + req.DataClass
+	return req.TenantID + ":" + req.AgentID + ":" + req.Resource + ":" + req.ActionType + ":" + req.DataClass
 }

@@ -24,6 +24,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/operan/modules/08-tool-execution/internal/policyclient"
+	"github.com/operan/modules/08-tool-execution/internal/positionclient"
 	"github.com/operan/modules/08-tool-execution/internal/schema"
 	"github.com/operan/modules/08-tool-execution/internal/simulated"
 	"github.com/operan/modules/08-tool-execution/internal/store"
@@ -45,6 +46,11 @@ type Funnel struct {
 	Invocations  *store.InvocationStore
 	Validator    *schema.Validator
 	Policy       *policyclient.Client
+	// Positions resolves the acting seat's real autonomy tier from Module 05
+	// at invoke time. The authority stage never trusts req.Actor.AutonomyTier
+	// for the decision — that field is the caller's claim, echoed onto the
+	// record for audit, not evidence.
+	Positions *positionclient.Client
 }
 
 // Invoke runs the funnel. The returned invocation is already recorded; err is
@@ -116,13 +122,19 @@ func (f *Funnel) Invoke(ctx context.Context, authorization, tenantID string, req
 	}
 
 	// 4 — Authority. The org chart is the tool-authorization boundary: the
-	// seat's autonomy tier must clear the capability's minimum. An actor whose
-	// tier cannot be established ranks below every tier and is refused write
-	// verbs — unknown authority is not authority.
-	if store.AutonomyRank(req.Actor.AutonomyTier) < store.AutonomyRank(cap.MinAutonomy) {
+	// seat's autonomy tier must clear the capability's minimum. That tier is
+	// never taken from the request — req.Actor.AutonomyTier is the caller's
+	// claim, and any authenticated caller can claim anything. The funnel
+	// resolves the seat's real tier from Module 05, live, every time. An
+	// actor whose tier cannot be established ranks below every tier and is
+	// refused write verbs — unknown authority is not authority, and neither
+	// is an unverifiable claim.
+	resolution := f.Positions.Resolve(ctx, authorization, tenantID, req.Correlation.DepartmentID, req.Actor.PositionID)
+	inv.ResolvedAutonomyTier = resolution.Tier
+	if store.AutonomyRank(resolution.Tier) < store.AutonomyRank(cap.MinAutonomy) {
 		return finish(store.InvocationDeniedAuthority,
-			fmt.Sprintf("%s requires autonomy %q; the acting seat holds %q",
-				cap.ID, cap.MinAutonomy, orUnknown(req.Actor.AutonomyTier))), nil
+			fmt.Sprintf("%s requires autonomy %q; the acting seat resolves to %q (caller claimed %q) — %s",
+				cap.ID, cap.MinAutonomy, orUnknown(resolution.Tier), orUnknown(req.Actor.AutonomyTier), resolution.Reason)), nil
 	}
 
 	// 5 — Dispatch. Only the simulated provider executes today; registering
