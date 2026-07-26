@@ -10,6 +10,12 @@ import (
 // authority they acted under. Recorded on every invocation because "an AI did
 // it, within its authority" is only worth anything if the record says whose
 // authority that was.
+//
+// AutonomyTier is the caller's claim, taken verbatim from the request body —
+// it is transport input, not a fact. It is never compared against a
+// capability's minimum; Invocation.ResolvedAutonomyTier is. Keeping the claim
+// on the record is what makes a caller lying about their seat's authority a
+// legible, auditable event instead of a silently corrected one.
 type Actor struct {
 	Type         string `json:"type"` // agent | user | system
 	ID           string `json:"id,omitempty"`
@@ -65,10 +71,17 @@ type Invocation struct {
 	ExternalRef    *ExternalRef           `json:"external_ref,omitempty"`
 	Simulated      bool                   `json:"simulated"`
 	PolicyDecision string                 `json:"policy_decision,omitempty"`
-	Status         string                 `json:"status"`
-	Error          string                 `json:"error,omitempty"`
-	DurationMS     int64                  `json:"duration_ms"`
-	CreatedAt      time.Time              `json:"created_at"`
+	// ResolvedAutonomyTier is the acting seat's real tier, resolved
+	// server-side from Module 05's org chart at invoke time — never taken
+	// from the request. Empty means the seat could not be resolved, which
+	// ranks below every real tier (store.AutonomyRank) and is therefore no
+	// authority at all. Compare against Actor.AutonomyTier (the claim) to see
+	// a caller misrepresenting its own authority.
+	ResolvedAutonomyTier string    `json:"resolved_autonomy_tier,omitempty"`
+	Status               string    `json:"status"`
+	Error                string    `json:"error,omitempty"`
+	DurationMS           int64     `json:"duration_ms"`
+	CreatedAt            time.Time `json:"created_at"`
 }
 
 // InvocationStore is append-only: invocations are never updated or deleted.

@@ -48,8 +48,8 @@ func (m *mockPolicyStore) ListActiveForTenant(ctx context.Context, tenantID stri
 func TestEvaluate_NoMatchingPolicies(t *testing.T) {
 	e, _ := newTestEngine(t)
 	result, err := e.Evaluate(context.Background(), EvaluateRequest{
-		TenantID: "tenant-1",
-		Resource: "send_email",
+		TenantID:   "tenant-1",
+		Resource:   "send_email",
 		ActionType: "send",
 	})
 	require.NoError(t, err)
@@ -150,11 +150,11 @@ func TestEvaluate_MultiplePoliciesPriorityOrdering(t *testing.T) {
 
 func TestCache_PolicyCacheHit(t *testing.T) {
 	e, _ := newTestEngine(t)
-	e.cache.Set("tenant-1:send_email:send:", &EvaluateResult{
+	e.cache.Set("tenant-1:agent-1:send_email:send:", &EvaluateResult{
 		Allowed: true, Action: "allow", PolicyName: "test-policy",
 	})
 	result, err := e.Evaluate(context.Background(), EvaluateRequest{
-		TenantID: "tenant-1", Resource: "send_email", ActionType: "send",
+		TenantID: "tenant-1", AgentID: "agent-1", Resource: "send_email", ActionType: "send",
 	})
 	require.NoError(t, err)
 	assert.True(t, result.Allowed)
@@ -173,12 +173,57 @@ func TestCache_CacheMiss(t *testing.T) {
 
 func TestInvalidateCache(t *testing.T) {
 	e, _ := newTestEngine(t)
-	e.cache.Set("tenant-1:test:action:", &EvaluateResult{Allowed: true})
+	e.cache.Set("tenant-1:agent-1:test:action:", &EvaluateResult{Allowed: true})
 	assert.Equal(t, 1, e.cache.Size())
 	e.InvalidateCache(EvaluateRequest{
-		TenantID: "tenant-1", Resource: "test", ActionType: "action",
+		TenantID: "tenant-1", AgentID: "agent-1", Resource: "test", ActionType: "action",
 	})
 	assert.Equal(t, 0, e.cache.Size())
+}
+
+// The cache key must include the actor: two agents in the same tenant asking
+// about the same resource and action can be bound by different policies (an
+// agent-scoped policy with a condition on agent_id, here) and each must get
+// its own decision inside the cache's TTL — not whichever agent happened to
+// ask first. Before the fix, buildCacheKey ignored the actor entirely, so
+// the second agent's request was a cache *hit* against the first agent's
+// answer.
+func TestCache_DifferentActorsGetDifferentDecisions(t *testing.T) {
+	e, ms := newTestEngine(t)
+	ms.policies = []store.Policy{
+		{
+			TenantID: "tenant-1", Name: "allow-all", Action: "allow",
+			Scope: "global", Effect: "enforce", ResourceType: "all", Priority: 10, IsActive: true,
+		},
+		{
+			TenantID: "tenant-1", Name: "deny-agent-1", Action: "deny",
+			Scope: "agent", Effect: "enforce", ResourceType: "all", Priority: 90, IsActive: true,
+			ConditionExpression: map[string]interface{}{
+				"field": "agent_id", "op": "eq", "value": "agent-1",
+			},
+		},
+	}
+
+	result1, err := e.Evaluate(context.Background(), EvaluateRequest{
+		TenantID: "tenant-1", AgentID: "agent-1", Resource: "send_email", ActionType: "send",
+	})
+	require.NoError(t, err)
+	result2, err := e.Evaluate(context.Background(), EvaluateRequest{
+		TenantID: "tenant-1", AgentID: "agent-2", Resource: "send_email", ActionType: "send",
+	})
+	require.NoError(t, err)
+
+	assert.False(t, result1.Allowed, "agent-1 is explicitly denied by its own policy")
+	assert.True(t, result2.Allowed, "agent-2 falls through to the allow-all policy")
+
+	// Both decisions are cached, under different keys — a re-ask inside the
+	// TTL still gives agent-1 its own (denied) answer, not agent-2's.
+	assert.Equal(t, 2, e.cache.Size())
+	again1, err := e.Evaluate(context.Background(), EvaluateRequest{
+		TenantID: "tenant-1", AgentID: "agent-1", Resource: "send_email", ActionType: "send",
+	})
+	require.NoError(t, err)
+	assert.False(t, again1.Allowed, "agent-1's cached decision must still be its own")
 }
 
 func TestEvaluate_Timeout(t *testing.T) {

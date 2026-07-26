@@ -20,6 +20,7 @@ import (
 	"github.com/operan/modules/08-tool-execution/internal/handlers"
 	"github.com/operan/modules/08-tool-execution/internal/middleware"
 	"github.com/operan/modules/08-tool-execution/internal/policyclient"
+	"github.com/operan/modules/08-tool-execution/internal/positionclient"
 	"github.com/operan/modules/08-tool-execution/internal/schema"
 	"github.com/operan/modules/08-tool-execution/internal/store"
 	"github.com/operan/modules/08-tool-execution/internal/vocab"
@@ -104,6 +105,7 @@ func main() {
 			Invocations:  invocationStore,
 			Validator:    schema.NewValidator(),
 			Policy:       policyclient.New(cfg.PolicyURL),
+			Positions:    positionclient.New(cfg.DepartmentURL),
 		},
 		MaxPageSize: cfg.MaxPageSize,
 	}
