@@ -1,8 +1,10 @@
 package store
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"slices"
 	"sync"
 	"time"
@@ -74,6 +76,7 @@ type ResourceStore struct {
 	mu       sync.RWMutex
 	resources map[string]*Resource
 	byTenant map[string][]string // keyed by TenantID -> ResourceIDs
+	sink     *sink
 }
 
 // NewResourceStore creates a new ResourceStore.
@@ -102,6 +105,7 @@ func (s *ResourceStore) Create(res *Resource) (*Resource, error) {
 
 	s.resources[res.ID] = res
 	s.byTenant[res.TenantID] = append(s.byTenant[res.TenantID], res.ID)
+	s.save(context.Background(), res)
 
 	return res, nil
 }
@@ -179,6 +183,7 @@ func (s *ResourceStore) Patch(id string, req ResourcePatchRequest) (*Resource, e
 	}
 
 	res.UpdatedAt = timeNow()
+	s.save(context.Background(), res)
 
 	return res, nil
 }
@@ -191,6 +196,12 @@ func (s *ResourceStore) Delete(id string) error {
 	res, ok := s.resources[id]
 	if !ok {
 		return fmt.Errorf("resource %s not found", id)
+	}
+
+	if s.sink != nil {
+		if err := s.sink.db.DeleteResource(context.Background(), id); err != nil {
+			log.Printf("[TCTL] resource %s not removed from database (%v)", id, err)
+		}
 	}
 
 	// Remove from byTenant
@@ -320,6 +331,7 @@ type AgentStore struct {
 	mu       sync.RWMutex
 	agents   map[string]*Agent
 	byTenant map[string][]string // keyed by TenantID -> AgentIDs
+	sink     *sink
 }
 
 // NewAgentStore creates a new AgentStore.
@@ -348,6 +360,7 @@ func (s *AgentStore) Create(agent *Agent) (*Agent, error) {
 
 	s.agents[agent.ID] = agent
 	s.byTenant[agent.TenantID] = append(s.byTenant[agent.TenantID], agent.ID)
+	s.save(context.Background(), agent)
 
 	return agent, nil
 }
@@ -408,6 +421,7 @@ func (s *AgentStore) Patch(id string, req AgentPatchRequest) (*Agent, error) {
 	}
 
 	agent.UpdatedAt = timeNow()
+	s.save(context.Background(), agent)
 
 	return agent, nil
 }
@@ -420,6 +434,12 @@ func (s *AgentStore) Delete(id string) error {
 	agent, ok := s.agents[id]
 	if !ok {
 		return fmt.Errorf("agent %s not found", id)
+	}
+
+	if s.sink != nil {
+		if err := s.sink.db.DeleteAgent(context.Background(), id); err != nil {
+			log.Printf("[TCTL] agent %s not removed from database (%v)", id, err)
+		}
 	}
 
 	// Remove from byTenant

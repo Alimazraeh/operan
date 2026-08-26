@@ -1,0 +1,65 @@
+# Operan — Persistent Volume Claims for file-based module data
+# Replaces the former node-local hostPath volumes (M05, M07, M09, M11) so
+# data survives pod rescheduling. Requires a storage class that supports
+# ReadWriteOnce dynamic provisioning in the cluster.
+# Apply before modules.yaml: kubectl apply -f deploy/k8s/persistent-volumes.yaml -n operan
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: m05-template-data
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: department-templates
+    app.kubernetes.io/part-of: operan
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: m07-memory-data
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: memory-fabric
+    app.kubernetes.io/part-of: operan
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: m09-supervision-data
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: human-supervision
+    app.kubernetes.io/part-of: operan
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: m11-observability-data
+  namespace: operan
+  labels:
+    app.kubernetes.io/name: observability
+    app.kubernetes.io/part-of: operan
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

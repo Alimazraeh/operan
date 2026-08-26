@@ -5,7 +5,9 @@
 package store
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"slices"
 	"sync"
 	"time"
@@ -134,6 +136,7 @@ type TenantStore struct {
 	mu      sync.RWMutex
 	tenants map[string]*Tenant // keyed by ID
 	byName  map[string]string  // keyed by Name (DNS-safe lowercase)
+	sink    *sink              // write-through sink; nil in memory-only mode
 }
 
 // NewTenantStore creates a new TenantStore.
@@ -172,6 +175,7 @@ func (s *TenantStore) Create(t *Tenant) (*Tenant, error) {
 	}
 
 	s.tenants[t.ID] = t
+	s.save(context.Background(), t)
 	return t, nil
 }
 
@@ -258,6 +262,7 @@ func (s *TenantStore) Patch(id string, req TenantPatchRequest) (*Tenant, error) 
 		}
 	}
 	t.UpdatedAt = timeNow()
+	s.save(context.Background(), t)
 
 	return t, nil
 }
@@ -270,6 +275,11 @@ func (s *TenantStore) Delete(id string) error {
 	_, ok := s.tenants[id]
 	if !ok {
 		return fmt.Errorf("tenant %s not found", id)
+	}
+	if s.sink != nil {
+		if err := s.sink.db.DeleteTenant(context.Background(), id); err != nil {
+			log.Printf("[TCTL] tenant %s not removed from database (%v)", id, err)
+		}
 	}
 	delete(s.tenants, id)
 	// Also clean up byName lookup

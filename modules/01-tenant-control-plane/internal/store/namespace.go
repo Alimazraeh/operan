@@ -1,7 +1,9 @@
 package store
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"slices"
 	"strings"
 	"sync"
@@ -66,6 +68,7 @@ type NamespaceStore struct {
 	namespaces map[string]*Namespace
 	byTenant   map[string][]string // keyed by TenantID -> NamespaceIDs
 	byName     map[string]string   // keyed by "tenant_id::name"
+	sink       *sink
 }
 
 // NewNamespaceStore creates a new NamespaceStore.
@@ -108,6 +111,7 @@ func (s *NamespaceStore) Create(ns *Namespace) (*Namespace, error) {
 	s.namespaces[ns.ID] = ns
 	s.byTenant[ns.TenantID] = append(s.byTenant[ns.TenantID], ns.ID)
 	s.byName[key] = ns.ID
+	s.save(context.Background(), ns)
 
 	return ns, nil
 }
@@ -211,6 +215,7 @@ func (s *NamespaceStore) Patch(id string, req NamespacePatchRequest) (*Namespace
 	}
 
 	ns.UpdatedAt = timeNow()
+	s.save(context.Background(), ns)
 
 	return ns, nil
 }
@@ -223,6 +228,12 @@ func (s *NamespaceStore) Delete(id string) error {
 	ns, ok := s.namespaces[id]
 	if !ok {
 		return fmt.Errorf("namespace %s not found", id)
+	}
+
+	if s.sink != nil {
+		if err := s.sink.db.DeleteNamespace(context.Background(), id); err != nil {
+			log.Printf("[TCTL] namespace %s not removed from database (%v)", id, err)
+		}
 	}
 
 	// Remove from byTenant

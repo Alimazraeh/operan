@@ -152,21 +152,30 @@ type Handler struct {
 	EnvironmentStore   *store.EnvironmentStore
 }
 
-// NewHandler creates a new Handler with all stores.
-func NewHandler(tenantStore *store.TenantStore, secretStore *store.SecretStore, subStore *store.SubscriptionStore, billingStore *store.BillingStore) *Handler {
+// NewHandler creates a new Handler with all stores. The six stores that
+// were previously constructed inside this function are now passed in so the
+// caller can attach durable backing stores (Persist) before serving.
+func NewHandler(
+	tenantStore *store.TenantStore, secretStore *store.SecretStore,
+	subStore *store.SubscriptionStore, billingStore *store.BillingStore,
+	paymentMethodStore *store.PaymentMethodStore, agentStore *store.AgentStore,
+	resourceStore *store.ResourceStore, namespaceStore *store.NamespaceStore,
+	deploymentStore *store.DeploymentStore, policyStore *store.PolicyStore,
+	environmentStore *store.EnvironmentStore,
+) *Handler {
 	return &Handler{
 		TenantStore:        tenantStore,
 		SecretStore:        secretStore,
 		SubscriptionStore:  subStore,
 		BillingStore:       billingStore,
-		PaymentMethodStore: store.NewPaymentMethodStore(),
+		PaymentMethodStore: paymentMethodStore,
 		EventPublisher:     events.NewPublisher(),
-		AgentStore:         store.NewAgentStore(),
-		ResourceStore:      store.NewResourceStore(),
-		NamespaceStore:     store.NewNamespaceStore(),
-		DeploymentStore:    store.NewDeploymentStore(),
-		PolicyStore:        store.NewPolicyStore(),
-		EnvironmentStore:   store.NewEnvironmentStore(),
+		AgentStore:         agentStore,
+		ResourceStore:      resourceStore,
+		NamespaceStore:     namespaceStore,
+		DeploymentStore:    deploymentStore,
+		PolicyStore:        policyStore,
+		EnvironmentStore:   environmentStore,
 	}
 }
 

@@ -29,6 +29,7 @@ type Config struct {
 	LogLevel      string
 	JWTSecret     string
 	Issuer        string
+	DatabaseURL   string
 }
 
 // ParseConfig reads configuration from environment variables with defaults.
@@ -51,6 +52,9 @@ func ParseConfig() Config {
 		}(),
 		JWTSecret: getEnvOrDefault("JWT_SECRET", DefaultJWTSecret),
 		Issuer:    getEnvOrDefault("JWT_ISSUER", DefaultIssuer),
+		// Empty means in-memory mode: the stores behave exactly as before and
+		// the module says so at boot.
+		DatabaseURL: os.Getenv("DATABASE_URL"),
 	}
 }
 

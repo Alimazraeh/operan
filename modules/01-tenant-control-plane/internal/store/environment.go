@@ -1,7 +1,9 @@
 package store
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"slices"
 	"strings"
 	"sync"
@@ -107,6 +109,7 @@ type EnvironmentStore struct {
 	environments   map[string]*Environment
 	byTenant       map[string][]string // keyed by TenantID -> EnvironmentIDs
 	byType         map[string][]string // keyed by Type -> EnvironmentIDs
+	sink           *sink
 }
 
 // NewEnvironmentStore creates a new EnvironmentStore.
@@ -140,6 +143,7 @@ func (s *EnvironmentStore) Create(e *Environment) (*Environment, error) {
 	s.environments[e.ID] = e
 	s.byTenant[e.TenantID] = append(s.byTenant[e.TenantID], e.ID)
 	s.byType[string(e.Type)] = append(s.byType[string(e.Type)], e.ID)
+	s.save(context.Background(), e)
 
 	return e, nil
 }
@@ -224,6 +228,7 @@ func (s *EnvironmentStore) Patch(id string, req EnvironmentPatchRequest) (*Envir
 	}
 
 	e.UpdatedAt = timeNow()
+	s.save(context.Background(), e)
 
 	return e, nil
 }
@@ -236,6 +241,12 @@ func (s *EnvironmentStore) Delete(id string) error {
 	e, ok := s.environments[id]
 	if !ok {
 		return fmt.Errorf("environment %s not found", id)
+	}
+
+	if s.sink != nil {
+		if err := s.sink.db.DeleteEnvironment(context.Background(), id); err != nil {
+			log.Printf("[TCTL] environment %s not removed from database (%v)", id, err)
+		}
 	}
 
 	// Remove from byTenant
@@ -397,6 +408,7 @@ func (s *EnvironmentStore) transition(id string, newState EnvironmentState, note
 		e.DeactivatedAt = &now
 	}
 	e.UpdatedAt = now
+	s.save(context.Background(), e)
 
 	return e, nil
 }

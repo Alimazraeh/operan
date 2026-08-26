@@ -20,7 +20,10 @@ func newTestHandler(t *testing.T) *middleware.Handler {
 	secretStore := store.NewSecretStore()
 	subStore := store.NewSubscriptionStore()
 	billingStore := store.NewBillingStore()
-	return middleware.NewHandler(tenantStore, secretStore, subStore, billingStore)
+	return middleware.NewHandler(tenantStore, secretStore, subStore, billingStore,
+		store.NewPaymentMethodStore(), store.NewAgentStore(), store.NewResourceStore(),
+		store.NewNamespaceStore(), store.NewDeploymentStore(), store.NewPolicyStore(),
+		store.NewEnvironmentStore())
 }
 
 func createTestTenant(h *middleware.Handler) *store.Tenant {

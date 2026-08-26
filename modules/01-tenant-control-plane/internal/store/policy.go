@@ -1,8 +1,10 @@
 package store
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"slices"
 	"strings"
 	"sync"
@@ -98,6 +100,7 @@ type PolicyStore struct {
 	mu       sync.RWMutex
 	policies map[string]*Policy
 	byTenant map[string][]string // keyed by TenantID -> PolicyIDs
+	sink     *sink
 }
 
 // NewPolicyStore creates a new PolicyStore.
@@ -126,6 +129,7 @@ func (s *PolicyStore) Create(p *Policy) (*Policy, error) {
 
 	s.policies[p.ID] = p
 	s.byTenant[p.TenantID] = append(s.byTenant[p.TenantID], p.ID)
+	s.save(context.Background(), p)
 
 	return p, nil
 }
@@ -192,6 +196,7 @@ func (s *PolicyStore) Patch(id string, req PolicyPatchRequest) (*Policy, error) 
 	}
 
 	p.UpdatedAt = timeNow()
+	s.save(context.Background(), p)
 
 	return p, nil
 }
@@ -204,6 +209,12 @@ func (s *PolicyStore) Delete(id string) error {
 	p, ok := s.policies[id]
 	if !ok {
 		return fmt.Errorf("policy %s not found", id)
+	}
+
+	if s.sink != nil {
+		if err := s.sink.db.DeletePolicy(context.Background(), id); err != nil {
+			log.Printf("[TCTL] policy %s not removed from database (%v)", id, err)
+		}
 	}
 
 	// Remove from byTenant
