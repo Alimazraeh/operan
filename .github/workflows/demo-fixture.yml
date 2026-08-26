@@ -1,0 +1,143 @@
+name: Demo Fixture (WO-3)
+
+# ─────────────────────────────────────────────────────────────────────────
+# STATUS: the `test` job is real and would pass today (the exact commands
+# below were run locally against this tool while it was written — see the
+# WO-3 report for output). The `provision-and-replay` job has NEVER BEEN
+# RUN, anywhere, by anyone. It was written by an agent with no cluster
+# access, is gated to manual dispatch only (see `workflow_dispatch:` below
+# and the job's own `if:` guard), and MUST NOT be pointed at a real cluster
+# without a human first reading through it. Do not remove this notice
+# without actually running the job and recording the result.
+#
+# Why provision-and-replay cannot simply be enabled on push, even by a
+# human with cluster credentials to hand:
+#   1. GitHub-hosted runners cannot reach *.operan.svc.cluster.local — that
+#      DNS name only resolves inside the cluster's own network. Either the
+#      six module URLs need a reachable ingress/ClusterIP-with-tunnel, or
+#      this job needs to run on a self-hosted runner with cluster network
+#      access. Neither exists yet; the module-url-* inputs below default to
+#      the in-cluster names purely as documentation of where they'd
+#      normally live, not because a hosted runner can reach them.
+#   2. It needs DEMO_FIXTURE_ADMIN_PASSWORD and DEMO_FIXTURE_USER_PASSWORD
+#      as repository secrets. Neither has been created.
+#   3. Nobody has run `demo-fixture export` against the live smoke-tenant
+#      yet, so fixtures/smoke-tenant.yaml is metadata.provenance:
+#      hand-assembled, not live-export — see that file's own header. A
+#      first CI run should happen only after a real export has replaced it,
+#      or the run is exercising this tool's best guess at the schema, not
+#      the actual tenant.
+#
+# See tools/demo-fixture/README.md, "First real round-trip", for the
+# numbered runbook a human follows to turn this on for real.
+# ─────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/demo-fixture/**"
+      - ".github/workflows/demo-fixture.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/demo-fixture/**"
+      - ".github/workflows/demo-fixture.yml"
+  workflow_dispatch:
+    inputs:
+      confirm_cluster_ready:
+        description: >-
+          Type exactly "yes" to run provision-and-replay against a real
+          cluster. Anything else (including leaving this blank) runs only
+          the safe, cluster-free test job.
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  # ─── Real, cluster-free: build + unit test the tool itself ──────────────
+  test:
+    name: build & test (no cluster required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tools/demo-fixture/go.mod
+          cache-dependency-path: tools/demo-fixture/go.sum
+
+      - name: go vet
+        working-directory: tools/demo-fixture
+        run: go vet ./...
+
+      - name: go build
+        working-directory: tools/demo-fixture
+        run: go build ./...
+
+      - name: go test -race
+        working-directory: tools/demo-fixture
+        run: go test ./... -race -count=1
+
+      - name: validate the committed reference fixture
+        working-directory: tools/demo-fixture
+        run: |
+          go run ./cmd/demo-fixture restore \
+            --fixture fixtures/smoke-tenant.yaml \
+            --dry-run \
+            --user-password placeholder-for-dry-run-only
+          echo "dry-run plan printed above with zero network calls — see the tool's own tests for the assertion that backs that claim."
+
+  # ─── UNVERIFIED: provisions a real tenant and replays one request ───────
+  # Never run. Gated to manual dispatch with an explicit confirmation input
+  # so it cannot fire by accident on a push or PR. See the file header.
+  provision-and-replay:
+    name: "UNVERIFIED — provision fixture and replay one request"
+    needs: test
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_cluster_ready == 'yes'
+    runs-on: ubuntu-latest
+    # Uncomment and set once a self-hosted runner with cluster network
+    # access exists:
+    # runs-on: [self-hosted, operan-cluster]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tools/demo-fixture/go.mod
+          cache-dependency-path: tools/demo-fixture/go.sum
+
+      - name: build demo-fixture
+        working-directory: tools/demo-fixture
+        run: go build -o /tmp/demo-fixture ./cmd/demo-fixture
+
+      - name: restore (provision) the fixture
+        working-directory: tools/demo-fixture
+        env:
+          DEMO_FIXTURE_ADMIN_PASSWORD: ${{ secrets.DEMO_FIXTURE_ADMIN_PASSWORD }}
+          DEMO_FIXTURE_USER_PASSWORD: ${{ secrets.DEMO_FIXTURE_USER_PASSWORD }}
+          # These four default to in-cluster DNS names inside the tool
+          # itself; override here once this job runs somewhere that can
+          # actually reach them (self-hosted runner, or a reachable
+          # ingress — see the file header).
+          DEMO_FIXTURE_M01_URL: ${{ vars.DEMO_FIXTURE_M01_URL }}
+          DEMO_FIXTURE_M02_URL: ${{ vars.DEMO_FIXTURE_M02_URL }}
+          DEMO_FIXTURE_M04_URL: ${{ vars.DEMO_FIXTURE_M04_URL }}
+          DEMO_FIXTURE_M05_URL: ${{ vars.DEMO_FIXTURE_M05_URL }}
+          DEMO_FIXTURE_M09_URL: ${{ vars.DEMO_FIXTURE_M09_URL }}
+        run: |
+          /tmp/demo-fixture restore \
+            --fixture fixtures/smoke-tenant.yaml \
+            --replay \
+            --replay-poll-interval 5s \
+            --replay-max-attempts 60
+
+      - name: report
+        if: always()
+        run: |
+          echo "This step intentionally has no verified content yet."
+          echo "A human should replace this with real assertions (e.g. re-run"
+          echo "restore and confirm zero new resources are created) after the"
+          echo "first successful manual run — see tools/demo-fixture/README.md."
