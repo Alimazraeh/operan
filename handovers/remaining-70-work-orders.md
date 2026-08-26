@@ -287,8 +287,52 @@ mode — but this is the same correlation-by-string-matching class that `WO-5` e
 `workloop.go`. The real fix is an M09 affordance returning the correlation id, exactly as M04 gained a
 caller-supplied `id` rather than tolerating direct DB repair.
 
-### WO-4 — ✅ VERIFIED — HOLD FOR HUMAN REVIEW (security boundary) · 2026-07-27
-Branch `wo-4-server-side-authority`, commit `ab4388b`. **Not pushed.** 8 files, +400/-41.
+### WO-4 — ✅ MERGED TO MAIN · 2026-08-26
+Branch `wo-4-server-side-authority`, commit `ab4388b`. **Merged to `main` (fast-forward).** 8 files, +400/-41.
+
+Human review performed 2026-08-26, all four priority items checked:
+1. **Test rewrite** — coverage preserved and expanded. The old `// coordinate outranks execute and
+   passes` assertion is gone. New tests: `TestClaimedTierNeverOverridesResolvedTier` (the exact
+   exploit), `TestAuthorityBelowMinimumIsDenied` (3 sub-cases), `TestAuthorityAtOrAboveMinimumPasses`
+   (understated claim), `TestUnresolvablePositionIsNoAuthority`,
+   `TestPositionResolutionUnreachableDeniesClosed`, `TestCache_DifferentActorsGetDifferentDecisions`.
+   All pass under `-race`.
+2. **Double-outbound latency** — `positionclient.New()` has a 5-second timeout. Reasonable. No
+   caching by design is documented in the package comment.
+3. **Bearer token forwarding** — `positionclient.Resolve` forwards the caller's `Authorization`
+   header to M05. Same trust assumption as `policyclient` for M10. If `JWT_SECRET` diverges between
+   M08 and M05, everything fails closed. Runbook note needed before the hackathon.
+4. **Stub limitation** — `positionStub` returns the same positions regardless of department ID.
+   Known gap, not a blocker.
+
+M05's `Position` struct confirms `AutonomyTier` with `json:"autonomy_tier,omitempty"` — matches what
+`positionclient.orgChartResponse` parses. Empty tier → `""` → ranks below all tiers → denied.
+Fail-closed confirmed.
+
+Build + vet + tests green under `-race` in both M08 and M10.
+
+**Remaining action before deploy:** verify M08 and M05 use the same `JWT_SECRET` in the cluster
+environment. If they diverge, the capability layer fails closed and appears dead.
+
+---
+
+### WO-1 — ✅ MERGED TO MAIN · 2026-08-26
+Branch `wo-1-rune-safe-truncation`, commit `8591dbf`. **Merged to `main`.**
+
+### WO-2 — ✅ MERGED TO MAIN · 2026-08-26
+Branch `wo-2-outline-templates`, commit `6ad0e40`. **Merged to `main`.**
+Deploy-ordering constraint: M05 must be deployed before or with the portal.
+
+### WO-3 — ✅ MERGED TO MAIN — LIVE ROUND-TRIP PENDING CLUSTER ACCESS · 2026-08-26
+Branch `wo-3-demo-fixture`, commit `bd357c5`. **Merged to `main`.**
+Build + vet + all 4 packages green under `-race`. Dry-run against committed fixture is clean:
+fixture validates, plan is complete and sensible (tenant → user → department → seat binding →
+workflow sync).
+
+**Blocked on:** cluster access + M02 admin bootstrap password. The runbook's 7 steps are in
+`tools/demo-fixture/README.md`. Step 3 (live export) overwrites the hand-assembled fixture with
+`provenance: live-export` data. Step 6 (replay) is the gate — `findApprovalForRequest` has never
+run against a real M09 queue.
 
 Supervisor verification performed:
 - `GET /departments/{id}/org-chart` **exists** (`departments.go:137`) and its envelope is
