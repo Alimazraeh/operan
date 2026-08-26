@@ -419,10 +419,7 @@ func (e *Engine) executeNode(ctx context.Context, nodeID string, node store.Work
 	// can surface it without engine-local memory.
 	if output != nil {
 		if text, ok := output["text"].(string); ok && text != "" {
-			if len(text) > 8000 {
-				text = text[:8000] + "…"
-			}
-			details["output"] = text
+			details["output"] = bound(text, 8000)
 		}
 		if tokens, ok := output["tokens"]; ok {
 			details["tokens"] = tokens

@@ -2,8 +2,11 @@
 //
 // The Web UI of the PRD's Experience Layer: a single binary that serves the
 // embedded Operan portal SPA and reverse-proxies /svc/<name>/ to every
-// platform service, so the browser stays same-origin (no CORS) and the JWT
-// is minted client-side from the tenant's signing secret.
+// platform service, so the browser stays same-origin (no CORS). This binary
+// holds no auth logic of its own: the SPA logs a user in against Module 02's
+// identity-access service (POST /svc/iam/auth/login), M02 mints the JWT
+// server-side against real per-user credentials, and the SPA attaches it as
+// a bearer token on every proxied request from then on.
 package main
 
 import (
