@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"sync"
@@ -55,6 +56,7 @@ type BillingStore struct {
 	invoices   map[string]*Invoice
 	byTenant   map[string][]string // keyed by TenantID -> InvoiceIDs
 	bySubscription map[string]string // SubscriptionID -> InvoiceID
+	sink       *sink
 }
 
 // NewBillingStore creates a new BillingStore.
@@ -104,6 +106,7 @@ func (s *BillingStore) CreateInvoice(inv *Invoice) (*Invoice, error) {
 	if inv.SubscriptionID != "" {
 		s.bySubscription[inv.SubscriptionID] = inv.ID
 	}
+	s.save(context.Background(), inv)
 
 	return inv, nil
 }
@@ -153,6 +156,7 @@ func (s *BillingStore) Update(id string, req InvoiceUpdateRequest) (*Invoice, er
 		inv.PaidAt = &now
 	}
 	inv.UpdatedAt = timeNow()
+	s.save(context.Background(), inv)
 
 	return inv, nil
 }

@@ -1,12 +1,14 @@
 package store
 
 import (
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"log"
 	"slices"
 	"sync"
 	"time"
@@ -45,6 +47,7 @@ type SecretStore struct {
 	mu      sync.RWMutex
 	secrets map[string]*Secret // keyed by auto-generated UUID
 	byKey   map[string]string  // keyed by "tenantID:key"
+	sink    *sink
 }
 
 // NewSecretStore creates a new SecretStore.
@@ -100,6 +103,7 @@ func (s *SecretStore) Create(tenantID, key, value, description string, tags []st
 
 	s.secrets[sec.ID] = sec
 	s.byKey[lookupKey] = sec.ID
+	s.save(context.Background(), sec)
 
 	return sec, nil
 }
@@ -204,6 +208,7 @@ func (s *SecretStore) Update(id string, description string, tags []string) (*Sec
 	sec.Description = description
 	sec.Tags = tags
 	sec.UpdatedAt = timeNow()
+	s.save(context.Background(), sec)
 
 	return sec, nil
 }
@@ -239,6 +244,7 @@ func (s *SecretStore) Rotate(id, newValue string) (*Secret, error) {
 	}
 
 	s.secrets[newSec.ID] = newSec
+	s.save(context.Background(), newSec)
 
 	return newSec, nil
 }
@@ -253,6 +259,11 @@ func (s *SecretStore) Delete(id string) error {
 		return fmt.Errorf("secret %s not found", id)
 	}
 
+	if s.sink != nil {
+		if err := s.sink.db.DeleteSecret(context.Background(), id); err != nil {
+			log.Printf("[TCTL] secret %s not removed from database (%v)", id, err)
+		}
+	}
 	deleteKey := sec.TenantID + ":" + sec.Key
 	delete(s.secrets, id)
 	delete(s.byKey, deleteKey)

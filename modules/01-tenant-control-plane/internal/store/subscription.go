@@ -1,7 +1,9 @@
 package store
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"slices"
 	"sync"
 	"time"
@@ -89,6 +91,7 @@ type SubscriptionStore struct {
 	mu        sync.RWMutex
 	subscriptions map[string]*Subscription
 	byTenant    map[string]string // keyed by TenantID -> SubscriptionID
+	sink        *sink
 }
 
 // NewSubscriptionStore creates a new SubscriptionStore.
@@ -150,6 +153,7 @@ func (s *SubscriptionStore) Create(sub *Subscription) (*Subscription, error) {
 
 	s.subscriptions[sub.ID] = sub
 	s.byTenant[sub.TenantID] = sub.ID
+	s.save(context.Background(), sub)
 
 	return sub, nil
 }
@@ -231,6 +235,7 @@ func (s *SubscriptionStore) Patch(id string, req SubscriptionUpdateRequest) (*Su
 	}
 
 	sub.UpdatedAt = timeNow()
+	s.save(context.Background(), sub)
 
 	return sub, nil
 }
@@ -255,6 +260,7 @@ func (s *SubscriptionStore) Cancel(id string, req SubscriptionCancelRequest) (*S
 	}
 
 	sub.UpdatedAt = timeNow()
+	s.save(context.Background(), sub)
 
 	return sub, nil
 }
@@ -269,6 +275,11 @@ func (s *SubscriptionStore) Delete(id string) error {
 		return fmt.Errorf("subscription %s not found", id)
 	}
 
+	if s.sink != nil {
+		if err := s.sink.db.DeleteSubscription(context.Background(), id); err != nil {
+			log.Printf("[TCTL] subscription %s not removed from database (%v)", id, err)
+		}
+	}
 	delete(s.byTenant, sub.TenantID)
 	delete(s.subscriptions, id)
 

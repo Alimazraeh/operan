@@ -13,6 +13,9 @@ data:
   POSTGRES_PASSWORD: "CHANGE_ME"
   POSTGRES_HOST: postgresql.operan.svc.cluster.local
   POSTGRES_PORT: "5432"
+  # Pre-built DSN for modules that expect a single connection string (M04, M08).
+  # Replace with a Secret in production.
+  DSN: "postgres://operan:CHANGE_ME@postgresql.operan.svc.cluster.local:5432/operan?sslmode=disable"
 ---
 apiVersion: apps/v1
 kind: StatefulSet

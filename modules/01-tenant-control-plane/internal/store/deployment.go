@@ -1,7 +1,9 @@
 package store
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"slices"
 	"strings"
 	"sync"
@@ -78,6 +80,7 @@ type DeploymentStore struct {
 	mu          sync.RWMutex
 	deployments map[string]*Deployment
 	byTenant    map[string][]string // keyed by TenantID -> DeploymentIDs
+	sink        *sink
 }
 
 // NewDeploymentStore creates a new DeploymentStore.
@@ -109,6 +112,7 @@ func (s *DeploymentStore) Create(d *Deployment) (*Deployment, error) {
 
 	s.deployments[d.ID] = d
 	s.byTenant[d.TenantID] = append(s.byTenant[d.TenantID], d.ID)
+	s.save(context.Background(), d)
 
 	return d, nil
 }
@@ -171,6 +175,7 @@ func (s *DeploymentStore) Patch(id string, req DeploymentPatchRequest) (*Deploym
 	}
 
 	d.UpdatedAt = timeNow()
+	s.save(context.Background(), d)
 
 	return d, nil
 }
@@ -183,6 +188,12 @@ func (s *DeploymentStore) Delete(id string) error {
 	d, ok := s.deployments[id]
 	if !ok {
 		return fmt.Errorf("deployment %s not found", id)
+	}
+
+	if s.sink != nil {
+		if err := s.sink.db.DeleteDeployment(context.Background(), id); err != nil {
+			log.Printf("[TCTL] deployment %s not removed from database (%v)", id, err)
+		}
 	}
 
 	// Remove from byTenant
@@ -305,6 +316,7 @@ func (s *DeploymentStore) Rollback(deploymentID string, createdBy string) (*Depl
 
 	s.deployments[rollback.ID] = rollback
 	s.byTenant[rollback.TenantID] = append(s.byTenant[rollback.TenantID], rollback.ID)
+	s.save(context.Background(), rollback)
 
 	return rollback, nil
 }
@@ -323,6 +335,7 @@ func (s *DeploymentStore) Deprecate(id string) (*Deployment, error) {
 	d.Status = DeploymentStatusDeprecated
 	d.DeprecatedAt = &now
 	d.UpdatedAt = now
+	s.save(context.Background(), d)
 
 	return d, nil
 }
@@ -350,6 +363,7 @@ func (s *DeploymentStore) transition(id string, newStatus DeploymentStatus, note
 		d.DeployedAt = &now
 	}
 	d.UpdatedAt = timeNow()
+	s.save(context.Background(), d)
 
 	return d, nil
 }

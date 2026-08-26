@@ -1,7 +1,9 @@
 package store
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"slices"
 	"strings"
 	"sync"
@@ -38,6 +40,7 @@ type PaymentMethodStore struct {
 	mu         sync.RWMutex
 	methods    map[string]*PaymentMethod
 	byTenant   map[string][]string // TenantID -> PaymentMethodIDs
+	sink       *sink
 }
 
 // NewPaymentMethodStore creates a new PaymentMethodStore.
@@ -77,6 +80,15 @@ func (s *PaymentMethodStore) Create(pm *PaymentMethod) (*PaymentMethod, error) {
 
 	s.methods[pm.ID] = pm
 	s.byTenant[pm.TenantID] = append(s.byTenant[pm.TenantID], pm.ID)
+	s.save(context.Background(), pm)
+	// Clearing a previous default is a write on its own — persist those rows too.
+	if s.sink != nil {
+		for _, existing := range s.methods {
+			if existing.ID != pm.ID && existing.TenantID == pm.TenantID {
+				s.save(context.Background(), existing)
+			}
+		}
+	}
 
 	return pm, nil
 }
@@ -122,6 +134,7 @@ func (s *PaymentMethodStore) Update(pm *PaymentMethod) (*PaymentMethod, error) {
 
 	pm.UpdatedAt = timeNow()
 	s.methods[pm.ID] = pm
+	s.save(context.Background(), pm)
 
 	cpy := *pm
 	return &cpy, nil
@@ -204,6 +217,11 @@ func (s *PaymentMethodStore) Delete(id string) error {
 		return fmt.Errorf("payment method %s not found", id)
 	}
 
+	if s.sink != nil {
+		if err := s.sink.db.DeletePaymentMethod(context.Background(), id); err != nil {
+			log.Printf("[TCTL] payment method %s not removed from database (%v)", id, err)
+		}
+	}
 	delete(s.methods, id)
 	for i, existingID := range s.byTenant[pm.TenantID] {
 		if existingID == id {
