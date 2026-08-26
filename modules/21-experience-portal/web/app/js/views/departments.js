@@ -45,9 +45,17 @@ export async function viewDepartments() {
     const meta = CATEGORY_META[cat] || { icon: "🏢", label: cat };
     list.sort((a, b) => (sizeOrder[sizeOf(a)] ?? 9) - (sizeOrder[sizeOf(b)] ?? 9));
     const flagship = ["it", "it-operations", "ops"].includes(cat);
-    const sizes = list.map(t =>
-      `<button class="sm ${flagship ? "" : "ghost"}" onclick="window.deployDept('${t.id}')"
-        title="${esc(t.name)} — ${t.agents_count || 0} agents">${esc(sizeOf(t))} · ${t.agents_count || 0} agents</button>`).join(" ");
+    // Module 05 flags each template "operational" once at least one step in
+    // one of its workflows carries a capability binding; everything else is
+    // an outline — real org chart and SOPs on paper, but the steps are LLM
+    // prose and recorded pass-throughs. Outline templates stay in the
+    // catalog (they show intended breadth) but don't get a deploy button.
+    const sizes = list.map(t => t.operational === true
+      ? `<button class="sm ${flagship ? "" : "ghost"}" onclick="window.deployDept('${t.id}')"
+          title="${esc(t.name)} — ${t.agents_count || 0} agents">${esc(sizeOf(t))} · ${t.agents_count || 0} agents</button>`
+      : `<button class="sm ghost tmpl-outline" onclick="window.explainOutline('${t.id}')"
+          title="${esc(t.name)} — outline: no authored SOPs with capability bindings yet">${esc(sizeOf(t))} · outline</button>`
+    ).join(" ");
     return `<div class="tmpl${flagship ? " flagship" : ""}">
       <h4>${meta.icon} ${esc(meta.label)}${flagship ? ' <span class="tag">flagship</span>' : ""}</h4>
       <div class="d">${esc((list[0].description || "").slice(0, 140))}</div>
@@ -145,6 +153,24 @@ window.deployDept = async function (templateId) {
     log(`<span style="color:var(--bad)">Error: ${esc(String(e))}</span>`);
     toast("Deployment failed", "bad");
   }
+};
+
+// An outline template has a real org chart, service portfolio and SOPs on
+// paper, but none of its workflow steps are bound to a capability — so
+// deploying it would stand up a department whose "work" is LLM prose and
+// recorded pass-throughs, not anything a system actually does. That's the
+// same honesty rule the Capabilities console enforces on every invocation;
+// this is where it applies before deploy even starts.
+window.explainOutline = function (templateId) {
+  const t = templates.find(x => x.id === templateId);
+  if (!t) return;
+  const deployable = templates.filter(x => x.operational === true).map(x => x.name);
+  toast(
+    `${esc(t.name)} is an outline, not a deployable department — no authored SOPs carry a ` +
+    `capability binding yet, so it would run on LLM prose and recorded pass-throughs instead ` +
+    `of real work.` + (deployable.length ? ` Deployable today: ${esc(deployable.join(", "))}.` : ""),
+    "warn"
+  );
 };
 
 // ── Department detail: the operating model, tabbed ──────────

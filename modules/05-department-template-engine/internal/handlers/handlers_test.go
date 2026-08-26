@@ -1397,6 +1397,87 @@ func TestListTemplates_WithPagination(t *testing.T) {
 	}
 }
 
+// TestListTemplates_OperationalFlag proves the WO-2 rule end-to-end through
+// the real list handler and response envelope, not just the pure helper:
+// a template is operational only once a step somewhere in its workflows
+// carries config.capability. The middle case is the required boundary —
+// a template with an authored workflow whose steps simply never bind a
+// capability must still come back as an outline (operational: false).
+func TestListTemplates_OperationalFlag(t *testing.T) {
+	h := newTestHandlers(t)
+
+	req, _ := testRequest("POST", "/templates", map[string]interface{}{
+		"name": "No Workflows", "category": "hr",
+	})
+	h.CreateTemplate(httptest.NewRecorder(), req)
+
+	req, _ = testRequest("POST", "/templates", map[string]interface{}{
+		"name": "Outline With Steps", "category": "hr",
+		"workflows": []interface{}{
+			map[string]interface{}{
+				"id":   "wf-1",
+				"name": "Onboard",
+				"steps": []interface{}{
+					map[string]interface{}{"id": "s1", "type": "agent_call", "config": map[string]interface{}{"agent": "hr-lead"}},
+					map[string]interface{}{"id": "s2", "type": "human_gate"},
+				},
+			},
+		},
+	})
+	h.CreateTemplate(httptest.NewRecorder(), req)
+
+	req, _ = testRequest("POST", "/templates", map[string]interface{}{
+		"name": "Operational Template", "category": "it",
+		"workflows": []interface{}{
+			map[string]interface{}{
+				"id":   "wf-1",
+				"name": "Route Ticket",
+				"steps": []interface{}{
+					map[string]interface{}{"id": "s1", "type": "tool_call", "config": map[string]interface{}{"capability": "itsm.ticket.assign"}},
+				},
+			},
+		},
+	})
+	h.CreateTemplate(httptest.NewRecorder(), req)
+
+	req, _ = testRequest("GET", "/templates?page_size=10", nil)
+	rec := httptest.NewRecorder()
+	h.ListTemplates(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var resp map[string]interface{}
+	json.Unmarshal(rec.Body.Bytes(), &resp)
+	data, ok := resp["data"].([]interface{})
+	if !ok {
+		t.Fatalf("expected data array, got %v", resp["data"])
+	}
+
+	got := map[string]bool{}
+	for _, item := range data {
+		m := item.(map[string]interface{})
+		got[m["name"].(string)] = m["operational"].(bool)
+	}
+
+	want := map[string]bool{
+		"No Workflows":         false,
+		"Outline With Steps":   false, // boundary case: workflows + steps, zero capability bindings
+		"Operational Template": true,
+	}
+	for name, wantOp := range want {
+		gotOp, ok := got[name]
+		if !ok {
+			t.Errorf("template %q missing from list response", name)
+			continue
+		}
+		if gotOp != wantOp {
+			t.Errorf("template %q: operational = %v, want %v", name, gotOp, wantOp)
+		}
+	}
+}
+
 func TestGetTemplate_InvalidID(t *testing.T) {
 	h := newTestHandlers(t)
 	req, _ := testRequest("GET", "/templates/", nil)
