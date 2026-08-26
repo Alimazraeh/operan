@@ -1,0 +1,137 @@
+# smoke-tenant demo fixture
+#
+# PROVENANCE — read this before trusting any field below.
+#
+# This file was hand-assembled from `handovers/../memory/operan-current-state-handoff.md`
+# (the 2026-07-26 session's verified-live findings) by an agent with NO cluster
+# access. It is metadata.provenance: hand-assembled, NOT live-export. Every field
+# below is either:
+#   (a) transcribed from a fact the handoff notes mark as "VERIFIED LIVE" against
+#       the real cluster on an earlier date, with a comment saying so, or
+#   (b) a deliberate, commented placeholder/default where no verified fact exists.
+#
+# It deliberately does NOT include the four AI-agent-held seats the it-medium-001
+# template defines (Systems Administrator, Network Administrator, Helpdesk Lead,
+# GPO Pod) — the handoff notes confirm five agents exist in the live tenant but
+# do not record their ids or names, and inventing plausible-looking UUIDs for
+# them would misrepresent fabricated data as verified fact. Only Dana's seat,
+# whose id IS recorded verified-live, is bound here.
+#
+# ACTION REQUIRED: run `demo-fixture export` against the live smoke-tenant at the
+# first opportunity and replace this file with real output (see the tool's
+# README, "First real round-trip" section). Until then, treat this file as a
+# well-researched draft of the target shape, not a restorable snapshot of the
+# live tenant.
+schema_version: 1
+metadata:
+  name: smoke-tenant-demo
+  description: >-
+    Dana's IT department on smoke-tenant — the seat binding, the org chart,
+    and the access-grant request loop that is currently this project's
+    primary sales asset. See the provenance note above.
+  provenance: hand-assembled
+  source_note: >-
+    handovers/../memory/operan-current-state-handoff.md, 2026-07-26 session,
+    sections marked VERIFIED LIVE. No cluster access at authoring time —
+    exported_at is intentionally omitted (only set by a real `export` run).
+
+tenant:
+  name: smoke-tenant
+  display_name: Smoke Tenant
+  # plan/region/isolation_level: NOT independently confirmed against Module 01.
+  # The handoff notes show the portal accepting "any tenant slug" at login,
+  # meaning M02/M04/M05 do not require a Module 01 tenant record to exist for
+  # the tenant to be operational — so these three fields may not even have a
+  # live source of truth to confirm against. Reasonable defaults pending a
+  # real export.
+  plan: saas
+  region: me-east-1
+  isolation_level: namespace
+
+users:
+  # VERIFIED LIVE (handoff notes): dana@adri.nz, id
+  # 3a0c0c3c-c849-4b74-883a-9ccf85b14b5c, tenant smoke-tenant, role
+  # department_head. Password is deliberately absent — restore sets one from
+  # --user-password / $DEMO_FIXTURE_USER_PASSWORD, never from this file.
+  - ref: dana
+    email: dana@adri.nz
+    display_name: Dana Q
+    role_ids:
+      - department_head
+
+department:
+  # it-medium-001 v1.1.0, "Medium IT Department" — confirmed against the
+  # template source (modules/05-department-template-engine/templates/it-medium-001.json),
+  # not just the handoff notes.
+  template_id: it-medium-001
+  # No department_name override recorded — deploying with an empty name lets
+  # Module 05 default it to the template's own name ("Medium IT Department"),
+  # per apiclient.FindDepartment's doc comment on why restore's idempotency
+  # check treats an empty name as "match by template id alone".
+  environment: production
+  seat_bindings:
+    # VERIFIED LIVE: Dana bound to pos-it-manager-01 (200); her /me/assignments
+    # returned IT Manager, is_department_root=true, autonomy_tier=coordinate,
+    # holds gate it-high-risk-approvals — all of which match this position's
+    # definition in the template source directly.
+    - position_id: pos-it-manager-01
+      holder_type: human
+      user_ref: dana
+  # VERIFIED LIVE: POST /departments/{id}/services/sync-workflows is
+  # idempotent and refuses undefined SOPs (ran once: 4 changes; re-ran: 0
+  # changes, no error).
+  sync_workflows: true
+
+history:
+  # VERIFIED LIVE, E2E, IN PRODUCTION (handoff notes): Dana raised an access
+  # request on wf-access-001 (svc-access-management) → agent it-gpo-01 drafted
+  # a validation report → gate landed in Dana's own inbox (wf-access-001's
+  # access-02 step declares required_by: it-manager-01, and Dana holds that
+  # seat) → she approved → access-03 (identity.access.grant) and access-04
+  # (comms.message.send) executed through the Module 08 funnel: both
+  # completed, simulated:true, policy "Policy allowed: Allow
+  # identity.access.grant", actor pos-it-manager-01 at autonomy coordinate.
+  # The handoff notes truncate the original title ("Grant J. Rahman read
+  # access…"); reproduced here exactly as recorded, ellipsis included — the
+  # full text was not captured and is not guessed at here.
+  - service_id: svc-access-management
+    title: "Grant J. Rahman read access…"
+    priority: normal
+    status: completed
+    timeline:
+      - kind: created
+      - kind: dispatched
+      - kind: agent_output
+        detail: "it-gpo-01 drafted the grant specification"
+      - kind: gate_raised
+        detail: "access-02: required_by it-manager-01"
+      - kind: gate_responded
+        detail: "approved by Dana Q (pos-it-manager-01)"
+      - kind: completed
+    invocations:
+      - capability_id: identity.access.grant
+        status: completed
+        simulated: true
+        policy_decision: "Policy allowed: Allow identity.access.grant"
+      - capability_id: comms.message.send
+        status: completed
+        simulated: true
+
+replay:
+  # A fresh demonstration request on the SAME gated SOP as the historical
+  # entry above, so `restore --replay` re-proves the identical loop
+  # end-to-end rather than inventing a new one: raise → it-gpo-01 drafts →
+  # gate lands in Dana's inbox (she holds pos-it-manager-01) → she approves
+  # (this tool logs in as her using --user-password) → identity.access.grant
+  # + comms.message.send execute → completed.
+  #
+  # The title is deliberately distinct from the historical entry's (not a
+  # replay of history — see fixture.HistoricalRequest's doc comment) and
+  # short enough to never hit Module 03's 100-rune approval-title truncation,
+  # which is how this tool correlates the raised request to the Module 09
+  # approval it needs to approve (see restorecmd's findApprovalForRequest).
+  service_id: svc-access-management
+  title: "Grant demo-fixture replay read access to shared drive"
+  body: "Raised by demo-fixture restore --replay to prove the request loop still completes after a restore."
+  priority: normal
+  approver_ref: dana
