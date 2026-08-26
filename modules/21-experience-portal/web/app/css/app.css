@@ -666,6 +666,11 @@ tbody td.mono { font-family: var(--mono); font-size: 11px; color: var(--text-dim
 .tmpl .d { color: var(--text-dim); font-size: 12.5px; flex: 1; line-height: 1.5; }
 .tmpl .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
 
+/* Outline templates (no authored SOP with a capability binding): visible,
+   dashed to read as "sketch, not deployable", clickable to explain why. */
+button.tmpl-outline { border-style: dashed; color: var(--text-muted); cursor: help; }
+button.tmpl-outline:hover { border-color: var(--warn); color: var(--warn); }
+
 /* ── Activity feed / events ─────────────────────────────── */
 .ev {
   display: flex; align-items: center; gap: 12px;
