@@ -2,8 +2,8 @@
   "id": "ops-all-001",
   "name": "IT Operations Team",
   "description": "An IT/Operations department template for companies of any size (3-20 FTE). This template covers an operations team with an IT Manager, System Administrator, Network Engineer, Help Desk Lead, Help Desk Agents, Security Administrator, and a General Purpose Operator (GPO). It provides comprehensive IT infrastructure management including infrastructure administration, network management, security operations, help desk support, user provisioning, and disaster recovery. Designed for organizations that need reliable, secure, and scalable IT operations with clear service level expectations.",
-  "category": "operations",
-  "version": "1.0.0",
+  "category": "ops",
+  "version": "1.0.1",
   "metadata": {
     "enterprise_size": "all",
     "department_size": "3-20 FTE",
@@ -18,6 +18,7 @@
     "last_reviewed": "2026-07-17"
   },
   "tags": [
+    "unified",
     "operations",
     "it-infrastructure",
     "network-administration",
