@@ -368,7 +368,11 @@ spec:
       enableServiceLinks: false
       containers:
       - name: department-templates
-        image: alimazraeh/operan-05-department-template-engine:latest
+        # Sha-pinned to match the cluster's current rollout. Update this
+        # sha when deploying a new M05 build. Do NOT use :latest — the
+        # cluster is managed via sha-pinned rollouts and :latest would
+        # un-pin the cluster to whatever was last pushed to the registry.
+        image: alimazraeh/operan-05-department-template-engine:sha-bcce0d9
         imagePullPolicy: Always
         ports:
         - containerPort: 8005
