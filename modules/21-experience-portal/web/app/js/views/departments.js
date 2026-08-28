@@ -44,7 +44,7 @@ export async function viewDepartments() {
   const catalogCards = Object.entries(byCat).map(([cat, list]) => {
     const meta = CATEGORY_META[cat] || { icon: "🏢", label: cat };
     list.sort((a, b) => (sizeOrder[sizeOf(a)] ?? 9) - (sizeOrder[sizeOf(b)] ?? 9));
-    const flagship = ["it", "it-operations", "ops"].includes(cat);
+    const flagship = ["it", "it-operations"].includes(cat);
     // Module 05 flags each template "operational" once at least one step in
     // one of its workflows carries a capability binding; everything else is
     // an outline — real org chart and SOPs on paper, but the steps are LLM
