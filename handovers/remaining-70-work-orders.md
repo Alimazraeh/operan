@@ -287,10 +287,9 @@ mode — but this is the same correlation-by-string-matching class that `WO-5` e
 `workloop.go`. The real fix is an M09 affordance returning the correlation id, exactly as M04 gained a
 caller-supplied `id` rather than tolerating direct DB repair.
 
-### WO-4 — ✅ MERGED TO LOCAL MAIN — HUMAN REVIEW CONFIRMED BY USER 2026-08-26 · NOT PUSHED
+### WO-4 — ✅ MERGED + DEPLOYED · HUMAN REVIEW CONFIRMED BY USER 2026-08-27
 Branch `wo-4-server-side-authority`, commit `ab4388b`. **Merged to local `main` (fast-forward).**
-**Not pushed to origin. No image contains this work. The vulnerability is still live in the
-cluster (m08 @ sha-4edd99a, m10 @ sha-916f7d6) until a new image is built and deployed.**
+**Deployed:** 2026-08-28. M08+M10 at `sha-aaa2d15`. The vulnerability is closed in production.
 
 Human review performed 2026-08-26, all four priority items checked:
 1. **Test rewrite** — coverage preserved and expanded. The old `// coordinate outranks execute and
@@ -318,16 +317,19 @@ environment. If they diverge, the capability layer fails closed and appears dead
 
 ---
 
-### WO-1 — ✅ MERGED TO LOCAL MAIN · 2026-08-26 · NOT PUSHED
-Branch `wo-1-rune-safe-truncation`, commit `8591dbf`. **Merged to local `main`. Not pushed.**
+### WO-1 — ✅ MERGED + DEPLOYED · 2026-08-26 → 2026-08-28
+Branch `wo-1-rune-safe-truncation`, commit `8591dbf`. **Merged to local `main`. Deployed 2026-08-28
+(M03 at `sha-aaa2d15`).**
 
-### WO-2 — ✅ MERGED TO LOCAL MAIN · 2026-08-26 · NOT PUSHED
-Branch `wo-2-outline-templates`, commit `6ad0e40`. **Merged to local `main`. Not pushed.**
-Deploy-ordering constraint: M05 must be deployed before or with the portal.
+### WO-2 — ✅ MERGED + DEPLOYED · 2026-08-26 → 2026-08-28
+Branch `wo-2-outline-templates`, commit `6ad0e40`. **Merged to local `main`. Deployed 2026-08-28
+(M05 at `sha-aaa2d15`).**
+Deploy-ordering constraint: M05 must be deployed before or with the portal. ✅ (M05 first, M21 last.)
 
-### WO-3 — ✅ MERGED TO LOCAL MAIN — LIVE ROUND-TRIP PENDING CLUSTER ACCESS · 2026-08-26 · NOT PUSHED
+### WO-3 — ✅ MERGED + PUSHED — LIVE ROUND-TRIP PENDING CLUSTER ACCESS · 2026-08-26
 Branch `wo-3-demo-fixture`, commit `579ce93` (rewritten from `bd357c5` during the 2026-08-28
-history scrub of a test fixture that tripped GitHub push protection). **Merged to local `main`.**
+history scrub of a test fixture that tripped GitHub push protection). **Merged to local `main`,
+pushed to origin.**
 Build + vet + all 4 packages green under `-race`. Dry-run against committed fixture is clean:
 fixture validates, plan is complete and sensible (tenant → user → department → seat binding →
 workflow sync).
@@ -371,12 +373,24 @@ For the human reviewer, in priority order:
 
 ---
 
-### WO-7 — PostgreSQL persistence for M01 + K8s infrastructure hardening · 2026-08-27 · ON LOCAL MAIN · NOT PUSHED
+### WO-7 — PostgreSQL persistence for M01 + K8s infrastructure hardening · 2026-08-27 · MERGED + DEPLOYED
 
 **Process note:** This work was started directly on local `main` without a work order, violating
 Rule 1 ("Branch, never main"). The code was committed as `18993e1` before being regularized here.
 The architect reviewed the engineering and found it sound; the process violation is recorded.
 No further work will be started on main without a work order and a branch.
+
+**Deployed:** 2026-08-28. Images built for `linux/amd64`, pushed to Docker Hub as `sha-aaa2d15`,
+deployed to the cluster. All 7 affected pods (M01, M03, M04, M05, M08, M10, M21) running with
+zero restarts. M03 confirmed connected to PostgreSQL (`orchestration` database).
+
+**Additional fixes during deploy (not in the original commit):**
+- M03: `pgx/stdlib` blank import added (commit `42fec95`) — the repository layer used
+  `database/sql` but never registered the pgx driver. Crashed with "unknown driver pgx".
+- M03: `orchestration` database created in the cluster (did not exist).
+- M04/M08: live cluster env vars patched from missing `secret/operan-postgres` to
+  `configMapKeyRef/operan-postgresql/DSN`.
+- `operan-postgresql` ConfigMap: `DSN` key added to the live cluster.
 
 **Scope (bundled in commit `18993e1`, 32 files, +2384/-74):**
 
