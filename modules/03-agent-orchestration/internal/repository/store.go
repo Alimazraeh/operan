@@ -289,6 +289,21 @@ func (s *Store) UpdateWorkflowCurrentNodes(id string, nodeIDs []string) error {
 	}
 }
 
+// ReconcileOrphans fails workflows that a previous process left in a
+// non-terminal state. The in-memory mode has nothing to reconcile (its state
+// died with the process, which is the honest outcome); the PostgreSQL mode
+// has to repair records that would otherwise poll as running forever.
+func (s *Store) ReconcileOrphans() (int, error) {
+	switch s.mode {
+	case ModeInMemory:
+		return 0, nil
+	case ModePostgreSQL:
+		return s.repo.Workflow().FailOrphanedActive()
+	default:
+		return 0, fmt.Errorf("unknown store mode: %d", s.mode)
+	}
+}
+
 func (s *Store) ListWorkflows(tenantID string, page, pageSize int, status *string) ([]*store.Workflow, int, bool) {
 	switch s.mode {
 	case ModeInMemory:
