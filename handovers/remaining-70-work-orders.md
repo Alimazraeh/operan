@@ -319,12 +319,14 @@ environment. If they diverge, the capability layer fails closed and appears dead
 
 ### WO-1 — ✅ MERGED + DEPLOYED · 2026-08-26 → 2026-08-28
 Branch `wo-1-rune-safe-truncation`, commit `8591dbf`. **Merged to local `main`. Deployed 2026-08-28
-(M03 at `sha-aaa2d15`).**
+(M03 at `sha-b72ca6a`, which includes the WO-1 fix + pgx driver + boot-time reconciliation).**
 
 ### WO-2 — ✅ MERGED + DEPLOYED · 2026-08-26 → 2026-08-28
 Branch `wo-2-outline-templates`, commit `6ad0e40`. **Merged to local `main`. Deployed 2026-08-28
 (M05 at `sha-aaa2d15`).**
 Deploy-ordering constraint: M05 must be deployed before or with the portal. ✅ (M05 first, M21 last.)
+⚠️ A `kubectl apply` after `kubectl set image` silently reset M05 to `sha-bcce0d9` — caught by the
+architect's image read-back, fixed by re-rolling and reading the image back from the live deployment.
 
 ### WO-3 — ✅ MERGED + PUSHED — LIVE ROUND-TRIP PENDING CLUSTER ACCESS · 2026-08-26
 Branch `wo-3-demo-fixture`, commit `579ce93` (rewritten from `bd357c5` during the 2026-08-28
@@ -380,17 +382,28 @@ Rule 1 ("Branch, never main"). The code was committed as `18993e1` before being 
 The architect reviewed the engineering and found it sound; the process violation is recorded.
 No further work will be started on main without a work order and a branch.
 
-**Deployed:** 2026-08-28. Images built for `linux/amd64`, pushed to Docker Hub as `sha-aaa2d15`,
+**Deployed:** 2026-08-28. Images built for `linux/amd64`, pushed to Docker Hub,
 deployed to the cluster. All 7 affected pods (M01, M03, M04, M05, M08, M10, M21) running with
 zero restarts. M03 confirmed connected to PostgreSQL (`orchestration` database).
+
+**Image tags (read back from live deployments, 2026-08-28 17:15 UTC):**
+- M01, M04, M05, M08, M10, M21: `sha-aaa2d15`
+- M03: `sha-b72ca6a` (re-tagged from the incorrect initial `sha-aaa2d15`)
 
 **Additional fixes during deploy (not in the original commit):**
 - M03: `pgx/stdlib` blank import added (commit `42fec95`) — the repository layer used
   `database/sql` but never registered the pgx driver. Crashed with "unknown driver pgx".
 - M03: `orchestration` database created in the cluster (did not exist).
-- M04/M08: live cluster env vars patched from missing `secret/operan-postgres` to
-  `configMapKeyRef/operan-postgresql/DSN`.
-- `operan-postgresql` ConfigMap: `DSN` key added to the live cluster.
+- M03: boot-time reconciliation added (commit `b72ca6a`) — fails orphaned non-terminal
+  workflows at startup, preventing zombie runs with persistent state.
+- M04/M08: live cluster env vars patched to `secretKeyRef/operan-postgres/dsn`.
+  (Initially patched to `configMapKeyRef/operan-postgresql/DSN` — the weaker pattern —
+  then reverted to the Secret per architect P2-3.)
+- `operan-postgres` Secret created (dsn, user, password, host, port). DSN/USER/PASSWORD
+  removed from the `operan-postgresql` ConfigMap. PostgreSQL StatefulSet `envFrom`
+  updated to include the Secret.
+- M05: `kubectl apply` silently reset M05 from `sha-aaa2d15` back to `sha-bcce0d9`.
+  Caught by the architect's image read-back. Re-rolled and verified.
 
 **Scope (bundled in commit `18993e1`, 32 files, +2384/-74):**
 
@@ -403,7 +416,7 @@ zero restarts. M03 confirmed connected to PostgreSQL (`orchestration` database).
    - `main.go`: fail-closed if `DATABASE_URL` set but unreachable. `Hydrate*()` reloads all 11
      stores at boot with a per-entity load summary.
    - `config.go`: `DatabaseURL` from `DATABASE_URL` env var. Empty → in-memory mode (unchanged).
-   - K8s: `DATABASE_URL` wired to `operan-postgresql` ConfigMap `DSN` key.
+   - K8s: `DATABASE_URL` wired to `secret/operan-postgres/dsn`.
 
 2. **M03 (Agent Orchestration) — PostgreSQL enabled in K8s.**
    - `DB_MODE=postgres` + connection env vars added. The existing 18-table PostgreSQL
@@ -412,8 +425,10 @@ zero restarts. M03 confirmed connected to PostgreSQL (`orchestration` database).
 3. **M04/M08 — pre-existing crash bug fixed.**
    - Both referenced a `secret` named `operan-postgres` that does not exist in any manifest.
      Would have crashed with `CreateContainerConfigError` on next deploy.
-   - Fixed: added `DSN` key to `operan-postgresql` ConfigMap. Both modules switched to
-     `configMapKeyRef`.
+   - Fixed: created the `operan-postgres` Secret (dsn, user, password, host, port).
+     Both modules use `secretKeyRef/operan-postgres/dsn`. (Initially patched to
+     `configMapKeyRef/operan-postgresql/DSN` — the weaker pattern — then reverted
+     to the Secret per architect P2-3.)
 
 4. **K8s — hostPath → PVC.**
    - 4 module data volumes (M05, M07, M09, M11) converted from node-local `hostPath` to
@@ -421,7 +436,8 @@ zero restarts. M03 confirmed connected to PostgreSQL (`orchestration` database).
    - `fix-data-perms` init containers removed. Zero `hostPath` references remain in module
      deployments.
 
-5. **M05 image sha-pinned** in `modules.yaml` to `sha-bcce0d9` (current cluster state).
+5. **M05 image sha-pinned** in `modules.yaml` to `sha-aaa2d15` (current cluster state,
+   verified by image read-back). M03 pinned to `sha-b72ca6a`.
    `:latest` would un-pin the cluster to whatever was last pushed to the registry.
 
 6. **ops-all-001 dropped from flagship array** in portal `departments.js`. The template has
