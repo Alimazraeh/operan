@@ -38,6 +38,18 @@ func main() {
 		log.Fatalf("store initialization error: %v", err)
 	}
 
+	// ─── Boot-time reconciliation ─────────────────────────────────────────────
+	// Workflows run in-process: a non-terminal record is only valid while the
+	// engine that started it is alive. A previous process's leftovers are
+	// orphans — nothing advances them, and leaving them as running makes
+	// pollers (e.g. M05's deployment poller) hang instead of failing the
+	// request honestly. Fail the orphans so callers see a terminal state.
+	if n, err := store.ReconcileOrphans(); err != nil {
+		log.Printf("[store] WARNING: orphan reconciliation failed: %v — non-terminal workflows from a previous process may hang pollers", err)
+	} else if n > 0 {
+		log.Printf("[store] reconciliation: marked %d orphaned workflow(s) from a previous process as failed", n)
+	}
+
 	// ─── Initialize event publisher ───────────────────────────────────────────
 	// Build broker config from runtime config
 	brokerCfg := events.BrokerConfig{

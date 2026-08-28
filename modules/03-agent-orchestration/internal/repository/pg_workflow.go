@@ -90,6 +90,32 @@ func (r *WorkflowPostgres) UpdateCurrentNodes(id string, nodeIDs []string) error
 	return err
 }
 
+// FailOrphanedActive marks workflows in a non-terminal state as failed.
+//
+// The DAG engine runs workflows in-process: the "running" state is only valid
+// while the engine that started it is alive. On boot, any persisted workflow
+// still marked running/paused/pending was orphaned by a restart — nothing
+// will ever advance it. Without this reconciliation the record survives as
+// running forever: callers that poll GetWorkflowState succeed, miss counters
+// reset, and the workflow is a zombie that hangs its requesters indefinitely
+// instead of failing them honestly. Failing the orphans restores the honest
+// terminal state (callers see "failed" and surface the error).
+func (r *WorkflowPostgres) FailOrphanedActive() (int, error) {
+	ctx := defaultCtx()
+	res, err := r.db.ExecContext(ctx,
+		`UPDATE workflows SET status=$1, completed_at=now()
+		 WHERE status IN ('pending','running','paused')`,
+		store.WorkflowStatusFailed)
+	if err != nil {
+		return 0, err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return int(n), nil
+}
+
 func (r *WorkflowPostgres) List(tenantID string, page, pageSize int, status *string) ([]*store.Workflow, int, error) {
 	ctx := defaultCtx()
 	if page < 1 {

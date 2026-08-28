@@ -20,6 +20,7 @@ type WorkflowRepo interface {
 	UpdateStatus(id string, status store.WorkflowStatus) error
 	UpdateStatusAndTenant(id, tenantID string, status store.WorkflowStatus) error
 	UpdateCurrentNodes(id string, nodeIDs []string) error
+	FailOrphanedActive() (int, error)
 	List(tenantID string, page, pageSize int, status *string) ([]*store.Workflow, int, error)
 	AddCheckpoint(cp *store.Checkpoint) error
 	GetCheckpoints(workflowID string) ([]*store.Checkpoint, error)
