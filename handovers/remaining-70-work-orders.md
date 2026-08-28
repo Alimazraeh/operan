@@ -326,7 +326,8 @@ Branch `wo-2-outline-templates`, commit `6ad0e40`. **Merged to local `main`. Not
 Deploy-ordering constraint: M05 must be deployed before or with the portal.
 
 ### WO-3 — ✅ MERGED TO LOCAL MAIN — LIVE ROUND-TRIP PENDING CLUSTER ACCESS · 2026-08-26 · NOT PUSHED
-Branch `wo-3-demo-fixture`, commit `bd357c5`. **Merged to local `main`. Not pushed.**
+Branch `wo-3-demo-fixture`, commit `579ce93` (rewritten from `bd357c5` during the 2026-08-28
+history scrub of a test fixture that tripped GitHub push protection). **Merged to local `main`.**
 Build + vet + all 4 packages green under `-race`. Dry-run against committed fixture is clean:
 fixture validates, plan is complete and sensible (tenant → user → department → seat binding →
 workflow sync).
@@ -373,11 +374,11 @@ For the human reviewer, in priority order:
 ### WO-7 — PostgreSQL persistence for M01 + K8s infrastructure hardening · 2026-08-27 · ON LOCAL MAIN · NOT PUSHED
 
 **Process note:** This work was started directly on local `main` without a work order, violating
-Rule 1 ("Branch, never main"). The code was committed as `852483a` before being regularized here.
+Rule 1 ("Branch, never main"). The code was committed as `18993e1` before being regularized here.
 The architect reviewed the engineering and found it sound; the process violation is recorded.
 No further work will be started on main without a work order and a branch.
 
-**Scope (bundled in commit `852483a`, 32 files, +2384/-74):**
+**Scope (bundled in commit `18993e1`, 32 files, +2384/-74):**
 
 1. **M01 (Tenant Control Plane) — PostgreSQL persistence from scratch.**
    - New `internal/database/` package: pgxpool + 11-table schema (tenants, subscriptions,
