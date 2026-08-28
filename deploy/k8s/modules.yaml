@@ -38,13 +38,12 @@ spec:
           value: kafka
         # PostgreSQL persistence for tenant, subscription, secret, and
         # deployment state. Without this the control plane loses everything
-        # on pod restart. DSN from the operan-postgresql ConfigMap (shared
-        # with M03/M04/M08).
+        # on pod restart. DSN from the operan-postgres Secret.
         - name: DATABASE_URL
           valueFrom:
-            configMapKeyRef:
-              name: operan-postgresql
-              key: DSN
+            secretKeyRef:
+              name: operan-postgres
+              key: dsn
         readinessProbe:
           httpGet:
             path: /health
@@ -173,7 +172,9 @@ spec:
       enableServiceLinks: false
       containers:
       - name: agent-orchestration
-        image: alimazraeh/operan-03-agent-orchestration:latest
+        # Sha-pinned to match the cluster's current rollout. Update this
+        # sha when deploying a new M03 build. Do NOT use :latest.
+        image: alimazraeh/operan-03-agent-orchestration:sha-b72ca6a
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -212,14 +213,14 @@ spec:
           value: '5432'
         - name: DB_USER
           valueFrom:
-            configMapKeyRef:
-              name: operan-postgresql
-              key: POSTGRES_USER
+            secretKeyRef:
+              name: operan-postgres
+              key: user
         - name: DB_PASSWORD
           valueFrom:
-            configMapKeyRef:
-              name: operan-postgresql
-              key: POSTGRES_PASSWORD
+            secretKeyRef:
+              name: operan-postgres
+              key: password
         - name: DB_NAME
           value: orchestration
         readinessProbe:
@@ -304,14 +305,12 @@ spec:
         # no longer resolved. With it set but unreachable the service refuses to
         # start rather than looking healthy while forgetting everything.
         #
-        # DSN built from the operan-postgresql ConfigMap (shared with M03 and
-        # the PostgreSQL StatefulSet). The password is cluster-internal; for
-        # production, replace with a Secret and TLS.
+        # DSN from the operan-postgres Secret (shared with M01/M03/M08).
         - name: AGENT_REGISTRY_DATABASE_DSN
           valueFrom:
-            configMapKeyRef:
-              name: operan-postgresql
-              key: DSN
+            secretKeyRef:
+              name: operan-postgres
+              key: dsn
         readinessProbe:
           httpGet:
             path: /health
@@ -551,12 +550,12 @@ spec:
           value: kafka.operan.svc.cluster.local:9092
         # The capability layer: bindings are customer configuration and
         # invocations are the audit trail — durable, or the service refuses to
-        # start. DSN from the operan-postgresql ConfigMap (shared with M03/M04).
+        # start. DSN from the operan-postgres Secret (shared with M01/M03/M04).
         - name: MODULE08_DB_URL
           valueFrom:
-            configMapKeyRef:
-              name: operan-postgresql
-              key: DSN
+            secretKeyRef:
+              name: operan-postgres
+              key: dsn
         - name: MODULE08_POLICY_URL
           value: http://policy-governance.operan.svc.cluster.local:8010
         # Demo bootstrap: these tenants get the simulated provider bound to

@@ -9,13 +9,28 @@ metadata:
   namespace: operan
 data:
   POSTGRES_DB: operan
-  POSTGRES_USER: operan
-  POSTGRES_PASSWORD: "CHANGE_ME"
   POSTGRES_HOST: postgresql.operan.svc.cluster.local
   POSTGRES_PORT: "5432"
-  # Pre-built DSN for modules that expect a single connection string (M04, M08).
-  # Replace with a Secret in production.
-  DSN: "postgres://operan:CHANGE_ME@postgresql.operan.svc.cluster.local:5432/operan?sslmode=disable"
+---
+# PostgreSQL credentials — consumed by the StatefulSet (POSTGRES_USER,
+# POSTGRES_PASSWORD) and by M01/M03/M04/M08 (dsn, user, password).
+# Create once per cluster:
+#   kubectl -n operan create secret generic operan-postgres \
+#     --from-literal=dsn='postgres://operan:CHANGE_ME@postgresql.operan.svc.cluster.local:5432/operan?sslmode=disable' \
+#     --from-literal=user=operan --from-literal=password=CHANGE_ME \
+#     --from-literal=host=postgresql.operan.svc.cluster.local --from-literal=port=5432
+apiVersion: v1
+kind: Secret
+metadata:
+  name: operan-postgres
+  namespace: operan
+type: Opaque
+stringData:
+  dsn: "postgres://operan:CHANGE_ME@postgresql.operan.svc.cluster.local:5432/operan?sslmode=disable"
+  user: "operan"
+  password: "CHANGE_ME"
+  host: "postgresql.operan.svc.cluster.local"
+  port: "5432"
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -43,6 +58,8 @@ spec:
         envFrom:
         - configMapRef:
             name: operan-postgresql
+        - secretRef:
+            name: operan-postgres
         ports:
         - containerPort: 5432
           name: postgres
