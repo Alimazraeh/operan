@@ -318,20 +318,20 @@ environment. If they diverge, the capability layer fails closed and appears dead
 ---
 
 ### WO-1 — ✅ MERGED + DEPLOYED · 2026-08-26 → 2026-08-28
-Branch `wo-1-rune-safe-truncation`, commit `8591dbf`. **Merged to local `main`. Deployed 2026-08-28
-(M03 at `sha-b72ca6a`, which includes the WO-1 fix + pgx driver + boot-time reconciliation).**
+Branch `wo-1-rune-safe-truncation`, commit `8591dbf` (post-rewrite: `ac0e9a8`).
+**Merged to local `main`. Deployed 2026-08-28 (M03 at `sha-b72ca6a`, which includes the
+WO-1 fix + pgx driver + boot-time reconciliation).**
 
 ### WO-2 — ✅ MERGED + DEPLOYED · 2026-08-26 → 2026-08-28
-Branch `wo-2-outline-templates`, commit `6ad0e40`. **Merged to local `main`. Deployed 2026-08-28
-(M05 at `sha-aaa2d15`).**
+Branch `wo-2-outline-templates`, commit `6ad0e40` (post-rewrite: `b4831e8`).
+**Merged to local `main`. Deployed 2026-08-28 (M05 at `sha-aaa2d15`).**
 Deploy-ordering constraint: M05 must be deployed before or with the portal. ✅ (M05 first, M21 last.)
 ⚠️ A `kubectl apply` after `kubectl set image` silently reset M05 to `sha-bcce0d9` — caught by the
 architect's image read-back, fixed by re-rolling and reading the image back from the live deployment.
 
 ### WO-3 — ✅ MERGED + PUSHED — LIVE ROUND-TRIP PENDING CLUSTER ACCESS · 2026-08-26
-Branch `wo-3-demo-fixture`, commit `579ce93` (rewritten from `bd357c5` during the 2026-08-28
-history scrub of a test fixture that tripped GitHub push protection). **Merged to local `main`,
-pushed to origin.**
+Branch `wo-3-demo-fixture`, commit `ae2e86d` (post-rewrite; was `bd357c5` → `579ce93` →
+`ae2e86d` across two history scrubs). **Merged to local `main`, pushed to origin.**
 Build + vet + all 4 packages green under `-race`. Dry-run against committed fixture is clean:
 fixture validates, plan is complete and sensible (tenant → user → department → seat binding →
 workflow sync).
@@ -378,9 +378,10 @@ For the human reviewer, in priority order:
 ### WO-7 — PostgreSQL persistence for M01 + K8s infrastructure hardening · 2026-08-27 · MERGED + DEPLOYED
 
 **Process note:** This work was started directly on local `main` without a work order, violating
-Rule 1 ("Branch, never main"). The code was committed as `18993e1` before being regularized here.
-The architect reviewed the engineering and found it sound; the process violation is recorded.
-No further work will be started on main without a work order and a branch.
+Rule 1 ("Branch, never main"). The code was committed as `18993e1` (post-rewrite:
+`4433f0e`) before being regularized here. The architect reviewed the engineering and
+found it sound; the process violation is recorded. No further work will be started on
+main without a work order and a branch.
 
 **Deployed:** 2026-08-28. Images built for `linux/amd64`, pushed to Docker Hub,
 deployed to the cluster. All 7 affected pods (M01, M03, M04, M05, M08, M10, M21) running with
@@ -391,11 +392,13 @@ zero restarts. M03 confirmed connected to PostgreSQL (`orchestration` database).
 - M03: `sha-b72ca6a` (re-tagged from the incorrect initial `sha-aaa2d15`)
 
 **Additional fixes during deploy (not in the original commit):**
-- M03: `pgx/stdlib` blank import added (commit `42fec95`) — the repository layer used
-  `database/sql` but never registered the pgx driver. Crashed with "unknown driver pgx".
+- M03: `pgx/stdlib` blank import added (commit `42fec95`, post-rewrite `9a648cf`) — the
+  repository layer used `database/sql` but never registered the pgx driver. Crashed
+  with "unknown driver pgx".
 - M03: `orchestration` database created in the cluster (did not exist).
-- M03: boot-time reconciliation added (commit `b72ca6a`) — fails orphaned non-terminal
-  workflows at startup, preventing zombie runs with persistent state.
+- M03: boot-time reconciliation added (commit `b72ca6a`, post-rewrite `306c260`) — fails
+  orphaned non-terminal workflows at startup, preventing zombie runs with persistent
+  state. Image tag anchored by git tag `deployed-m03-b72ca6a`.
 - M04/M08: live cluster env vars patched to `secretKeyRef/operan-postgres/dsn`.
   (Initially patched to `configMapKeyRef/operan-postgresql/DSN` — the weaker pattern —
   then reverted to the Secret per architect P2-3.)
