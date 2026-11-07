@@ -3,7 +3,6 @@
 package repository
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 
@@ -211,16 +210,6 @@ func scanSchedule(row scanner) (*store.Schedule, error) {
 
 type scanner interface {
 	Scan(dest ...interface{}) error
-}
-
-// ensureTenant ensures a tenant exists (or is valid) by checking the tenants table.
-// This is a no-op for now since tenant validation is handled at the API layer.
-func ensureTenant(ctx context.Context, db *sql.DB, tenantID string) error {
-	// Tenant validation is handled by middleware before reaching the repository.
-	// This is a hook for future multi-tenant enforcement.
-	_ = tenantID
-	_ = ctx
-	return nil
 }
 
 // encodeJSONB serializes a value to JSON bytes, returning []byte or nil.

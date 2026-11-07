@@ -102,6 +102,9 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 		createTableRetryRecords,
 		// ─── stack health ──────────────────────────────────────────────────
 		createTableStackHealth,
+		// ─── fixes to databases created by earlier versions ────────────────
+		// Must come last: it reshapes the tables the statements above create.
+		alterTenantIDToText,
 	}
 
 	for _, sql := range migrations {
@@ -130,7 +133,7 @@ CREATE INDEX IF NOT EXISTS idx_tenants_domain ON tenants(domain);
 const createTableWorkflows = `
 CREATE TABLE IF NOT EXISTS workflows (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id       UUID NOT NULL REFERENCES tenants(id),
+    tenant_id       TEXT NOT NULL,
     department_id   TEXT,
     name            TEXT NOT NULL,
     version         TEXT NOT NULL DEFAULT '1',
@@ -152,7 +155,7 @@ CREATE INDEX IF NOT EXISTS idx_workflows_department ON workflows(department_id);
 const createTableWorkflowVariables = `
 CREATE TABLE IF NOT EXISTS workflow_variables (
     workflow_id   UUID NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
-    tenant_id     UUID NOT NULL REFERENCES tenants(id),
+    tenant_id     TEXT NOT NULL,
     key           TEXT NOT NULL,
     value         JSONB NOT NULL DEFAULT '{}',
     version       INT NOT NULL DEFAULT 1,
@@ -188,7 +191,7 @@ CREATE INDEX IF NOT EXISTS idx_we_workflow ON workflow_events(workflow_id);
 const createTableSchedules = `
 CREATE TABLE IF NOT EXISTS schedules (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id           UUID NOT NULL REFERENCES tenants(id),
+    tenant_id           TEXT NOT NULL,
     name                TEXT NOT NULL,
     cron                TEXT NOT NULL,
     workflow_template_id TEXT NOT NULL,
@@ -204,7 +207,7 @@ CREATE INDEX IF NOT EXISTS idx_schedules_enabled ON schedules(enabled);
 const createTableAgents = `
 CREATE TABLE IF NOT EXISTS agents (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id       UUID NOT NULL REFERENCES tenants(id),
+    tenant_id       TEXT NOT NULL,
     name            TEXT NOT NULL,
     type            TEXT NOT NULL DEFAULT 'general',
     capabilities    JSONB NOT NULL DEFAULT '[]',
@@ -219,13 +222,14 @@ CREATE INDEX IF NOT EXISTS idx_agents_status ON agents(status);
 const createTableAgentAssignments = `
 CREATE TABLE IF NOT EXISTS agent_assignments (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id       UUID NOT NULL REFERENCES tenants(id),
+    tenant_id       TEXT NOT NULL,
     workflow_id     UUID NOT NULL REFERENCES workflows(id),
     node_id         TEXT NOT NULL,
     agent_id        UUID NOT NULL REFERENCES agents(id),
     parameters      JSONB NOT NULL DEFAULT '{}',
     assigned_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE INDEX IF NOT EXISTS idx_aa_tenant ON agent_assignments(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_aa_workflow ON agent_assignments(workflow_id);
 CREATE INDEX IF NOT EXISTS idx_aa_agent ON agent_assignments(agent_id);
 `
@@ -243,7 +247,7 @@ CREATE TABLE IF NOT EXISTS agent_availability (
 const createTablePipelines = `
 CREATE TABLE IF NOT EXISTS pipelines (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id       UUID NOT NULL REFERENCES tenants(id),
+    tenant_id       TEXT NOT NULL,
     name            TEXT NOT NULL,
     description     TEXT DEFAULT '',
     steps           JSONB NOT NULL DEFAULT '[]',
@@ -289,7 +293,7 @@ const createTableExecutions = `
 CREATE TABLE IF NOT EXISTS executions (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     pipeline_id     UUID NOT NULL REFERENCES pipelines(id),
-    tenant_id       UUID NOT NULL REFERENCES tenants(id),
+    tenant_id       TEXT NOT NULL,
     status          TEXT NOT NULL DEFAULT 'pending',
     inputs          JSONB NOT NULL DEFAULT '{}',
     outputs         JSONB NOT NULL DEFAULT '{}',
@@ -327,7 +331,7 @@ CREATE INDEX IF NOT EXISTS idx_es_execution ON execution_steps(execution_id);
 const createTableHumanTasks = `
 CREATE TABLE IF NOT EXISTS human_tasks (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id               UUID NOT NULL REFERENCES tenants(id),
+    tenant_id               TEXT NOT NULL,
     pipeline_execution_id   UUID NOT NULL REFERENCES executions(id),
     step_id                 TEXT NOT NULL,
     assignee_type           TEXT NOT NULL DEFAULT 'user',
@@ -354,7 +358,7 @@ CREATE TABLE IF NOT EXISTS escalations (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workflow_id         UUID NOT NULL REFERENCES workflows(id),
     node_id             TEXT,
-    tenant_id           UUID NOT NULL REFERENCES tenants(id),
+    tenant_id           TEXT NOT NULL,
     department_id       TEXT,
     status              TEXT NOT NULL DEFAULT 'pending',
     severity            TEXT NOT NULL DEFAULT 'medium',
@@ -374,7 +378,7 @@ CREATE TABLE IF NOT EXISTS retry_records (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workflow_id     UUID NOT NULL REFERENCES workflows(id),
     node_id         TEXT,
-    tenant_id       UUID NOT NULL REFERENCES tenants(id),
+    tenant_id       TEXT NOT NULL,
     attempt_number  INT NOT NULL DEFAULT 1,
     status          TEXT NOT NULL DEFAULT 'pending',
     error_code      TEXT DEFAULT '',
@@ -390,7 +394,7 @@ CREATE INDEX IF NOT EXISTS idx_rr_status ON retry_records(status);
 const createTableStackHealth = `
 CREATE TABLE IF NOT EXISTS stack_health (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id   UUID NOT NULL REFERENCES tenants(id),
+    tenant_id   TEXT NOT NULL,
     stacks      JSONB NOT NULL DEFAULT '{}',
     at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     stack_type  TEXT,
@@ -403,4 +407,51 @@ CREATE TABLE IF NOT EXISTS stack_health (
 CREATE INDEX IF NOT EXISTS idx_sh_tenant ON stack_health(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_sh_type ON stack_health(stack_type);
 CREATE INDEX IF NOT EXISTS idx_sh_at ON stack_health(at DESC);
+`
+
+// alterTenantIDToText converts tenant_id from UUID to TEXT on databases created
+// before the column type was fixed, and drops the foreign keys into `tenants`.
+//
+// Tenant ids in this platform are slugs — the portal mints them, and every other
+// module stores tenant_id as a string. M03 was the outlier: UUID columns with a
+// FK into a `tenants` table that nothing ever populates, so every insert failed
+// (22P02 on a slug, 23503 on a well-formed UUID). It stayed hidden until the pgx
+// driver was registered and M03's writes actually reached Postgres.
+//
+// Runs on every boot, so it must stay idempotent: both loops select only what is
+// still unconverted, and a fresh database — where the CREATE TABLEs above already
+// make TEXT columns — matches nothing and the whole block is a no-op.
+const alterTenantIDToText = `
+DO $$
+DECLARE
+    rec record;
+BEGIN
+    FOR rec IN
+        SELECT con.conname AS name, con.conrelid::regclass AS tbl
+        FROM pg_constraint con
+        JOIN pg_attribute att
+          ON att.attrelid = con.conrelid
+         AND att.attnum = ANY (con.conkey)
+        WHERE con.contype = 'f'
+          AND att.attname = 'tenant_id'
+          AND con.confrelid = (
+              SELECT oid FROM pg_class
+              WHERE relname = 'tenants' AND relnamespace = 'public'::regnamespace
+          )
+    LOOP
+        EXECUTE format('ALTER TABLE %s DROP CONSTRAINT %I', rec.tbl, rec.name);
+    END LOOP;
+
+    FOR rec IN
+        SELECT table_name AS tbl
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND column_name = 'tenant_id'
+          AND data_type = 'uuid'
+    LOOP
+        EXECUTE format(
+            'ALTER TABLE %I ALTER COLUMN tenant_id TYPE TEXT USING tenant_id::text',
+            rec.tbl);
+    END LOOP;
+END $$;
 `
