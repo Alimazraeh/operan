@@ -103,14 +103,32 @@ func TestMigrate_NoForeignKeyIntoTenants(t *testing.T) {
 
 // ─── The conversion for databases created by earlier versions ───────────────
 
+// tenantConversion returns the statement that widens tenant_id, and its index,
+// so assertions do not depend on it being the last migration — more fixes land
+// after it over time.
+func tenantConversion(t *testing.T, stmts []string) (string, int) {
+	t.Helper()
+	for i, s := range stmts {
+		if strings.Contains(s, "ALTER COLUMN tenant_id TYPE TEXT") {
+			return s, i
+		}
+	}
+	t.Fatal("no migration widens tenant_id to TEXT")
+	return "", -1
+}
+
 func TestMigrate_ConvertsLegacyColumnsAfterCreatingTables(t *testing.T) {
 	stmts := migrationSQL(t)
-	last := stmts[len(stmts)-1]
+	conversion, at := tenantConversion(t, stmts)
 
-	if !strings.Contains(last, "ALTER COLUMN tenant_id TYPE TEXT") {
-		t.Errorf("the legacy conversion must run last, after the CREATE TABLEs; last statement was %q", firstLine(last))
+	// It reshapes the tables the CREATE TABLEs make, so every one of them has
+	// to have run first.
+	for i, s := range stmts {
+		if i > at && strings.Contains(strings.ToUpper(s), "CREATE TABLE") {
+			t.Errorf("%q creates a table after the tenant_id conversion has already run", firstLine(s))
+		}
 	}
-	if !strings.Contains(last, "DROP CONSTRAINT") {
+	if !strings.Contains(conversion, "DROP CONSTRAINT") {
 		t.Error("the conversion must also drop the tenants foreign keys, or the type change cannot apply")
 	}
 }
@@ -118,13 +136,58 @@ func TestMigrate_ConvertsLegacyColumnsAfterCreatingTables(t *testing.T) {
 // Migrate runs on every boot, so an unconditional ALTER would fail the second
 // time. Both loops must select only what is still unconverted.
 func TestMigrate_ConversionIsRerunSafe(t *testing.T) {
-	stmts := migrationSQL(t)
-	last := stmts[len(stmts)-1]
+	conversion, _ := tenantConversion(t, migrationSQL(t))
 
 	for _, guard := range []string{"data_type = 'uuid'", "contype = 'f'"} {
-		if !strings.Contains(last, guard) {
+		if !strings.Contains(conversion, guard) {
 			t.Errorf("conversion is missing the %q guard — it would not be safe to re-run on boot", guard)
 		}
+	}
+}
+
+// ─── Correlation columns span both execution models ────────────────────────
+
+// This module runs two execution models: the pipelines API
+// (pipelines -> executions -> execution_steps) and the workflows API the
+// department work loop uses. A human gate raised by the workflows API writes
+// the workflow run id into human_tasks.pipeline_execution_id, and `executions`
+// only ever holds rows for the pipelines API — so a foreign key from that
+// column rejected every gate the work loop raised, 23503, after the agent had
+// already done its work. No single table can be that column's target.
+func TestMigrate_CorrelationColumnCarriesNoForeignKey(t *testing.T) {
+	for _, stmt := range migrationSQL(t) {
+		// The conversion names the constraint in order to drop it.
+		if strings.Contains(stmt, "DROP CONSTRAINT") {
+			continue
+		}
+		for _, line := range strings.Split(stmt, "\n") {
+			l := strings.Join(strings.Fields(line), " ")
+			if !strings.HasPrefix(l, "pipeline_execution_id") {
+				continue
+			}
+			if strings.Contains(strings.ToUpper(l), "REFERENCES") {
+				t.Errorf("pipeline_execution_id is declared with a foreign key in %q — the workflows API writes a run id here, which is never a row in executions", l)
+			}
+		}
+	}
+}
+
+// Databases created before that constraint came off the table definition still
+// carry it, so a migration has to drop it — guarded, since Migrate runs on
+// every boot.
+func TestMigrate_DropsTheLegacyCorrelationForeignKey(t *testing.T) {
+	found := false
+	for _, stmt := range migrationSQL(t) {
+		if !strings.Contains(stmt, "pipeline_execution_id") || !strings.Contains(stmt, "DROP CONSTRAINT") {
+			continue
+		}
+		found = true
+		if !strings.Contains(strings.ToUpper(stmt), "IF EXISTS") {
+			t.Error("the correlation foreign key is dropped unguarded — not safe to re-run on boot")
+		}
+	}
+	if !found {
+		t.Error("no migration drops the legacy human_tasks -> executions foreign key")
 	}
 }
 

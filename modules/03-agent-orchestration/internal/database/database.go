@@ -103,8 +103,9 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 		// ─── stack health ──────────────────────────────────────────────────
 		createTableStackHealth,
 		// ─── fixes to databases created by earlier versions ────────────────
-		// Must come last: it reshapes the tables the statements above create.
+		// Must come last: they reshape the tables the statements above create.
 		alterTenantIDToText,
+		dropHumanTaskExecutionFK,
 	}
 
 	for _, sql := range migrations {
@@ -328,11 +329,18 @@ CREATE TABLE IF NOT EXISTS execution_steps (
 CREATE INDEX IF NOT EXISTS idx_es_execution ON execution_steps(execution_id);
 `
 
+// This module runs two execution models: the older pipelines API
+// (pipelines -> executions -> execution_steps) and the workflows API the
+// department work loop uses. pipeline_execution_id is the correlation id for
+// whichever one raised the task — the gate node handler sets it to the
+// workflow run id, by design — so it cannot carry a foreign key into
+// executions. It did, and the gate's insert failed 23503 against a table the
+// workflow path never writes.
 const createTableHumanTasks = `
 CREATE TABLE IF NOT EXISTS human_tasks (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id               TEXT NOT NULL,
-    pipeline_execution_id   UUID NOT NULL REFERENCES executions(id),
+    pipeline_execution_id   UUID NOT NULL,
     step_id                 TEXT NOT NULL,
     assignee_type           TEXT NOT NULL DEFAULT 'user',
     assignee_id             TEXT,
@@ -452,6 +460,47 @@ BEGIN
         EXECUTE format(
             'ALTER TABLE %I ALTER COLUMN tenant_id TYPE TEXT USING tenant_id::text',
             rec.tbl);
+    END LOOP;
+END $$;
+`
+
+// dropHumanTaskExecutionFK removes the foreign key from the human-task
+// correlation column into `executions`, on databases created before it was
+// taken off the table definition above.
+//
+// A human gate raised by the workflows API sets pipeline_execution_id to the
+// workflow run id. `executions` only ever holds rows for the pipelines API, so
+// the constraint rejected every gate the department work loop raised:
+//
+//	insert or update on table "human_tasks" violates foreign key constraint
+//	"human_tasks_pipeline_execution_id_fkey"
+//	DETAIL: Key (pipeline_execution_id)=(28c20f45-…) is not present in
+//	        table "executions".
+//
+// The column stays — it is the correlation id both models write — and the
+// constraint goes, because no single table can be its target.
+//
+// Dropped by its real name rather than the Postgres default, and IF EXISTS, so
+// this is a no-op on every boot after the first.
+const dropHumanTaskExecutionFK = `
+DO $$
+DECLARE
+    rec record;
+BEGIN
+    FOR rec IN
+        SELECT con.conname AS name
+        FROM pg_constraint con
+        JOIN pg_attribute att
+          ON att.attrelid = con.conrelid
+         AND att.attnum = ANY (con.conkey)
+        WHERE con.contype = 'f'
+          AND att.attname = 'pipeline_execution_id'
+          AND con.conrelid = (
+              SELECT oid FROM pg_class
+              WHERE relname = 'human_tasks' AND relnamespace = 'public'::regnamespace
+          )
+    LOOP
+        EXECUTE format('ALTER TABLE human_tasks DROP CONSTRAINT IF EXISTS %I', rec.name);
     END LOOP;
 END $$;
 `
