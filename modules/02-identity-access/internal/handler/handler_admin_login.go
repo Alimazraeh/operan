@@ -5,6 +5,7 @@ package handler
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -75,7 +76,13 @@ func (h *AdminLoginHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Admin password: check env var first (ADMIN_PASSWORD), then file (IAM_ADMIN_PASSWORD_FILE), then default
+	// Admin password: ADMIN_PASSWORD, else a password file. There is no default
+	// and there must never be one again: this endpoint mints an admin JWT for
+	// whatever tenant the caller names, and it used to fall back to the
+	// hardcoded string "operan-admin-2026". Unconfigured deployments — the live
+	// cluster among them — were therefore reachable by anyone who had read the
+	// source. Fail closed instead: break-glass access that works out of the box
+	// is a backdoor, not a convenience.
 	var storedPassword string
 
 	if envPwd := os.Getenv("ADMIN_PASSWORD"); envPwd != "" {
@@ -88,11 +95,16 @@ func (h *AdminLoginHandler) Login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		storedPassword = strings.TrimSpace(string(content))
-	} else {
-		storedPassword = "operan-admin-2026"
 	}
 
-	if req.Password != storedPassword {
+	if storedPassword == "" {
+		h.WriteError(w, http.StatusServiceUnavailable, 503, "admin login not configured",
+			"set ADMIN_PASSWORD or IAM_ADMIN_PASSWORD_FILE to enable break-glass login; "+
+				"for everyday access sign in with your own email and password")
+		return
+	}
+
+	if subtle.ConstantTimeCompare([]byte(req.Password), []byte(storedPassword)) != 1 {
 		h.WriteError(w, http.StatusUnauthorized, 401, "invalid password", "password does not match the stored value")
 		return
 	}

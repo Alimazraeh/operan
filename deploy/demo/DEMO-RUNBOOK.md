@@ -15,9 +15,24 @@ The **Experience Portal (Module 21)** is the platform Web UI, on the LAN:
 http://192.168.8.228:30088
 ```
 
-Sign in with the signing secret
-(`kubectl -n operan get secret operan-jwt -o jsonpath='{.data.secret}' | base64 -d`),
-click **New** for a fresh tenant, then **Enter the platform**.
+Sign in with **your email and password** — fill the email field and the portal
+uses M02's real per-user login, so every gate you approve is attributed to you
+rather than to a shared synthetic admin. The platform's first administrator is
+provisioned at boot from `IAM_BOOTSTRAP_ADMIN_EMAIL` / `IAM_BOOTSTRAP_ADMIN_TENANT`
+and the admin password secret:
+
+```bash
+kubectl -n operan get secret operan-admin -o jsonpath='{.data.password}' | base64 -d
+```
+
+Leaving the email blank falls back to break-glass admin login, which takes that
+same password. Use it only when per-user sign-in is unavailable.
+
+> Earlier revisions of this runbook told you to paste the JWT **signing secret**
+> into the password field. That was wrong — `admin/login` never compared against
+> it — and it is a bad habit besides: that secret signs every token in the
+> platform, so anyone holding it can mint any identity in any tenant. Never put
+> it in a login form.
 
 The demo is the portal itself:
 1. **Departments** → pick *Sales Department* from the catalog → **Deploy

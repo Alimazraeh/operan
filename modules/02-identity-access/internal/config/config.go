@@ -28,13 +28,29 @@ type Config struct {
 	AuthentikTokenTTL   int    // TTL for per-tenant API tokens in minutes (0 = no expiry)
 	ProvisioningMethod  string // "none", "docker-compose", "helm" — "none" assumes pre-provisioned Authentik
 	IngressDomain       string // Domain for Ingress resources when provisioning via Helm
+
+	// Bootstrap administrator. With all three set, the process makes sure that
+	// account exists at boot so real per-user sign-in works on a fresh
+	// deployment instead of everyone sharing the admin bootstrap password.
+	// Leave any of them empty and no account is provisioned.
+	BootstrapAdminEmail    string
+	BootstrapAdminTenant   string
+	BootstrapAdminPassword string
 }
 
 // Load reads configuration from environment variables with sensible defaults.
 func Load() *Config {
 	cfg := &Config{
-		Port:             getEnvInt("IAM_PORT", 8002),
-		TokenSecret:      getEnvString("IAM_TOKEN_SECRET", ""),
+		Port:        getEnvInt("IAM_PORT", 8002),
+		TokenSecret: getEnvString("IAM_TOKEN_SECRET", ""),
+
+		BootstrapAdminEmail:  getEnvString("IAM_BOOTSTRAP_ADMIN_EMAIL", ""),
+		BootstrapAdminTenant: getEnvString("IAM_BOOTSTRAP_ADMIN_TENANT", ""),
+		// Falls back to the break-glass password so one secret can serve both
+		// without forcing operators to manage two.
+		BootstrapAdminPassword: getEnvString("IAM_BOOTSTRAP_ADMIN_PASSWORD",
+			getEnvString("ADMIN_PASSWORD", "")),
+
 		TokenExpiry:      getEnvInt("IAM_TOKEN_EXPIRY_MIN", 60),
 		EventBrokerURL:   getEnvString("IAM_EVENT_BROKER_URL", ""),
 		TracerEnabled:    getEnvBool("IAM_OTEL_ENABLED", true),
@@ -45,11 +61,11 @@ func Load() *Config {
 		RateLimitBurst: getEnvInt("IAM_RATE_LIMIT_BURST", 200),
 
 		// Authentik integration
-		AuthentikServerURL: getEnvString("AUTHENTIK_SERVER_URL", ""),
+		AuthentikServerURL:  getEnvString("AUTHENTIK_SERVER_URL", ""),
 		AuthentikAdminToken: getEnvString("AUTHENTIK_ADMIN_API_TOKEN", ""),
-		AuthentikTokenTTL:  getEnvInt("AUTHENTIK_TOKEN_TTL_MIN", 0),
-		ProvisioningMethod: getEnvString("AUTHENTIK_PROVISIONING_METHOD", "none"),
-		IngressDomain:      getEnvString("AUTHENTIK_INGRESS_DOMAIN", "auth.operan.internal"),
+		AuthentikTokenTTL:   getEnvInt("AUTHENTIK_TOKEN_TTL_MIN", 0),
+		ProvisioningMethod:  getEnvString("AUTHENTIK_PROVISIONING_METHOD", "none"),
+		IngressDomain:       getEnvString("AUTHENTIK_INGRESS_DOMAIN", "auth.operan.internal"),
 
 		// Database persistence
 		DatabaseURL: getEnvString("IAM_DATABASE_URL", ""),

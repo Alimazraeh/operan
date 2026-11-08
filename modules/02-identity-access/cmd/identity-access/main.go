@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/operan/modules/02-identity-access/internal/authentik"
+	"github.com/operan/modules/02-identity-access/internal/bootstrap"
 	"github.com/operan/modules/02-identity-access/internal/config"
 	"github.com/operan/modules/02-identity-access/internal/database"
 	"github.com/operan/modules/02-identity-access/internal/events"
@@ -56,6 +57,30 @@ func main() {
 		}
 		users = persistentUsers
 		audit = store.NewPersistentAuditStore(memAudit, pool)
+
+		// Give the deployment a real account to sign in with. Without one, a
+		// fresh tenant has no user and everybody falls back to sharing the
+		// admin bootstrap password — which is how signing in came to look like
+		// a trade against security.
+		if cfg.BootstrapAdminEmail != "" && cfg.BootstrapAdminTenant != "" && cfg.BootstrapAdminPassword != "" {
+			switch outcome, err := bootstrap.EnsureAdminUser(users,
+				cfg.BootstrapAdminTenant, cfg.BootstrapAdminEmail, cfg.BootstrapAdminPassword); {
+			case err != nil:
+				// Not fatal: the break-glass path still works, and refusing to
+				// start would take the whole IAM module down over one account.
+				log.Printf("[BOOTSTRAP] admin %s in tenant %s: %v",
+					cfg.BootstrapAdminEmail, cfg.BootstrapAdminTenant, err)
+			case outcome == bootstrap.Created:
+				log.Printf("[BOOTSTRAP] created administrator %s for tenant %s",
+					cfg.BootstrapAdminEmail, cfg.BootstrapAdminTenant)
+			default:
+				log.Printf("[BOOTSTRAP] administrator %s already present in tenant %s — left untouched",
+					cfg.BootstrapAdminEmail, cfg.BootstrapAdminTenant)
+			}
+		} else {
+			log.Printf("[BOOTSTRAP] no bootstrap administrator configured " +
+				"(set IAM_BOOTSTRAP_ADMIN_EMAIL, IAM_BOOTSTRAP_ADMIN_TENANT and a password)")
+		}
 	} else {
 		log.Printf("No database configured — running in-memory mode")
 		users = memUsers
