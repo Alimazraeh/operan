@@ -263,8 +263,11 @@ func (r *WorkflowPostgres) SetVariables(workflowID, tenantID string, vars map[st
 	return tx.Commit()
 }
 
-func (r *WorkflowPostgres) AddEvent(evt *store.ExecutionEvent) error {
+func (r *WorkflowPostgres) AddEvent(workflowID string, evt *store.ExecutionEvent) error {
 	ctx := defaultCtx()
+	if workflowID == "" {
+		return fmt.Errorf("add event %q: no workflow id", evt.EventType)
+	}
 	if evt.EventID == "" {
 		evt.EventID = uuid.New().String()
 	}
@@ -274,7 +277,7 @@ func (r *WorkflowPostgres) AddEvent(evt *store.ExecutionEvent) error {
 	_, err := r.db.ExecContext(ctx,
 		`INSERT INTO workflow_events (event_id, workflow_id, node_id, event_type, timestamp, details)
 		 VALUES ($1,$2,$3,$4,$5,$6)`,
-		evt.EventID, evt.NodeID, evt.NodeID, evt.EventType, evt.Timestamp, detailsBytes)
+		evt.EventID, workflowID, evt.NodeID, evt.EventType, evt.Timestamp, detailsBytes)
 	return err
 }
 

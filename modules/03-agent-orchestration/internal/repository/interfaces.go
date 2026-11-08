@@ -26,7 +26,12 @@ type WorkflowRepo interface {
 	AddVariable(workflowID, tenantID string, key string, value json.RawMessage) error
 	GetVariables(workflowID string) (*store.WorkflowVariables, error)
 	SetVariables(workflowID, tenantID string, vars map[string]interface{}) error
-	AddEvent(evt *store.ExecutionEvent) error
+	// AddEvent takes the workflow id as its own argument rather than reading it
+	// off the event: store.ExecutionEvent has no such field, and both callers
+	// used to build the event without one, so every write bound a node id into
+	// the workflow_id column and failed. A required parameter cannot be
+	// forgotten the way an unset struct field can.
+	AddEvent(workflowID string, evt *store.ExecutionEvent) error
 	GetExecutionHistory(workflowID string) ([]*store.ExecutionEvent, error)
 	Delete(id string) error
 }

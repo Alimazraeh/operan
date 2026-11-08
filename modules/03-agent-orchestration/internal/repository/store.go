@@ -398,13 +398,19 @@ func (s *Store) AddExecutionEvent(workflowID string, evt store.ExecutionEvent) {
 	case ModeInMemory:
 		s.wf.AddEvent(workflowID, evt)
 	case ModePostgreSQL:
-		_ = s.repo.Workflow().AddEvent(&store.ExecutionEvent{
+		if err := s.repo.Workflow().AddEvent(workflowID, &store.ExecutionEvent{
 			EventID:   evt.EventID,
 			NodeID:    evt.NodeID,
 			EventType: evt.EventType,
 			Timestamp: evt.Timestamp,
 			Details:   evt.Details,
-		})
+		}); err != nil {
+			// Never fail a run over its own audit trail — but never lose the
+			// write in silence either. This was discarded, which is why node
+			// failures left no trace anywhere.
+			log.Printf("[store] add execution event %s for workflow %s: %v",
+				evt.EventType, workflowID, err)
+		}
 	default:
 	}
 }
@@ -1342,13 +1348,18 @@ func (p *storePassthroughWorkflow) SetVariables(workflowID, tenantID string, var
 	return p.repo.SetVariables(workflowID, tenantID, vars)
 }
 func (p *storePassthroughWorkflow) AddEvent(workflowID string, evt store.ExecutionEvent) {
-	_ = p.repo.AddEvent(&store.ExecutionEvent{
+	if err := p.repo.AddEvent(workflowID, &store.ExecutionEvent{
 		EventID:   evt.EventID,
 		NodeID:    evt.NodeID,
 		EventType: evt.EventType,
 		Timestamp: evt.Timestamp,
 		Details:   evt.Details,
-	})
+	}); err != nil {
+		// This is the path the DAG engine writes node_start / node_failed on,
+		// so swallowing it cost every failed run its reason.
+		log.Printf("[store] add execution event %s for workflow %s: %v",
+			evt.EventType, workflowID, err)
+	}
 }
 func (p *storePassthroughWorkflow) GetExecutionHistory(workflowID string) []store.ExecutionEvent {
 	evts, err := p.repo.GetExecutionHistory(workflowID)
