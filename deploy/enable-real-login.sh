@@ -17,7 +17,9 @@ set -uo pipefail
 
 NS=operan
 SECRET=operan-admin
-IMAGE_TAG="${IMAGE_TAG:-sha-4ffe462}"
+# The image built from this branch's tip. 4ffe462 carries the M02 change; this
+# is the tag an image actually exists for.
+IMAGE_TAG="${IMAGE_TAG:-sha-ce8de2a}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-ali@adri.nz}"
 ADMIN_TENANT="${ADMIN_TENANT:-acme-3}"
 
