@@ -43,6 +43,38 @@ func TestEnsureAdminUser_CreatesTheFirstAdministrator(t *testing.T) {
 	}
 }
 
+// The role has to be one the platform's permission vocabulary knows. The portal
+// maps role -> permissions from a fixed set (perm.js ROLE_PERMISSIONS:
+// platform_admin, executive, department_head, supervisor, employee) and grants
+// nothing at all for anything else — so seeding "admin" produced an
+// administrator who signed in successfully and then found every navigation
+// entry that requires a permission missing, with no error to explain it.
+func TestEnsureAdminUser_GrantsARoleThePlatformKnows(t *testing.T) {
+	known := map[string]bool{
+		"platform_admin": true, "executive": true,
+		"department_head": true, "supervisor": true, "employee": true,
+	}
+	if !known[AdminRole] {
+		t.Fatalf("AdminRole = %q, which perm.js grants no permissions for", AdminRole)
+	}
+	if AdminRole != "platform_admin" {
+		t.Errorf("AdminRole = %q — only platform_admin carries platform.admin, "+
+			"which the Tenants, IAM, Connectors and Observability views require", AdminRole)
+	}
+
+	users := store.NewUserStore()
+	if _, err := EnsureAdminUser(users, tenant, email, password); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	got, err := users.GetByTenantAndEmail(tenant, email)
+	if err != nil {
+		t.Fatalf("lookup: %v", err)
+	}
+	if len(got.RoleIDs) != 1 || got.RoleIDs[0] != "platform_admin" {
+		t.Errorf("roles = %v, want [platform_admin]", got.RoleIDs)
+	}
+}
+
 // Running on every boot must not touch an account that already exists:
 // re-asserting the configured password would silently undo a rotation, and
 // re-activating would revive an account someone had deliberately disabled.

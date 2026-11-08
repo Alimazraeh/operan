@@ -20,6 +20,17 @@ import (
 	"github.com/operan/modules/02-identity-access/internal/store"
 )
 
+// AdminRole is the role the bootstrap administrator is granted.
+//
+// It must be a role the rest of the platform actually knows. The portal derives
+// what a person may see from a fixed vocabulary — platform_admin, executive,
+// department_head, supervisor, employee (web/app/js/perm.js ROLE_PERMISSIONS) —
+// and silently grants nothing for a role outside it. Seeding "admin" instead of
+// "platform_admin" therefore produced an administrator who could sign in and
+// then saw a navigation stripped to the four ungated views, with no error
+// anywhere to say why.
+const AdminRole = "platform_admin"
+
 // Outcome says what EnsureAdminUser did, so the caller can log it honestly.
 type Outcome int
 
@@ -87,7 +98,7 @@ func EnsureAdminUser(users store.UserStoreAPI, tenantID, email, password string)
 		TenantID:    tenantID,
 		Email:       email,
 		DisplayName: "Platform Administrator",
-		RoleIDs:     []string{"admin"},
+		RoleIDs:     []string{AdminRole},
 	}
 	if err := users.Create(user); err != nil {
 		return AlreadyPresent, fmt.Errorf("create bootstrap admin: %w", err)
@@ -100,7 +111,7 @@ func EnsureAdminUser(users store.UserStoreAPI, tenantID, email, password string)
 	}
 
 	// Roles are stored separately from the row Create writes.
-	if err := users.SetRoles(user.ID, []string{"admin"}); err != nil {
+	if err := users.SetRoles(user.ID, []string{AdminRole}); err != nil {
 		return Created, fmt.Errorf("grant bootstrap admin role: %w", err)
 	}
 
