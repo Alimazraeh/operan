@@ -9,10 +9,28 @@ import (
 )
 
 // adminRoles defines the roles permitted to perform write operations.
-var adminRoles = []string{"admin", "registry_admin"}
+//
+// platform_admin is the platform's own administrator role. Module 02 mints it
+// into the token's "role" claim and the portal's permission model is built on
+// that vocabulary (21-experience-portal/web/app/js/perm.js: platform_admin,
+// executive, department_head, supervisor, employee). This module predates it
+// and knew only its own names, so the moment Identity & Access started issuing
+// the platform's real role, a genuinely privileged administrator began getting
+// "Insufficient permissions" here — and because Module 05 forwards the caller's
+// token verbatim when it registers a department's agents, every department
+// deployment died at deploy_swarm.
+//
+// Keep "admin": break-glass admin login still mints exactly that claim, so
+// dropping it would break deploys whenever per-user sign-in is unavailable.
+// Keep "registry_admin": service tokens use it.
+var adminRoles = []string{"platform_admin", "admin", "registry_admin"}
 
 // readerRoles defines the roles permitted to perform read operations.
-var readerRoles = []string{"admin", "registry_admin", "registry_reader"}
+//
+// Currently unused — every read route is open via ExtractTenant — but it is
+// kept in step with adminRoles so that wiring it up later cannot quietly
+// reintroduce the same vocabulary mismatch.
+var readerRoles = []string{"platform_admin", "admin", "registry_admin", "registry_reader"}
 
 // authWithRole wraps a handler with JWT authentication + Role-based access control.
 func authWithRole(secret string, allowedRoles []string, handler http.HandlerFunc) http.HandlerFunc {
